@@ -32,12 +32,12 @@ The elasticsearch component is ready to use !
 sudo apt-get install openjdk-8-jre 
 ```
 
- - Install [libsodium](http://doc.libsodium.org/installation/index.html) (Linux only)
+ - Install [libsodium](https://download.libsodium.org/doc/index.html) (Linux only)
   
-     - Linux: See [installation](http://doc.libsodium.org/installation/index.html). After installation, make sure the file 'libsodium.so' 
+     - Linux: See [installation](https://download.libsodium.org/doc/installation/index.html). After installation, make sure the file 'libsodium.so' 
        exists on: /usr/local/lib or /opt/local/lib. If not, create a symbolic link.
        
-     - Windows: no installation need (include in binaries) 
+    No installation need for Windows (include in binaries) 
   
  - Download lastest release of file ucoinj-elasticsearch-X.Y-standalone.zip
  
