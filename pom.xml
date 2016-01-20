@@ -1,8 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <!--parent> <groupId>fr.ifremer</groupId> <artifactId>common</artifactId> <version>1.1-SNAPSHOT</version> </parent -->
-
   <groupId>io.ucoin</groupId>
   <artifactId>ucoinj</artifactId>
   <version>0.1-SNAPSHOT</version>
@@ -18,7 +16,7 @@
 
     <!-- Commons versions -->
     <file.encoding>UTF-8</file.encoding>
-    <log4j.version>1.2.16</log4j.version>
+    <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.5</slf4j.version>
     <guava.version>19.0</guava.version>
     <xalan.version>2.7.1</xalan.version>
@@ -28,7 +26,7 @@
     <kalium.version>0.4.0</kalium.version>
     <scrypt.version>1.4.0</scrypt.version>
     <elasticsearch.version>2.1.1</elasticsearch.version>
-    <jna.version>4.2.1</jna.version>
+    <jna.version>4.1.0</jna.version>
 
     <nuitonConfigVersion>3.0-rc-2</nuitonConfigVersion>
     <nuitonI18nVersion>3.3</nuitonI18nVersion>
@@ -81,6 +79,18 @@
     <!-- where to generate sources -->
     <maven.gen.dir>${project.build.directory}/generated-sources</maven.gen.dir>
 
+    <!-- distribution management -->
+    <distribution.site.id>eis-public-reports</distribution.site.id>
+    <distribution.site.host>server.e-is.pro:22</distribution.site.host>
+    <distribution.site.repository>scp://${distribution.site.host}/var/www</distribution.site.repository>
+    <distribution.site.projectId>reefdb</distribution.site.projectId>
+    <distribution.repository.id>eis-nexus-deploy</distribution.repository.id>
+    <distribution.repository.url>http://nexus.e-is.pro/nexus/content/repositories/ucoinj-releases</distribution.repository.url>
+    <distribution.internet.url>${distribution.repository.url}</distribution.internet.url>
+    <distribution.snapshotRepository.id>eis-nexus-deploy</distribution.snapshotRepository.id>
+    <distribution.snapshotRepository.url>http://nexus.e-is.pro/nexus/content/repositories/ucoinj-snapshots</distribution.snapshotRepository.url>
+
+    <github.global.server>github</github.global.server>
   </properties>
 
   <licenses>
@@ -98,13 +108,20 @@
     <module>ucoinj-core-client</module>
     <module>ucoinj-elasticsearch</module>
     <module>ucoinj-ui-wicket</module>
+    <module>ucoinj-elasticsearch-plugin</module>
+    <module>ucoinj-cesium</module>
   </modules>
 
   <scm>
-    <url>https://github.com/blavenie/ucoinj/</url>
-    <connection>scm:svn:https://github.com/blavenie/ucoinj/</connection>
-    <developerConnection>scm:svn:https://github.com/blavenie/ucoinj/</developerConnection>
+    <url>https://github.com/ucoin-io/ucoinj/</url>
+    <connection>scm:svn:https://github.com/ucoin-io/ucoinj/</connection>
+    <developerConnection>scm:svn:https://github.com/ucoin-io/ucoinj/</developerConnection>
   </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/ucoin-io/ucoinj/issues</url>
+  </issueManagement>
 
   <repositories>
     <repository>
@@ -439,6 +456,11 @@
         </plugin>
 
         <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>2.5</version>
+        </plugin>
+
+        <plugin>
           <artifactId>maven-changes-plugin</artifactId>
           <version>2.11</version>
           <configuration>
@@ -497,6 +519,12 @@
           <version>2.3</version>
         </plugin>
 
+        <plugin>
+          <groupId>com.github.github</groupId>
+          <artifactId>site-maven-plugin</artifactId>
+          <version>0.12</version>
+        </plugin>
+
       </plugins>
     </pluginManagement>
   </build>
@@ -516,17 +544,18 @@
 
   <distributionManagement>
     <repository>
-      <id>eis-nexus-deploy</id>
-      <url>
-		http://nexus.e-is.pro/nexus/content/repositories/ucoinj-releases
-	  </url>
+      <uniqueVersion>true</uniqueVersion>
+      <id>${distribution.repository.id}</id>
+      <url>${distribution.repository.url}</url>
     </repository>
     <snapshotRepository>
-      <id>eis-nexus-deploy</id>
-      <url>
-		 http://nexus.e-is.pro/nexus/content/repositories/ucoinj-snapshots
-	  </url>
+      <id>${distribution.snapshotRepository.id}</id>
+      <url>${distribution.snapshotRepository.url}</url>
     </snapshotRepository>
+    <site>
+      <id>${distribution.site.id}</id>
+      <url>${distribution.site.repository}/${distribution.site.projectId}</url>
+    </site>
   </distributionManagement>
 
   <profiles>
@@ -714,6 +743,22 @@
                 <goals>
                   <goal>changes-check</goal>
                 </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>com.github.github</groupId>
+            <artifactId>site-maven-plugin</artifactId>
+            <configuration>
+              <message>Creating site for ${project.version}</message>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>site</goal>
+                </goals>
+                <phase>site</phase>
               </execution>
             </executions>
           </plugin>

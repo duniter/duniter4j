@@ -165,8 +165,14 @@ More documentation here :
  
  Get the source code, then compile using Maven:
   
-```bash
-$ mvn install
+```
+	git clone https://github.com/ucoin-io/ucoinj.git
+	cd ucoinj
+	git submodule init
+	git submodule sync
+	git submodule update
+	
+    mvn install
 ```
  
  To package binaries :
