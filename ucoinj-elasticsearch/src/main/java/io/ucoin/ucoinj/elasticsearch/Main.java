@@ -43,10 +43,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 public class Main {
 
@@ -127,7 +125,6 @@ public class Main {
         shutdown();
 
         log.info("uCoinj :: ElasticSearch Indexer successfully stopped");
-        //System.exit(-1);
     }
 
     /* -- protected methods -- */

@@ -24,7 +24,6 @@ package io.ucoin.ucoinj.elasticsearch.action;
  * #L%
  */
 
-import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.service.bma.BlockchainRemoteService;
@@ -41,6 +40,8 @@ public class IndexerAction {
 
     public void indexLastBlocks() {
 
+        boolean async = ServiceLocator.instance().getElasticSearchService().isNodeInstance();
+
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -52,7 +53,15 @@ public class IndexerAction {
             }
         };
 
-        ServiceLocator.instance().getExecutorService().execute(runnable);
+        // Async execution
+        if (async) {
+            ServiceLocator.instance().getExecutorService().execute(runnable);
+        }
+
+        // Synchrone execution
+        else {
+            runnable.run();
+        }
     }
 
     public void resetAllBlocks() {

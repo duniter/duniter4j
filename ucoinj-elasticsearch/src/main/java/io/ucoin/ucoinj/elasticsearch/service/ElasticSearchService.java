@@ -88,6 +88,10 @@ public class ElasticSearchService implements Bean,InitializingBean, Closeable {
                 config.isLocal());
     }
 
+    public boolean isNodeInstance() {
+        return node != null && !localNode;
+    }
+
     public void startNode(boolean enableHttp, boolean local) {
 
         if (node != null && !localNode) {
