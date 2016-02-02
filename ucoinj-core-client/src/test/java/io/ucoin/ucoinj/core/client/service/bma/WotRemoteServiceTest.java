@@ -157,7 +157,6 @@ public class WotRemoteServiceTest {
 	@Test
 	public void getCertification() throws Exception {
 
-		SecretBox secretBox = createSecretBox();
 		Wallet wallet = createTestWallet();
 
 		String userUid = "kimamila";
@@ -184,28 +183,6 @@ public class WotRemoteServiceTest {
 
 	/* -- internal methods */
 
-	protected void assertBasicIdentity(BasicIdentity identity,
-			boolean withSignature) {
-
-		Assert.assertNotNull(identity);
-		Assert.assertNotNull(identity.getUid());
-		Assert.assertNotNull(identity.getPubkey());
-		if (withSignature) {
-			Assert.assertNotNull(identity.getSignature());
-		} else {
-			Assert.assertNull(identity.getSignature());
-		}
-
-	}
-
-
-	protected void assertIdentity(Identity identity) {
-		assertBasicIdentity(identity, true);
-
-		Assert.assertTrue(identity.getTimestamp() > 0);
-
-	}
-
 	protected Wallet createTestWallet() {
 		Wallet wallet = new Wallet(
 				resource.getFixtures().getCurrency(),
@@ -224,12 +201,4 @@ public class WotRemoteServiceTest {
 		return secretBox;
 	}
 
-
-	protected Peer createTestPeer() {
-		Peer peer = new Peer(
-				Configuration.instance().getNodeHost(),
-				Configuration.instance().getNodePort());
-
-		return peer;
-	}
 }
