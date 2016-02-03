@@ -187,6 +187,7 @@ public class ElasticSearchService implements Bean,InitializingBean, Closeable {
                 .put("http.host", config.getHost())
                 .put("path.home", config.getBasedir())
                 .put("path.data", config.getDataDirectory())
+                .put("path.plugins", config.getPluginsDirectory())
                 .build();
 
         // Create a node builder

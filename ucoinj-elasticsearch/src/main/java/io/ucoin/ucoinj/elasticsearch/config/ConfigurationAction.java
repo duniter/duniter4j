@@ -35,9 +35,9 @@ public enum ConfigurationAction implements ConfigActionDef {
 
 	START(NodeAction.class.getName() + "#start", "start"),
 
-	INDEX_BLOCKS(IndexerAction.class.getName() + "#indexLastBlocks", "index"),
+	INDEX_BLOCKS(IndexerAction.class.getName() + "#indexation", "index"),
 
-	RESET_BLOCKS(IndexerAction.class.getName() + "#resetAllBlocks", "reset-data");
+	RESET_BLOCKS(IndexerAction.class.getName() + "#resetData", "reset-data");
 
 	public String action;
 	public String[] aliases;

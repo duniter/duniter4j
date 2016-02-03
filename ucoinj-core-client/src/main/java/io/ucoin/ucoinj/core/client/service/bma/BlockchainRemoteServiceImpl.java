@@ -21,15 +21,16 @@ package io.ucoin.ucoinj.core.client.service.bma;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
 import io.ucoin.ucoinj.core.client.config.Configuration;
+import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
+import io.ucoin.ucoinj.core.client.model.bma.BlockchainMemberships;
+import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
 import io.ucoin.ucoinj.core.client.model.bma.gson.JsonArrayParser;
 import io.ucoin.ucoinj.core.client.model.local.Currency;
 import io.ucoin.ucoinj.core.client.model.local.Identity;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.model.local.Wallet;
-import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
-import io.ucoin.ucoinj.core.client.model.bma.BlockchainMemberships;
-import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
 import io.ucoin.ucoinj.core.client.service.ServiceLocator;
 import io.ucoin.ucoinj.core.client.service.exception.HttpBadRequestException;
 import io.ucoin.ucoinj.core.client.service.exception.PubkeyAlreadyUsedException;
@@ -37,10 +38,12 @@ import io.ucoin.ucoinj.core.client.service.exception.UidAlreadyUsedException;
 import io.ucoin.ucoinj.core.client.service.exception.UidMatchAnotherPubkeyException;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.service.CryptoService;
+import io.ucoin.ucoinj.core.util.CollectionUtils;
 import io.ucoin.ucoinj.core.util.ObjectUtils;
 import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.core.util.cache.Cache;
 import io.ucoin.ucoinj.core.util.cache.SimpleCache;
+import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -48,11 +51,11 @@ import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
 public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implements BlockchainRemoteService {
 
@@ -88,6 +91,8 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     // Cache on blockchain parameters
     private Cache<Long, BlockchainParameters> mParametersCache;
 
+    private Map<URI, WebsocketClientEndpoint> blockWsEndPoints = new HashMap<>();
+
     public BlockchainRemoteServiceImpl() {
         super();
     }
@@ -100,6 +105,18 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
         // Initialize caches
         initCaches();
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+
+        if (blockWsEndPoints.size() != 0) {
+            for (WebsocketClientEndpoint clientEndPoint: blockWsEndPoints.values()) {
+                clientEndPoint.close();
+            }
+            blockWsEndPoints.clear();
+        }
     }
 
     @Override
@@ -484,6 +501,36 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         }
 
         return result;
+    }
+
+    @Override
+    public void addNewBlockListener(long currencyId, WebsocketClientEndpoint.MessageHandler messageHandler) {
+        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+        addNewBlockListener(peer, messageHandler);
+    }
+
+    @Override
+    public void addNewBlockListener(Peer peer, WebsocketClientEndpoint.MessageHandler messageHandler) {
+
+        try {
+            URI wsBlockURI = new URI(String.format("ws://%s:%s/ws/block",
+                    peer.getHost(),
+                    peer.getPort()));
+
+            // Get the websocket, or open new one if not exists
+            WebsocketClientEndpoint wsClientEndPoint = blockWsEndPoints.get(wsBlockURI);
+            if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
+                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI);
+                blockWsEndPoints.put(wsBlockURI, wsClientEndPoint);
+            }
+
+            // add listener
+            wsClientEndPoint.addMessageHandler(messageHandler);
+
+        } catch (URISyntaxException ex) {
+            throw new TechnicalException("could not create URI need for web socket on block: " + ex.getMessage());
+        }
+
     }
 
     /* -- Internal methods -- */

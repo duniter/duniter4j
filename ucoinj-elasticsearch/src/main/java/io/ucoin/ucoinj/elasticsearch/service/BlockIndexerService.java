@@ -85,6 +85,8 @@ public class BlockIndexerService extends BaseIndexerService {
 
     public static final String INDEX_TYPE_BLOCK = "block";
 
+    public static final String INDEX_BLOCK_CURRENT_ID = "current";
+
     private static final int SYNC_MISSING_BLOCK_MAX_RETRY = 5;
 
     private CurrencyIndexerService currencyIndexerService;
@@ -132,8 +134,8 @@ public class BlockIndexerService extends BaseIndexerService {
             BlockchainParameters parameter = blockchainService.getParameters(peer);
             if (parameter == null) {
                 progressionModel.setStatus(ProgressionModel.Status.FAILED);
-                log.error(String.format("Could not connect to node [%s:%s]",
-                        config.getNodeBmaHost(), config.getNodeBmaPort()));
+                log.error(String.format("Could not connect to node [%s]",
+                        peer.getUrl()));
                 return;
             }
             String currencyName = parameter.getCurrency();
@@ -158,6 +160,11 @@ public class BlockIndexerService extends BaseIndexerService {
 
             if (currentBlock != null) {
                 int maxBlockNumber = currentBlock.getNumber();
+
+                // DEV mode
+                if (!config.isFullMode()) {
+                    maxBlockNumber = 5000;
+                }
 
                 // Get the last indexed block number
                 int startNumber = 0;
@@ -185,7 +192,6 @@ public class BlockIndexerService extends BaseIndexerService {
                             ? indexBlocksUsingBulk(peer, currencyName, startNumber, maxBlockNumber, progressionModel)
                             : indexBlocksNoBulk(peer, currencyName, startNumber, maxBlockNumber, progressionModel);
 
-
                     // If some blocks are missing, try to get it using other peers
                     if (CollectionUtils.isNotEmpty(missingBlocks)) {
                         progressionModel.setTask(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.otherPeers.task", currencyName));
@@ -203,7 +209,7 @@ public class BlockIndexerService extends BaseIndexerService {
                 }
                 else {
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format("Current block from peer [%s:%s] is #%s. Index is up to date.", peer.getHost(), peer.getPort(), maxBlockNumber));
+                        log.debug(String.format("Current block from peer [%s] is #%s. Index is up to date.", peer.getUrl(), maxBlockNumber));
                     }
                     progressionModel.setStatus(ProgressionModel.Status.SUCCESS);
                 }
@@ -346,18 +352,48 @@ public class BlockIndexerService extends BaseIndexerService {
         // Preparing indexation
         IndexRequestBuilder indexRequest = getClient().prepareIndex(currencyName, INDEX_TYPE_BLOCK)
                 .setId(String.valueOf(number))
+                .setRefresh(refresh)
                 .setSource(json);
 
         // Execute indexation
         if (!wait) {
-            indexRequest
-                    .setRefresh(refresh)
-                    .execute();
+            indexRequest.execute();
         }
         else {
-            indexRequest
-                    .setRefresh(refresh)
-                    .execute().actionGet();
+            indexRequest.execute().actionGet();
+        }
+    }
+
+    /**
+     *
+     * @param json block as json
+     * @param refresh is a existing block ?
+     * @param wait need to wait until processed ?
+     */
+    public void indexBlockAsJson(Peer peer, String json, boolean refresh, boolean wait) {
+        ObjectUtils.checkNotNull(json);
+        ObjectUtils.checkArgument(json.length() > 0);
+
+        JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
+        JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("currency");
+
+        String currencyName = blockCurrencyParser.getValueAsString(json);
+        int number = blockNumberParser.getValueAsInt(json);
+
+        log.info(I18n.t("ucoinj.blockIndexerService.indexBlock", currencyName, peer, number));
+
+        // Preparing indexation
+        IndexRequestBuilder indexRequest = getClient().prepareIndex(currencyName, INDEX_TYPE_BLOCK)
+                .setId(String.valueOf(number))
+                .setRefresh(refresh)
+                .setSource(json);
+
+        // Execute indexation
+        if (!wait) {
+            indexRequest.execute();
+        }
+        else {
+            indexRequest.execute().actionGet();
         }
     }
 
@@ -375,21 +411,23 @@ public class BlockIndexerService extends BaseIndexerService {
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         String json = gson.toJson(currentBlock);
 
-        indexCurrentBlockAsJson(currentBlock.getCurrency(), json.getBytes(), true, wait);
+        indexCurrentBlockAsJson(currentBlock.getCurrency(), json, wait);
     }
 
    /**
     *
     * @param currencyName
     * @param currentBlockJson block as JSON
+    * @pram wait need to wait until block processed ?
     */
-    public void indexCurrentBlockAsJson(String currencyName, byte[] currentBlockJson, boolean refresh, boolean wait) {
+    public void indexCurrentBlockAsJson(String currencyName, String currentBlockJson, boolean wait) {
         ObjectUtils.checkNotNull(currentBlockJson);
-        ObjectUtils.checkArgument(currentBlockJson.length > 0);
+        ObjectUtils.checkArgument(currentBlockJson.length() > 0);
 
         // Preparing indexation
         IndexRequestBuilder indexRequest = getClient().prepareIndex(currencyName, INDEX_TYPE_BLOCK)
-                .setId("current")
+                .setId(INDEX_BLOCK_CURRENT_ID)
+                .setRefresh(true)
                 .setSource(currentBlockJson);
 
         // Execute indexation
@@ -397,9 +435,7 @@ public class BlockIndexerService extends BaseIndexerService {
             boolean acceptedInPool = false;
             while(!acceptedInPool)
                 try {
-                    indexRequest
-                            .setRefresh(refresh)
-                            .execute();
+                    indexRequest.execute();
                     acceptedInPool = true;
                 }
                 catch(EsRejectedExecutionException e) {
@@ -413,9 +449,7 @@ public class BlockIndexerService extends BaseIndexerService {
                 }
 
         } else {
-            indexRequest
-                    .setRefresh(refresh)
-                    .execute().actionGet();
+            indexRequest.execute().actionGet();
         }
     }
 
@@ -484,7 +518,7 @@ public class BlockIndexerService extends BaseIndexerService {
     }
 
     public BlockchainBlock getCurrentBlock(String currencyName) {
-        return getBlockByIdStr(currencyName, "current");
+        return getBlockByIdStr(currencyName, INDEX_BLOCK_CURRENT_ID);
     }
 
     /* -- Internal methods -- */
@@ -514,6 +548,11 @@ public class BlockIndexerService extends BaseIndexerService {
 
                     // membersChanges
                     .startObject("membersChanges")
+                    .field("type", "string")
+                    .endObject()
+
+                    // membersChanges
+                    .startObject("monetaryMass")
                     .field("type", "string")
                     .endObject()
 
@@ -607,13 +646,13 @@ public class BlockIndexerService extends BaseIndexerService {
                 if (progressionModel.isCancel()) {
                     progressionModel.setStatus(ProgressionModel.Status.STOPPED);
                     if (log.isInfoEnabled()) {
-                        log.info(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.stopped"));
+                        log.info(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.stopped", peer));
                     }
                     return missingBlockNumbers;
                 }
 
                 // Report progress
-                reportIndexBlocksProgress(progressionModel, firstNumber, lastNumber, curNumber);
+                reportIndexBlocksProgress(progressionModel, currencyName, peer, firstNumber, lastNumber, curNumber);
             }
 
             try {
@@ -623,7 +662,7 @@ public class BlockIndexerService extends BaseIndexerService {
                 // If last block
                 if (curNumber == lastNumber - 1) {
                     // update the current block
-                    indexCurrentBlockAsJson(currencyName, blockAsJson.getBytes(), true, true /*wait*/);
+                    indexCurrentBlockAsJson(currencyName, blockAsJson, true /*wait*/);
                 }
             }
             catch(Throwable t) {
@@ -649,7 +688,7 @@ public class BlockIndexerService extends BaseIndexerService {
             if (progressionModel.isCancel()) {
                 progressionModel.setStatus(ProgressionModel.Status.STOPPED);
                 if (log.isInfoEnabled()) {
-                    log.info(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.stopped"));
+                    log.info(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.stopped", currencyName, peer.getUrl()));
                 }
                 return missingBlockNumbers;
             }
@@ -675,6 +714,8 @@ public class BlockIndexerService extends BaseIndexerService {
 
             // Process received blocks
             else {
+
+                List<Integer> processedBlockNumbers = Lists.newArrayList();
                 BulkRequestBuilder bulkRequest = client.prepareBulk();
                 for (String blockAsJson : blocksAsJson) {
                     int itemNumber = blockNumberParser.getValueAsInt(blockAsJson);
@@ -684,15 +725,18 @@ public class BlockIndexerService extends BaseIndexerService {
                         batchFirstNumber = itemNumber;
                     }
 
-                    // Add to bulk
-                    bulkRequest.add(client.prepareIndex(currencyName, INDEX_TYPE_BLOCK, String.valueOf(itemNumber))
-                            .setRefresh(false)
-                            .setSource(blockAsJson)
-                    );
+                    if (!processedBlockNumbers.contains(itemNumber)) {
+                        // Add to bulk
+                        bulkRequest.add(client.prepareIndex(currencyName, INDEX_TYPE_BLOCK, String.valueOf(itemNumber))
+                                .setRefresh(false)
+                                .setSource(blockAsJson)
+                        );
+                        processedBlockNumbers.add(itemNumber);
+                    }
 
                     // If last block : also update the current block
                     if (itemNumber == lastNumber) {
-                        bulkRequest.add(client.prepareIndex(currencyName, INDEX_TYPE_BLOCK, "current")
+                        bulkRequest.add(client.prepareIndex(currencyName, INDEX_TYPE_BLOCK, INDEX_BLOCK_CURRENT_ID)
                                 .setRefresh(true)
                                 .setSource(blockAsJson)
                         );
@@ -709,7 +753,7 @@ public class BlockIndexerService extends BaseIndexerService {
                         // process failures by iterating through each bulk response item
                         for (BulkItemResponse itemResponse : bulkResponse) {
                             boolean skip = !itemResponse.isFailed()
-                                    || Objects.equal("current", itemResponse.getId())
+                                    || Objects.equal(INDEX_BLOCK_CURRENT_ID, itemResponse.getId())
                                     || missingBlockNumbers.contains(Integer.parseInt(itemResponse.getId()));
                             if (!skip) {
                                 int itemNumber = Integer.parseInt(itemResponse.getId());
@@ -724,7 +768,7 @@ public class BlockIndexerService extends BaseIndexerService {
             }
 
             // Report progress
-            reportIndexBlocksProgress(progressionModel, firstNumber, lastNumber, batchFirstNumber);
+            reportIndexBlocksProgress(progressionModel, currencyName, peer, firstNumber, lastNumber, batchFirstNumber);
 
         }
 
@@ -769,7 +813,7 @@ public class BlockIndexerService extends BaseIndexerService {
 
         for(Peer childPeer: otherPeers) {
             if (log.isInfoEnabled()) {
-                log.info(String.format("Trying to get missing blocks from other peer [%s:%s]...", childPeer.getHost(), childPeer.getPort()));
+                log.info(String.format("[%s] Trying to get missing blocks from other peer [%s]...", currencyName, childPeer));
             }
             try {
                 for(String blockNumberStr: ImmutableSet.copyOf(sortedMissingBlocks)) {
@@ -799,7 +843,7 @@ public class BlockIndexerService extends BaseIndexerService {
                         String blockAsJson = blockchainRemoteService.getBlockAsJson(childPeer, blockNumber);
                         if (StringUtils.isNotBlank(blockAsJson)) {
                             if (debug) {
-                                log.trace("Found missing block #%s on peer [%s:%s].", blockNumber, childPeer.getHost(), childPeer.getPort());
+                                log.debug(String.format("Found missing block #%s on peer [%s].", blockNumber, childPeer));
                             }
 
                             // Index the missing block
@@ -820,7 +864,7 @@ public class BlockIndexerService extends BaseIndexerService {
             }
             catch(TechnicalException e) {
                 if (debug) {
-                    log.debug("Error while getting blocks from peer [%s:%s]: %s. Skipping this peer.", childPeer.getHost(), childPeer.getPort(), e.getMessage());
+                    log.debug(String.format("Error while getting blocks from peer [%s]: %s. Skipping this peer.", childPeer), e.getMessage());
                 }
 
                 continue; // skip this peer
@@ -855,13 +899,13 @@ public class BlockIndexerService extends BaseIndexerService {
         return indexMissingBlocksFromOtherPeers(peer, newCurrentBlock, newMissingBlocks, tryCounter);
     }
 
-    protected void reportIndexBlocksProgress(ProgressionModel progressionModel, int firstNumber, int lastNumber, int curNumber) {
+    protected void reportIndexBlocksProgress(ProgressionModel progressionModel, String currencyName, Peer peer, int firstNumber, int lastNumber, int curNumber) {
         int pct = (curNumber - firstNumber) * 100 / (lastNumber - firstNumber);
         progressionModel.setCurrent(pct);
 
-        progressionModel.setMessage(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.progress", curNumber, lastNumber, pct));
+        progressionModel.setMessage(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.progress", currencyName, peer, curNumber, lastNumber, pct));
         if (log.isInfoEnabled()) {
-            log.info(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.progress", curNumber, lastNumber, pct));
+            log.info(I18n.t("ucoinj.blockIndexerService.indexLastBlocks.progress", currencyName, peer, curNumber, lastNumber, pct));
         }
 
     }

@@ -25,6 +25,7 @@ package io.ucoin.ucoinj.core.client.model.bma;
 
 
 import java.io.Serializable;
+import java.math.BigInteger;
 
 /**
  * A block from the blockchain.
@@ -43,7 +44,7 @@ public class BlockchainBlock implements Serializable {
 	private Integer time;
     private Integer medianTime;
     private Integer membersCount;
-    private Long monetaryMass;
+    private BigInteger monetaryMass;
     private String currency;
     private String issuer;
     private String signature;
@@ -111,11 +112,11 @@ public class BlockchainBlock implements Serializable {
         this.membersCount = membersCount;
     }
 
-    public Long getMonetaryMass() {
+    public BigInteger getMonetaryMass() {
         return monetaryMass;
     }
 
-    public void setMonetaryMass(Long monetaryMass) {
+    public void setMonetaryMass(BigInteger monetaryMass) {
         this.monetaryMass = monetaryMass;
     }
 

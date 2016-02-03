@@ -34,6 +34,7 @@ import io.ucoin.ucoinj.core.client.model.Member;
 import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.service.ServiceLocator;
+import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +48,12 @@ public class BlockchainRemoteServiceTest {
 
     private BlockchainRemoteService service;
 
+    private boolean isWebSocketNewBlockReceived;
+
     @Before
     public void setUp() {
         service = ServiceLocator.instance().getBlockchainRemoteService();
+        isWebSocketNewBlockReceived = false;
     }
 
     @Test
@@ -100,6 +104,28 @@ public class BlockchainRemoteServiceTest {
             number++;
         }
 
+    }
+
+    @Test
+    public void addNewBlockListener() throws Exception {
+
+        isWebSocketNewBlockReceived = false;
+
+        service.addNewBlockListener(createTestPeer(), new WebsocketClientEndpoint.MessageHandler() {
+            @Override
+            public void handleMessage(String message) {
+                BlockchainBlock block = GsonUtils.newBuilder().create().fromJson(message, BlockchainBlock.class);
+                log.debug("Received block #" + block.getNumber());
+                isWebSocketNewBlockReceived = true;
+            }
+        });
+
+        int count = 0;
+        while(!isWebSocketNewBlockReceived) {
+            Thread.sleep(1000); // wait 1s
+            count++;
+            Assert.assertTrue("No block received from WebSocket, after 10s", count<10);
+        }
     }
 
     /* -- Internal methods -- */

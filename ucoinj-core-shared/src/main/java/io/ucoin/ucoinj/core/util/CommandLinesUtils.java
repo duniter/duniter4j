@@ -43,10 +43,7 @@ public class CommandLinesUtils {
 		String inputValue = null;
 		while (inputValue == null) {
 			System.out.print(message.trim());
-			if (StringUtils.isNotEmpty(defaultValue)) {
-				System.out.print(String.format(" [%s]", defaultValue));
-			}
-			System.out.print(": ");
+			System.out.print("\n");
 			inputValue = scanIn.nextLine();
 			if (StringUtils.isBlank(inputValue)) {
 				// A default exists: use it

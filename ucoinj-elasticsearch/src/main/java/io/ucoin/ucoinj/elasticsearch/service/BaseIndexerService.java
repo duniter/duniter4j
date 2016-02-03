@@ -23,13 +23,11 @@ package io.ucoin.ucoinj.elasticsearch.service;
  */
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ucoin.ucoinj.core.beans.Bean;
 import io.ucoin.ucoinj.core.beans.InitializingBean;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.client.Client;

@@ -33,7 +33,11 @@ import io.ucoin.ucoinj.core.client.model.local.Wallet;
 import io.ucoin.ucoinj.core.client.service.exception.PubkeyAlreadyUsedException;
 import io.ucoin.ucoinj.core.client.service.exception.UidAlreadyUsedException;
 import io.ucoin.ucoinj.core.client.service.exception.UidMatchAnotherPubkeyException;
+import io.ucoin.ucoinj.core.exception.TechnicalException;
+import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 public interface BlockchainRemoteService extends Service {
@@ -209,5 +213,10 @@ public interface BlockchainRemoteService extends Service {
      * @return
      */
     Map<Integer, Long> getUDs(long currencyId, long startOffset);
+
+    void addNewBlockListener(long currencyId, WebsocketClientEndpoint.MessageHandler messageHandler);
+
+    void addNewBlockListener(Peer peer, WebsocketClientEndpoint.MessageHandler messageHandler);
+
 
 }

@@ -11,6 +11,7 @@ set APP_BASEDIR=%CD%
 set JAVA_COMMAND=%JAVA_HOME%\bin\java
 set APP_LOG_FILE=%APP_BASEDIR%\data\${project.artifactId}-${project.version}.log
 set JAVA_OPTS=-Xmx1G
+set APP_CONF_FILE=%APP_BASEDIR%\ucoinj.config
 
 if not exist "%JAVA_HOME%" goto no_java
 
@@ -31,7 +32,7 @@ echo .
 set OLDDIR=%CD%
 cd /d %~dp0%
 
-call "%JAVA_COMMAND%" %JAVA_OPTS% "-Ducoinj.log.file=%APP_LOG_FILE%" -Djna.nosys=true -jar ${project.build.finalName}.${project.packaging} %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%JAVA_COMMAND%" %JAVA_OPTS% "-Ducoinj.log.file=%APP_LOG_FILE%" ""-Ducoinj-elasticsearch.config=%APP_CONF_FILE%" -Djna.nosys=true -jar ${project.build.finalName}.${project.packaging} %1 %2 %3 %4 %5 %6 %7 %8 %9
 set exitcode=%ERRORLEVEL%
 echo Stop with exitcode: %exitcode%
 cd %OLDDIR%

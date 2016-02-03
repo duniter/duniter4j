@@ -28,6 +28,7 @@
       io.ucoin.ucoinj.elasticsearch.Main
     </maven.jar.main.class>
 
+    <ucoinj-elasticsearch.config>${project.basedir}/src/test/resources/ucoinj-elasticsearch-test.properties</ucoinj-elasticsearch.config>
   </properties>
 
   <dependencies>
@@ -258,6 +259,12 @@
                   <mainClass>${exec.mainClass}</mainClass>
                   <classpathScope>${exec.classpathScope}</classpathScope>
                   <commandlineArgs>start</commandlineArgs>
+                  <systemProperties>
+                    <property >
+                      <key>ucoinj-elasticsearch.config</key>
+                      <value>${ucoinj-elasticsearch.config}</value>
+                    </property>
+                  </systemProperties>
                 </configuration>
               </execution>
             </executions>

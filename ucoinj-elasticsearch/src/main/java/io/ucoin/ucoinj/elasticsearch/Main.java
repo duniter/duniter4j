@@ -25,7 +25,6 @@ package io.ucoin.ucoinj.elasticsearch;
 
 import com.google.common.collect.Lists;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
-import io.ucoin.ucoinj.core.util.CollectionUtils;
 import io.ucoin.ucoinj.core.util.CommandLinesUtils;
 import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
@@ -43,10 +42,18 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class Main {
+
+    private static String TITLE_SEPARATOR_LINE = "************************************************\n";
+    private static String TITLE_EMPTY_LINE = "*\n";
+    private static String TITLE = TITLE_SEPARATOR_LINE
+            + TITLE_EMPTY_LINE
+            + "* %s\n" // title
+            + TITLE_EMPTY_LINE
+            + "* %s\n" // sub-title
+            + TITLE_EMPTY_LINE + TITLE_SEPARATOR_LINE;
 
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
@@ -69,7 +76,7 @@ public class Main {
         arguments.removeAll(Arrays.asList(ConfigurationAction.HELP.aliases));
 
         // Could override config file name (useful for dev)
-        String configFile = "ucoinj.config";
+        String configFile = "ucoinj-elasticsearch.config";
         if (System.getProperty(configFile) != null) {
             configFile = System.getProperty(configFile);
             configFile = configFile.replaceAll("\\\\", "/");
@@ -114,8 +121,13 @@ public class Main {
 
             // If scheduling is running, wait quit instruction
             if (!quit) {
+
                 while (!quit) {
-                    String userInput = CommandLinesUtils.readInput("*** uCoinj :: Elasticsearch successfully started *** >> To quit, press [Q] or enter\n", "Q", true);
+                    String userInput = CommandLinesUtils.readInput(
+                            String.format(TITLE,
+                                    "uCoinj :: Elasticsearch successfully started",
+                                    ">> To quit, press [Q] or [enter]"),
+                            "Q", true);
                     quit = StringUtils.isNotBlank(userInput) && "Q".equalsIgnoreCase(userInput);
                 }
             }

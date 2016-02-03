@@ -208,6 +208,19 @@ public class Configuration  {
         return result;
     }
 
+    /** @return {@link ConfigurationOption#PLUGINS_DIRECTORY} value */
+    public File getPluginsDirectory() {
+        File result = applicationConfig.getOptionAsFile(ConfigurationOption.PLUGINS_DIRECTORY.getKey());
+        return result;
+    }
+
+    /** @return {@link ConfigurationOption#MODE} value */
+    public boolean isFullMode() {
+        String launchMode = applicationConfig.getOption(ConfigurationOption.LAUNCH_MODE.getKey());
+        return "full".equals(launchMode);
+    }
+
+
     public ApplicationConfig getApplicationConfig() {
         return applicationConfig;
     }

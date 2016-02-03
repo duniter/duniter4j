@@ -82,9 +82,15 @@ public class Peer implements LocalEntity, Serializable {
     }
 
     public String toString() {
+/*
         return new StringBuilder().append("url=").append(url).append(",")
                 .append("host=").append(host).append(",")
                 .append("port=").append(port)
+                .toString();
+*/
+        return new StringBuilder().append(host)
+                .append(":")
+                .append(port)
                 .toString();
     }
 

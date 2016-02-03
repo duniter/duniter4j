@@ -25,8 +25,10 @@ package io.ucoin.ucoinj.elasticsearch.action;
  */
 
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
+import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.service.bma.BlockchainRemoteService;
+import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.BlockIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
@@ -38,18 +40,28 @@ public class IndexerAction {
 	/* Logger */
 	private static final Logger log = LoggerFactory.getLogger(IndexerAction.class);
 
-    public void indexLastBlocks() {
+    public void indexation() {
 
-        boolean async = ServiceLocator.instance().getElasticSearchService().isNodeInstance();
+        final boolean async = ServiceLocator.instance().getElasticSearchService().isNodeInstance();
 
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 Configuration config = Configuration.instance();
-                Peer peer = checkConfigAndGetPeer(config);
-                BlockIndexerService blockIndexerService = ServiceLocator.instance().getBlockIndexerService();
-
+                final Peer peer = checkConfigAndGetPeer(config);
+                final BlockIndexerService blockIndexerService = ServiceLocator.instance().getBlockIndexerService();
                 blockIndexerService.indexLastBlocks(peer);
+
+                if (async) {
+                    ServiceLocator.instance().getBlockchainRemoteService().addNewBlockListener(peer, new WebsocketClientEndpoint.MessageHandler() {
+                        @Override
+                        public void handleMessage(String message) {
+                            String currencyName = GsonUtils.getValueFromJSONAsString(message, "currency");
+                            blockIndexerService.indexBlockAsJson(peer, message, true /*refresh*/, true /*wait*/);
+                            blockIndexerService.indexCurrentBlockAsJson(currencyName, message, true /*wait*/);
+                        }
+                    });
+                }
             }
         };
 
@@ -64,7 +76,7 @@ public class IndexerAction {
         }
     }
 
-    public void resetAllBlocks() {
+    public void resetData() {
         BlockchainRemoteService blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
         BlockIndexerService indexerService = ServiceLocator.instance().getBlockIndexerService();
         Configuration config = Configuration.instance();

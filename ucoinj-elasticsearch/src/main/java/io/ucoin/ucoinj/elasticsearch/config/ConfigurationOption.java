@@ -59,6 +59,18 @@ public enum ConfigurationOption  implements ConfigOptionDef {
             "${ucoinj.basedir}/data",
             File.class),
 
+    PLUGINS_DIRECTORY(
+            "ucoinj.plugins.directory",
+            n("ucoinj.config.option.plugins.directory.description"),
+            "${ucoinj.basedir}/plugins",
+            File.class),
+
+    LAUNCH_MODE(
+            "ucoinj.launch.mode",
+            n("ucoinj.config.option.launch.mode.description"),
+            "dev",
+            String.class),
+
     I18N_DIRECTORY(
             "ucoinj.i18n.directory",
             n("ucoinj.config.option.i18n.directory.description"),

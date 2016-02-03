@@ -19,6 +19,37 @@
             <artifactId>elasticsearch</artifactId>
             <scope>compile</scope>
         </dependency>
+
+        <!-- JNA -->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.xbib.elasticsearch.plugin</groupId>
+            <artifactId>elasticsearch-transport-websocket</artifactId>
+            <version>1.4.0.0</version>
+        </dependency>
+
+        <!-- Unit tests -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
