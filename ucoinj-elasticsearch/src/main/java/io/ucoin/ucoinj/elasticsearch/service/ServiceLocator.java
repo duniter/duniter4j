@@ -62,4 +62,13 @@ public class ServiceLocator extends io.ucoin.ucoinj.core.client.service.ServiceL
     public ExecutorService getExecutorService() {
         return getBean(ExecutorService.class);
     }
+
+    public ProductIndexerService getProductIndexerService() {
+        return getBean(ProductIndexerService.class);
+    }
+
+    public CategoryIndexerService getCategoryIndexerService() {
+        return getBean(CategoryIndexerService.class);
+    }
+
 }

@@ -188,6 +188,8 @@ public class ElasticSearchService implements Bean,InitializingBean, Closeable {
                 .put("path.home", config.getBasedir())
                 .put("path.data", config.getDataDirectory())
                 .put("path.plugins", config.getPluginsDirectory())
+                // TODO
+                .put("http.cors.enabled", Boolean.TRUE.toString())
                 .build();
 
         // Create a node builder

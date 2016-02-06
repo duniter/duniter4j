@@ -31,6 +31,8 @@ import io.ucoin.ucoinj.core.client.service.bma.BlockchainRemoteService;
 import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.BlockIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.CategoryIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.ProductIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -76,7 +78,7 @@ public class IndexerAction {
         }
     }
 
-    public void resetData() {
+    public void resetCurrencyBlocks() {
         BlockchainRemoteService blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
         BlockIndexerService indexerService = ServiceLocator.instance().getBlockIndexerService();
         Configuration config = Configuration.instance();
@@ -94,19 +96,52 @@ public class IndexerAction {
 
             log.info(String.format("Reset data for index [%s]", currencyName));
 
-            // Check if index exists
+            // Delete then create index on currency
             boolean indexExists = indexerService.existsIndex(currencyName);
             if (indexExists) {
-                log.debug(String.format("Deleting index [%s]", currencyName));
                 indexerService.deleteIndex(currencyName);
-
-                log.debug(String.format("Creating index [%s]", currencyName));
                 indexerService.createIndex(currencyName);
             }
+
 
             log.info(String.format("Successfully reset data for index [%s]", currencyName));
         } catch(Exception e) {
             log.error("Error during reset data: " + e.getMessage(), e);
+        }
+    }
+
+    public void resetProducts() {
+        ProductIndexerService productIndexerService = ServiceLocator.instance().getProductIndexerService();
+
+        try {
+            // Delete then create index on product
+            boolean indexExists = productIndexerService.existsIndex();
+            if (indexExists) {
+                productIndexerService.deleteIndex();
+            }
+            log.info(String.format("Successfully reset products data"));
+        } catch(Exception e) {
+            log.error("Error during reset products data: " + e.getMessage(), e);
+        }
+    }
+
+    public void resetCategories() {
+        CategoryIndexerService categoryIndexerService = ServiceLocator.instance().getCategoryIndexerService();
+
+        try {
+            // Delete then create index on product
+            boolean indexExists = categoryIndexerService.existsIndex();
+            if (indexExists) {
+                categoryIndexerService.deleteIndex();
+            }
+
+            // Init data
+            categoryIndexerService.createIndex();
+            categoryIndexerService.initCategories();
+
+            log.info(String.format("Successfully re-initialized categories data"));
+        } catch(Exception e) {
+            log.error("Error during reset categories data: " + e.getMessage(), e);
         }
     }
 

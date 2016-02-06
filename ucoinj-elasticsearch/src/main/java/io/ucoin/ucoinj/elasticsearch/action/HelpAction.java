@@ -34,6 +34,7 @@ public class HelpAction {
 				.append(" start                            Start elastic search node\n")
 				.append(" index                            Index blocks from BMA Node\n")
 				.append(" reset-data                       Reset indexed data for the uCoin node's currency\n")
+				.append(" reset-data-product               Reset indexed products data\n")
 				.append("\n")
 				.append("\n")
 				.append("Options:\n\n")

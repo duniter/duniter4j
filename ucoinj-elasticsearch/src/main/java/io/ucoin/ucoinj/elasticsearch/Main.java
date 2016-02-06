@@ -33,16 +33,18 @@ import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import io.ucoin.ucoinj.elasticsearch.util.Desktop;
 import io.ucoin.ucoinj.elasticsearch.util.DesktopPower;
 import org.apache.commons.io.FileUtils;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.nuiton.config.ApplicationConfig;
 import org.nuiton.i18n.I18n;
 import org.nuiton.i18n.init.DefaultI18nInitializer;
 import org.nuiton.i18n.init.UserI18nInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 public class Main {
 
@@ -55,7 +57,7 @@ public class Main {
             + "* %s\n" // sub-title
             + TITLE_EMPTY_LINE + TITLE_SEPARATOR_LINE;
 
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
+    private static final ESLogger log = ESLoggerFactory.getLogger(Main.class.getName());
 
     public static void main(String[] args) {
         Main main = new Main();

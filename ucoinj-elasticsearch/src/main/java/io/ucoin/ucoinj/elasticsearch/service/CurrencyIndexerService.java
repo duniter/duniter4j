@@ -136,42 +136,17 @@ public class CurrencyIndexerService extends BaseIndexerService {
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
-        log.info(String.format("Creating index [%s]", INDEX_NAME));
+        log.info(String.format("Creating index [%s/]", INDEX_NAME, INDEX_TYPE_SIMPLE));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(INDEX_NAME);
-        try {
-
-            Settings indexSettings = Settings.settingsBuilder()
-                    .put("number_of_shards", 1)
-                    .put("number_of_replicas", 1)
-                    .put("analyzer", createDefaultAnalyzer())
-                    .build();
-            createIndexRequestBuilder.setSettings(indexSettings);
-
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE_SIMPLE)
-                    .startObject("properties")
-                    .startObject("currencyName")
-                    .field("type", "string")
-                    .endObject()
-                    .startObject("memberCount")
-                    .field("type", "integer")
-                    .endObject()
-                    .startObject("tags")
-                    .field("type", "completion")
-                    .field("search_analyzer", "simple")
-                    .field("analyzer", "simple")
-                    .field("preserve_separators", "false")
-                    .endObject()
-                    .endObject()
-                    .endObject().endObject();
-
-            createIndexRequestBuilder.addMapping(INDEX_TYPE_SIMPLE, mapping);
-
-        }
-        catch(IOException ioe) {
-            throw new TechnicalException("Error while preparing index: " + ioe.getMessage(), ioe);
-        }
-        CreateIndexResponse response = createIndexRequestBuilder.execute().actionGet();
+        Settings indexSettings = Settings.settingsBuilder()
+                .put("number_of_shards", 1)
+                .put("number_of_replicas", 1)
+                .put("analyzer", createDefaultAnalyzer())
+                .build();
+        createIndexRequestBuilder.setSettings(indexSettings);
+        createIndexRequestBuilder.addMapping(INDEX_TYPE_SIMPLE, createIndexMapping());
+        createIndexRequestBuilder.execute().actionGet();
     }
 
     /**
@@ -479,6 +454,39 @@ public class CurrencyIndexerService extends BaseIndexerService {
     }
 
     /* -- Internal methods -- */
+
+    public XContentBuilder createIndexMapping() {
+        try {
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE_SIMPLE)
+                .startObject("properties")
+
+                // currency name
+                .startObject("currencyName")
+                .field("type", "string")
+                .endObject()
+
+                // member count
+                .startObject("memberCount")
+                .field("type", "integer")
+                .endObject()
+
+                // tags
+                .startObject("tags")
+                .field("type", "completion")
+                .field("search_analyzer", "simple")
+                .field("analyzer", "simple")
+                .field("preserve_separators", "false")
+
+                .endObject()
+                .endObject()
+                .endObject().endObject();
+
+            return mapping;
+        }
+        catch(IOException ioe) {
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE_SIMPLE, ioe.getMessage()), ioe);
+        }
+    }
 
     protected void createCurrency(Currency currency) throws DuplicateIndexIdException, JsonProcessingException {
         ObjectUtils.checkNotNull(currency, "currency could not be null") ;

@@ -37,7 +37,12 @@ public enum ConfigurationAction implements ConfigActionDef {
 
 	INDEX_BLOCKS(IndexerAction.class.getName() + "#indexation", "index"),
 
-	RESET_BLOCKS(IndexerAction.class.getName() + "#resetData", "reset-data");
+	RESET_BLOCKS(IndexerAction.class.getName() + "#resetCurrencyBlocks", "reset-data"),
+
+	RESET_PRODUCTS(IndexerAction.class.getName() + "#resetProducts", "reset-products"),
+
+	RESET_CATEGORIES(IndexerAction.class.getName() + "#resetCategories", "reset-categories");
+
 
 	public String action;
 	public String[] aliases;

@@ -20,34 +20,26 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- JNA -->
         <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <scope>runtime</scope>
+            <groupId>io.ucoin</groupId>
+            <artifactId>ucoinj-elasticsearch</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.xbib.elasticsearch.plugin</groupId>
-            <artifactId>elasticsearch-transport-websocket</artifactId>
-            <version>1.4.0.0</version>
-        </dependency>
-
-        <!-- Unit tests -->
+        <!-- LOGGING DEPENDENCIES - SLF4J -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <scope>test</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <scope>test</scope>
+            <optional>true</optional>
         </dependency>
 
     </dependencies>

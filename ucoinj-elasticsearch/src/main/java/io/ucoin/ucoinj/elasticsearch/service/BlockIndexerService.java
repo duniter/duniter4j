@@ -245,7 +245,7 @@ public class BlockIndexerService extends BaseIndexerService {
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(INDEX_TYPE_BLOCK, createIndexMapping());
-        CreateIndexResponse response = createIndexRequestBuilder.execute().actionGet();
+        createIndexRequestBuilder.execute().actionGet();
     }
 
     public void createBlock(BlockchainBlock block) throws DuplicateIndexIdException {
