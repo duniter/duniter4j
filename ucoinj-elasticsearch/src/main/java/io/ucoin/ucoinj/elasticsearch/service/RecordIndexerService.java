@@ -24,70 +24,31 @@ package io.ucoin.ucoinj.elasticsearch.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
-import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
-import io.ucoin.ucoinj.core.client.model.bma.EndpointProtocol;
 import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
-import io.ucoin.ucoinj.core.client.model.bma.gson.JsonAttributeParser;
-import io.ucoin.ucoinj.core.client.model.elasticsearch.Currency;
-import io.ucoin.ucoinj.core.client.model.local.Peer;
-import io.ucoin.ucoinj.core.client.service.bma.BlockchainRemoteService;
-import io.ucoin.ucoinj.core.client.service.bma.NetworkRemoteService;
 import io.ucoin.ucoinj.core.client.service.bma.WotRemoteService;
-import io.ucoin.ucoinj.core.client.service.exception.HttpBadRequestException;
-import io.ucoin.ucoinj.core.client.service.exception.JsonSyntaxException;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
-import io.ucoin.ucoinj.core.model.ProgressionModel;
-import io.ucoin.ucoinj.core.model.ProgressionModelImpl;
-import io.ucoin.ucoinj.core.util.CollectionUtils;
-import io.ucoin.ucoinj.core.util.ObjectUtils;
-import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
-import io.ucoin.ucoinj.elasticsearch.service.exception.DuplicateIndexIdException;
-import org.apache.commons.lang3.ArrayUtils;
-import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.metrics.max.Max;
-import org.elasticsearch.search.highlight.HighlightField;
-import org.elasticsearch.search.sort.SortOrder;
-import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class ProductIndexerService extends BaseIndexerService {
+public class RecordIndexerService extends BaseIndexerService {
 
-    private static final Logger log = LoggerFactory.getLogger(ProductIndexerService.class);
+    private static final Logger log = LoggerFactory.getLogger(RecordIndexerService.class);
 
-    public static final String INDEX_NAME = "product";
-    public static final String INDEX_TYPE_SIMPLE = "simple";
+    public static final String INDEX_NAME = "store";
+    public static final String INDEX_TYPE_SIMPLE = "record";
 
     private Gson gson;
 
@@ -95,7 +56,7 @@ public class ProductIndexerService extends BaseIndexerService {
 
     private WotRemoteService wotRemoteService;
 
-    public ProductIndexerService() {
+    public RecordIndexerService() {
         gson = GsonUtils.newBuilder().create();
     }
 
@@ -142,7 +103,7 @@ public class ProductIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Create index need for product registry
+     * Create index need for record registry
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
@@ -161,19 +122,19 @@ public class ProductIndexerService extends BaseIndexerService {
 
     /**
      *
-     * @param productJson
-     * @return the product id
+     * @param recordJson
+     * @return the record id
      */
-    public String indexProductFromJson(String productJson) {
+    public String indexRecordFromJson(String recordJson) {
         if (log.isDebugEnabled()) {
-            log.debug("Indexing a product");
+            log.debug("Indexing a record");
         }
 
-        // Preparing indexation
+        // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE_SIMPLE)
-                .setSource(productJson);
+                .setSource(recordJson);
 
-        // Execute indexation
+        // Execute indexBlocksFromNode
         IndexResponse response = indexRequest
                 .setRefresh(false)
                 .execute().actionGet();

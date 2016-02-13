@@ -58,7 +58,7 @@ public class CategoryIndexerService extends BaseIndexerService {
 
     private static final Logger log = LoggerFactory.getLogger(CategoryIndexerService.class);
 
-    public static final String INDEX_NAME = "product";
+    public static final String INDEX_NAME = "store";
     public static final String INDEX_TYPE = "category";
 
     private Gson gson;
@@ -137,11 +137,11 @@ public class CategoryIndexerService extends BaseIndexerService {
             log.debug("Indexing a category");
         }
 
-        // Preparing indexation
+        // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE)
                 .setSource(jsonCategory);
 
-        // Execute indexation
+        // Execute indexBlocksFromNode
         IndexResponse response = indexRequest
                 .setRefresh(false)
                 .execute().actionGet();

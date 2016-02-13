@@ -215,7 +215,7 @@ public class BlockIndexerService extends BaseIndexerService {
                 }
             }
         } catch(Exception e) {
-            log.error("Error during indexation: " + e.getMessage(), e);
+            log.error("Error during indexBlocksFromNode: " + e.getMessage(), e);
             progressionModel.setStatus(ProgressionModel.Status.FAILED);
         }
     }
@@ -265,7 +265,7 @@ public class BlockIndexerService extends BaseIndexerService {
      * Create or update a block, depending on its existence and hash
      * @param block
      * @param updateWhenSameHash if true, always update an existing block. If false, update only if hash has changed.
-     * @param wait wait indexation end
+     * @param wait wait indexBlocksFromNode end
      * @throws DuplicateIndexIdException
      */
     public void saveBlock(BlockchainBlock block, boolean updateWhenSameHash, boolean wait) throws DuplicateIndexIdException {
@@ -324,12 +324,12 @@ public class BlockIndexerService extends BaseIndexerService {
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         String json = gson.toJson(block);
 
-        // Preparing indexation
+        // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = getClient().prepareIndex(block.getCurrency(), INDEX_TYPE_BLOCK)
                 .setId(block.getNumber().toString())
                 .setSource(json);
 
-        // Execute indexation
+        // Execute indexBlocksFromNode
         ActionFuture<IndexResponse> futureResponse = indexRequest
                 .setRefresh(true)
                 .execute();
@@ -349,13 +349,13 @@ public class BlockIndexerService extends BaseIndexerService {
         ObjectUtils.checkNotNull(json);
         ObjectUtils.checkArgument(json.length > 0);
 
-        // Preparing indexation
+        // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = getClient().prepareIndex(currencyName, INDEX_TYPE_BLOCK)
                 .setId(String.valueOf(number))
                 .setRefresh(refresh)
                 .setSource(json);
 
-        // Execute indexation
+        // Execute indexBlocksFromNode
         if (!wait) {
             indexRequest.execute();
         }
@@ -382,13 +382,13 @@ public class BlockIndexerService extends BaseIndexerService {
 
         log.info(I18n.t("ucoinj.blockIndexerService.indexBlock", currencyName, peer, number));
 
-        // Preparing indexation
+        // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = getClient().prepareIndex(currencyName, INDEX_TYPE_BLOCK)
                 .setId(String.valueOf(number))
                 .setRefresh(refresh)
                 .setSource(json);
 
-        // Execute indexation
+        // Execute indexBlocksFromNode
         if (!wait) {
             indexRequest.execute();
         }
@@ -424,13 +424,13 @@ public class BlockIndexerService extends BaseIndexerService {
         ObjectUtils.checkNotNull(currentBlockJson);
         ObjectUtils.checkArgument(currentBlockJson.length() > 0);
 
-        // Preparing indexation
+        // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = getClient().prepareIndex(currencyName, INDEX_TYPE_BLOCK)
                 .setId(INDEX_BLOCK_CURRENT_ID)
                 .setRefresh(true)
                 .setSource(currentBlockJson);
 
-        // Execute indexation
+        // Execute indexBlocksFromNode
         if (!wait) {
             boolean acceptedInPool = false;
             while(!acceptedInPool)

@@ -32,7 +32,7 @@ import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.BlockIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.CategoryIndexerService;
-import io.ucoin.ucoinj.elasticsearch.service.ProductIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.RecordIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class IndexerAction {
 	/* Logger */
 	private static final Logger log = LoggerFactory.getLogger(IndexerAction.class);
 
-    public void indexation() {
+    public void indexBlocksFromNode() {
 
         final boolean async = ServiceLocator.instance().getElasticSearchService().isNodeInstance();
 
@@ -78,7 +78,12 @@ public class IndexerAction {
         }
     }
 
-    public void resetCurrencyBlocks() {
+    public void resetAllData() {
+        resetDataBlocks();
+        resetDataRecords();
+    }
+
+    public void resetDataBlocks() {
         BlockchainRemoteService blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
         BlockIndexerService indexerService = ServiceLocator.instance().getBlockIndexerService();
         Configuration config = Configuration.instance();
@@ -110,42 +115,28 @@ public class IndexerAction {
         }
     }
 
-    public void resetProducts() {
-        ProductIndexerService productIndexerService = ServiceLocator.instance().getProductIndexerService();
+    public void resetDataRecords() {
+        RecordIndexerService recordIndexerService = ServiceLocator.instance().getRecordIndexerService();
+        CategoryIndexerService categoryIndexerService = ServiceLocator.instance().getCategoryIndexerService();
 
         try {
-            // Delete then create index on product
-            boolean indexExists = productIndexerService.existsIndex();
+            // Delete then create index on records
+            boolean indexExists = recordIndexerService.existsIndex();
             if (indexExists) {
-                productIndexerService.deleteIndex();
+                recordIndexerService.deleteIndex();
             }
             log.info(String.format("Successfully reset products data"));
+
+            categoryIndexerService.createIndex();
+            categoryIndexerService.initCategories();
+            log.info(String.format("Successfully re-initialized categories data"));
+
         } catch(Exception e) {
             log.error("Error during reset products data: " + e.getMessage(), e);
         }
     }
 
-    public void resetCategories() {
-        CategoryIndexerService categoryIndexerService = ServiceLocator.instance().getCategoryIndexerService();
-
-        try {
-            // Delete then create index on product
-            boolean indexExists = categoryIndexerService.existsIndex();
-            if (indexExists) {
-                categoryIndexerService.deleteIndex();
-            }
-
-            // Init data
-            categoryIndexerService.createIndex();
-            categoryIndexerService.initCategories();
-
-            log.info(String.format("Successfully re-initialized categories data"));
-        } catch(Exception e) {
-            log.error("Error during reset categories data: " + e.getMessage(), e);
-        }
-    }
-
-    /* -- -- */
+    /* -- internal methods -- */
 
     protected Peer checkConfigAndGetPeer(Configuration config) {
         if (StringUtils.isBlank(config.getNodeBmaHost())) {

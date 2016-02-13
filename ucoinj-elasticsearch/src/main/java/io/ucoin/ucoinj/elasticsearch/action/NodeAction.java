@@ -24,14 +24,10 @@ package io.ucoin.ucoinj.elasticsearch.action;
  * #L%
  */
 
-import io.ucoin.ucoinj.core.util.CommandLinesUtils;
-import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class NodeAction {
 	/* Logger */
@@ -78,8 +74,8 @@ public class NodeAction {
             currencyIndexerService.createIndexIfNotExists();
 
             // Product index
-            ProductIndexerService productIndexerService = ServiceLocator.instance().getProductIndexerService();
-            productIndexerService.createIndexIfNotExists();
+            RecordIndexerService recordIndexerService = ServiceLocator.instance().getRecordIndexerService();
+            recordIndexerService.createIndexIfNotExists();
 
             // Category index
             CategoryIndexerService categoryIndexerService = ServiceLocator.instance().getCategoryIndexerService();

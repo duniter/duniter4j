@@ -35,13 +35,13 @@ public enum ConfigurationAction implements ConfigActionDef {
 
 	START(NodeAction.class.getName() + "#start", "start"),
 
-	INDEX_BLOCKS(IndexerAction.class.getName() + "#indexation", "index"),
+	INDEX_BLOCKS(IndexerAction.class.getName() + "#indexBlocksFromNode", "index"),
 
-	RESET_BLOCKS(IndexerAction.class.getName() + "#resetCurrencyBlocks", "reset-data"),
+	RESET_ALL_DATA(IndexerAction.class.getName() + "#resetAllData", "reset-data"),
 
-	RESET_PRODUCTS(IndexerAction.class.getName() + "#resetProducts", "reset-products"),
+	RESET_BLOCKS(IndexerAction.class.getName() + "#resetDataBlocks", "reset-data-blocks"),
 
-	RESET_CATEGORIES(IndexerAction.class.getName() + "#resetCategories", "reset-categories");
+	RESET_RECORDS(IndexerAction.class.getName() + "#resetDataRecords", "reset-data-records");
 
 
 	public String action;

@@ -206,12 +206,12 @@ public class CurrencyIndexerService extends BaseIndexerService {
             // Serialize into JSON
             byte[] json = getObjectMapper().writeValueAsBytes(currency);
 
-            // Preparing indexation
+            // Preparing indexBlocksFromNode
             IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE_SIMPLE)
                     .setId(currency.getCurrencyName())
                     .setSource(json);
 
-            // Execute indexation
+            // Execute indexBlocksFromNode
             indexRequest
                     .setRefresh(true)
                     .execute().actionGet();
