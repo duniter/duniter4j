@@ -39,10 +39,11 @@ public enum ConfigurationAction implements ConfigActionDef {
 
 	RESET_ALL_DATA(IndexerAction.class.getName() + "#resetAllData", "reset-data"),
 
-	RESET_BLOCKS(IndexerAction.class.getName() + "#resetDataBlocks", "reset-data-blocks"),
+	RESET_BLOCKS(IndexerAction.class.getName() + "#resetDataBlocks", "reset-blocks"),
 
-	RESET_RECORDS(IndexerAction.class.getName() + "#resetDataRecords", "reset-data-records");
+	RESET_MARKET(IndexerAction.class.getName() + "#resetMarketRecords", "reset-market"),
 
+	RESET_REGISTRY(IndexerAction.class.getName() + "#resetRegistryRecords", "reset-registry");
 
 	public String action;
 	public String[] aliases;

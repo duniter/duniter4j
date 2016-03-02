@@ -1,4 +1,4 @@
-package io.ucoin.ucoinj.elasticsearch.service;
+package io.ucoin.ucoinj.elasticsearch.service.registry;
 
 /*
  * #%L
@@ -24,60 +24,69 @@ package io.ucoin.ucoinj.elasticsearch.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
+import io.ucoin.ucoinj.core.client.model.elasticsearch.Record;
+import io.ucoin.ucoinj.core.client.service.bma.WotRemoteService;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
-import io.ucoin.ucoinj.core.util.StringUtils;
+import io.ucoin.ucoinj.core.service.CryptoService;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
-import org.apache.lucene.util.BytesRef;
+import io.ucoin.ucoinj.elasticsearch.service.BaseIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
+import io.ucoin.ucoinj.elasticsearch.service.exception.InvalidFormatException;
+import io.ucoin.ucoinj.elasticsearch.service.exception.InvalidSignatureException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.channels.GatheringByteChannel;
+import java.io.IOException;
+import java.util.Set;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class CategoryIndexerService extends BaseIndexerService {
+public class RegistryRecordIndexerService extends BaseIndexerService {
 
-    private static final Logger log = LoggerFactory.getLogger(CategoryIndexerService.class);
+    private static final Logger log = LoggerFactory.getLogger(RegistryRecordIndexerService.class);
 
-    public static final String INDEX_NAME = "store";
-    public static final String INDEX_TYPE = "category";
+    private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
+
+    public static final String INDEX_NAME = "registry";
+    public static final String INDEX_TYPE = "record";
 
     private Gson gson;
 
     private Configuration config;
 
-    public CategoryIndexerService() {
+    private WotRemoteService wotRemoteService;
+
+    private CryptoService cryptoService;
+
+    public RegistryRecordIndexerService() {
         gson = GsonUtils.newBuilder().create();
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
+        wotRemoteService = ServiceLocator.instance().getWotRemoteService();
+        cryptoService = ServiceLocator.instance().getCryptoService();
         config = Configuration.instance();
     }
 
     @Override
     public void close() throws IOException {
         super.close();
+        wotRemoteService = null;
         config = null;
         gson = null;
     }
@@ -110,7 +119,7 @@ public class CategoryIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Create index need for category registry
+     * Create index need for record registry
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
@@ -129,17 +138,41 @@ public class CategoryIndexerService extends BaseIndexerService {
 
     /**
      *
-     * @param jsonCategory
-     * @return the product id
+     * @param recordJson
+     * @return the record id
      */
-    public String indexCategoryFromJson(String jsonCategory) {
-        if (log.isDebugEnabled()) {
-            log.debug("Indexing a category");
+    public String indexRecordFromJson(String recordJson) {
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode actualObj = mapper.readTree(recordJson);
+            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
+            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
+                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
+                throw new InvalidFormatException("Invalid record JSON format. Required fields [issuer,signature]");
+            }
+            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
+            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+
+            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
+                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
+
+            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
+                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
+            }
+
+        }
+        catch(IOException | JsonSyntaxException e) {
+            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
         }
 
         // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE)
-                .setSource(jsonCategory);
+                .setSource(recordJson);
 
         // Execute indexBlocksFromNode
         IndexResponse response = indexRequest
@@ -147,61 +180,6 @@ public class CategoryIndexerService extends BaseIndexerService {
                 .execute().actionGet();
 
         return response.getId();
-    }
-
-
-    public void initCategories() {
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing all categories");
-        }
-
-        BulkRequest bulkRequest = Requests.bulkRequest();
-
-        InputStream ris = null;
-        try {
-            ris = getClass().getClassLoader().getResourceAsStream("categories-bulk-insert.json");
-            if (ris == null) {
-                throw new TechnicalException(String.format("Could not retrieve data file [%s] need to fill index [%s]: ", "categories-bulk-insert.json", INDEX_NAME));
-            }
-
-            StringBuilder builder = new StringBuilder();
-            BufferedReader bf = new BufferedReader(new InputStreamReader(ris));
-            String line = bf.readLine();
-            while(line != null) {
-                if (StringUtils.isNotBlank(line)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Add to category bulk: " + line);
-                    }
-                    builder.append(line).append('\n');
-                }
-                line = bf.readLine();
-            }
-
-            byte[] data = builder.toString().getBytes();
-            bulkRequest.add(new BytesArray(data), INDEX_NAME, INDEX_TYPE, false);
-
-/*
-            InputStreamStreamInput is = new InputStreamStreamInput(ris);
-            bulkRequest.readFrom(is);*/
-        } catch(Exception e) {
-            throw new TechnicalException(String.format("Error while initializing data [%s]", INDEX_NAME), e);
-        }
-        finally {
-            if (ris != null) {
-                try  {
-                    ris.close();
-                }
-                catch(IOException e) {
-                    // Silent is gold
-                }
-            }
-        }
-
-        try {
-            getClient().bulk(bulkRequest).actionGet();
-        } catch(Exception e) {
-            throw new TechnicalException(String.format("Error while initializing data [%s]", INDEX_NAME), e);
-        }
     }
 
     /* -- Internal methods -- */
@@ -212,28 +190,51 @@ public class CategoryIndexerService extends BaseIndexerService {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                     .startObject("properties")
 
-                    // name
-                    .startObject("name")
+                    // title
+                    .startObject("title")
                     .field("type", "string")
                     .endObject()
 
                     // description
-                    /*.startObject("description")
-                    .field("type", "string")
-                    .endObject()*/
-
-                    // parent
-                    .startObject("parent")
+                    .startObject("description")
                     .field("type", "string")
                     .endObject()
 
+                    // time
+                    .startObject("time")
+                    .field("type", "integer")
+                    .endObject()
+
+                    // issuer
+                    .startObject("issuer")
+                    .field("type", "string")
+                    .endObject()
+
+                    // issuer
+                    .startObject("location")
+                    .field("type", "geo_point")
+                    .endObject()
+
+                    // categories
+                    .startObject("categories")
+                    .field("type", "nested")
+                    .startObject("properties")
+                    .startObject("cat1") // cat1
+                    .field("type", "string")
+                    .endObject()
+                    .startObject("cat2") // cat2
+                    .field("type", "string")
+                    .endObject()
+                    .endObject()
+                    .endObject()
+
                     // tags
-                    /*.startObject("tags")
+                    .startObject("tags")
                     .field("type", "completion")
                     .field("search_analyzer", "simple")
                     .field("analyzer", "simple")
                     .field("preserve_separators", "false")
-                    .endObject()*/
+                    .endObject()
 
                     .endObject()
                     .endObject().endObject();

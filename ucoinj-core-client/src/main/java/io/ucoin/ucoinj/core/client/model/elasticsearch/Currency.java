@@ -33,6 +33,8 @@ import java.io.Serializable;
  */
 public class Currency implements Serializable {
 
+    public static final String PROPERTY_CURRENCY_NAME="currencyName";
+
     private String currencyName;
     private Integer membersCount;
     private String firstBlockSignature;

@@ -31,9 +31,11 @@ import io.ucoin.ucoinj.core.client.service.bma.BlockchainRemoteService;
 import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.BlockIndexerService;
-import io.ucoin.ucoinj.elasticsearch.service.CategoryIndexerService;
-import io.ucoin.ucoinj.elasticsearch.service.RecordIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCategoryIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryRecordIndexerService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +82,8 @@ public class IndexerAction {
 
     public void resetAllData() {
         resetDataBlocks();
-        resetDataRecords();
+        resetMarketRecords();
+        resetRegistryRecords();
     }
 
     public void resetDataBlocks() {
@@ -115,9 +118,9 @@ public class IndexerAction {
         }
     }
 
-    public void resetDataRecords() {
-        RecordIndexerService recordIndexerService = ServiceLocator.instance().getRecordIndexerService();
-        CategoryIndexerService categoryIndexerService = ServiceLocator.instance().getCategoryIndexerService();
+    public void resetMarketRecords() {
+        MarketRecordIndexerService recordIndexerService = ServiceLocator.instance().getMarketRecordIndexerService();
+        MarketCategoryIndexerService categoryIndexerService = ServiceLocator.instance().getMarketCategoryIndexerService();
 
         try {
             // Delete then create index on records
@@ -125,14 +128,35 @@ public class IndexerAction {
             if (indexExists) {
                 recordIndexerService.deleteIndex();
             }
-            log.info(String.format("Successfully reset products data"));
+            log.info(String.format("Successfully reset market records"));
 
             categoryIndexerService.createIndex();
             categoryIndexerService.initCategories();
-            log.info(String.format("Successfully re-initialized categories data"));
+            log.info(String.format("Successfully re-initialized market categories data"));
 
         } catch(Exception e) {
-            log.error("Error during reset products data: " + e.getMessage(), e);
+            log.error("Error during reset market records: " + e.getMessage(), e);
+        }
+    }
+
+    public void resetRegistryRecords() {
+        RegistryRecordIndexerService recordIndexerService = ServiceLocator.instance().getRegistryRecordIndexerService();
+        RegistryCategoryIndexerService categoryIndexerService = ServiceLocator.instance().getRegistryCategoryIndexerService();
+
+        try {
+            // Delete then create index on records
+            boolean indexExists = recordIndexerService.existsIndex();
+            if (indexExists) {
+                recordIndexerService.deleteIndex();
+            }
+            log.info(String.format("Successfully reset registry records"));
+
+            categoryIndexerService.createIndex();
+            categoryIndexerService.initCategories();
+            log.info(String.format("Successfully re-initialized market categories data"));
+
+        } catch(Exception e) {
+            log.error("Error during reset registry records: " + e.getMessage(), e);
         }
     }
 

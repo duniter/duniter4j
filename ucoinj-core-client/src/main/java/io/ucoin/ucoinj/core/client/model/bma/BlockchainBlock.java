@@ -52,7 +52,7 @@ public class BlockchainBlock implements Serializable {
     private String parameters;
     private String previousHash;
     private String previousIssuer;
-    private Integer dividend;
+    private BigInteger dividend;
     private String[] membersChanges;
     private Identity[] identities;
     private Joiner[] joiners;
@@ -162,10 +162,10 @@ public class BlockchainBlock implements Serializable {
     public void setPreviousIssuer(String previousIssuer) {
         this.previousIssuer = previousIssuer;
     }
-    public Integer getDividend() {
+    public BigInteger getDividend() {
         return dividend;
     }
-    public void setDividend(Integer dividend) {
+    public void setDividend(BigInteger dividend) {
         this.dividend = dividend;
     }
     public Identity[] getIdentities() {

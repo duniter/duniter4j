@@ -1,4 +1,4 @@
-package io.ucoin.ucoinj.elasticsearch.service;
+package io.ucoin.ucoinj.elasticsearch.service.registry;
 
 /*
  * #%L
@@ -26,51 +26,57 @@ package io.ucoin.ucoinj.elasticsearch.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
-import io.ucoin.ucoinj.core.client.service.bma.WotRemoteService;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
+import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
+import io.ucoin.ucoinj.elasticsearch.service.BaseIndexerService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class RecordIndexerService extends BaseIndexerService {
+public class RegistryCategoryIndexerService extends BaseIndexerService {
 
-    private static final Logger log = LoggerFactory.getLogger(RecordIndexerService.class);
+    private static final Logger log = LoggerFactory.getLogger(RegistryCategoryIndexerService.class);
 
-    public static final String INDEX_NAME = "store";
-    public static final String INDEX_TYPE_SIMPLE = "record";
+    private static final String CATEGORIES_BULK_CLASSPATH_FILE = "registry-categories-bulk-insert.json";
+
+    public static final String INDEX_NAME = "registry";
+    public static final String INDEX_TYPE = "category";
+
 
     private Gson gson;
 
     private Configuration config;
 
-    private WotRemoteService wotRemoteService;
-
-    public RecordIndexerService() {
+    public RegistryCategoryIndexerService() {
         gson = GsonUtils.newBuilder().create();
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
-        wotRemoteService = ServiceLocator.instance().getWotRemoteService();
         config = Configuration.instance();
     }
 
     @Override
     public void close() throws IOException {
         super.close();
-        wotRemoteService = null;
         config = null;
         gson = null;
     }
@@ -103,11 +109,11 @@ public class RecordIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Create index need for record registry
+     * Create index need for category registry
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
-        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE_SIMPLE));
+        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(INDEX_NAME);
         Settings indexSettings = Settings.settingsBuilder()
@@ -116,23 +122,23 @@ public class RecordIndexerService extends BaseIndexerService {
                 .put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(INDEX_TYPE_SIMPLE, createIndexMapping());
+        createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());
         createIndexRequestBuilder.execute().actionGet();
     }
 
     /**
      *
-     * @param recordJson
-     * @return the record id
+     * @param jsonCategory
+     * @return the product id
      */
-    public String indexRecordFromJson(String recordJson) {
+    public String indexCategoryFromJson(String jsonCategory) {
         if (log.isDebugEnabled()) {
-            log.debug("Indexing a record");
+            log.debug("Indexing a category");
         }
 
         // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE_SIMPLE)
-                .setSource(recordJson);
+        IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE)
+                .setSource(jsonCategory);
 
         // Execute indexBlocksFromNode
         IndexResponse response = indexRequest
@@ -142,59 +148,88 @@ public class RecordIndexerService extends BaseIndexerService {
         return response.getId();
     }
 
+
+    public void initCategories() {
+        if (log.isDebugEnabled()) {
+            log.debug("Initializing all categories");
+        }
+
+        BulkRequest bulkRequest = Requests.bulkRequest();
+
+        InputStream ris = null;
+        try {
+            ris = getClass().getClassLoader().getResourceAsStream(CATEGORIES_BULK_CLASSPATH_FILE);
+            if (ris == null) {
+                throw new TechnicalException(String.format("Could not retrieve data file [%s] need to fill index [%s]: ", CATEGORIES_BULK_CLASSPATH_FILE, INDEX_NAME));
+            }
+
+            StringBuilder builder = new StringBuilder();
+            BufferedReader bf = new BufferedReader(new InputStreamReader(ris));
+            String line = bf.readLine();
+            while(line != null) {
+                if (StringUtils.isNotBlank(line)) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Add to category bulk: " + line);
+                    }
+                    builder.append(line).append('\n');
+                }
+                line = bf.readLine();
+            }
+
+            byte[] data = builder.toString().getBytes();
+            bulkRequest.add(new BytesArray(data), INDEX_NAME, INDEX_TYPE, false);
+
+        } catch(Exception e) {
+            throw new TechnicalException(String.format("Error while initializing data [%s]", INDEX_NAME), e);
+        }
+        finally {
+            if (ris != null) {
+                try  {
+                    ris.close();
+                }
+                catch(IOException e) {
+                    // Silent is gold
+                }
+            }
+        }
+
+        try {
+            getClient().bulk(bulkRequest).actionGet();
+        } catch(Exception e) {
+            throw new TechnicalException(String.format("Error while initializing data [%s]", INDEX_NAME), e);
+        }
+    }
+
     /* -- Internal methods -- */
 
 
     public XContentBuilder createIndexMapping() {
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE_SIMPLE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                     .startObject("properties")
 
-                    // title
-                    .startObject("title")
+                    // name
+                    .startObject("name")
                     .field("type", "string")
                     .endObject()
 
                     // description
-                    .startObject("description")
+                    /*.startObject("description")
                     .field("type", "string")
-                    .endObject()
+                    .endObject()*/
 
-                    // time
-                    .startObject("time")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // issuer
-                    .startObject("issuer")
+                    // parent
+                    .startObject("parent")
                     .field("type", "string")
-                    .endObject()
-
-                    // issuer
-                    .startObject("location")
-                    .field("type", "geo_point")
-                    .endObject()
-
-                    // categories
-                    .startObject("categories")
-                    .field("type", "nested")
-                    .startObject("properties")
-                    .startObject("cat1") // cat1
-                    .field("type", "string")
-                    .endObject()
-                    .startObject("cat2") // cat2
-                    .field("type", "string")
-                    .endObject()
-                    .endObject()
                     .endObject()
 
                     // tags
-                    .startObject("tags")
+                    /*.startObject("tags")
                     .field("type", "completion")
                     .field("search_analyzer", "simple")
                     .field("analyzer", "simple")
                     .field("preserve_separators", "false")
-                    .endObject()
+                    .endObject()*/
 
                     .endObject()
                     .endObject().endObject();
@@ -202,7 +237,7 @@ public class RecordIndexerService extends BaseIndexerService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE_SIMPLE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE, ioe.getMessage()), ioe);
         }
     }
 

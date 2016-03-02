@@ -23,6 +23,10 @@ package io.ucoin.ucoinj.elasticsearch.service;
  */
 
 
+import io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCategoryIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryRecordIndexerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,12 +67,20 @@ public class ServiceLocator extends io.ucoin.ucoinj.core.client.service.ServiceL
         return getBean(ExecutorService.class);
     }
 
-    public RecordIndexerService getRecordIndexerService() {
-        return getBean(RecordIndexerService.class);
+    public MarketRecordIndexerService getMarketRecordIndexerService() {
+        return getBean(MarketRecordIndexerService.class);
     }
 
-    public CategoryIndexerService getCategoryIndexerService() {
-        return getBean(CategoryIndexerService.class);
+    public MarketCategoryIndexerService getMarketCategoryIndexerService() {
+        return getBean(MarketCategoryIndexerService.class);
+    }
+
+    public RegistryRecordIndexerService getRegistryRecordIndexerService() {
+        return getBean(RegistryRecordIndexerService.class);
+    }
+
+    public RegistryCategoryIndexerService getRegistryCategoryIndexerService() {
+        return getBean(RegistryCategoryIndexerService.class);
     }
 
 }
