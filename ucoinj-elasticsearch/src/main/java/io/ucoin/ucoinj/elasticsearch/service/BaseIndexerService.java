@@ -27,17 +27,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ucoin.ucoinj.core.beans.Bean;
 import io.ucoin.ucoinj.core.beans.InitializingBean;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
+import io.ucoin.ucoinj.core.util.StringUtils;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * Created by Benoit on 08/04/2015.
@@ -103,6 +106,53 @@ public abstract class BaseIndexerService implements Bean, InitializingBean, Clos
             return analyzer;
         } catch(IOException e) {
             throw new TechnicalException("Error while preparing default index analyzer: " + e.getMessage(), e);
+        }
+    }
+
+    protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {
+        BulkRequest bulkRequest = Requests.bulkRequest();
+
+        InputStream ris = null;
+        try {
+            ris = getClass().getClassLoader().getResourceAsStream(classpathFile);
+            if (ris == null) {
+                throw new TechnicalException(String.format("Could not retrieve data file [%s] need to fill index [%s]: ", classpathFile, indexName));
+            }
+
+            StringBuilder builder = new StringBuilder();
+            BufferedReader bf = new BufferedReader(new InputStreamReader(ris));
+            String line = bf.readLine();
+            while(line != null) {
+                if (StringUtils.isNotBlank(line)) {
+                    if (log.isTraceEnabled()) {
+                        log.trace(String.format("[%s] Add to bulk: %s", indexName, line));
+                    }
+                    builder.append(line).append('\n');
+                }
+                line = bf.readLine();
+            }
+
+            byte[] data = builder.toString().getBytes();
+            bulkRequest.add(new BytesArray(data), indexName, indexType, false);
+
+        } catch(Exception e) {
+            throw new TechnicalException(String.format("[%s] Error while inserting rows", indexName), e);
+        }
+        finally {
+            if (ris != null) {
+                try  {
+                    ris.close();
+                }
+                catch(IOException e) {
+                    // Silent is gold
+                }
+            }
+        }
+
+        try {
+            getClient().bulk(bulkRequest).actionGet();
+        } catch(Exception e) {
+            throw new TechnicalException(String.format("[%s] Error while inserting rows", indexName), e);
         }
     }
 }

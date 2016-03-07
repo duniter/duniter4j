@@ -55,6 +55,7 @@ public class RegistryCategoryIndexerService extends BaseIndexerService {
     private static final Logger log = LoggerFactory.getLogger(RegistryCategoryIndexerService.class);
 
     private static final String CATEGORIES_BULK_CLASSPATH_FILE = "registry-categories-bulk-insert.json";
+    private static final String SUB_CATEGORIES_BULK_CLASSPATH_FILE = "registry-sub-categories-bulk-insert.json";
 
     public static final String INDEX_NAME = "registry";
     public static final String INDEX_TYPE = "category";
@@ -151,53 +152,11 @@ public class RegistryCategoryIndexerService extends BaseIndexerService {
 
     public void initCategories() {
         if (log.isDebugEnabled()) {
-            log.debug("Initializing all categories");
+            log.debug("Initializing all registry categories");
         }
 
-        BulkRequest bulkRequest = Requests.bulkRequest();
-
-        InputStream ris = null;
-        try {
-            ris = getClass().getClassLoader().getResourceAsStream(CATEGORIES_BULK_CLASSPATH_FILE);
-            if (ris == null) {
-                throw new TechnicalException(String.format("Could not retrieve data file [%s] need to fill index [%s]: ", CATEGORIES_BULK_CLASSPATH_FILE, INDEX_NAME));
-            }
-
-            StringBuilder builder = new StringBuilder();
-            BufferedReader bf = new BufferedReader(new InputStreamReader(ris));
-            String line = bf.readLine();
-            while(line != null) {
-                if (StringUtils.isNotBlank(line)) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Add to category bulk: " + line);
-                    }
-                    builder.append(line).append('\n');
-                }
-                line = bf.readLine();
-            }
-
-            byte[] data = builder.toString().getBytes();
-            bulkRequest.add(new BytesArray(data), INDEX_NAME, INDEX_TYPE, false);
-
-        } catch(Exception e) {
-            throw new TechnicalException(String.format("Error while initializing data [%s]", INDEX_NAME), e);
-        }
-        finally {
-            if (ris != null) {
-                try  {
-                    ris.close();
-                }
-                catch(IOException e) {
-                    // Silent is gold
-                }
-            }
-        }
-
-        try {
-            getClient().bulk(bulkRequest).actionGet();
-        } catch(Exception e) {
-            throw new TechnicalException(String.format("Error while initializing data [%s]", INDEX_NAME), e);
-        }
+        // Insert categories
+        bulkFromClasspathFile(CATEGORIES_BULK_CLASSPATH_FILE, INDEX_NAME, INDEX_TYPE);
     }
 
     /* -- Internal methods -- */
