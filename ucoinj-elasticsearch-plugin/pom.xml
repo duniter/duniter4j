@@ -14,7 +14,10 @@
     <description>uCoinj :: ElasticSearch Plugin</description>
 
     <properties>
-        <maven.jar.main.class>io.ucoin.ucoinj.elasticsearch.Main</maven.jar.main.class>
+      <!-- bundle configuration -->
+      <bundlePrefix>ucoinj-elasticsearch-with-plugin-${project.version}</bundlePrefix>
+
+      <maven.jar.main.class>io.ucoin.ucoinj.elasticsearch.Main</maven.jar.main.class>
     </properties>
 
     <dependencies>
@@ -66,24 +69,38 @@
         </resources>
 
         <plugins>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
+          <plugin>
+            <artifactId>maven-jar-plugin</artifactId>
+            <configuration>
+              <archive>
+                <manifest>
+                  <useUniqueVersions>false</useUniqueVersions>
+                  <addClasspath>true</addClasspath>
+                  <classpathPrefix>./lib/</classpathPrefix>
+                </manifest>
+              </archive>
+            </configuration>
+          </plugin>
+
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <executions>
+              <execution>
+                  <id>assembly-plugin</id>
+                  <phase>package</phase>
+                  <goals>
+                      <goal>single</goal>
+                  </goals>
+                  <configuration>
                     <appendAssemblyId>false</appendAssemblyId>
                     <outputDirectory>${project.build.directory}/releases/</outputDirectory>
                     <descriptors>
-                        <descriptor>${basedir}/src/main/assembly/plugin.xml</descriptor>
+                      <descriptor>${basedir}/src/main/assembly/plugin.xml</descriptor>
                     </descriptors>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+                  </configuration>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
     </build>
 
@@ -102,5 +119,63 @@
                 </exec.args>
             </properties>
         </profile>
+
+      <profile>
+        <id>default-bundle</id>
+        <activation>
+          <property>
+            <name>performRelease</name>
+            <value>true</value>
+          </property>
+        </activation>
+        <build>
+          <defaultGoal>package</defaultGoal>
+          <plugins>
+            <plugin>
+              <artifactId>maven-dependency-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>copy-dependencies</id>
+                  <goals>
+                    <goal>copy-dependencies</goal>
+                  </goals>
+                  <phase>prepare-package</phase>
+                  <configuration>
+                    <overWriteReleases>false</overWriteReleases>
+                    <overWriteSnapshots>true</overWriteSnapshots>
+                    <overWriteIfNewer>true</overWriteIfNewer>
+                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                    <silent>true</silent>
+                    <includeScope>runtime</includeScope>
+                    <excludeScope>test</excludeScope>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+
+            <plugin>
+              <artifactId>maven-assembly-plugin</artifactId>
+              <executions>
+                <execution>
+                  <id>assembly-standalone</id>
+                  <phase>package</phase>
+                  <goals>
+                    <goal>single</goal>
+                  </goals>
+                  <configuration>
+                    <attach>true</attach>
+                    <finalName>${bundlePrefix}</finalName>
+                    <descriptors>
+                      <descriptor>
+                        src/main/assembly/standalone.xml
+                      </descriptor>
+                    </descriptors>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </build>
+      </profile>
     </profiles>
 </project>
