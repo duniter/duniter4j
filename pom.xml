@@ -79,6 +79,9 @@
     <!-- where to generate sources -->
     <maven.gen.dir>${project.build.directory}/generated-sources</maven.gen.dir>
 
+    <!-- Could be overriding in modules -->
+    <maven.jar.main.class/>
+
     <!-- distribution management -->
     <distribution.site.id>eis-public-reports</distribution.site.id>
     <distribution.site.host>server.e-is.pro:22</distribution.site.host>
@@ -654,7 +657,7 @@
       <properties>
         <exec.mainClass>${maven.jar.main.class}</exec.mainClass>
         <exec.classpathScope>runtime</exec.classpathScope>
-        <adagio.log.file>${project.build.directory}/exec.log</adagio.log.file>
+        <ucoinj.log.file>${project.build.directory}/exec.log</ucoinj.log.file>
       </properties>
     </profile>
 

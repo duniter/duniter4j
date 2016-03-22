@@ -162,9 +162,12 @@ More documentation here :
     - Windows: copy the file 'sodium.dll' into directory 'ucoinj-core/lib/'
  
   - Install [Maven 3](http://maven.apache.org/).
+```
+    sudo apt-get install maven
+```
  
- Get the source code, then compile using Maven:
-  
+  - Get the source code, then compile using Maven:
+
 ```
 	git clone https://github.com/ucoin-io/ucoinj.git
 	cd ucoinj
@@ -172,13 +175,13 @@ More documentation here :
 	git submodule sync
 	git submodule update
 	
-    mvn install
+    mvn install -DskipTests
 ```
  
  To package binaries :
 
 ```bash
-$ mvn install -DperformRelase
+$ mvn install -DskipTests -DperformRelease
 ```
 
 ## Roadmap

@@ -13,6 +13,10 @@
 
     <description>uCoinj :: ElasticSearch Plugin</description>
 
+    <properties>
+        <maven.jar.main.class>io.ucoin.ucoinj.elasticsearch.Main</maven.jar.main.class>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.elasticsearch</groupId>
@@ -82,4 +86,21 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>run</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <ucoinj.basedir>${project.build.directory}</ucoinj.basedir>
+                <ucoinj.plugins.directory>${basedir}}/src/test/es-home/plugins</ucoinj.plugins.directory>
+                <es.http.cors.allow-origin>*</es.http.cors.allow-origin>
+                <exec.args>
+                    start reset-market reset-registry index --host metab.ucoin.fr --port 9201
+                </exec.args>
+            </properties>
+        </profile>
+    </profiles>
 </project>
