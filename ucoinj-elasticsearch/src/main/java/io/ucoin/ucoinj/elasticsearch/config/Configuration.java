@@ -184,7 +184,7 @@ public class Configuration  {
         applicationConfig.addAlias("-esp", "--option", ConfigurationOption.PORT.getKey());
         applicationConfig.addAlias("--es-port", "--option", ConfigurationOption.PORT.getKey());
 
-        applicationConfig.addAlias("--daemon", "--option", ConfigurationOption.DAEMON.getKey());
+        applicationConfig.addAlias("--daemon", "--option", ConfigurationOption.DAEMON.getKey(), Boolean.TRUE.toString());
      }
 
     public File getConfigFile() {
