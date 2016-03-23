@@ -129,6 +129,13 @@ public enum ConfigurationOption  implements ConfigOptionDef {
             Integer.class,
             false),
 
+    DAEMON(
+            "ucoinj.elasticsearch.daemon",
+            n("ucoinj.config.option.node.elasticsearch.daemon.description"),
+            "false",
+            Boolean.class,
+            false),
+
     EMBEDDED_ENABLE(
             "ucoinj.elasticsearch.embedded.enable",
             n("ucoinj.config.option.elasticsearch.embedded.enable.description"),

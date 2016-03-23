@@ -18,5 +18,5 @@ io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService
 io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService
 io.ucoin.ucoinj.elasticsearch.service.registry.RegistryRecordIndexerService
 io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCategoryIndexerService
-
+io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCitiesIndexerService
 

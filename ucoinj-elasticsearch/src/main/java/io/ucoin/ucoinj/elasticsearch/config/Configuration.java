@@ -183,6 +183,8 @@ public class Configuration  {
         applicationConfig.addAlias("--es-host", "--option", ConfigurationOption.HOST.getKey());
         applicationConfig.addAlias("-esp", "--option", ConfigurationOption.PORT.getKey());
         applicationConfig.addAlias("--es-port", "--option", ConfigurationOption.PORT.getKey());
+
+        applicationConfig.addAlias("--daemon", "--option", ConfigurationOption.DAEMON.getKey());
      }
 
     public File getConfigFile() {
@@ -257,6 +259,10 @@ public class Configuration  {
 
     public int getPort() {
         return applicationConfig.getOptionAsInt(ConfigurationOption.PORT.getKey());
+    }
+
+    public boolean isDaemon() {
+        return applicationConfig.getOptionAsBoolean(ConfigurationOption.DAEMON.getKey());
     }
 
     public boolean isEmbedded() {

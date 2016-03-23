@@ -25,12 +25,14 @@ package io.ucoin.ucoinj.core.client.model.bma.gson;
 
 import com.google.common.collect.Multimap;
 import com.google.gson.GsonBuilder;
+import com.google.gson.internal.bind.MapTypeAdapterFactory;
 import io.ucoin.ucoinj.core.client.model.Member;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
 import io.ucoin.ucoinj.core.client.model.bma.NetworkPeering;
 import io.ucoin.ucoinj.core.client.model.local.Identity;
 
 import java.util.List;
+import java.util.Map;
 
 public class GsonUtils {
 

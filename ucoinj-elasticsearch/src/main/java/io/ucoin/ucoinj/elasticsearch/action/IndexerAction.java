@@ -35,6 +35,7 @@ import io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService
 import io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCategoryIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCitiesIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryRecordIndexerService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -153,10 +154,30 @@ public class IndexerAction {
 
             categoryIndexerService.createIndex();
             categoryIndexerService.initCategories();
-            log.info(String.format("Successfully re-initialized market categories data"));
+            log.info(String.format("Successfully re-initialized registry categories"));
 
         } catch(Exception e) {
             log.error("Error during reset registry records: " + e.getMessage(), e);
+        }
+    }
+
+    public void resetCities() {
+        RegistryCitiesIndexerService service = ServiceLocator.instance().getRegistryCitiesIndexerService();
+
+        try {
+            // Delete then create index on records
+            boolean indexExists = service.existsIndex();
+            if (indexExists) {
+                service.deleteIndex();
+            }
+            log.info(String.format("Successfully reset registry cities"));
+
+            service.createIndex();
+            service.initCities();
+            log.info(String.format("Successfully re-initialized registry cities"));
+
+        } catch(Exception e) {
+            log.error("Error during reset registry cities: " + e.getMessage(), e);
         }
     }
 

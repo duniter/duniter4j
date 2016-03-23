@@ -43,7 +43,9 @@ public enum ConfigurationAction implements ConfigActionDef {
 
 	RESET_MARKET(IndexerAction.class.getName() + "#resetMarketRecords", "reset-market"),
 
-	RESET_REGISTRY(IndexerAction.class.getName() + "#resetRegistryRecords", "reset-registry");
+	RESET_REGISTRY(IndexerAction.class.getName() + "#resetRegistryRecords", "reset-registry"),
+
+	RESET_CITIES(IndexerAction.class.getName() + "#resetCities", "reset-cities");
 
 	public String action;
 	public String[] aliases;

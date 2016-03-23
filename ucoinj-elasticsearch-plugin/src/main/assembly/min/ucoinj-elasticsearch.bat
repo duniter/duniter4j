@@ -32,7 +32,7 @@ echo .
 set OLDDIR=%CD%
 cd /d %~dp0%
 
-call "%JAVA_COMMAND%" %JAVA_OPTS% "-Ducoinj.log.file=%APP_LOG_FILE%" ""-Ducoinj-elasticsearch.config=%APP_CONF_FILE%" -Djna.nosys=true -jar ${project.build.finalName}.${project.packaging} %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%JAVA_COMMAND%" %JAVA_OPTS% "-Ducoinj.log.file=%APP_LOG_FILE%" "-Ducoinj-elasticsearch.config=%APP_CONF_FILE%" "-Ducoinj.plugins.directory=%APP_BASEDIR%\plugins" -Djna.nosys=true -jar ucoinj-elasticsearch-plugin-${project.version}.jar %1 %2 %3 %4 %5 %6 %7 %8 %9
 set exitcode=%ERRORLEVEL%
 echo Stop with exitcode: %exitcode%
 cd %OLDDIR%

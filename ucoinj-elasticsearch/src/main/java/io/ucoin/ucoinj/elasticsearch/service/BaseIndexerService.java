@@ -136,7 +136,7 @@ public abstract class BaseIndexerService implements Bean, InitializingBean, Clos
             bulkRequest.add(new BytesArray(data), indexName, indexType, false);
 
         } catch(Exception e) {
-            throw new TechnicalException(String.format("[%s] Error while inserting rows", indexName), e);
+            throw new TechnicalException(String.format("[%s] Error while inserting rows into %s", indexName, indexType), e);
         }
         finally {
             if (ris != null) {
@@ -152,7 +152,7 @@ public abstract class BaseIndexerService implements Bean, InitializingBean, Clos
         try {
             getClient().bulk(bulkRequest).actionGet();
         } catch(Exception e) {
-            throw new TechnicalException(String.format("[%s] Error while inserting rows", indexName), e);
+            throw new TechnicalException(String.format("[%s] Error while inserting rows into %s", indexName, indexType), e);
         }
     }
 }

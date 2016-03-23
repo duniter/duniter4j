@@ -27,6 +27,7 @@ import io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService
 import io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCategoryIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryRecordIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCitiesIndexerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,4 +84,7 @@ public class ServiceLocator extends io.ucoin.ucoinj.core.client.service.ServiceL
         return getBean(RegistryCategoryIndexerService.class);
     }
 
+    public RegistryCitiesIndexerService getRegistryCitiesIndexerService() {
+        return getBean(RegistryCitiesIndexerService.class);
+    }
 }

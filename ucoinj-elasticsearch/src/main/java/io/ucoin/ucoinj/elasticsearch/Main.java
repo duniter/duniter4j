@@ -69,9 +69,9 @@ public class Main {
             log.info("Starting uCoinj :: ElasticSearch Indexer with arguments " + Arrays.toString(args));
         }
 
-        // By default, display help
+        // By default, start
         if (args == null || args.length == 0) {
-            args = new String[] { "--help" };
+            args = new String[] { "--start" };
         }
 
         List<String> arguments = Lists.newArrayList(Arrays.asList(args));
@@ -110,35 +110,37 @@ public class Main {
             log.error(e.getMessage(), e);
         }
 
-        if (arguments.size() > 0) {
+        if (!config.isDaemon()) {
+            if (arguments.size() > 0) {
 
-            // Check if auto-quit if need
-            boolean quit = true;
-            for (String startAlias: ConfigurationAction.START.aliases) {
-                if (arguments.contains(startAlias)) {
-                    quit = false;
-                    break;
+                // Check if auto-quit if need
+                boolean quit = true;
+                for (String startAlias : ConfigurationAction.START.aliases) {
+                    if (arguments.contains(startAlias)) {
+                        quit = false;
+                        break;
+                    }
+                }
+
+                // If scheduling is running, wait quit instruction
+                if (!quit) {
+
+                    while (!quit) {
+                        String userInput = CommandLinesUtils.readInput(
+                                String.format(TITLE,
+                                        "uCoinj :: Elasticsearch successfully started",
+                                        ">> To quit, press [Q] or [enter]"),
+                                "Q", true);
+                        quit = StringUtils.isNotBlank(userInput) && "Q".equalsIgnoreCase(userInput);
+                    }
                 }
             }
 
-            // If scheduling is running, wait quit instruction
-            if (!quit) {
+            // shutdown
+            shutdown();
 
-                while (!quit) {
-                    String userInput = CommandLinesUtils.readInput(
-                            String.format(TITLE,
-                                    "uCoinj :: Elasticsearch successfully started",
-                                    ">> To quit, press [Q] or [enter]"),
-                            "Q", true);
-                    quit = StringUtils.isNotBlank(userInput) && "Q".equalsIgnoreCase(userInput);
-                }
-            }
+            log.info("uCoinj :: ElasticSearch Indexer successfully stopped");
         }
-
-        // shutdown
-        shutdown();
-
-        log.info("uCoinj :: ElasticSearch Indexer successfully stopped");
     }
 
     /* -- protected methods -- */

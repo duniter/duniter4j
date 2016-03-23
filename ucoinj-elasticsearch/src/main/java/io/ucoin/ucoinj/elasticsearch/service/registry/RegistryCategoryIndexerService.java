@@ -55,32 +55,9 @@ public class RegistryCategoryIndexerService extends BaseIndexerService {
     private static final Logger log = LoggerFactory.getLogger(RegistryCategoryIndexerService.class);
 
     private static final String CATEGORIES_BULK_CLASSPATH_FILE = "registry-categories-bulk-insert.json";
-    private static final String SUB_CATEGORIES_BULK_CLASSPATH_FILE = "registry-sub-categories-bulk-insert.json";
 
     public static final String INDEX_NAME = "registry";
     public static final String INDEX_TYPE = "category";
-
-
-    private Gson gson;
-
-    private Configuration config;
-
-    public RegistryCategoryIndexerService() {
-        gson = GsonUtils.newBuilder().create();
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        config = Configuration.instance();
-    }
-
-    @Override
-    public void close() throws IOException {
-        super.close();
-        config = null;
-        gson = null;
-    }
 
     /**
      * Delete currency index, and all data

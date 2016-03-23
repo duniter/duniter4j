@@ -1,4 +1,4 @@
-package io.ucoin.ucoinj.elasticsearch.service.market;
+package io.ucoin.ucoinj.elasticsearch.service.registry;
 
 /*
  * #%L
@@ -25,6 +25,7 @@ package io.ucoin.ucoinj.elasticsearch.service.market;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.util.StringUtils;
@@ -42,19 +43,45 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class MarketCategoryIndexerService extends BaseIndexerService {
+public class RegistryCitiesIndexerService extends BaseIndexerService {
 
-    private static final Logger log = LoggerFactory.getLogger(MarketCategoryIndexerService.class);
-    private static final String CATEGORIES_BULK_CLASSPATH_FILE = "market-categories-bulk-insert.json";
+    private static final Logger log = LoggerFactory.getLogger(RegistryCitiesIndexerService.class);
 
+    private static final String CITIES_CLASSPATH_FILE = "cities/countriesToCities.json";
 
-    public static final String INDEX_NAME = "market";
-    public static final String INDEX_TYPE = "category";
+    public static final String INDEX_NAME = "registry";
+    public static final String INDEX_TYPE = "city";
+
+    private Gson gson;
+
+    private Configuration config;
+
+    public RegistryCitiesIndexerService() {
+        gson = GsonUtils.newBuilder().create();
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
+        config = Configuration.instance();
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+        config = null;
+        gson = null;
+    }
 
     /**
      * Delete currency index, and all data
@@ -101,36 +128,71 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
         createIndexRequestBuilder.execute().actionGet();
     }
 
-    /**
-     *
-     * @param jsonCategory
-     * @return the product id
-     */
-    public String indexCategoryFromJson(String jsonCategory) {
+    public void initCities() {
         if (log.isDebugEnabled()) {
-            log.debug("Indexing a category");
+            log.debug("Initializing all registry cities");
         }
 
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE)
-                .setSource(jsonCategory);
+        // Insert cities
+        BulkRequest bulkRequest = Requests.bulkRequest();
 
-        // Execute indexBlocksFromNode
-        IndexResponse response = indexRequest
-                .setRefresh(false)
-                .execute().actionGet();
+        InputStream ris = null;
+        try {
+            ris = getClass().getClassLoader().getResourceAsStream(CITIES_CLASSPATH_FILE);
+            if (ris == null) {
+                throw new TechnicalException(String.format("Could not retrieve data file [%s] need to fill index [%s/%s]: ", CITIES_CLASSPATH_FILE, INDEX_NAME, INDEX_TYPE));
+            }
 
-        return response.getId();
-    }
+            StringBuilder builder = new StringBuilder();
+            BufferedReader bf = new BufferedReader(new InputStreamReader(ris), 2048);
+            char[] buf = new char[2048];
+            int len;
+            boolean ignoreBOM = true;
+            while((len = bf.read(buf)) != -1) {
+                if (ignoreBOM) {
+                    builder.append(buf, 2, len-2);
+                    ignoreBOM = false;
+                }
+                else {
+                    builder.append(buf, 0, len);
+                }
+            }
 
 
-    public void initCategories() {
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing all market categories");
+            java.lang.reflect.Type typeOfHashMap = new TypeToken<Map<String, String[]>>() { }.getType();
+
+            Map<String, String[]> cities = new HashMap<>();
+            cities.put("chine", new String[]{"ABC", "def"});
+            String json = gson.toJson(cities, typeOfHashMap);
+            log.debug(String.format("test json: ", json));
+            log.debug(String.format("test json: ", builder.substring(0,19)));
+
+            Map<String, String[]> citiesByCountry = gson.fromJson(builder.toString(), typeOfHashMap);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Register %s countries", citiesByCountry.size()));
+            }
+
+            //bulkRequest.add(new BytesArray(data), indexName, indexType, false);
+
+        } catch(Exception e) {
+            throw new TechnicalException(String.format("[%s] Error while inserting rows", INDEX_TYPE), e);
+        }
+        finally {
+            if (ris != null) {
+                try  {
+                    ris.close();
+                }
+                catch(IOException e) {
+                    // Silent is gold
+                }
+            }
         }
 
-        // Insert categories
-        bulkFromClasspathFile(CATEGORIES_BULK_CLASSPATH_FILE, INDEX_NAME, INDEX_TYPE);
+        try {
+            getClient().bulk(bulkRequest).actionGet();
+        } catch(Exception e) {
+            throw new TechnicalException(String.format("[%s] Error while inserting rows into %s", INDEX_NAME, INDEX_TYPE), e);
+        }
     }
 
     /* -- Internal methods -- */
@@ -141,28 +203,15 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                     .startObject("properties")
 
-                    // name
-                    .startObject("name")
+                    // city
+                    .startObject("city")
                     .field("type", "string")
                     .endObject()
 
-                    // description
-                    /*.startObject("description")
-                    .field("type", "string")
-                    .endObject()*/
-
-                    // parent
-                    .startObject("parent")
+                    // country
+                    .startObject("country")
                     .field("type", "string")
                     .endObject()
-
-                    // tags
-                    /*.startObject("tags")
-                    .field("type", "completion")
-                    .field("search_analyzer", "simple")
-                    .field("analyzer", "simple")
-                    .field("preserve_separators", "false")
-                    .endObject()*/
 
                     .endObject()
                     .endObject().endObject();
@@ -173,5 +222,4 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
             throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE, ioe.getMessage()), ioe);
         }
     }
-
 }

@@ -1,3 +1,6 @@
 [submodule "ucoinj-cesium/src/main/cesium"]
 	path = ucoinj-cesium/src/main/cesium
-	url = https://github.com/ucoin-io/cesium/tree/with-ES-store
+	url = git://github.com/ucoin-io/cesium.git
+[submodule "ucoinj-elasticsearch/src/main/resources/cities"]
+	path = ucoinj-elasticsearch/src/main/resources/cities
+	url = git://github.com/David-Haim/CountriesToCitiesJSON.git
