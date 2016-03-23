@@ -182,15 +182,20 @@ public class ElasticSearchService implements Bean,InitializingBean, Closeable {
             }
         }
 
-        Settings settings = Settings.settingsBuilder()
+        Settings.Builder builder = Settings.settingsBuilder()
                 .put("http.enabled", enableHttp)
-                .put("http.host", config.getHost())
                 .put("path.home", config.getBasedir())
                 .put("path.data", config.getDataDirectory())
                 .put("path.plugins", config.getPluginsDirectory())
                 // TODO
-                .put("http.cors.enabled", Boolean.TRUE.toString())
-                .build();
+                .put("http.cors.enabled", Boolean.TRUE.toString());
+        if (!local && enableHttp && StringUtils.isNotBlank(config.getHost())) {
+            builder.put("http.host", config.getHost());
+            if (!"localhost".equalsIgnoreCase(config.getHost())) {
+                builder.put("network.host", config.getHost());
+            }
+        }
+        Settings settings = builder.build();
 
         // Create a node builder
         NodeBuilder nodeBuilder = NodeBuilder.nodeBuilder()
