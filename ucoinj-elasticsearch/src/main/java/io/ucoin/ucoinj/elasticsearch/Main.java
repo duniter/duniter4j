@@ -110,7 +110,16 @@ public class Main {
             log.error(e.getMessage(), e);
         }
 
-        if (!config.isDaemon()) {
+        if (config.isDaemon()) {
+            while (true) {
+                try {
+                    Thread.sleep(5000);
+                } catch(InterruptedException e) {
+                  // Nothing
+                }
+            }
+        }
+        else {
             if (arguments.size() > 0) {
 
                 // Check if auto-quit if need
@@ -135,12 +144,10 @@ public class Main {
                     }
                 }
             }
-
-            // shutdown
-            shutdown();
-
-            log.info("uCoinj :: ElasticSearch Indexer successfully stopped");
         }
+
+        // shutdown
+        shutdown();
     }
 
     /* -- protected methods -- */
@@ -157,6 +164,8 @@ public class Main {
                 // Silent is gold
             }
         }
+
+        log.info("uCoinj :: ElasticSearch Indexer successfully stopped");
     }
 
     protected void initI18n(Configuration config) throws IOException {

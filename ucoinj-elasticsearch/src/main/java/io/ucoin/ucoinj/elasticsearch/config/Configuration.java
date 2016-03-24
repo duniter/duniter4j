@@ -257,6 +257,10 @@ public class Configuration  {
         return applicationConfig.getOption(ConfigurationOption.HOST.getKey());
     }
 
+    public String getNetworkHost() {
+        return applicationConfig.getOption(ConfigurationOption.NETWORK_HOST.getKey());
+    }
+
     public int getPort() {
         return applicationConfig.getOptionAsInt(ConfigurationOption.PORT.getKey());
     }

@@ -25,7 +25,7 @@ if [ -d $JAVA_HOME ]; then
 	echo "launch java"
 	echo "java command: $JAVA_COMMAND"
 	
-	$JAVA_COMMAND $MEMORY $APP_JVM_OPTS -Ducoinj.log.file=$APP_LOG_FILE -Ducoinj-elasticsearch.config=$APP_CONF_FILE -Djna.nosys=true -Ducoinj.basedir=$APP_BASEDIR -Ducoinj.plugins.directory=$APP_BASEDIR/plugins -Des.http.cors.allow-origin=* -jar ucoinj-elasticsearch-plugin-${project.version}.jar $*
+	$JAVA_COMMAND $MEMORY $APP_JVM_OPTS -Ducoinj.basedir=$APP_BASEDIR -Ducoinj.plugins.directory=$APP_BASEDIR/plugins -Ducoinj.log.file=$APP_LOG_FILE -Ducoinj-elasticsearch.config=$APP_CONF_FILE -Ducoinj.launch.mode=full -Djna.nosys=true -Des.http.cors.allow-origin=* -jar ucoinj-elasticsearch-plugin-${project.version}.jar $*
 
 	exitcode=$?
 	echo "Stop ${project.name} with exitcode: $exitcode"

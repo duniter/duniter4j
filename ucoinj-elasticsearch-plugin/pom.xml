@@ -115,8 +115,9 @@
                 <ucoinj.plugins.directory>${basedir}}/src/test/es-home/plugins</ucoinj.plugins.directory>
                 <es.http.cors.allow-origin>*</es.http.cors.allow-origin>
                 <exec.args>
-                    start reset-market reset-registry index --host metab.ucoin.fr --port 9201
+                    start index --host metab.ucoin.fr --port 9201
                 </exec.args>
+                <ucoinj.log.file>${project.build.directory}/exec.log</ucoinj.log.file>
             </properties>
         </profile>
 

@@ -129,6 +129,13 @@ public enum ConfigurationOption  implements ConfigOptionDef {
             Integer.class,
             false),
 
+    NETWORK_HOST(
+            "ucoinj.elasticsearch.network.host",
+            n("ucoinj.config.option.elasticsearch.network.host.description"),
+            "_local_",
+            String.class,
+            false),
+
     DAEMON(
             "ucoinj.elasticsearch.daemon",
             n("ucoinj.config.option.node.elasticsearch.daemon.description"),

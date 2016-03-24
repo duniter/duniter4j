@@ -187,20 +187,21 @@ public class ElasticSearchService implements Bean,InitializingBean, Closeable {
                 .put("path.home", config.getBasedir())
                 .put("path.data", config.getDataDirectory())
                 .put("path.plugins", config.getPluginsDirectory())
-                // TODO
+                .put("http.host", config.getHost())
                 .put("http.cors.enabled", Boolean.TRUE.toString());
-        if (!local && enableHttp && StringUtils.isNotBlank(config.getHost())) {
-            builder.put("http.host", config.getHost());
-            if (!"localhost".equalsIgnoreCase(config.getHost())) {
-                builder.put("network.host", config.getHost());
+
+        // Set network host
+        if (!local && enableHttp
+                && StringUtils.isNotBlank(config.getNetworkHost())) {
+            if (!"localhost".equalsIgnoreCase(config.getNetworkHost())) {
+                builder.put("network.host", config.getNetworkHost());
             }
         }
-        Settings settings = builder.build();
 
         // Create a node builder
         NodeBuilder nodeBuilder = NodeBuilder.nodeBuilder()
                 .clusterName(clusterName)
-                .settings(settings)
+                .settings(builder.build())
                 .local(local);
 
         if (StringUtils.isNotBlank(clusterName)) {
