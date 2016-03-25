@@ -48,6 +48,7 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
@@ -180,6 +181,17 @@ public class RegistryRecordIndexerService extends BaseIndexerService {
                 .execute().actionGet();
 
         return response.getId();
+    }
+
+
+    public void insertRecordFromBulkFile(File bulkFile) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Inserting records from file");
+        }
+
+        // Insert cities
+        bulkFromFile(bulkFile, INDEX_NAME, INDEX_TYPE);
     }
 
     /* -- Internal methods -- */

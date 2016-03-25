@@ -134,6 +134,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
         bulkFromFile(bulkFile, INDEX_NAME, INDEX_TYPE);
     }
 
+
     /* -- Internal methods -- */
 
 

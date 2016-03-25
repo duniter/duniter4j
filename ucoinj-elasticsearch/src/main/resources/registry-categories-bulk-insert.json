@@ -1,3 +1,7 @@
+{"index": {"_id": "0"}}
+{"name": "Autres", "parent": null}
+{"index": {"_id": "particulier"}}
+{"name": "Particulier", "parent": "0"}
 {"index": {"_id": "A"}}
 {"name": "Agriculture, sylviculture et pêche", "parent": null}
 {"index": {"_id": "01.11Z"}}
