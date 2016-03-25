@@ -84,7 +84,7 @@ public class IndexerAction {
     public void resetAllData() {
         resetDataBlocks();
         resetMarketRecords();
-        resetRegistryRecords();
+        resetRegistry();
     }
 
     public void resetDataBlocks() {
@@ -140,9 +140,10 @@ public class IndexerAction {
         }
     }
 
-    public void resetRegistryRecords() {
+    public void resetRegistry() {
         RegistryRecordIndexerService recordIndexerService = ServiceLocator.instance().getRegistryRecordIndexerService();
         RegistryCategoryIndexerService categoryIndexerService = ServiceLocator.instance().getRegistryCategoryIndexerService();
+        RegistryCitiesIndexerService citiesIndexerService = ServiceLocator.instance().getRegistryCitiesIndexerService();
 
         try {
             // Delete then create index on records
@@ -153,31 +154,15 @@ public class IndexerAction {
             log.info(String.format("Successfully reset registry records"));
 
             categoryIndexerService.createIndex();
+
             categoryIndexerService.initCategories();
             log.info(String.format("Successfully re-initialized registry categories"));
 
-        } catch(Exception e) {
-            log.error("Error during reset registry records: " + e.getMessage(), e);
-        }
-    }
-
-    public void resetCities() {
-        RegistryCitiesIndexerService service = ServiceLocator.instance().getRegistryCitiesIndexerService();
-
-        try {
-            // Delete then create index on records
-            boolean indexExists = service.existsIndex();
-            if (indexExists) {
-                service.deleteIndex();
-            }
-            log.info(String.format("Successfully reset registry cities"));
-
-            service.createIndex();
-            service.initCities();
+            citiesIndexerService.initCities();
             log.info(String.format("Successfully re-initialized registry cities"));
 
         } catch(Exception e) {
-            log.error("Error during reset registry cities: " + e.getMessage(), e);
+            log.error("Error during reset registry records: " + e.getMessage(), e);
         }
     }
 

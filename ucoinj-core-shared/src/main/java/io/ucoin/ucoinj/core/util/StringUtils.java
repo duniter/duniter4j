@@ -27,6 +27,9 @@ package io.ucoin.ucoinj.core.util;
  */
 public class StringUtils {
 
+    // FEFF because this is the Unicode char represented by the UTF-8 byte order mark (EF BB BF).
+    public static final String UTF8_BOM = "\uFEFF";
+
     public static boolean isNotBlank(String value) {
         return value != null && value.trim().length() > 0;
     }
@@ -63,5 +66,12 @@ public class StringUtils {
 
     public static boolean equals(String cs1, String cs2) {
         return cs1 == null?cs2 == null:cs1.equals(cs2);
+    }
+
+    public static String removeUTF8BOM(String s) {
+        if (s.startsWith(UTF8_BOM)) {
+            s = s.substring(1);
+        }
+        return s;
     }
 }

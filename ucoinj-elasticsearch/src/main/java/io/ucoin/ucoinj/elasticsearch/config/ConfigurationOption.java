@@ -50,13 +50,19 @@ public enum ConfigurationOption  implements ConfigOptionDef {
     BASEDIR(
             "ucoinj.basedir",
             n("ucoinj.config.option.basedir.description"),
-            "${user.home}/.ucoinj-elasticsearch",
+            "${user.home}/.config/duniter-es",
             File.class),
 
     DATA_DIRECTORY(
             "ucoinj.data.directory",
             n("ucoinj.config.option.data.directory.description"),
             "${ucoinj.basedir}/data",
+            File.class),
+
+    TEMP_DIRECTORY(
+            "ucoinj.temp.directory",
+            n("ucoinj.config.option.temp.directory.description"),
+            "${ucoinj.basedir}/temp",
             File.class),
 
     PLUGINS_DIRECTORY(

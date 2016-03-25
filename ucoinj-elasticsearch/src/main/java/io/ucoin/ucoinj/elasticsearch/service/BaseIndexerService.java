@@ -24,6 +24,7 @@ package io.ucoin.ucoinj.elasticsearch.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import io.ucoin.ucoinj.core.beans.Bean;
 import io.ucoin.ucoinj.core.beans.InitializingBean;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
@@ -110,18 +111,62 @@ public abstract class BaseIndexerService implements Bean, InitializingBean, Clos
     }
 
     protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {
-        BulkRequest bulkRequest = Requests.bulkRequest();
-
-        InputStream ris = null;
+        InputStream is = null;
         try {
-            ris = getClass().getClassLoader().getResourceAsStream(classpathFile);
-            if (ris == null) {
+            is = getClass().getClassLoader().getResourceAsStream(classpathFile);
+            if (is == null) {
                 throw new TechnicalException(String.format("Could not retrieve data file [%s] need to fill index [%s]: ", classpathFile, indexName));
             }
 
+            bulkFromStream(is, indexName, indexType);
+        }
+        finally {
+            if (is != null) {
+                try  {
+                    is.close();
+                }
+                catch(IOException e) {
+                    // Silent is gold
+                }
+            }
+        }
+    }
+
+    protected void bulkFromFile(File file, String indexName, String indexType) {
+        Preconditions.checkNotNull(file);
+        Preconditions.checkArgument(file.exists());
+
+        InputStream is = null;
+        try {
+            is = new BufferedInputStream(new FileInputStream(file));
+            bulkFromStream(is, indexName, indexType);
+        }
+        catch(FileNotFoundException e) {
+            throw new TechnicalException(String.format("[%s] Could not find file %s", indexName, file.getPath()), e);
+        }
+        finally {
+            if (is != null) {
+                try  {
+                    is.close();
+                }
+                catch(IOException e) {
+                    // Silent is gold
+                }
+            }
+        }
+    }
+
+    protected void bulkFromStream(InputStream is, String indexName, String indexType) {
+        Preconditions.checkNotNull(is);
+        BulkRequest bulkRequest = Requests.bulkRequest();
+
+        BufferedReader br = null;
+
+        try {
+            br = new BufferedReader(new InputStreamReader(is));
+
+            String line = br.readLine();
             StringBuilder builder = new StringBuilder();
-            BufferedReader bf = new BufferedReader(new InputStreamReader(ris));
-            String line = bf.readLine();
             while(line != null) {
                 if (StringUtils.isNotBlank(line)) {
                     if (log.isTraceEnabled()) {
@@ -129,7 +174,7 @@ public abstract class BaseIndexerService implements Bean, InitializingBean, Clos
                     }
                     builder.append(line).append('\n');
                 }
-                line = bf.readLine();
+                line = br.readLine();
             }
 
             byte[] data = builder.toString().getBytes();
@@ -139,9 +184,9 @@ public abstract class BaseIndexerService implements Bean, InitializingBean, Clos
             throw new TechnicalException(String.format("[%s] Error while inserting rows into %s", indexName, indexType), e);
         }
         finally {
-            if (ris != null) {
+            if (br != null) {
                 try  {
-                    ris.close();
+                    br.close();
                 }
                 catch(IOException e) {
                     // Silent is gold

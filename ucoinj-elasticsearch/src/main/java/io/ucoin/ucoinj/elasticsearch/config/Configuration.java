@@ -210,6 +210,12 @@ public class Configuration  {
         return result;
     }
 
+    /** @return {@link ConfigurationOption#TEMP_DIRECTORY} value */
+    public File getTempDirectory() {
+        File result = applicationConfig.getOptionAsFile(ConfigurationOption.TEMP_DIRECTORY.getKey());
+        return result;
+    }
+
     /** @return {@link ConfigurationOption#PLUGINS_DIRECTORY} value */
     public File getPluginsDirectory() {
         File result = applicationConfig.getOptionAsFile(ConfigurationOption.PLUGINS_DIRECTORY.getKey());

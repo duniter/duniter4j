@@ -31,23 +31,16 @@ import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.BaseIndexerService;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
+import java.io.*;
 import java.util.Map;
 
 /**
@@ -57,7 +50,9 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
 
     private static final Logger log = LoggerFactory.getLogger(RegistryCitiesIndexerService.class);
 
-    private static final String CITIES_CLASSPATH_FILE = "cities/countriesToCities.json";
+    private static final String CITIES_BULK_FILENAME = "registry-cities-bulk-insert.json";
+
+    private static final String CITIES_SOURCE_CLASSPATH_FILE = "cities/countriesToCities.json";
 
     public static final String INDEX_NAME = "registry";
     public static final String INDEX_TYPE = "city";
@@ -133,66 +128,10 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
             log.debug("Initializing all registry cities");
         }
 
+        File bulkFile = createCitiesBulkFile();
+
         // Insert cities
-        BulkRequest bulkRequest = Requests.bulkRequest();
-
-        InputStream ris = null;
-        try {
-            ris = getClass().getClassLoader().getResourceAsStream(CITIES_CLASSPATH_FILE);
-            if (ris == null) {
-                throw new TechnicalException(String.format("Could not retrieve data file [%s] need to fill index [%s/%s]: ", CITIES_CLASSPATH_FILE, INDEX_NAME, INDEX_TYPE));
-            }
-
-            StringBuilder builder = new StringBuilder();
-            BufferedReader bf = new BufferedReader(new InputStreamReader(ris), 2048);
-            char[] buf = new char[2048];
-            int len;
-            boolean ignoreBOM = true;
-            while((len = bf.read(buf)) != -1) {
-                if (ignoreBOM) {
-                    builder.append(buf, 2, len-2);
-                    ignoreBOM = false;
-                }
-                else {
-                    builder.append(buf, 0, len);
-                }
-            }
-
-
-            java.lang.reflect.Type typeOfHashMap = new TypeToken<Map<String, String[]>>() { }.getType();
-
-            Map<String, String[]> cities = new HashMap<>();
-            cities.put("chine", new String[]{"ABC", "def"});
-            String json = gson.toJson(cities, typeOfHashMap);
-            log.debug(String.format("test json: ", json));
-            log.debug(String.format("test json: ", builder.substring(0,19)));
-
-            Map<String, String[]> citiesByCountry = gson.fromJson(builder.toString(), typeOfHashMap);
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Register %s countries", citiesByCountry.size()));
-            }
-
-            //bulkRequest.add(new BytesArray(data), indexName, indexType, false);
-
-        } catch(Exception e) {
-            throw new TechnicalException(String.format("[%s] Error while inserting rows", INDEX_TYPE), e);
-        }
-        finally {
-            if (ris != null) {
-                try  {
-                    ris.close();
-                }
-                catch(IOException e) {
-                    // Silent is gold
-                }
-            }
-        }
-
-        try {
-            getClient().bulk(bulkRequest).actionGet();
-        } catch(Exception e) {
-            throw new TechnicalException(String.format("[%s] Error while inserting rows into %s", INDEX_NAME, INDEX_TYPE), e);
-        }
+        bulkFromFile(bulkFile, INDEX_NAME, INDEX_TYPE);
     }
 
     /* -- Internal methods -- */
@@ -204,7 +143,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
                     .startObject("properties")
 
                     // city
-                    .startObject("city")
+                    .startObject("name")
                     .field("type", "string")
                     .endObject()
 
@@ -221,5 +160,105 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
         catch(IOException ioe) {
             throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE, ioe.getMessage()), ioe);
         }
+    }
+
+    public File createCitiesBulkFile() {
+
+        File result = new File(config.getTempDirectory(), CITIES_BULK_FILENAME);
+
+        InputStream ris = null;
+        BufferedReader bf = null;
+        FileWriter fw = null;
+        try {
+            if (result.exists()) {
+                FileUtils.forceDelete(result);
+            }
+            else if (!result.getParentFile().exists()) {
+                FileUtils.forceMkdir(result.getParentFile());
+            }
+
+            ris = getClass().getClassLoader().getResourceAsStream(CITIES_SOURCE_CLASSPATH_FILE);
+            if (ris == null) {
+                throw new TechnicalException(String.format("Could not retrieve file [%s] from test classpath. Make sure git submodules has been initialized before building.", CITIES_SOURCE_CLASSPATH_FILE));
+            }
+
+            boolean firstLine = true;
+            java.lang.reflect.Type typeOfHashMap = new TypeToken<Map<String, String[]>>() { }.getType();
+
+            Gson gson = GsonUtils.newBuilder().create();
+
+            StringBuilder builder = new StringBuilder();
+            bf = new BufferedReader(
+                    new InputStreamReader(
+                            ris, "UTF-16LE"), 2048);
+
+            fw = new FileWriter(result);
+            char[] buf = new char[2048];
+            int len;
+
+            while((len = bf.read(buf)) != -1) {
+                String bufStr = new String(buf, 0, len);
+
+                if (firstLine) {
+                    // Remove UTF-16 BOM char
+                    int objectStartIndex = bufStr.indexOf('\uFEFF');
+                    if (objectStartIndex != -1) {
+                        bufStr = bufStr.substring(objectStartIndex);
+                    }
+                    firstLine=false;
+                }
+
+                int arrayEndIndex = bufStr.indexOf("],\"");
+                if (arrayEndIndex == -1) {
+                    arrayEndIndex = bufStr.indexOf("]}");
+                }
+
+                if (arrayEndIndex == -1) {
+                    builder.append(bufStr);
+                }
+                else {
+                    builder.append(bufStr.substring(0, arrayEndIndex+1));
+                    builder.append("}");
+                    if (log.isTraceEnabled()) {
+                        log.trace(builder.toString());
+                    }
+                    Map<String, String[]> citiesByCountry = gson.fromJson(builder.toString(), typeOfHashMap);
+
+                    builder.setLength(0);
+                    for (String country: citiesByCountry.keySet()) {
+                        if (StringUtils.isNotBlank(country)) {
+                            for (String city : citiesByCountry.get(country)) {
+                                if (StringUtils.isNotBlank(city)) {
+                                    fw.write(String.format("{\"index\":{\"_id\" : \"%s-%s\"}}\n", country, city));
+                                    fw.write(String.format("{\"country\":\"%s\", \"name\":\"%s\"}\n", country, city));
+                                }
+                            }
+                        }
+                    }
+
+                    fw.flush();
+
+                    // reset and prepare buffer for next country
+                    builder.setLength(0);
+                    builder.append("{");
+                    if (arrayEndIndex+2 < bufStr.length()) {
+                        builder.append(bufStr.substring(arrayEndIndex+2));
+                    }
+                }
+            }
+
+            fw.close();
+            bf.close();
+
+        } catch(Exception e) {
+            throw new TechnicalException(String.format("Error while creating cities file [%s]", result.getName()), e);
+        }
+        finally {
+            IOUtils.closeQuietly(bf);
+            IOUtils.closeQuietly(ris);
+            IOUtils.closeQuietly(fw);
+        }
+
+        return result;
     }
 }
