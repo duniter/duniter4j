@@ -62,22 +62,22 @@ public interface WotRemoteService extends Service {
     
     WotCertification getCertifiersOf(long currencyId, String uid);
 
-    String getSelfCertification(byte[] secKey, String uid, long timestamp);
+    String getSignedIdentity(String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid);
 
-    void sendSelf(long currencyId, byte[] pubKey, byte[] secKey, String uid, long timestamp);
+    void sendIdentity(long currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid);
+
+    void sendIdentity(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid);
 
     String getCertification(byte[] pubKey, byte[] secKey, String userUid,
-                                   long userTimestamp,
-                                   String userSignature,
-                                   int blockNumber,
-                                   String blockHash);
+                                   String userTimestamp,
+                                   String userSignature);
 
     String sendCertification(Wallet wallet, Identity identity);
 
     String sendCertification(long currencyId,
                                     byte[] pubKey, byte[] secKey,
-                                  String uid, long timestamp,
+                                  String uid, String timestamp,
                                   String userUid, String userPubKeyHash,
-                                  long userTimestamp, String userSignature);
+                             String userTimestamp, String userSignature);
 
 }

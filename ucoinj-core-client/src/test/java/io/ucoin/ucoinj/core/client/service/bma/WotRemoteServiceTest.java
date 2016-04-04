@@ -25,20 +25,16 @@ package io.ucoin.ucoinj.core.client.service.bma;
 
 import io.ucoin.ucoinj.core.client.TestResource;
 import io.ucoin.ucoinj.core.client.config.Configuration;
-import io.ucoin.ucoinj.core.client.model.BasicIdentity;
-import io.ucoin.ucoinj.core.client.model.bma.WotCertification;
-import io.ucoin.ucoinj.core.client.model.bma.WotLookup;
+import io.ucoin.ucoinj.core.client.model.bma.*;
 import io.ucoin.ucoinj.core.client.model.local.Identity;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.model.local.Wallet;
 import io.ucoin.ucoinj.core.client.service.ServiceLocator;
+import io.ucoin.ucoinj.core.client.service.exception.HttpBadRequestException;
 import io.ucoin.ucoinj.core.util.CollectionUtils;
 import io.ucoin.ucoinj.core.util.crypto.CryptoUtils;
 import io.ucoin.ucoinj.core.util.crypto.SecretBox;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,51 +130,24 @@ public class WotRemoteServiceTest {
 	}
 
 	@Test
-	public void sendSelf() throws Exception {
+	public void sendIdentity() throws Exception {
+        Peer peer = createTestPeer();
+        Wallet wallet = createTestWallet();
+        String uid = resource.getFixtures().getUid();
+        String currency = resource.getFixtures().getCurrency();
 
-		SecretBox secretBox = createSecretBox();
+        // Get the block UID
+        BlockchainRemoteService blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
+        BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);
+        Assume.assumeNotNull(currentBlock);
+        String blockUid = currentBlock.getNumber() + "-" + currentBlock.getHash();
 
-		String uid = resource.getFixtures().getUid();
-		long timestamp = resource.getFixtures().getSelfTimestamp();
-		Wallet wallet = createTestWallet();
-
-		String selfCertification = service.getSelfCertification(
-				wallet.getSecKey(),
-				wallet.getUid(),
-				timestamp);
-
-		String expectedCertification = String.format(
-				"UID:%s\nMETA:TS:%s\n%s\n", uid, timestamp, resource
-						.getFixtures().getSelfSignature());
-
-		Assert.assertEquals(expectedCertification, selfCertification);
-	}
-
-	@Test
-	public void getCertification() throws Exception {
-
-		Wallet wallet = createTestWallet();
-
-		String userUid = "kimamila";
-		long userTimestamp = 1418377981;
-		String userSelf = "pVO6YMhZMl5pPxa33hpFCNljIZ0fO6HMPp9d+uW+DVT4DJXP+tQ5XzLfvOaT3uH+3Slx3BiuH/fADleSp873Cg==";
-		int blockNumber = 3328;
-		String blockHash = "0837171AD6CE72B7DAD0409A230D43A9CCFFE0DC";
-
-		String selfCertification = service.getCertification(wallet.getPubKey(),
-				wallet.getSecKey(), userUid,
-				userTimestamp, userSelf, blockNumber, blockHash);
-
-		String expectedCertification = String
-				.format("UID:%s\nMETA:TS:%s\n%s\nMETA:TS:%s-%s\n%s\n",
-						userUid,
-						userTimestamp,
-						userSelf,
-						blockNumber,
-						blockHash,
-						"wOAbhxPzlnwmKgMXirPjxNno5tsHN95KMSUrVrZSLPcXn69cFg6ZbiWpSKVSFcHVVuZ4rhRvi46RFvVT/yFuDA==");
-
-		Assert.assertEquals(expectedCertification, selfCertification);
+        try {
+            service.sendIdentity(peer, currency, wallet.getPubKey(), wallet.getSecKey(), uid, blockUid);
+        }
+        catch(HttpBadRequestException e) {
+            Assert.assertEquals(ErrorCode.UID_ALREADY_USED, e.getCode());
+        }
 	}
 
 	/* -- internal methods */
@@ -193,12 +162,11 @@ public class WotRemoteServiceTest {
 		return wallet;
 	}
 
-	protected SecretBox createSecretBox() {
-		String salt = resource.getFixtures().getUserSalt();
-		String password = resource.getFixtures().getUserPassword();
-		SecretBox secretBox = new SecretBox(salt, password);
+	protected Peer createTestPeer() {
+		Peer peer = new Peer(
+				Configuration.instance().getNodeHost(),
+				Configuration.instance().getNodePort());
 
-		return secretBox;
+		return peer;
 	}
-
 }

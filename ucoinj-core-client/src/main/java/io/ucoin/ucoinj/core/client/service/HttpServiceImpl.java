@@ -25,6 +25,7 @@ package io.ucoin.ucoinj.core.client.service;
 import com.google.gson.Gson;
 import io.ucoin.ucoinj.core.beans.InitializingBean;
 import io.ucoin.ucoinj.core.client.config.Configuration;
+import io.ucoin.ucoinj.core.client.model.bma.Error;
 import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.service.exception.HttpBadRequestException;
@@ -191,7 +192,13 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                 case HttpStatus.SC_FORBIDDEN:
                     throw new TechnicalException("ucoinj.client.authentication");
                 case HttpStatus.SC_BAD_REQUEST:
-                    throw new HttpBadRequestException("ucoinj.client.status" + response.getStatusLine().toString());
+                    try {
+                        Error error = (Error)parseResponse(response, Error.class);
+                        throw new HttpBadRequestException(error);
+                    }
+                    catch(IOException e) {
+                        throw new HttpBadRequestException("ucoinj.client.status" + response.getStatusLine().toString());
+                    }
                 default:
                     throw new TechnicalException("ucoinj.client.status" + response.getStatusLine().toString());
             }

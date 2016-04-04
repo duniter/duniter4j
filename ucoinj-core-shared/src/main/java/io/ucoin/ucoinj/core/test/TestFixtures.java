@@ -27,11 +27,11 @@ package io.ucoin.ucoinj.core.test;
 public class TestFixtures {
 
 	public String getCurrency() {
-        return "meta_brouzouf";
+        return "super_currency";
     }
 	
     public String getUid() {
-        return "cgeek";
+        return "abc";
     }
 
     public String getUserSalt() {
@@ -70,15 +70,15 @@ public class TestFixtures {
     }
     
     /**
-     * A signature, that corespond to getSelfTimestamp(), getUid()
+     * A signature, that correspond to self identity
      * @return
      */
-    public String getSelfSignature() {
-    	return "TMgQysT7JwY8XwemskwWb8LBDJybLUsnxqaaUvSteIYpOxRiB92gkFQQcGpBwq4hAwhEiqBAiFkiXIozppDDDg==";
+    public String getSelfIdentitySignature() {
+    	return "sBawDbMdsUYFf1z4i/3sXC4kuVnLLy2aTpcY3BdfpzhX/DFOPxcCyq95D+lTed1Cuv7Ey+0KRSWMUcKnIZQ+BA==";
     }
     
-    public long getSelfTimestamp() {
-    	return 1420881879;
+    public String getSelfIdentityBlockUid() {
+    	return "10169-00072A7870BDA66FA3BA8F102933C24EB591A15D789000AD8150F0FE476733D7";
     }
     
     /**

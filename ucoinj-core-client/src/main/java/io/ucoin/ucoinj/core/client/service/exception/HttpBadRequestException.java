@@ -22,6 +22,7 @@ package io.ucoin.ucoinj.core.client.service.exception;
  * #L%
  */
 
+import io.ucoin.ucoinj.core.client.model.bma.Error;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 
 /**
@@ -43,7 +44,13 @@ public class HttpBadRequestException extends TechnicalException{
         super(message);
     }
 
+    public HttpBadRequestException(Error error) {
+        super(error.getMessage());
+        setCode(error.getUcode());
+    }
+
     public HttpBadRequestException(Throwable cause) {
         super(cause);
     }
+
 }

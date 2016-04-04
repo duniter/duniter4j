@@ -52,10 +52,9 @@ public class TransactionRemoteServiceTest {
 	}
 
 	@Test
-	public void transfert() throws Exception {
+	public void transfer() throws Exception {
 
-		
-		service.transfert(
+		service.transfer(
 				createTestWallet(),
 				resource.getFixtures().getOtherUserPublicKey(),
 				1,

@@ -53,27 +53,47 @@ public class BlockchainParameters implements Serializable{
     private Long ud0;
 
     /**
-     * Minimum delay between 2 identical certifications (same pubkeys)
+     * Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
      */
-    private Integer sigDelay;
+    private Integer sigPeriod;
 
     /**
-     * Maximum age of a valid signature (in seconds) (e.g. 2629800)
+     * Maximum quantity of active certifications made by member.
+     */
+    private Integer sigStock;
+
+    /**
+     * 	Maximum delay a certification can wait before being expired for non-writing.
+     */
+    private Integer sigWindow;
+
+    /**
+     * Maximum age of a active signature (in seconds) (e.g. 2629800)
      */
     private Integer sigValidity;
 
     /**
-     * Minimum quantity of signatures to be part of the WoT (e.g. 3)
+     * Minimum quantity of signatures to be part of the WoT(e.g. 3)
      */
     private Integer sigQty;
 
     /**
-     * Minimum quantity of valid made certifications to be part of the WoT for distance rule
+     * 	Maximum delay an identity can wait before being expired for non-writing.
      */
-    private Integer sigWoT;
+    private Integer idtyWindow;
 
     /**
-     * Maximum age of a valid membership (in seconds)
+     * Maximum delay a membership can wait before being expired for non-writing.
+     */
+    private Integer msWindow;
+
+    /**
+     * Minimum percent of sentries to reach to match the distance rule
+     */
+    private Double xpercent;
+
+    /**
+     * Maximum age of an active membership (in seconds)
      */
     private Integer msValidity;
 
@@ -139,14 +159,6 @@ public class BlockchainParameters implements Serializable{
         this.ud0 = ud0;
     }
 
-    public Integer getSigDelay() {
-        return sigDelay;
-    }
-
-    public void setSigDelay(Integer sigDelay) {
-        this.sigDelay = sigDelay;
-    }
-
     public Integer getSigValidity() {
         return sigValidity;
     }
@@ -163,13 +175,6 @@ public class BlockchainParameters implements Serializable{
         this.sigQty = sigQty;
     }
 
-    public Integer getSigWoT() {
-        return sigWoT;
-    }
-
-    public void setSigWoT(Integer sigWoT) {
-        this.sigWoT = sigWoT;
-    }
 
     public Integer getMsValidity() {
         return msValidity;
@@ -227,6 +232,54 @@ public class BlockchainParameters implements Serializable{
         this.percentRot = percentRot;
     }
 
+    public Integer getSigPeriod() {
+        return sigPeriod;
+    }
+
+    public void setSigPeriod(Integer sigPeriod) {
+        this.sigPeriod = sigPeriod;
+    }
+
+    public Integer getSigStock() {
+        return sigStock;
+    }
+
+    public void setSigStock(Integer sigStock) {
+        this.sigStock = sigStock;
+    }
+
+    public Integer getSigWindow() {
+        return sigWindow;
+    }
+
+    public void setSigWindow(Integer sigWindow) {
+        this.sigWindow = sigWindow;
+    }
+
+    public Integer getIdtyWindow() {
+        return idtyWindow;
+    }
+
+    public void setIdtyWindow(Integer idtyWindow) {
+        this.idtyWindow = idtyWindow;
+    }
+
+    public Integer getMsWindow() {
+        return msWindow;
+    }
+
+    public void setMsWindow(Integer msWindow) {
+        this.msWindow = msWindow;
+    }
+
+    public Double getXpercent() {
+        return xpercent;
+    }
+
+    public void setXpercent(Double xpercent) {
+        this.xpercent = xpercent;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder()
@@ -234,10 +287,14 @@ public class BlockchainParameters implements Serializable{
                 .append("\nc=").append(c)
                 .append("\ndt=").append(dt)
                 .append("\nud0=").append(ud0)
-                .append("\nsigDelay=").append(sigDelay)
+                .append("\nsigPeriod=").append(sigPeriod)
+                .append("\nsigStock=").append(sigStock)
+                .append("\nsigWindow=").append(sigWindow)
                 .append("\nsigValidity=").append(sigValidity)
                 .append("\nsigQty=").append(sigQty)
-                .append("\nsigWoT=").append(sigWoT)
+                .append("\nidtyWindow=").append(idtyWindow)
+                .append("\nmsWindow=").append(msWindow)
+                .append("\nxpercent=").append(xpercent)
                 .append("\nmsValidity=").append(msValidity)
                 .append("\nstepMax=").append(stepMax)
                 .append("\nmedianTimeBlocks=").append(medianTimeBlocks)

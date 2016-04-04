@@ -30,7 +30,6 @@ import java.io.Serializable;
 public class NetworkPeering implements Serializable {
     private String version;
     private String currency;
-    private String status;
     private String block;
     private String signature;
     // not need : private String raw
@@ -52,14 +51,6 @@ public class NetworkPeering implements Serializable {
 
     public void setCurrency(String currency) {
         this.currency = currency;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public String getBlock() {
@@ -87,7 +78,8 @@ public class NetworkPeering implements Serializable {
     }
 
     public String toString() {
-        String s = "currency=" + currency + "\n" +
+        String s = "version=" + version + "\n" +
+                "currency=" + currency + "\n" +
                 "pubkey=" + pubkey + "\n" +
                 "signature=" + signature + "\n" +
                 "block=" + block + "\n";

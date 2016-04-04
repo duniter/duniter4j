@@ -29,40 +29,34 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Type;
 
-public class JoinerTypeAdapter implements JsonDeserializer<BlockchainBlock.Joiner>, JsonSerializer<BlockchainBlock.Joiner>{
+public class RevokedTypeAdapter implements JsonDeserializer<BlockchainBlock.Revoked>, JsonSerializer<BlockchainBlock.Revoked>{
 
     @Override
-    public BlockchainBlock.Joiner deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+    public BlockchainBlock.Revoked deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         String identityStr = json.getAsString();
         if (StringUtils.isBlank(identityStr)) {
             return null;
         }
         
         String[] identityParts = identityStr.split(":");
-        if (identityParts.length != 5) {
-            throw new JsonParseException(String.format("Bad format for BlockchainBlock.Identity. Should have 5 parts, but found %s.", identityParts.length));
+        if (identityParts.length != 4) {
+            throw new JsonParseException(String.format("Bad format for BlockchainBlock.Revoked. Should have 4 parts, but found %s.", identityParts.length));
         }
 
-        BlockchainBlock.Joiner result = new BlockchainBlock.Joiner();
+        BlockchainBlock.Revoked result = new BlockchainBlock.Revoked();
         int i = 0;
         
-        result.setPublicKey(identityParts[i++]);
         result.setSignature(identityParts[i++]);
-        result.setMBlockUid(identityParts[i++]);
-        result.setIBlockUid(identityParts[i++]);
         result.setUserId(identityParts[i++]);
 
         return result;
     }
 
     @Override
-    public JsonElement serialize(BlockchainBlock.Joiner member, Type type, JsonSerializationContext context) {
+    public JsonElement serialize(BlockchainBlock.Revoked input, Type type, JsonSerializationContext context) {
         String result = new StringBuilder()
-                .append(member.getPublicKey()).append(":")
-                .append(member.getSignature()).append(":")
-                .append(member.getMBlockUid()).append(":")
-                .append(member.getIBlockUid()).append(":")
-                .append(member.getUserId()).toString();
+                .append(input.getSignature()).append(":")
+                .append(input.getUserId()).toString();
 
         return context.serialize(result.toString(), String.class);
     }

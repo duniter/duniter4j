@@ -197,6 +197,8 @@ public interface BlockchainRemoteService extends Service {
      */
     void requestMembership(Wallet wallet);
 
+    void requestMembership(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String membershipBlockUid, String selfBlockUid);
+
     BlockchainMemberships getMembershipByPubkeyOrUid(long currencyId, String uidOrPubkey);
 
     BlockchainMemberships getMembershipByPubkeyOrUid(Peer peer, String uidOrPubkey);

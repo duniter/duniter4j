@@ -1,0 +1,68 @@
+[2016-02-02 19:00:21,260][INFO ][node                     ] [Lucas Brand] version[2.2.0], pid[4389], build[8ff36d1/2016-01-27T13:32:39Z]
+[2016-02-02 19:00:21,261][INFO ][node                     ] [Lucas Brand] initializing ...
+[2016-02-02 19:00:21,353][INFO ][plugins                  ] [Lucas Brand] modules [], plugins [], sites []
+[2016-02-02 19:00:21,389][INFO ][env                      ] [Lucas Brand] using [1] data paths, mounts [[/home (/dev/sdb5)]], net usable_space [202.6gb], net total_space [436.4gb], spins? [possibly], types [ext4]
+[2016-02-02 19:00:21,389][INFO ][env                      ] [Lucas Brand] heap size [3.4gb], compressed ordinary object pointers [true]
+[2016-02-02 19:00:23,318][INFO ][node                     ] [Lucas Brand] initialized
+[2016-02-02 19:00:23,318][INFO ][node                     ] [Lucas Brand] starting ...
+[2016-02-02 19:00:23,381][INFO ][transport                ] [Lucas Brand] publish_address {127.0.0.1:9300}, bound_addresses {127.0.0.1:9300}, {[::1]:9300}
+[2016-02-02 19:00:23,390][INFO ][discovery                ] [Lucas Brand] elasticsearch/0vD7T8u-Rmajbu8MH0yb_w
+[2016-02-02 19:00:26,433][INFO ][cluster.service          ] [Lucas Brand] new_master {Lucas Brand}{0vD7T8u-Rmajbu8MH0yb_w}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
+[2016-02-02 19:00:26,443][INFO ][http                     ] [Lucas Brand] publish_address {127.0.0.1:9292}, bound_addresses {127.0.0.1:9292}, {[::1]:9292}
+[2016-02-02 19:00:26,443][INFO ][node                     ] [Lucas Brand] started
+[2016-02-02 19:00:26,535][INFO ][gateway                  ] [Lucas Brand] recovered [0] indices into cluster_state
+[2016-02-02 19:01:28,760][INFO ][node                     ] [Lucas Brand] stopping ...
+[2016-02-02 19:01:28,770][INFO ][node                     ] [Lucas Brand] stopped
+[2016-02-02 19:01:28,770][INFO ][node                     ] [Lucas Brand] closing ...
+[2016-02-02 19:01:28,773][INFO ][node                     ] [Lucas Brand] closed
+[2016-02-02 19:01:32,954][INFO ][node                     ] [Hephaestus] version[2.2.0], pid[4590], build[8ff36d1/2016-01-27T13:32:39Z]
+[2016-02-02 19:01:32,955][INFO ][node                     ] [Hephaestus] initializing ...
+[2016-02-02 19:01:33,045][INFO ][plugins                  ] [Hephaestus] modules [], plugins [], sites []
+[2016-02-02 19:01:33,075][INFO ][env                      ] [Hephaestus] using [1] data paths, mounts [[/home (/dev/sdb5)]], net usable_space [202.6gb], net total_space [436.4gb], spins? [possibly], types [ext4]
+[2016-02-02 19:01:33,075][INFO ][env                      ] [Hephaestus] heap size [3.4gb], compressed ordinary object pointers [true]
+[2016-02-02 19:01:34,914][INFO ][node                     ] [Hephaestus] initialized
+[2016-02-02 19:01:34,914][INFO ][node                     ] [Hephaestus] starting ...
+[2016-02-02 19:01:34,973][INFO ][transport                ] [Hephaestus] publish_address {127.0.0.1:9300}, bound_addresses {127.0.0.1:9300}, {[::1]:9300}
+[2016-02-02 19:01:34,981][INFO ][discovery                ] [Hephaestus] elasticsearch/KPUfVSTIRRicjnPSp6TjLQ
+[2016-02-02 19:01:38,024][INFO ][cluster.service          ] [Hephaestus] new_master {Hephaestus}{KPUfVSTIRRicjnPSp6TjLQ}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
+[2016-02-02 19:01:38,037][INFO ][http                     ] [Hephaestus] publish_address {127.0.0.1:9292}, bound_addresses {127.0.0.1:9292}, {[::1]:9292}
+[2016-02-02 19:01:38,038][INFO ][node                     ] [Hephaestus] started
+[2016-02-02 19:01:38,105][INFO ][gateway                  ] [Hephaestus] recovered [0] indices into cluster_state
+[2016-02-02 19:02:06,623][INFO ][node                     ] [Hephaestus] stopping ...
+[2016-02-02 19:02:06,633][INFO ][node                     ] [Hephaestus] stopped
+[2016-02-02 19:02:06,633][INFO ][node                     ] [Hephaestus] closing ...
+[2016-02-02 19:02:06,637][INFO ][node                     ] [Hephaestus] closed
+[2016-02-02 19:02:24,839][INFO ][node                     ] [Sergeant Fury] version[2.2.0], pid[4758], build[8ff36d1/2016-01-27T13:32:39Z]
+[2016-02-02 19:02:24,840][INFO ][node                     ] [Sergeant Fury] initializing ...
+[2016-02-02 19:02:24,922][INFO ][plugins                  ] [Sergeant Fury] modules [], plugins [], sites []
+[2016-02-02 19:02:24,946][INFO ][env                      ] [Sergeant Fury] using [1] data paths, mounts [[/home (/dev/sdb5)]], net usable_space [202.6gb], net total_space [436.4gb], spins? [possibly], types [ext4]
+[2016-02-02 19:02:24,946][INFO ][env                      ] [Sergeant Fury] heap size [3.4gb], compressed ordinary object pointers [true]
+[2016-02-02 19:02:26,789][INFO ][node                     ] [Sergeant Fury] initialized
+[2016-02-02 19:02:26,789][INFO ][node                     ] [Sergeant Fury] starting ...
+[2016-02-02 19:02:26,851][INFO ][transport                ] [Sergeant Fury] publish_address {127.0.0.1:9300}, bound_addresses {127.0.0.1:9300}, {[::1]:9300}
+[2016-02-02 19:02:26,860][INFO ][discovery                ] [Sergeant Fury] elasticsearch/dG65jlrZSDCOeJg0Q074Cw
+[2016-02-02 19:02:29,905][INFO ][cluster.service          ] [Sergeant Fury] new_master {Sergeant Fury}{dG65jlrZSDCOeJg0Q074Cw}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
+[2016-02-02 19:02:29,914][INFO ][http                     ] [Sergeant Fury] publish_address {127.0.0.1:9292}, bound_addresses {127.0.0.1:9292}, {[::1]:9292}
+[2016-02-02 19:02:29,915][INFO ][node                     ] [Sergeant Fury] started
+[2016-02-02 19:02:29,985][INFO ][gateway                  ] [Sergeant Fury] recovered [0] indices into cluster_state
+[2016-02-02 19:02:43,546][INFO ][node                     ] [Sergeant Fury] stopping ...
+[2016-02-02 19:02:43,555][INFO ][node                     ] [Sergeant Fury] stopped
+[2016-02-02 19:02:43,555][INFO ][node                     ] [Sergeant Fury] closing ...
+[2016-02-02 19:02:43,559][INFO ][node                     ] [Sergeant Fury] closed
+[2016-02-02 19:02:49,922][INFO ][node                     ] [Lady Mandarin] version[2.2.0], pid[4918], build[8ff36d1/2016-01-27T13:32:39Z]
+[2016-02-02 19:02:49,923][INFO ][node                     ] [Lady Mandarin] initializing ...
+[2016-02-02 19:02:50,007][INFO ][plugins                  ] [Lady Mandarin] modules [], plugins [], sites []
+[2016-02-02 19:02:50,045][INFO ][env                      ] [Lady Mandarin] using [1] data paths, mounts [[/home (/dev/sdb5)]], net usable_space [202.6gb], net total_space [436.4gb], spins? [possibly], types [ext4]
+[2016-02-02 19:02:50,045][INFO ][env                      ] [Lady Mandarin] heap size [3.4gb], compressed ordinary object pointers [true]
+[2016-02-02 19:02:51,888][INFO ][node                     ] [Lady Mandarin] initialized
+[2016-02-02 19:02:51,888][INFO ][node                     ] [Lady Mandarin] starting ...
+[2016-02-02 19:02:51,950][INFO ][transport                ] [Lady Mandarin] publish_address {127.0.0.1:9300}, bound_addresses {127.0.0.1:9300}, {[::1]:9300}
+[2016-02-02 19:02:51,960][INFO ][discovery                ] [Lady Mandarin] elasticsearch/hCDo3Pj5SnKGJzrKTawrSw
+[2016-02-02 19:02:55,005][INFO ][cluster.service          ] [Lady Mandarin] new_master {Lady Mandarin}{hCDo3Pj5SnKGJzrKTawrSw}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
+[2016-02-02 19:02:55,015][INFO ][http                     ] [Lady Mandarin] publish_address {127.0.0.1:9292}, bound_addresses {127.0.0.1:9292}, {[::1]:9292}
+[2016-02-02 19:02:55,015][INFO ][node                     ] [Lady Mandarin] started
+[2016-02-02 19:02:55,084][INFO ][gateway                  ] [Lady Mandarin] recovered [0] indices into cluster_state
+[2016-02-02 19:25:37,053][INFO ][node                     ] [Lady Mandarin] stopping ...
+[2016-02-02 19:25:37,064][INFO ][node                     ] [Lady Mandarin] stopped
+[2016-02-02 19:25:37,065][INFO ][node                     ] [Lady Mandarin] closing ...
+[2016-02-02 19:25:37,068][INFO ][node                     ] [Lady Mandarin] closed

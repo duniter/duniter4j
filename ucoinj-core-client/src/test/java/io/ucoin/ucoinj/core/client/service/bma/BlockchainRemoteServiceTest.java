@@ -27,13 +27,15 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import io.ucoin.ucoinj.core.client.TestResource;
 import io.ucoin.ucoinj.core.client.config.Configuration;
-import io.ucoin.ucoinj.core.client.model.BasicIdentity;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
-import io.ucoin.ucoinj.core.client.model.Member;
+import io.ucoin.ucoinj.core.client.model.bma.ErrorCode;
 import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
+import io.ucoin.ucoinj.core.client.model.local.Wallet;
 import io.ucoin.ucoinj.core.client.service.ServiceLocator;
+import io.ucoin.ucoinj.core.client.service.exception.HttpBadRequestException;
+import io.ucoin.ucoinj.core.util.crypto.CryptoUtils;
 import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import org.junit.*;
 import org.slf4j.Logger;
@@ -63,6 +65,8 @@ public class BlockchainRemoteServiceTest {
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getCurrency());
+
+        Assert.assertEquals(resource.getFixtures().getCurrency(), result.getCurrency());
     }
     
     @Test
@@ -74,11 +78,11 @@ public class BlockchainRemoteServiceTest {
         Assert.assertNotNull(result.getCurrency());
         
         for (BlockchainBlock.Identity id: result.getIdentities()) {
-            Assert.assertNotNull(id.getUid());
+            Assert.assertNotNull(id.getUserId());
         }
         
         for (BlockchainBlock.Joiner id: result.getJoiners()) {
-            Assert.assertNotNull(id.getUid());
+            Assert.assertNotNull(id.getUserId());
         }
     }
 
@@ -128,6 +132,30 @@ public class BlockchainRemoteServiceTest {
         }
     }
 
+
+    @Test
+    public void requestMembership() throws Exception {
+        Peer peer = createTestPeer();
+        Wallet wallet = createTestWallet();
+        String uid = resource.getFixtures().getUid();
+        String currency = resource.getFixtures().getCurrency();
+        String selfIdentityBlockUid = resource.getFixtures().getSelfIdentityBlockUid();
+
+        // Get the block UID
+        BlockchainRemoteService blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
+        BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);
+        Assume.assumeNotNull(currentBlock);
+        String blockUid = currentBlock.getNumber() + "-" + currentBlock.getHash();
+
+        try {
+            service.requestMembership(peer, currency, wallet.getPubKey(), wallet.getSecKey(), uid, blockUid, selfIdentityBlockUid);
+        }
+        catch(HttpBadRequestException e) {
+            Assert.assertEquals(ErrorCode.MEMBERSHRIP_ALREADY_SEND, e.getCode());
+
+        }
+    }
+
     /* -- Internal methods -- */
 
     protected Peer createTestPeer() {
@@ -136,5 +164,15 @@ public class BlockchainRemoteServiceTest {
                 Configuration.instance().getNodePort());
 
         return peer;
+    }
+
+    protected Wallet createTestWallet() {
+        Wallet wallet = new Wallet(
+                resource.getFixtures().getCurrency(),
+                resource.getFixtures().getUid(),
+                CryptoUtils.decodeBase58(resource.getFixtures().getUserPublicKey()),
+                CryptoUtils.decodeBase58(resource.getFixtures().getUserSecretKey()));
+
+        return wallet;
     }
 }

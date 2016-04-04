@@ -26,6 +26,7 @@ import io.ucoin.ucoinj.core.client.config.Configuration;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainMemberships;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
+import io.ucoin.ucoinj.core.client.model.bma.Protocol;
 import io.ucoin.ucoinj.core.client.model.bma.gson.JsonArrayParser;
 import io.ucoin.ucoinj.core.client.model.local.Currency;
 import io.ucoin.ucoinj.core.client.model.local.Identity;
@@ -38,11 +39,11 @@ import io.ucoin.ucoinj.core.client.service.exception.UidAlreadyUsedException;
 import io.ucoin.ucoinj.core.client.service.exception.UidMatchAnotherPubkeyException;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.service.CryptoService;
-import io.ucoin.ucoinj.core.util.CollectionUtils;
 import io.ucoin.ucoinj.core.util.ObjectUtils;
 import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.core.util.cache.Cache;
 import io.ucoin.ucoinj.core.util.cache.SimpleCache;
+import io.ucoin.ucoinj.core.util.crypto.CryptoUtils;
 import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -364,13 +365,14 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     public void requestMembership(Wallet wallet) {
         ObjectUtils.checkNotNull(wallet);
         ObjectUtils.checkNotNull(wallet.getCurrencyId());
+        ObjectUtils.checkNotNull(wallet.getCertTimestamp());
 
         BlockchainBlock block = getCurrentBlock(wallet.getCurrencyId());
 
         // Compute membership document
         String membership = getMembership(wallet,
                 block,
-                true /*sideIn*/);
+                true /*side in*/);
 
         if (log.isDebugEnabled()) {
             log.debug(String.format(
@@ -393,6 +395,28 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
             log.debug("received from /tx/process: " + membershipResult);
         }
 
+        executeRequest(httpPost, String.class);
+    }
+
+
+    public void requestMembership(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String membershipBlockUid, String selfBlockUid) {
+        // http post /blockchain/membership
+        HttpPost httpPost = new HttpPost(getPath(peer, URL_MEMBERSHIP));
+
+        // compute the self-certification
+        String membership = getSignedMembership(currency, pubKey, secKey, uid, membershipBlockUid, selfBlockUid, true/*side in*/);
+
+        List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+        urlParameters.add(new BasicNameValuePair("membership", membership));
+
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(urlParameters));
+        }
+        catch(UnsupportedEncodingException e) {
+            throw new TechnicalException(e);
+        }
+
+        // Execute the request
         executeRequest(httpPost, String.class);
     }
 
@@ -428,13 +452,12 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     ) {
 
         // Create the member ship document
-        String membership = getMembership(wallet.getUid(),
+        String membership = getUnsignedMembership( wallet.getCurrency(),
                 wallet.getPubKeyHash(),
-                wallet.getCurrency(),
-                block.getNumber(),
-                block.getHash(),
-                sideIn,
-                wallet.getCertTimestamp()
+                wallet.getUid(),
+                block.getNumber() + '-' + block.getHash(),
+                wallet.getCertTimestamp(),
+                sideIn
         );
 
         // Add signature
@@ -585,7 +608,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
                 // Self certification not exists: make sure the cert time is cleaning
                 else {
-                    identity.setTimestamp(-1);
+                    identity.setTimestamp(null);
                 }
             }
         }
@@ -593,7 +616,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         // UID and pubkey is a member: fine
         else if (identity.getPubkey().equals(result.getPubkey())) {
             identity.setMember(true);
-            identity.setTimestamp(result.getSigDate());
+            //FIXME identity.setTimestamp(result.getSigDate());
         }
 
         // Something wrong on pubkey : uid already used by anither pubkey !
@@ -642,25 +665,52 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         return result;
     }
 
-    private String getMembership(String uid,
-                                 String publicKey,
-                                 String currency,
-                                 long blockNumber,
-                                 String blockHash,
-                                 boolean sideIn,
-                                 long certificationTime
-    ) {
-        StringBuilder result = new StringBuilder()
-                .append("Version: 1\n")
-                .append("Type: Membership\n")
-                .append("Currency: ").append(currency).append('\n')
-                .append("Issuer: ").append(publicKey).append('\n')
-                .append("Block: ").append(blockNumber).append('-').append(blockHash).append('\n')
-                .append("Membership: ").append(sideIn ? "IN" : "OUT").append('\n')
-                .append("UserID: ").append(uid).append('\n')
-                .append("CertTS: ").append(certificationTime).append('\n');
+    protected String getSignedMembership(String currency,
+                                      byte[] pubKey,
+                                      byte[] secKey,
+                                      String userId,
+                                      String membershipBlockUid,
+                                      String selfBlockUid,
+                                      boolean sideIn) {
+        // Compute the pub key hash
+        String pubKeyHash = CryptoUtils.encodeBase58(pubKey);
 
-        return result.toString();
+        // Create the member ship document
+        String membership = getUnsignedMembership(currency,
+                pubKeyHash,
+                userId,
+                membershipBlockUid,
+                selfBlockUid,
+                sideIn
+        );
+
+        // Add signature
+        CryptoService cryptoService = ServiceLocator.instance().getCryptoService();
+        String signature = cryptoService.sign(membership, secKey);
+
+        return new StringBuilder().append(membership).append(signature)
+                .append('\n').toString();
+    }
+
+    protected String getUnsignedMembership(String currency,
+                                           String pubkey,
+                                           String userId,
+                                           String membershipBlockUid,
+                                           String selfBlockUid,
+                                           boolean sideIn
+    ) {
+        // see https://github.com/ucoin-io/ucoin/blob/master/doc/Protocol.md#membership
+        return new StringBuilder()
+                .append("Version: ").append(Protocol.VERSION)
+                .append("\nType: ").append(Protocol.TYPE_MEMBERSHIP)
+                .append("\nCurrency: ").append(currency)
+                .append("\nIssuer: ").append(pubkey)
+                .append("\nBlock: ").append(membershipBlockUid)
+                .append("\nMembership: ").append(sideIn ? "IN" : "OUT")
+                .append("\nUserID: ").append(userId)
+                .append("\nCertTS: ").append(selfBlockUid)
+                .append("\n")
+                .toString();
     }
 
     private Integer getLastBlockNumberFromJson(final String json) {

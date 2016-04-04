@@ -23,15 +23,13 @@ package io.ucoin.ucoinj.core.client.service.bma;
  */
 
 import io.ucoin.ucoinj.core.client.model.ModelUtils;
-import io.ucoin.ucoinj.core.client.model.bma.WotCertification;
-import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
-import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
-import io.ucoin.ucoinj.core.client.model.bma.WotLookup;
+import io.ucoin.ucoinj.core.client.model.bma.*;
 import io.ucoin.ucoinj.core.client.model.local.Certification;
 import io.ucoin.ucoinj.core.client.model.local.Identity;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.model.local.Wallet;
 import io.ucoin.ucoinj.core.client.service.ServiceLocator;
+import io.ucoin.ucoinj.core.client.service.local.CurrencyService;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.service.CryptoService;
 import io.ucoin.ucoinj.core.util.CollectionUtils;
@@ -71,6 +69,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
     private CryptoService cryptoService;
     private BlockchainRemoteService bcService;
+    private CurrencyService currencyService;
 
     public WotRemoteServiceImpl() {
         super();
@@ -81,6 +80,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         super.afterPropertiesSet();
         cryptoService = ServiceLocator.instance().getCryptoService();
         bcService = ServiceLocator.instance().getBlockchainRemoteService();
+        currencyService = ServiceLocator.instance().getCurrencyService();
     }
 
     public List<Identity> findIdentities(Set<Long> currenciesIds, String uidOrPubKey) {
@@ -282,20 +282,38 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     }
 
 
-    public void sendSelf(long currencyId, byte[] pubKey, byte[] secKey, String uid, long timestamp) {
+    public void sendIdentity(long currencyId, byte[] pubKey, byte[] secKey, String userId, String blockUid) {
         // http post /wot/add
         HttpPost httpPost = new HttpPost(getPath(currencyId, URL_ADD));
 
-        // Compute the pub key hash
-        String pubKeyHash = CryptoUtils.encodeBase58(pubKey);
+        String currency = currencyService.getCurrencyNameById(currencyId);
 
         // compute the self-certification
-        String selfCertification = getSelfCertification(secKey, uid, timestamp);
+        String identity = getSignedIdentity(currency, pubKey, secKey, userId, blockUid);
 
         List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-        urlParameters.add(new BasicNameValuePair("pubkey", pubKeyHash));
-        urlParameters.add(new BasicNameValuePair("self", selfCertification));
-        urlParameters.add(new BasicNameValuePair("other", ""));
+        urlParameters.add(new BasicNameValuePair("identity", identity));
+
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(urlParameters));
+        }
+        catch(UnsupportedEncodingException e) {
+            throw new TechnicalException(e);
+        }
+
+        // Execute the request
+        executeRequest(httpPost, String.class);
+    }
+
+    public void sendIdentity(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid) {
+        // http post /wot/add
+        HttpPost httpPost = new HttpPost(getPath(peer, URL_ADD));
+
+        // compute the self-certification
+        String identity = getSignedIdentity(currency, pubKey, secKey, uid, blockUid);
+
+        List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+        urlParameters.add(new BasicNameValuePair("identity", identity));
 
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(urlParameters));
@@ -324,9 +342,9 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
     public String sendCertification(long currencyId,
                                     byte[] pubKey, byte[] secKey,
-                                  String uid, long timestamp,
+                                  String uid, String timestamp,
                                   String userUid, String userPubKeyHash,
-                                  long userTimestamp, String userSignature) {
+                                  String userBlockUid, String userSignature) {
         // http post /wot/add
         HttpPost httpPost = new HttpPost(getPath(currencyId, URL_ADD));
 
@@ -341,18 +359,19 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         // Compute the pub key hash
         String pubKeyHash = CryptoUtils.encodeBase58(pubKey);
 
-        // compute the self-certification
-        String selfCertification = getSelfCertification(userUid, userTimestamp, userSignature);
+        // compute signed identity
+        String identity = getIdentity(currentBlock.getCurrency(),
+                pubKeyHash, userUid, userBlockUid, userSignature);
 
         // Compute the certification
-        String certification = getCertification(pubKey, secKey,
-                userUid, userTimestamp, userSignature,
-                blockNumber, blockHash);
+        String certification = null; /* FIXME getCertification(pubKey, secKey,
+                userUid, userBlockUid, userSignature,
+                blockNumber, blockHash);*/
         String inlineCertification = toInlineCertification(pubKeyHash, userPubKeyHash, certification);
 
         List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-        urlParameters.add(new BasicNameValuePair("pubkey", userPubKeyHash));
-        urlParameters.add(new BasicNameValuePair("self", selfCertification));
+        urlParameters.add(new BasicNameValuePair("identity", identity));
+        urlParameters.add(new BasicNameValuePair("self", identity));
         urlParameters.add(new BasicNameValuePair("other", inlineCertification));
 
         try {
@@ -403,26 +422,23 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
         target.setUid(source.getUid());
         target.setSelf(source.getSelf());
-        Long timestamp = source.getMeta() != null ? source.getMeta().timestamp : null;
-        target.setTimestamp(timestamp);
+        String timestamp = source.getMeta() != null ? source.getMeta().timestamp : null;
+        //FIXME target.setTimestamp(timestamp);
     }
 
-    public String getSelfCertification(byte[] secKey, String uid, long timestamp) {
-        // Create the self part to sign
-        StringBuilder buffer = new StringBuilder()
-                .append("UID:")
-                .append(uid)
-                .append("\nMETA:TS:")
-                .append(timestamp)
-                .append('\n');
+    public String getSignedIdentity(String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid) {
+
+        // Compute the pub key hash
+        String pubKeyHash = CryptoUtils.encodeBase58(pubKey);
+
+        // Create identity to sign
+        String unsignedIdentity = getUnsignedIdentity(currency, pubKeyHash, uid, blockUid);
 
         // Compute the signature
-        String signature = cryptoService.sign(buffer.toString(), secKey);
+        String signature = cryptoService.sign(unsignedIdentity, secKey);
 
         // Append the signature
-        return buffer.append(signature)
-                .append('\n')
-                .toString();
+        return unsignedIdentity + signature + '\n';
     }
 
     /* -- Internal methods -- */
@@ -449,7 +465,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
                 cert.setCertifiedBy(false);
                 result.add(cert);
 
-                long certificationAge = medianTime - certifier.getTimestamp();
+                /*FIXME long certificationAge = medianTime - certifier.getTimestamp();
                 if(certificationAge <= sigValidity) {
                     if (certifier.getIsMember() != null && certifier.getIsMember().booleanValue()
                             && certifier.getWritten()!=null && certifier.getWritten().getNumber()>=0) {
@@ -459,7 +475,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
                 }
                 else {
                     cert.setValid(false);
-                }
+                }*/
             }
         }
 
@@ -488,12 +504,15 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
                     cert.setCertifiedBy(true);
                     result.add(cert);
 
+                    // FIXME
+                    /*
                     long certificationAge = medianTime - certifiedBy.getTimestamp();
                     if (certificationAge <= sigValidity) {
                         cert.setValid(true);
                     } else {
                         cert.setValid(false);
                     }
+                    */
                 }
             }
 
@@ -596,13 +615,11 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     }
 
     public String getCertification(byte[] pubKey, byte[] secKey, String userUid,
-                                   long userTimestamp,
-                                   String userSignature,
-                                   int blockNumber,
-                                   String blockHash) {
+                                   String userTimestamp,
+                                   String userSignature) {
         // Create the self part to sign
         String unsignedCertification = getCertificationUnsigned(
-                userUid, userTimestamp, userSignature, blockNumber, blockHash);
+                userUid, userTimestamp, userSignature);
 
         // Compute the signature
         String signature = cryptoService.sign(unsignedCertification, secKey);
@@ -616,10 +633,8 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     }
 
     protected String getCertificationUnsigned(String userUid,
-                                      long userTimestamp,
-                                      String userSignature,
-                                      int blockNumber,
-                                      String blockHash) {
+                                      String userTimestamp,
+                                      String userSignature) {
         // Create the self part to sign
         return new StringBuilder()
                 .append("UID:")
@@ -628,27 +643,36 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
                 .append(userTimestamp)
                 .append('\n')
                 .append(userSignature)
-                .append("\nMETA:TS:")
+                /*.append("\nMETA:TS:")
                 .append(blockNumber)
                 .append('-')
-                .append(blockHash)
+                .append(blockHash)*/
                 .append('\n').toString();
     }
 
-    protected String getSelfCertification(String uid,
-                                              long timestamp,
-                                              String signature) {
-        // Create the self part to sign
+    protected String getUnsignedIdentity(String currency,
+                                         String pubkey,
+                                         String userId,
+                                         String blockUid) {
+        // see https://github.com/ucoin-io/ucoin/blob/master/doc/Protocol.md#identity
         return new StringBuilder()
-                .append("UID:")
-                .append(uid)
-                .append("\nMETA:TS:")
-                .append(timestamp)
-                .append('\n')
-                .append(signature)
-                // FIXME : in ucoin, no '\n' here - is it a bug ?
-                //.append('\n')
+                .append("Version: ").append(Protocol.VERSION)
+                .append("\nType: ").append(Protocol.TYPE_IDENTITY)
+                .append("\nCurrency: ").append(currency)
+                .append("\nIssuer: ").append(pubkey)
+                .append("\nUniqueID: ").append(userId)
+                .append("\nTimestamp: ").append(blockUid)
+                .append("\n")
                 .toString();
+    }
+
+    protected String getIdentity(String currency,
+                                         String pubkey,
+                                         String userId,
+                                         String blockUid,
+                                         String signature) {
+        return getUnsignedIdentity(currency, pubkey, userId, blockUid)
+                + "\n" + signature;
     }
 
     protected WotLookup.Uid getUid(WotLookup lookupResults, String filterUid) {
@@ -762,9 +786,9 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         if (source.meta != null) {
 
             // timestamp
-            Long timestamp = source.meta != null ? source.meta.timestamp : null;
+            String timestamp = source.meta != null ? source.meta.timestamp : null;
             if (timestamp != null) {
-                target.setTimestamp(timestamp.longValue());
+                //FIXME target.setTimestamp(timestamp.longValue());
             }
         }
 
@@ -858,4 +882,5 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
             previousCert.setTimestamp(cert.getTimestamp());
         }
     }
+
 }

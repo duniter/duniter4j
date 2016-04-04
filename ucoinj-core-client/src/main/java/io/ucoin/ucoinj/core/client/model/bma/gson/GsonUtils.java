@@ -44,11 +44,11 @@ public class GsonUtils {
                 .setDateFormat(DATE_PATTERN)
                 // Register Multimap adapter
                 .registerTypeAdapter(Multimap.class, new MultimapTypeAdapter())
-                // Register Blockchain.identity adapter
+                // Register Blockchain.* adapter
                 .registerTypeAdapter(BlockchainBlock.Identity.class, new IdentityTypeAdapter())
-                // Register Blockchain.joiner adapter
                 .registerTypeAdapter(BlockchainBlock.Joiner.class, new JoinerTypeAdapter())
-                // Register endpoint adpater
+                .registerTypeAdapter(BlockchainBlock.Revoked.class, new RevokedTypeAdapter())
+                // Register endpoint adapter
                 .registerTypeAdapter(NetworkPeering.Endpoint.class, new EndpointAdapter())
                 ;
     }

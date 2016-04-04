@@ -117,7 +117,7 @@ public class Wallet extends KeyPair implements LocalEntity, Serializable {
     }
 
     public boolean isSelfSend() {
-        return identity.getTimestamp() != -1;
+        return identity.getTimestamp() != null;
     }
 
     public Long getCurrencyId() {
@@ -174,11 +174,11 @@ public class Wallet extends KeyPair implements LocalEntity, Serializable {
         identity.setUid(uid);
     }
 
-    public long getCertTimestamp() {
+    public String getCertTimestamp() {
         return identity.getTimestamp();
     }
 
-    public void setCertTimestamp(long timestamp) {
+    public void setCertTimestamp(String timestamp) {
         identity.setTimestamp(timestamp);
     }
 

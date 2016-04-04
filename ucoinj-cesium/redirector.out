@@ -1,0 +1,18 @@
+[1m[32mRunning live reload server:[39m[22m undefined
+[1m[32mWatching:[39m[22m 0=www/**/*, 1=!www/lib/**/*
+[1m[32mRunning dev server: [39m[22m http://localhost:8100
+[1m[32mIonic server commands, enter:[39m[22m
+  restart[32m or [39mr[32m to restart the client app from the root[39m
+  goto[32m or [39mg[32m and a url to have the app navigate to the given url[39m
+  consolelogs[32m or [39mc[32m to enable/disable console log output[39m
+  serverlogs[32m or [39ms[32m to enable/disable server log output[39m
+  quit[32m or [39mq[32m to shutdown the server and exit[39m
+
+ionic $ [1m[32mIonic server commands, enter:[39m[22m
+  restart[32m or [39mr[32m to restart the client app from the root[39m
+  goto[32m or [39mg[32m and a url to have the app navigate to the given url[39m
+  consolelogs[32m or [39mc[32m to enable/disable console log output[39m
+  serverlogs[32m or [39ms[32m to enable/disable server log output[39m
+  quit[32m or [39mq[32m to shutdown the server and exit[39m
+
+ionic $ 

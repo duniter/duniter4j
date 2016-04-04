@@ -61,18 +61,16 @@ public class MarketRecordIndexerService extends BaseIndexerService {
     private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
 
     public static final String INDEX_NAME = "market";
-    public static final String INDEX_TYPE = "record";
 
-    private Gson gson;
-
-    private Configuration config;
+    public static final String INDEX_TYPE_OFFER = "offer";
+    public static final String INDEX_TYPE_DEMAND = "demand";
 
     private WotRemoteService wotRemoteService;
 
     private CryptoService cryptoService;
 
     public MarketRecordIndexerService() {
-        gson = GsonUtils.newBuilder().create();
+
     }
 
     @Override
@@ -80,15 +78,12 @@ public class MarketRecordIndexerService extends BaseIndexerService {
         super.afterPropertiesSet();
         wotRemoteService = ServiceLocator.instance().getWotRemoteService();
         cryptoService = ServiceLocator.instance().getCryptoService();
-        config = Configuration.instance();
     }
 
     @Override
     public void close() throws IOException {
         super.close();
         wotRemoteService = null;
-        config = null;
-        gson = null;
     }
 
     /**
@@ -123,71 +118,51 @@ public class MarketRecordIndexerService extends BaseIndexerService {
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
-        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
-
         CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(INDEX_NAME);
         Settings indexSettings = Settings.settingsBuilder()
-                .put("number_of_shards", 1)
-                .put("number_of_replicas", 1)
+                .put("number_of_shards", 3)
+                .put("number_of_replicas", 2)
                 .put("analyzer", createDefaultAnalyzer())
                 .build();
+
+        // Create offer index
+        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE_OFFER));
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());
+        createIndexRequestBuilder.addMapping(INDEX_TYPE_OFFER, createIndexMapping(INDEX_TYPE_OFFER));
+        createIndexRequestBuilder.execute().actionGet();
+
+        // Create demand index
+        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE_DEMAND));
+        createIndexRequestBuilder.setSettings(indexSettings);
+        createIndexRequestBuilder.addMapping(INDEX_TYPE_DEMAND, createIndexMapping(INDEX_TYPE_DEMAND));
         createIndexRequestBuilder.execute().actionGet();
     }
 
     /**
-     *
+     * Index a new offer
      * @param recordJson
      * @return the record id
      */
-    public String indexRecordFromJson(String recordJson) {
+    public String indexOfferFromJson(String recordJson) {
 
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode actualObj = mapper.readTree(recordJson);
-            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
-            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
-                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
-                throw new InvalidFormatException("Invalid record JSON format. Required fields [issuer,signature]");
-            }
-            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
-            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+        return indexRecordFromJson(recordJson, INDEX_TYPE_OFFER);
+    }
 
-            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
-                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
-
-            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
-                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
-            }
-
-        }
-        catch(IOException | JsonSyntaxException e) {
-            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
-        }
-
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE)
-                .setSource(recordJson);
-
-        // Execute indexBlocksFromNode
-        IndexResponse response = indexRequest
-                .setRefresh(false)
-                .execute().actionGet();
-
-        return response.getId();
+    /**
+     * Index a new demand
+     * @param recordJson
+     * @return the record id
+     */
+    public String indexDemandFromJson(String recordJson) {
+        return indexRecordFromJson(recordJson, INDEX_TYPE_DEMAND);
     }
 
     /* -- Internal methods -- */
 
 
-    public XContentBuilder createIndexMapping() {
+    public XContentBuilder createIndexMapping(String indexType) {
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(indexType)
                     .startObject("properties")
 
                     // title
@@ -242,8 +217,53 @@ public class MarketRecordIndexerService extends BaseIndexerService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, indexType, ioe.getMessage()), ioe);
         }
+    }
+
+    public String indexRecordFromJson(String recordJson, String indexType) {
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode actualObj = mapper.readTree(recordJson);
+            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
+            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
+                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
+                throw new InvalidFormatException("Invalid record JSON format. Required fields [issuer,signature]");
+            }
+            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
+
+            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+
+            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
+                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
+
+            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
+                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
+            }
+
+            // TODO : check if issuer is a valid member
+            //wotRemoteService.getRequirments();
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
+            }
+
+        }
+        catch(IOException | JsonSyntaxException e) {
+            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
+        }
+
+        // Preparing indexBlocksFromNode
+        IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, indexType)
+                .setSource(recordJson);
+
+        // Execute indexBlocksFromNode
+        IndexResponse response = indexRequest
+                .setRefresh(false)
+                .execute().actionGet();
+
+        return response.getId();
     }
 
 }

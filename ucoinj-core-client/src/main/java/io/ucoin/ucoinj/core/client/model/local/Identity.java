@@ -29,21 +29,21 @@ public class Identity extends BasicIdentity {
 
     private static final long serialVersionUID = -7451079677730158794L;
 
-    private long timestamp = -1;
+    private String timestamp = null;
 
     private Boolean isMember = null;
 
     private Long currencyId;
 
     /**
-     * The timestamp value of the signature date
+     * The timestamp value of the signature date (a BLOCK_UID)
      * @return
      */
-    public long getTimestamp() {
+    public String getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
+    public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
     }
 

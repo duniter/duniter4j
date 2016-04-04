@@ -39,29 +39,31 @@ public class BlockchainBlock implements Serializable {
     
     private String version;
     private Integer nonce;
-    private Integer powMin;
     private Integer number;
+    private Integer powMin;
 	private Integer time;
     private Integer medianTime;
     private Integer membersCount;
     private BigInteger monetaryMass;
+    private Integer unitBase;
     private String currency;
     private String issuer;
-    private String signature;
     private String hash;
     private String parameters;
     private String previousHash;
     private String previousIssuer;
+    private String inner_hash;
     private BigInteger dividend;
-    private String[] membersChanges;
     private Identity[] identities;
     private Joiner[] joiners;
-    private String[] actives;
-    private String[] leavers;
+    private Joiner[] leavers;
+    private Joiner[] actives;
+    private Revoked[] revoked;
     private String[] excluded;
     private String[] certifications;
-//            private int actives": [],
-//            private int transactions": [],
+    private Transaction[] transactions;
+    private String signature;
+
 
 //  raw": "Version: 1\nType: Block\nCurrency: zeta_brouzouf\nNonce: 8233\nNumber: 1\nDate: 1416589860\nConfirmedDate: 1416589860\nIssuer: HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk\nPreviousHash: 00006CD96A01378465318E48310118AC6B2F3625\nPreviousIssuer: HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk\nMembersCount: 4\nIdentities:\nJoiners:\nActives:\nLeavers:\nExcluded:\nCertifications:\nTransactions:\n"
     //private String raw;
@@ -181,9 +183,74 @@ public class BlockchainBlock implements Serializable {
         this.joiners = joiners;
     }
 
+    public Integer getUnitBase() {
+        return unitBase;
+    }
+
+    public void setUnitBase(Integer unitBase) {
+        this.unitBase = unitBase;
+    }
+
+    public String getInnerHash() {
+        return inner_hash;
+    }
+
+    public void setInnerHash(String inner_hash) {
+        this.inner_hash = inner_hash;
+    }
+
+    public Joiner[] getLeavers() {
+        return leavers;
+    }
+
+    public void setLeavers(Joiner[] leavers) {
+        this.leavers = leavers;
+    }
+
+    public Joiner[] getActives() {
+        return actives;
+    }
+
+    public void setActives(Joiner[] actives) {
+        this.actives = actives;
+    }
+
+    public Revoked[] getRevoked() {
+        return revoked;
+    }
+
+    public void setRevoked(Revoked[] revoked) {
+        this.revoked = revoked;
+    }
+
+    public String[] getExcluded() {
+        return excluded;
+    }
+
+    public void setExcluded(String[] excluded) {
+        this.excluded = excluded;
+    }
+
+    public String[] getCertifications() {
+        return certifications;
+    }
+
+    public void setCertifications(String[] certifications) {
+        this.certifications = certifications;
+    }
+
+    public Transaction[] getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(Transaction[] transactions) {
+        this.transactions = transactions;
+    }
+
     public String toString() {
         String s = "version=" + version;
         s += "\nnonce=" + nonce;
+        s += "\ninner_hash=" + inner_hash;
         s += "\nnumber=" + number;
         s += "\npowMin" + powMin;
         s += "\ntime=" + time;
@@ -199,11 +266,6 @@ public class BlockchainBlock implements Serializable {
         s += "\npreviousIssuer=" + previousIssuer;
         s += "\ndividend=" + dividend;
         s += "\nmembersChanges:";
-        if (membersChanges != null) {
-            for (String m : membersChanges) {
-                s += "\n\t" + m;
-            }
-        }
         s += "\nidentities:";
         if (identities != null) {
             for (Identity i : identities) {
@@ -216,10 +278,22 @@ public class BlockchainBlock implements Serializable {
                 s += "\n\t" + j.toString();
             }
         }
+        s += "\nactives:";
+        if (actives != null) {
+            for (Joiner a : actives) {
+                s += "\n\t" + a.toString();
+            }
+        }
         s += "\nleavers:";
         if (leavers != null) {
-            for (String l : leavers) {
-                s += "\n\t" + l;
+            for (Joiner l : leavers) {
+                s += "\n\t" + l.toString();
+            }
+        }
+        s += "\nrevoked:";
+        if (leavers != null) {
+            for (Revoked r : revoked) {
+                s += "\n\t" + r.toString();
             }
         }
         s += "\nexcluded:";
@@ -242,20 +316,20 @@ public class BlockchainBlock implements Serializable {
 
         private static final long serialVersionUID = 8080689271400316984L;
 
-        private String pubkey;
+        private String publicKey;
 
         private String signature;
 
-        private String uid;
+        private String blockUid;
 
-        private long timestamp = -1;
+        private String userId;
 
-        public String getPubkey() {
-            return pubkey;
+        public String getPublicKey() {
+            return publicKey;
         }
 
-        public void setPubkey(String pubkey) {
-            this.pubkey = pubkey;
+        public void setPublicKey(String publicKey) {
+            this.publicKey = publicKey;
         }
 
         public String getSignature() {
@@ -266,29 +340,30 @@ public class BlockchainBlock implements Serializable {
             this.signature = signature;
         }
 
-        public String getUid() {
-            return uid;
+        public String getUserId() {
+            return userId;
         }
 
-        public void setUid(String uid) {
-            this.uid = uid;
+        public void setUserId(String uid) {
+            this.userId = uid;
         }
 
-        public long getTimestamp() {
-            return timestamp;
+
+        public String getBlockUid() {
+            return blockUid;
         }
 
-        public void setTimestamp(long timestamp) {
-            this.timestamp = timestamp;
+        public void setBlockUid(String blockUid) {
+            this.blockUid = blockUid;
         }
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder()
-                    .append(":").append(pubkey)
+                    .append(":").append(publicKey)
                     .append(":").append(signature)
-                    .append(":").append(timestamp)
-                    .append("").append(uid);
+                    .append(":").append(blockUid)
+                    .append("").append(userId);
 
             return sb.toString();
         }
@@ -297,24 +372,23 @@ public class BlockchainBlock implements Serializable {
     public static class Joiner extends Identity {
 
         private static final long serialVersionUID = 8448049949323699700L;
-        private String pubkey;
+
+        private String publicKey;
 
         private String signature;
 
-        private String uid;
+        private String userId;
 
-        private long timestamp = -1;
+        private String mBlockUid;
 
-        private String number;
+        private String iBlockUid;
 
-        private String hash;
-
-        public String getPubkey() {
-            return pubkey;
+        public String getPublicKey() {
+            return publicKey;
         }
 
-        public void setPubkey(String pubkey) {
-            this.pubkey = pubkey;
+        public void setPublicKey(String pubkey) {
+            this.publicKey = pubkey;
         }
 
         public String getSignature() {
@@ -325,49 +399,183 @@ public class BlockchainBlock implements Serializable {
             this.signature = signature;
         }
 
-        public String getUid() {
-            return uid;
+        public String getUserId() {
+            return userId;
         }
 
-        public void setUid(String uid) {
-            this.uid = uid;
+        public void setUserId(String uid) {
+            this.userId = uid;
         }
 
-        public long getTimestamp() {
-            return timestamp;
+        public String getMBlockUid() {
+            return mBlockUid;
         }
 
-        public void setTimestamp(long timestamp) {
-            this.timestamp = timestamp;
+        public void setMBlockUid(String mBlockUid) {
+            this.mBlockUid = mBlockUid;
         }
 
-        public String getNumber() {
-            return number;
+        public String getIBlockUid() {
+            return iBlockUid;
         }
 
-        public void setNumber(String number) {
-            this.number = number;
-        }
-
-        public String getHash() {
-            return hash;
-        }
-
-        public void setHash(String hash) {
-            this.hash = hash;
+        public void setIBlockUid(String iBlockUid) {
+            this.iBlockUid = iBlockUid;
         }
 
         @Override
         public String toString() {
 
             StringBuilder sb = new StringBuilder()
-                    .append(":").append(pubkey)
+                    .append(":").append(publicKey)
                     .append(":").append(signature)
-                    .append(":").append(number)
-                    .append(":").append(hash)
-                    .append(":").append(timestamp)
-                    .append(":").append(uid);
+                    .append(":").append(mBlockUid)
+                    .append(":").append(iBlockUid)
+                    .append(":").append(userId);
 
+            return sb.toString();
+        }
+    }
+
+
+    public static class Revoked implements Serializable {
+        private String signature;
+        private String userId;
+
+        public String getSignature() {
+            return signature;
+        }
+        public void setSignature(String signature) {
+            this.signature = signature;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+
+        @Override
+        public String toString() {
+
+            StringBuilder sb = new StringBuilder()
+                    .append(":").append(signature)
+                    .append(":").append(userId);
+
+            return sb.toString();
+        }
+    }
+
+    public class Transaction implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private String[] signatures;
+
+        private String version;
+
+        private String currency;
+
+        private String[] issuers;
+
+        private String[] inputs;
+
+        private String[] unlocks;
+
+        private String[] outputs;
+
+        public String[] getSignatures() {
+            return signatures;
+        }
+
+        public void setSignatures(String[] signatures) {
+            this.signatures = signatures;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public String getCurrency() {
+            return currency;
+        }
+
+        public void setCurrency(String currency) {
+            this.currency = currency;
+        }
+
+        public String[] getIssuers() {
+            return issuers;
+        }
+
+        public void setIssuers(String[] issuers) {
+            this.issuers = issuers;
+        }
+
+        public String[] getInputs() {
+            return inputs;
+        }
+
+        public void setInputs(String[] inputs) {
+            this.inputs = inputs;
+        }
+
+        public String[] getUnlocks() {
+            return unlocks;
+        }
+
+        public void setUnlocks(String[] unlocks) {
+            this.unlocks = unlocks;
+        }
+
+        public String[] getOutputs() {
+            return outputs;
+        }
+
+        public void setOutputs(String[] outputs) {
+            this.outputs = outputs;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\nsignatures:");
+            if (signatures != null) {
+                for (String e : signatures) {
+                    sb.append("\n\t").append(e);
+                }
+            }
+            sb.append("\nversion: ").append(version);
+            sb.append("\ncurrency: ").append(currency);
+            sb.append("\nissuers:");
+            if (issuers != null) {
+                for (String e : issuers) {
+                    sb.append("\n\t").append(e);
+                }
+            }
+            sb.append("\ninputs:");
+            if (inputs != null) {
+                for (String e : inputs) {
+                    sb.append("\n\t").append(e);
+                }
+            }
+            sb.append("\nunlocks:");
+            if (unlocks != null) {
+                for (String e : unlocks) {
+                    sb.append("\n\t").append(e);
+                }
+            }
+            sb.append("\noutputs:");
+            if (outputs != null) {
+                for (String e : outputs) {
+                    sb.append("\n\t").append(e);
+                }
+            }
             return sb.toString();
         }
     }

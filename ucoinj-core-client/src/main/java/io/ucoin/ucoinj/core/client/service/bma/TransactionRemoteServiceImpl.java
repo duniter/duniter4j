@@ -24,6 +24,7 @@ package io.ucoin.ucoinj.core.client.service.bma;
 
 
 import io.ucoin.ucoinj.core.client.model.TxOutput;
+import io.ucoin.ucoinj.core.client.model.bma.Protocol;
 import io.ucoin.ucoinj.core.client.model.bma.TxHistory;
 import io.ucoin.ucoinj.core.client.model.bma.TxSource;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
@@ -73,8 +74,8 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
         cryptoService = ServiceLocator.instance().getCryptoService();
 	}
 
-	public String transfert(Wallet wallet, String destPubKey, long amount,
-							String comment) throws InsufficientCreditException {
+	public String transfer(Wallet wallet, String destPubKey, long amount,
+						   String comment) throws InsufficientCreditException {
 		
 		// http post /tx/process
 		HttpPost httpPost = new HttpPost(
@@ -248,13 +249,24 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 			String comments) {
 
 		StringBuilder sb = new StringBuilder();
-		sb.append("Version: 1\n").append("Type: Transaction\n")
+		sb.append("Version: ").append(Protocol.VERSION).append("\n")
+				.append("Type: ").append(Protocol.TYPE_TRANSACTION).append("\n")
 				.append("Currency: ").append(currency).append('\n')
 				.append("Issuers:\n")
 				// add issuer pubkey
 				.append(srcPubKey).append('\n');
 
 		// Inputs coins
+		sb.append("Inputs:\n");
+		for (TxSource.Source input : inputs) {
+			// INDEX:SOURCE:NUMBER:FINGERPRINT:AMOUNT
+			sb.append(0).append(':').append(input.getType()).append(':')
+					.append(input.getNumber()).append(':')
+					.append(input.getFingerprint()).append(':')
+					.append(input.getAmount()).append('\n');
+		}
+
+		// Unlocks
 		sb.append("Inputs:\n");
 		for (TxSource.Source input : inputs) {
 			// INDEX:SOURCE:NUMBER:FINGERPRINT:AMOUNT
@@ -286,7 +298,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		StringBuilder sb = new StringBuilder();
 		sb.append("TX:")
 				// VERSION
-				.append(PROTOCOL_VERSION).append(':')
+				.append(Protocol.VERSION).append(':')
 				// NB_ISSUERS
 				.append("1:")
 				// NB_INPUTS

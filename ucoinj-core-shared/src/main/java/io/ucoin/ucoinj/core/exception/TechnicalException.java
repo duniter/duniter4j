@@ -33,6 +33,16 @@ public class TechnicalException extends RuntimeException{
 
     private static final long serialVersionUID = -6715624222174163366L;
 
+    private int code;
+
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
+    }
+
     public TechnicalException() {
         super();
     }

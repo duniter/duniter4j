@@ -33,8 +33,8 @@ import io.ucoin.ucoinj.core.client.service.exception.InsufficientCreditException
 
 public interface TransactionRemoteService extends Service {
 
-	String transfert(Wallet wallet, String destPubKey, long amount,
-							String comment) throws InsufficientCreditException;
+	String transfer(Wallet wallet, String destPubKey, long amount,
+                    String comment) throws InsufficientCreditException;
 
 	TxSource getSources(long currencyId, String pubKey);
 

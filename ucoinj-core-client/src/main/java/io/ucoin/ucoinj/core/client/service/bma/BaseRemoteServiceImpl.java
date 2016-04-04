@@ -24,6 +24,7 @@ package io.ucoin.ucoinj.core.client.service.bma;
 
 import io.ucoin.ucoinj.core.beans.InitializingBean;
 import io.ucoin.ucoinj.core.beans.Service;
+import io.ucoin.ucoinj.core.client.model.bma.Protocol;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.service.HttpService;
 import io.ucoin.ucoinj.core.client.service.local.PeerService;
@@ -39,8 +40,6 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
 
     protected HttpService httpService;
     protected PeerService peerService;
-
-    public static final String PROTOCOL_VERSION = "1";
 
     @Override
     public void afterPropertiesSet() {

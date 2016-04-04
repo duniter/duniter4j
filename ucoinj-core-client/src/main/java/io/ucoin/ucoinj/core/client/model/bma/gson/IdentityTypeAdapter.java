@@ -46,10 +46,10 @@ public class IdentityTypeAdapter implements JsonDeserializer<BlockchainBlock.Ide
         BlockchainBlock.Identity result = new BlockchainBlock.Identity();
         int i = 0;
         
-        result.setPubkey(identityParts[i++]);
+        result.setPublicKey(identityParts[i++]);
         result.setSignature(identityParts[i++]);
-        result.setTimestamp(Integer.parseInt(identityParts[i++]));
-        result.setUid(identityParts[i++]);
+        result.setBlockUid(identityParts[i++]);
+        result.setUserId(identityParts[i++]);
 
         return result;
     }
@@ -57,10 +57,10 @@ public class IdentityTypeAdapter implements JsonDeserializer<BlockchainBlock.Ide
     @Override
     public JsonElement serialize(BlockchainBlock.Identity identity, Type type, JsonSerializationContext context) {
         String result = new StringBuilder()
-                .append(identity.getPubkey()).append(":")
+                .append(identity.getPublicKey()).append(":")
                 .append(identity.getSignature()).append(":")
-                .append(identity.getTimestamp()).append(":")
-                .append(identity.getUid()).toString();
+                .append(identity.getBlockUid()).append(":")
+                .append(identity.getUserId()).toString();
 
         return context.serialize(result.toString(), String.class);
     }

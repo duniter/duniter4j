@@ -97,6 +97,8 @@ public class WotLookup {
         public String uid;
         public Meta meta;
         public String self;
+        public Boolean revoked;
+        public String revocation_sig;
         public OtherSignature[] others;
 
         public String getUid() {
@@ -130,12 +132,36 @@ public class WotLookup {
         public void setOthers(OtherSignature[] others) {
             this.others = others;
         }
+
+        public Boolean getRevoked() {
+            return revoked;
+        }
+
+        public void setRevoked(Boolean revoked) {
+            this.revoked = revoked;
+        }
+
+        public String getRevocationSig() {
+            return revocation_sig;
+        }
+
+        public void setRevocationSig(String revocationSig) {
+            this.revocation_sig = revocationSig;
+        }
     }
 
 
     public class Meta implements Serializable {
-        public Long timestamp;
+        public String timestamp;
         public Long block_number;
+
+        public String getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(String timestamp) {
+            this.timestamp = timestamp;
+        }
     }
 
     public class OtherSignature {
