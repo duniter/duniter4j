@@ -26,9 +26,8 @@ package io.ucoin.ucoinj.web.pages.home;
 //import com.googlecode.wicket.jquery.ui.form.autocomplete.AutoCompleteTextField;
 
 import com.googlecode.wicket.jquery.ui.panel.JQueryFeedbackPanel;
-import io.ucoin.ucoinj.elasticsearch.model.Currency;
 import io.ucoin.ucoinj.elasticsearch.model.SearchResult;
-import io.ucoin.ucoinj.elasticsearch.service.CurrencyIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import io.ucoin.ucoinj.web.pages.BasePage;
 import io.ucoin.ucoinj.web.pages.registry.CurrencyPage;
@@ -47,12 +46,10 @@ import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.util.ListModel;
 import org.apache.wicket.request.Response;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
-import org.apache.wicket.util.string.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -204,7 +201,7 @@ public class HomePage extends BasePage {
         }
         else {
 
-            CurrencyIndexerService service = ServiceLocator.instance().getCurrencyIndexerService();
+            RegistryCurrencyIndexerService service = ServiceLocator.instance().getRegistryCurrencyIndexerService();
             List<SearchResult> result = service.searchCurrenciesAsVO(searchQuery);
 
             if (CollectionUtils.isNotEmpty(result)) {
@@ -233,7 +230,7 @@ public class HomePage extends BasePage {
             suggestions = Collections.<String>emptyList();
         }
         else {
-            CurrencyIndexerService service = ServiceLocator.instance().getCurrencyIndexerService();
+            RegistryCurrencyIndexerService service = ServiceLocator.instance().getRegistryCurrencyIndexerService();
             suggestions = service.getSuggestions(input);
 
             if (CollectionUtils.isEmpty(suggestions)) {

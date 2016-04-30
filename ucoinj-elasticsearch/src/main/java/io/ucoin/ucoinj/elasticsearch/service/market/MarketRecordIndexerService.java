@@ -34,6 +34,7 @@ import io.ucoin.ucoinj.core.client.model.elasticsearch.Record;
 import io.ucoin.ucoinj.core.client.service.bma.WotRemoteService;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.service.CryptoService;
+import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.BaseIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
@@ -62,12 +63,13 @@ public class MarketRecordIndexerService extends BaseIndexerService {
 
     public static final String INDEX_NAME = "market";
 
-    public static final String INDEX_TYPE_OFFER = "offer";
-    public static final String INDEX_TYPE_DEMAND = "demand";
+    public static final String INDEX_TYPE = "record";
 
     private WotRemoteService wotRemoteService;
 
     private CryptoService cryptoService;
+
+    private Configuration config;
 
     public MarketRecordIndexerService() {
 
@@ -78,6 +80,7 @@ public class MarketRecordIndexerService extends BaseIndexerService {
         super.afterPropertiesSet();
         wotRemoteService = ServiceLocator.instance().getWotRemoteService();
         cryptoService = ServiceLocator.instance().getCryptoService();
+        config = Configuration.instance();
     }
 
     @Override
@@ -122,45 +125,35 @@ public class MarketRecordIndexerService extends BaseIndexerService {
         Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", 3)
                 .put("number_of_replicas", 2)
-                .put("analyzer", createDefaultAnalyzer())
+                //.put("analyzer", createDefaultAnalyzer())
                 .build();
 
-        // Create offer index
-        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE_OFFER));
+        // Create record index type
+        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(INDEX_TYPE_OFFER, createIndexMapping(INDEX_TYPE_OFFER));
-        createIndexRequestBuilder.execute().actionGet();
-
-        // Create demand index
-        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE_DEMAND));
-        createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(INDEX_TYPE_DEMAND, createIndexMapping(INDEX_TYPE_DEMAND));
+        createIndexRequestBuilder.addMapping(INDEX_NAME, createIndexMapping(INDEX_TYPE));
         createIndexRequestBuilder.execute().actionGet();
     }
 
     /**
-     * Index a new offer
+     * Index a new record
      * @param recordJson
      * @return the record id
      */
-    public String indexOfferFromJson(String recordJson) {
+    public String indexRecordFromJson(String recordJson) {
 
-        return indexRecordFromJson(recordJson, INDEX_TYPE_OFFER);
-    }
-
-    /**
-     * Index a new demand
-     * @param recordJson
-     * @return the record id
-     */
-    public String indexDemandFromJson(String recordJson) {
-        return indexRecordFromJson(recordJson, INDEX_TYPE_DEMAND);
+        return indexRecordFromJson(recordJson, INDEX_TYPE);
     }
 
     /* -- Internal methods -- */
 
 
     public XContentBuilder createIndexMapping(String indexType) {
+        String stringAnalyzer = config.getIndexStringAnalyzer();
+        if (StringUtils.isBlank(stringAnalyzer)) {
+            stringAnalyzer = "english";
+        }
+
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(indexType)
                     .startObject("properties")
@@ -168,11 +161,13 @@ public class MarketRecordIndexerService extends BaseIndexerService {
                     // title
                     .startObject("title")
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // description
                     .startObject("description")
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // time
@@ -180,14 +175,48 @@ public class MarketRecordIndexerService extends BaseIndexerService {
                     .field("type", "integer")
                     .endObject()
 
-                    // issuer
-                    .startObject("issuer")
-                    .field("type", "string")
+                    // price
+                    .startObject("price")
+                    .field("type", "double")
+                    .endObject()
+
+                    // price Id UD
+                    .startObject("priceInUD")
+                    .field("type", "boolean")
                     .endObject()
 
                     // issuer
+                    .startObject("issuer")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // location
                     .startObject("location")
+                    .field("type", "string")
+                    .endObject()
+
+                    // geoPoint
+                    .startObject("geoPoint")
                     .field("type", "geo_point")
+                    .endObject()
+
+                    // pictures
+                    .startObject("pictures")
+                    .field("type", "nested")
+                    .startObject("properties")
+                    .startObject("src") // src
+                    .field("type", "attachment")
+                    .field("index", "not_analyzed")
+                    .endObject()
+                    .startObject("title") // title
+                    .field("title", "string")
+                    .field("analyzer", stringAnalyzer)
+                    .startObject("norms") // disabled norms on title
+                    .field("enabled", "false")
+                    .endObject()
+                    .endObject()
+                    .endObject()
                     .endObject()
 
                     // categories
@@ -196,9 +225,11 @@ public class MarketRecordIndexerService extends BaseIndexerService {
                     .startObject("properties")
                     .startObject("cat1") // cat1
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
                     .startObject("cat2") // cat2
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
                     .endObject()
                     .endObject()

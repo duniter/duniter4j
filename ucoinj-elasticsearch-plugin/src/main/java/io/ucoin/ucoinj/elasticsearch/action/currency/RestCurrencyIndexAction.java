@@ -22,6 +22,7 @@ package io.ucoin.ucoinj.elasticsearch.action.currency;
  * #L%
  */
 
+import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -40,7 +41,7 @@ public class RestCurrencyIndexAction extends BaseRestHandler {
     @Override
     protected void handleRequest(RestRequest restRequest, RestChannel restChannel, Client client) throws Exception {
         String json = restRequest.content().toUtf8();
-        //ServiceLocator.instance().getCurrencyIndexerService().indexCurrency();
+        //ServiceLocator.instance().getRegistryCurrencyIndexerService().indexCurrency();
         String currencyName = "";
         restChannel.sendResponse(new BytesRestResponse(OK, currencyName));
     }

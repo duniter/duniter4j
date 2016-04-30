@@ -25,9 +25,11 @@ package io.ucoin.ucoinj.elasticsearch.action;
  */
 
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
-import io.ucoin.ucoinj.elasticsearch.service.*;
+import io.ucoin.ucoinj.elasticsearch.service.ElasticSearchService;
+import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +74,7 @@ public class NodeAction {
         // Create indexed if need
         {
             // Currency index
-            CurrencyIndexerService currencyIndexerService = ServiceLocator.instance().getCurrencyIndexerService();
+            RegistryCurrencyIndexerService currencyIndexerService = ServiceLocator.instance().getRegistryCurrencyIndexerService();
             currencyIndexerService.createIndexIfNotExists();
 
             // Product index

@@ -34,6 +34,7 @@ import io.ucoin.ucoinj.core.client.model.elasticsearch.Record;
 import io.ucoin.ucoinj.core.client.service.bma.WotRemoteService;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.service.CryptoService;
+import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.BaseIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
@@ -130,7 +131,7 @@ public class RegistryRecordIndexerService extends BaseIndexerService {
         Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
-                .put("analyzer", createDefaultAnalyzer())
+                //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());
@@ -161,6 +162,11 @@ public class RegistryRecordIndexerService extends BaseIndexerService {
             if (!cryptoService.verify(recordNoSign, signature, issuer)) {
                 throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
             }
+
+            // TODO verify hash
+            //if (!cryptoService.verifyHash(recordNoSign, signature, issuer)) {
+            //    throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
+            //}
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
@@ -198,6 +204,11 @@ public class RegistryRecordIndexerService extends BaseIndexerService {
 
 
     public XContentBuilder createIndexMapping() {
+        String stringAnalyzer = config.getIndexStringAnalyzer();
+        if (StringUtils.isBlank(stringAnalyzer)) {
+            stringAnalyzer = "english";
+        }
+
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                     .startObject("properties")
@@ -205,11 +216,13 @@ public class RegistryRecordIndexerService extends BaseIndexerService {
                     // title
                     .startObject("title")
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // description
                     .startObject("description")
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // time
@@ -220,11 +233,23 @@ public class RegistryRecordIndexerService extends BaseIndexerService {
                     // issuer
                     .startObject("issuer")
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
-                    // issuer
+                    // location
                     .startObject("location")
+                    .field("type", "string")
+                    .endObject()
+
+                    // geoPoint
+                    .startObject("geoPoint")
                     .field("type", "geo_point")
+                    .endObject()
+
+                    // avatar
+                    .startObject("avatar")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // categories
@@ -233,9 +258,11 @@ public class RegistryRecordIndexerService extends BaseIndexerService {
                     .startObject("properties")
                     .startObject("cat1") // cat1
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
                     .startObject("cat2") // cat2
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
                     .endObject()
                     .endObject()

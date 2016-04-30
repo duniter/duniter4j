@@ -54,6 +54,8 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
 
     private static final String CITIES_SOURCE_CLASSPATH_FILE = "cities/countriesToCities.json";
 
+    private static final String CITIES_SOURCE_FILE2 = "/home/blavenie/git/ucoin-io/ucoinj/ucoinj-elasticsearch/src/main/misc/geoflar-communes-2015.geojson";
+
     public static final String INDEX_NAME = "registry";
     public static final String INDEX_TYPE = "city";
 
@@ -116,7 +118,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
         Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
-                .put("analyzer", createDefaultAnalyzer())
+                //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());
@@ -128,10 +130,10 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
             log.debug("Initializing all registry cities");
         }
 
-        File bulkFile = createCitiesBulkFile();
+        //File bulkFile = createCitiesBulkFile2();
 
         // Insert cities
-        bulkFromFile(bulkFile, INDEX_NAME, INDEX_TYPE);
+        //bulkFromFile(bulkFile, INDEX_NAME, INDEX_TYPE);
     }
 
 
@@ -139,6 +141,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
 
 
     public XContentBuilder createIndexMapping() {
+
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                     .startObject("properties")
@@ -151,6 +154,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
                     // country
                     .startObject("country")
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     .endObject()
@@ -181,6 +185,107 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
             ris = getClass().getClassLoader().getResourceAsStream(CITIES_SOURCE_CLASSPATH_FILE);
             if (ris == null) {
                 throw new TechnicalException(String.format("Could not retrieve file [%s] from test classpath. Make sure git submodules has been initialized before building.", CITIES_SOURCE_CLASSPATH_FILE));
+            }
+
+            boolean firstLine = true;
+            java.lang.reflect.Type typeOfHashMap = new TypeToken<Map<String, String[]>>() { }.getType();
+
+            Gson gson = GsonUtils.newBuilder().create();
+
+            StringBuilder builder = new StringBuilder();
+            bf = new BufferedReader(
+                    new InputStreamReader(
+                            ris, "UTF-16LE"), 2048);
+
+            fw = new FileWriter(result);
+            char[] buf = new char[2048];
+            int len;
+
+            while((len = bf.read(buf)) != -1) {
+                String bufStr = new String(buf, 0, len);
+
+                if (firstLine) {
+                    // Remove UTF-16 BOM char
+                    int objectStartIndex = bufStr.indexOf('\uFEFF');
+                    if (objectStartIndex != -1) {
+                        bufStr = bufStr.substring(objectStartIndex);
+                    }
+                    firstLine=false;
+                }
+
+                int arrayEndIndex = bufStr.indexOf("],\"");
+                if (arrayEndIndex == -1) {
+                    arrayEndIndex = bufStr.indexOf("]}");
+                }
+
+                if (arrayEndIndex == -1) {
+                    builder.append(bufStr);
+                }
+                else {
+                    builder.append(bufStr.substring(0, arrayEndIndex+1));
+                    builder.append("}");
+                    if (log.isTraceEnabled()) {
+                        log.trace(builder.toString());
+                    }
+                    Map<String, String[]> citiesByCountry = gson.fromJson(builder.toString(), typeOfHashMap);
+
+                    builder.setLength(0);
+                    for (String country: citiesByCountry.keySet()) {
+                        if (StringUtils.isNotBlank(country)) {
+                            for (String city : citiesByCountry.get(country)) {
+                                if (StringUtils.isNotBlank(city)) {
+                                    fw.write(String.format("{\"index\":{\"_id\" : \"%s-%s\"}}\n", country, city));
+                                    fw.write(String.format("{\"country\":\"%s\", \"name\":\"%s\"}\n", country, city));
+                                }
+                            }
+                        }
+                    }
+
+                    fw.flush();
+
+                    // reset and prepare buffer for next country
+                    builder.setLength(0);
+                    builder.append("{");
+                    if (arrayEndIndex+2 < bufStr.length()) {
+                        builder.append(bufStr.substring(arrayEndIndex+2));
+                    }
+                }
+            }
+
+            fw.close();
+            bf.close();
+
+        } catch(Exception e) {
+            throw new TechnicalException(String.format("Error while creating cities file [%s]", result.getName()), e);
+        }
+        finally {
+            IOUtils.closeQuietly(bf);
+            IOUtils.closeQuietly(ris);
+            IOUtils.closeQuietly(fw);
+        }
+
+        return result;
+    }
+
+    public File createCitiesBulkFile2() {
+
+        File result = new File(config.getTempDirectory(), CITIES_BULK_FILENAME);
+        File inputFile = new File(CITIES_SOURCE_FILE2);
+
+        InputStream ris = null;
+        BufferedReader bf = null;
+        FileWriter fw = null;
+        try {
+            if (result.exists()) {
+                FileUtils.forceDelete(result);
+            }
+            else if (!result.getParentFile().exists()) {
+                FileUtils.forceMkdir(result.getParentFile());
+            }
+
+            ris = new BufferedInputStream(new FileInputStream(inputFile));
+            if (ris == null) {
+                throw new TechnicalException(String.format("Could not retrieve file [%s] from test classpath. Make sure git submodules has been initialized before building.", CITIES_SOURCE_FILE2));
             }
 
             boolean firstLine = true;

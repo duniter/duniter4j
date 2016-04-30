@@ -1,4 +1,4 @@
-package io.ucoin.ucoinj.elasticsearch.service;
+package io.ucoin.ucoinj.elasticsearch.service.currency;
 
 /*
  * #%L
@@ -45,10 +45,12 @@ import io.ucoin.ucoinj.core.util.CollectionUtils;
 import io.ucoin.ucoinj.core.util.ObjectUtils;
 import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
+import io.ucoin.ucoinj.elasticsearch.service.BaseIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import io.ucoin.ucoinj.elasticsearch.service.exception.DuplicateIndexIdException;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -89,7 +91,7 @@ public class BlockIndexerService extends BaseIndexerService {
 
     private static final int SYNC_MISSING_BLOCK_MAX_RETRY = 5;
 
-    private CurrencyIndexerService currencyIndexerService;
+    private RegistryCurrencyIndexerService registryCurrencyIndexerService;
 
     private BlockchainRemoteService blockchainService;
 
@@ -104,7 +106,7 @@ public class BlockIndexerService extends BaseIndexerService {
     @Override
     public void afterPropertiesSet() throws Exception {
         super.afterPropertiesSet();
-        currencyIndexerService = ServiceLocator.instance().getCurrencyIndexerService();
+        registryCurrencyIndexerService = ServiceLocator.instance().getRegistryCurrencyIndexerService();
         blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
         config = Configuration.instance();
     }
@@ -112,7 +114,7 @@ public class BlockIndexerService extends BaseIndexerService {
     @Override
     public void close() throws IOException {
         super.close();
-        currencyIndexerService = null;
+        registryCurrencyIndexerService = null;
         blockchainService = null;
         config = null;
         gson = null;
@@ -145,11 +147,11 @@ public class BlockIndexerService extends BaseIndexerService {
                     currencyName, config.getNodeBmaHost(), config.getNodeBmaPort()));
 
             // Create index currency if need
-            currencyIndexerService.createIndexIfNotExists();
+            registryCurrencyIndexerService.createIndexIfNotExists();
 
-            Currency currency = currencyIndexerService.getCurrencyById(currencyName);
+            Currency currency = registryCurrencyIndexerService.getCurrencyById(currencyName);
             if (currency == null) {
-                currencyIndexerService.indexCurrencyFromPeer(peer);
+                registryCurrencyIndexerService.indexCurrencyFromPeer(peer);
             }
 
             // Check if index exists
@@ -162,7 +164,7 @@ public class BlockIndexerService extends BaseIndexerService {
                 int maxBlockNumber = currentBlock.getNumber();
 
                 // DEV mode
-                if (!config.isFullMode()) {
+                if (!config.isFullMode() && maxBlockNumber > 5000) {
                     maxBlockNumber = 5000;
                 }
 
@@ -241,7 +243,7 @@ public class BlockIndexerService extends BaseIndexerService {
         Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
-                .put("analyzer", createDefaultAnalyzer())
+                //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(INDEX_TYPE_BLOCK, createIndexMapping());
@@ -681,6 +683,7 @@ public class BlockIndexerService extends BaseIndexerService {
         boolean debug = log.isDebugEnabled();
 
         int batchSize = config.getIndexBulkSize();
+        String currentBlockJson = null;
         JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
 
         for (int batchFirstNumber = firstNumber; batchFirstNumber < lastNumber; ) {
@@ -736,10 +739,7 @@ public class BlockIndexerService extends BaseIndexerService {
 
                     // If last block : also update the current block
                     if (itemNumber == lastNumber) {
-                        bulkRequest.add(client.prepareIndex(currencyName, INDEX_TYPE_BLOCK, INDEX_BLOCK_CURRENT_ID)
-                                .setRefresh(true)
-                                .setSource(blockAsJson)
-                        );
+                        currentBlockJson = blockAsJson;
                     }
                 }
 
@@ -770,6 +770,10 @@ public class BlockIndexerService extends BaseIndexerService {
             // Report progress
             reportIndexBlocksProgress(progressionModel, currencyName, peer, firstNumber, lastNumber, batchFirstNumber);
 
+        }
+
+        if (StringUtils.isNotBlank(currentBlockJson)) {
+            indexCurrentBlockAsJson(currencyName, currentBlockJson, false);
         }
 
         return missingBlockNumbers;

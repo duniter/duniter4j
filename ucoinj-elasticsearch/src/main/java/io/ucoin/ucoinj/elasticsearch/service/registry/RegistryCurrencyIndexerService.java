@@ -1,4 +1,4 @@
-package io.ucoin.ucoinj.elasticsearch.service;
+package io.ucoin.ucoinj.elasticsearch.service.registry;
 
 /*
  * #%L
@@ -29,21 +29,23 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
 import io.ucoin.ucoinj.core.client.model.bma.BlockchainParameters;
+import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
+import io.ucoin.ucoinj.core.client.model.elasticsearch.Currency;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.service.bma.BlockchainRemoteService;
+import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.service.CryptoService;
 import io.ucoin.ucoinj.core.util.ObjectUtils;
-import io.ucoin.ucoinj.core.client.model.bma.gson.GsonUtils;
-import io.ucoin.ucoinj.core.exception.TechnicalException;
-import io.ucoin.ucoinj.core.client.model.elasticsearch.Currency;
 import io.ucoin.ucoinj.elasticsearch.model.SearchResult;
+import io.ucoin.ucoinj.elasticsearch.service.BaseIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
+import io.ucoin.ucoinj.elasticsearch.service.currency.BlockIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.exception.AccessDeniedException;
 import io.ucoin.ucoinj.elasticsearch.service.exception.DuplicateIndexIdException;
 import io.ucoin.ucoinj.elasticsearch.service.exception.InvalidSignatureException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -73,13 +75,13 @@ import java.util.Objects;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class CurrencyIndexerService extends BaseIndexerService {
+public class RegistryCurrencyIndexerService extends BaseIndexerService {
 
-    private static final Logger log = LoggerFactory.getLogger(CurrencyIndexerService.class);
+    private static final Logger log = LoggerFactory.getLogger(RegistryCurrencyIndexerService.class);
 
-    public static final String INDEX_NAME = "currency";
+    public static final String INDEX_NAME = "registry";
 
-    public static final String INDEX_TYPE_SIMPLE = "simple";
+    public static final String INDEX_TYPE = "currency";
 
     public static final String REGEX_WORD_SEPARATOR = "[-\\t@# ]+";
     public static final String REGEX_SPACE = "[\\t\\n\\r ]+";
@@ -88,7 +90,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
     private BlockIndexerService blockIndexerService;
     private Gson gson;
 
-    public CurrencyIndexerService() {
+    public RegistryCurrencyIndexerService() {
         super();
         this.gson = GsonUtils.newBuilder().create();
     }
@@ -136,16 +138,16 @@ public class CurrencyIndexerService extends BaseIndexerService {
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
-        log.info(String.format("Creating index [%s/]", INDEX_NAME, INDEX_TYPE_SIMPLE));
+        log.info(String.format("Creating index [%s/]", INDEX_NAME, INDEX_TYPE));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(INDEX_NAME);
         Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
-                .put("analyzer", createDefaultAnalyzer())
+                //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(INDEX_TYPE_SIMPLE, createIndexMapping());
+        createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());
         createIndexRequestBuilder.execute().actionGet();
     }
 
@@ -207,7 +209,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
             byte[] json = getObjectMapper().writeValueAsBytes(currency);
 
             // Preparing indexBlocksFromNode
-            IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE_SIMPLE)
+            IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE)
                     .setId(currency.getCurrencyName())
                     .setSource(json);
 
@@ -227,7 +229,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
      * @return
      */
     public List<String> getSuggestions(String query) {
-        CompletionSuggestionBuilder suggestionBuilder = new CompletionSuggestionBuilder(INDEX_TYPE_SIMPLE)
+        CompletionSuggestionBuilder suggestionBuilder = new CompletionSuggestionBuilder(INDEX_TYPE)
             .text(query)
             .size(10) // limit to 10 results
             .field("tags");
@@ -241,7 +243,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
         SuggestResponse response = suggestRequest.execute().actionGet();
 
         // Read query result
-        return toSuggestions(response, INDEX_TYPE_SIMPLE, query);
+        return toSuggestions(response, INDEX_TYPE, query);
     }
 
     /**
@@ -255,7 +257,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
         // Prepare request
         SearchRequestBuilder searchRequest = getClient()
                 .prepareSearch(INDEX_NAME)
-                .setTypes(INDEX_TYPE_SIMPLE)
+                .setTypes(INDEX_TYPE)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // If only one term, search as prefix
@@ -268,9 +270,9 @@ public class CurrencyIndexerService extends BaseIndexerService {
             searchRequest.setQuery(QueryBuilders.matchQuery("currencyName", query));
         }
 
-        // Sort as score/memberCount
+        // Sort as score/membersCount
         searchRequest.addSort("_score", SortOrder.DESC)
-                .addSort("memberCount", SortOrder.DESC);
+                .addSort("membersCount", SortOrder.DESC);
 
         // Highlight matched words
         searchRequest.setHighlighterTagsSchema("styled")
@@ -285,6 +287,33 @@ public class CurrencyIndexerService extends BaseIndexerService {
         return toCurrencies(searchResponse, true);
     }
 
+    public void deleteAllCurrencies() {
+        if (!existsIndex(INDEX_NAME)) {
+            return;
+        }
+
+        log.info(String.format("Deleting all currency indexes"));
+
+        // Prepare request
+        SearchRequestBuilder request = getClient()
+                .prepareSearch(INDEX_NAME)
+                .setTypes(INDEX_TYPE);
+
+        // Execute query
+        SearchResponse response = request.execute().actionGet();
+
+        // Delete every currencies
+        List<Currency> currencies = toCurrencies(response);
+        for (Currency currency: currencies){
+            log.info(String.format("Deleting currency [%s]...", currency.getCurrencyName()));
+            deleteIndexIfExists(currency.getCurrencyName());
+        }
+
+        deleteIndexIfExists(INDEX_NAME);
+
+        log.info("All currency successfully deleted");
+    }
+
     /**
      * find currency that match string query (full text search), and return a generic VO for search result.
      * @param query
@@ -296,7 +325,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
         // Prepare request
         SearchRequestBuilder searchRequest = getClient()
                 .prepareSearch(INDEX_NAME)
-                .setTypes(INDEX_TYPE_SIMPLE)
+                .setTypes(INDEX_TYPE)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // If only one term, search as prefix
@@ -309,15 +338,15 @@ public class CurrencyIndexerService extends BaseIndexerService {
             searchRequest.setQuery(QueryBuilders.matchQuery("currencyName", query));
         }
 
-        // Sort as score/memberCount
+        // Sort as score/membersCount
         searchRequest.addSort("_score", SortOrder.DESC)
-                .addSort("memberCount", SortOrder.DESC);
+                .addSort("membersCount", SortOrder.DESC);
 
         // Highlight matched words
         searchRequest.setHighlighterTagsSchema("styled")
                 .addHighlightedField("currencyName")
                 .addFields("currencyName")
-                .addFields("memberCount");
+                .addFields("membersCount");
 
         // Execute query
         SearchResponse searchResponse = searchRequest.execute().actionGet();
@@ -340,7 +369,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
         // Prepare request
         SearchRequestBuilder searchRequest = getClient()
                 .prepareSearch(INDEX_NAME)
-                .setTypes(INDEX_TYPE_SIMPLE)
+                .setTypes(INDEX_TYPE)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // If more than a word, search on terms match
@@ -350,7 +379,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
         List<Currency> currencies = null;
         try {
             SearchResponse searchResponse = searchRequest.execute().actionGet();
-            currencies = toCurrencies(searchResponse, false);
+            currencies = toCurrencies(searchResponse);
         }
         catch(SearchPhaseExecutionException e) {
             // Failed or no item on index
@@ -409,9 +438,9 @@ public class CurrencyIndexerService extends BaseIndexerService {
         // Prepare request
         SearchRequestBuilder searchRequest = getClient()
                 .prepareSearch(INDEX_NAME)
-                .setTypes(INDEX_TYPE_SIMPLE);
+                .setTypes(INDEX_TYPE);
 
-        // Sort as score/memberCount
+        // Sort as score/membersCount
         searchRequest.addSort("currencyName", SortOrder.ASC)
             .addField("_id");
 
@@ -457,7 +486,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
 
     public XContentBuilder createIndexMapping() {
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE_SIMPLE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                 .startObject("properties")
 
                 // currency name
@@ -466,8 +495,8 @@ public class CurrencyIndexerService extends BaseIndexerService {
                 .endObject()
 
                 // member count
-                .startObject("memberCount")
-                .field("type", "integer")
+                .startObject("membersCount")
+                .field("type", "long")
                 .endObject()
 
                 // tags
@@ -484,7 +513,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE_SIMPLE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE, ioe.getMessage()), ioe);
         }
     }
 
@@ -504,6 +533,10 @@ public class CurrencyIndexerService extends BaseIndexerService {
         ServiceLocator.instance().getBlockIndexerService().createIndex(currency.getCurrencyName());
     }
 
+    protected List<Currency> toCurrencies(SearchResponse response) {
+        return toCurrencies(response, false);
+    }
+
     protected List<Currency> toCurrencies(SearchResponse response, boolean withHighlight) {
         try {
             // Read query result
@@ -512,7 +545,7 @@ public class CurrencyIndexerService extends BaseIndexerService {
             for (SearchHit searchHit : searchHits) {
                 Currency currency = null;
                 if (searchHit.source() != null) {
-                    currency = getObjectMapper().readValue(searchHit.source(), Currency.class);
+                    currency = gson.fromJson(new String(searchHit.source(), "UTF-8"), Currency.class);
                 }
                 else {
                     currency = new Currency();

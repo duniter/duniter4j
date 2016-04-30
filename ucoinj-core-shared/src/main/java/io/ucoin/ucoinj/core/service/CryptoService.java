@@ -58,4 +58,11 @@ public interface CryptoService extends Bean {
     String sign(String message, String secretKey);
 
     boolean verify(String message, String signature, String publicKey);
+
+    /**
+     * Do a SHA256 then a hexa convert
+     * @param message
+     * @return
+     */
+    String hash(String message);
 }

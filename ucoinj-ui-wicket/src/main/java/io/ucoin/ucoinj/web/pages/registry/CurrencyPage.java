@@ -45,7 +45,7 @@ public class CurrencyPage extends BasePage {
         setDefaultModel(new CompoundPropertyModel<Currency>(new LoadableDetachableModel<Currency>() {
             @Override
             protected Currency load() {
-                return ServiceLocator.instance().getCurrencyIndexerService().getCurrencyById(currencyName);
+                return ServiceLocator.instance().getRegistryCurrencyIndexerService().getCurrencyById(currencyName);
             }
         }));
 

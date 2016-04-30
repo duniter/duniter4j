@@ -30,12 +30,13 @@ import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.service.bma.BlockchainRemoteService;
 import io.ucoin.ucoinj.core.util.websocket.WebsocketClientEndpoint;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
-import io.ucoin.ucoinj.elasticsearch.service.BlockIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
+import io.ucoin.ucoinj.elasticsearch.service.currency.BlockIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService;
-import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCategoryIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCitiesIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryRecordIndexerService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -55,6 +56,8 @@ public class IndexerAction {
                 Configuration config = Configuration.instance();
                 final Peer peer = checkConfigAndGetPeer(config);
                 final BlockIndexerService blockIndexerService = ServiceLocator.instance().getBlockIndexerService();
+
+                // Will create the currency if not exist
                 blockIndexerService.indexLastBlocks(peer);
 
                 if (async) {
@@ -82,9 +85,15 @@ public class IndexerAction {
     }
 
     public void resetAllData() {
+        resetAllCurrencies();
         resetDataBlocks();
         resetMarketRecords();
         resetRegistry();
+    }
+
+    public void resetAllCurrencies() {
+        RegistryCurrencyIndexerService currencyIndexerService = ServiceLocator.instance().getRegistryCurrencyIndexerService();
+        currencyIndexerService.deleteAllCurrencies();
     }
 
     public void resetDataBlocks() {
@@ -147,17 +156,23 @@ public class IndexerAction {
 
         try {
             // Delete then create index on records
-            boolean indexExists = recordIndexerService.existsIndex();
-            if (indexExists) {
+            if (recordIndexerService.existsIndex()) {
                 recordIndexerService.deleteIndex();
             }
+            recordIndexerService.createIndex();
             log.info(String.format("Successfully reset registry records"));
 
-            categoryIndexerService.createIndex();
 
+            if (categoryIndexerService.existsIndex()) {
+                categoryIndexerService.deleteIndex();
+            }
+            categoryIndexerService.createIndex();
             categoryIndexerService.initCategories();
             log.info(String.format("Successfully re-initialized registry categories"));
 
+            if (citiesIndexerService.existsIndex()) {
+                citiesIndexerService.deleteIndex();
+            }
             citiesIndexerService.initCities();
             log.info(String.format("Successfully re-initialized registry cities"));
 

@@ -82,7 +82,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 				getPath(wallet.getCurrencyId(), URL_TX_PROCESS));
 
 		// compute transaction
-		String transaction = getSignedTransaction(wallet, destPubKey, amount,
+		String transaction = getSignedTransaction(wallet, destPubKey, 0, amount,
                 comment);
 
 		if (log.isDebugEnabled()) {
@@ -211,8 +211,11 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 	/* -- internal methods -- */
 
-	public String getSignedTransaction(Wallet wallet, String destPubKey,
-			long amount, String comment) throws InsufficientCreditException {
+	public String getSignedTransaction(Wallet wallet,
+									   String destPubKey,
+									   int locktime,
+									   long amount,
+									   String comment) throws InsufficientCreditException {
         ObjectUtils.checkNotNull(wallet);
         ObjectUtils.checkArgument(StringUtils.isNotBlank(wallet.getCurrency()));
         ObjectUtils.checkArgument(StringUtils.isNotBlank(wallet.getPubKeyHash()));
@@ -235,7 +238,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 				sources, amount, txInputs, txOutputs);
 
 		String transaction = getTransaction(wallet.getCurrency(),
-				wallet.getPubKeyHash(), destPubKey, txInputs, txOutputs,
+				wallet.getPubKeyHash(), destPubKey, locktime, txInputs, txOutputs,
 				comment);
 
 		String signature = cryptoService.sign(transaction, wallet.getSecKey());
@@ -244,14 +247,18 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 				.append('\n').toString();
 	}
 
-	public String getTransaction(String currency, String srcPubKey,
-			String destPubKey, List<TxSource.Source> inputs, List<TxOutput> outputs,
+	public String getTransaction(String currency,
+								 String srcPubKey,
+								 String destPubKey,
+								 int locktime,
+								 List<TxSource.Source> inputs, List<TxOutput> outputs,
 			String comments) {
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("Version: ").append(Protocol.VERSION).append("\n")
 				.append("Type: ").append(Protocol.TYPE_TRANSACTION).append("\n")
 				.append("Currency: ").append(currency).append('\n')
+				.append("Locktime: ").append(locktime).append('\n')
 				.append("Issuers:\n")
 				// add issuer pubkey
 				.append(srcPubKey).append('\n');

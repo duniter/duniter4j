@@ -10,4 +10,4 @@ io.ucoin.ucoinj.core.client.service.local.CurrencyServiceImpl
 io.ucoin.ucoinj.core.client.dao.mem.MemoryCurrencyDaoImpl
 io.ucoin.ucoinj.core.client.dao.mem.MemoryPeerDaoImpl
 io.ucoin.ucoinj.elasticsearch.service.ElasticSearchService
-io.ucoin.ucoinj.elasticsearch.service.CurrencyIndexerService
+io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService

@@ -26,7 +26,7 @@
     <kalium.version>0.4.0</kalium.version>
     <scrypt.version>1.4.0</scrypt.version>
     <!--<elasticsearch.version>2.2.0</elasticsearch.version>-->
-    <elasticsearch.version>2.1.1</elasticsearch.version>
+    <elasticsearch.version>2.3.1</elasticsearch.version>
     <jna.version>4.1.0</jna.version>
 
     <nuitonConfigVersion>3.0-rc-2</nuitonConfigVersion>

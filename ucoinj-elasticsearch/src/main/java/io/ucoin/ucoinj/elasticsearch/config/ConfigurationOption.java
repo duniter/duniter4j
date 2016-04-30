@@ -191,6 +191,13 @@ public enum ConfigurationOption  implements ConfigOptionDef {
             Integer.class,
             false),
 
+    INDEX_STRING_ANALYZER(
+            "ucoinj.elasticsearch.string.analyzer",
+            n("ucoinj.config.option.elasticsearch.string.analyze.description"),
+            "french",
+            String.class,
+            false),
+
     TASK_EXECUTOR_QUEUE_CAPACITY(
             "ucoinj.elasticsearch.tasks.queueCapacity",
             n("ucoinj.config.option.tasks.queueCapacity.description"),

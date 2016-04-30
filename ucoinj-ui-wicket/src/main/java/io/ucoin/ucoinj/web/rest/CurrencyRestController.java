@@ -24,7 +24,7 @@ package io.ucoin.ucoinj.web.rest;
 
 
 import io.ucoin.ucoinj.core.client.model.elasticsearch.Currency;
-import io.ucoin.ucoinj.elasticsearch.service.CurrencyIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import io.ucoin.ucoinj.elasticsearch.service.exception.InvalidSignatureException;
 import io.ucoin.ucoinj.web.application.WebSession;
@@ -41,7 +41,7 @@ public class CurrencyRestController {
 
     @RequestMapping(value="/{currencyId}", method = RequestMethod.GET)
     public @ResponseBody Currency getCurrencyById(@PathVariable(value="currencyId") String currencyId) {
-        CurrencyIndexerService service = ServiceLocator.instance().getCurrencyIndexerService();
+        RegistryCurrencyIndexerService service = ServiceLocator.instance().getRegistryCurrencyIndexerService();
         return service.getCurrencyById(currencyId);
     }
 
@@ -52,7 +52,7 @@ public class CurrencyRestController {
             log.debug(String.format("Asking to add new currency:\n - pubkey: %s\n - currency: %s\n - signature: %s", pubkey, jsonCurrency, signature));
         }
 
-        CurrencyIndexerService service = ServiceLocator.instance().getCurrencyIndexerService();
+        RegistryCurrencyIndexerService service = ServiceLocator.instance().getRegistryCurrencyIndexerService();
         service.registerCurrency(pubkey, jsonCurrency, signature);
 
         /*CryptoService cryptoService = ServiceLocator.instance().getCryptoService();

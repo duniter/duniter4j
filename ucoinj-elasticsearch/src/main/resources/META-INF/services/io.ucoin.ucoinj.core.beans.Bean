@@ -11,11 +11,11 @@ io.ucoin.ucoinj.core.client.service.local.CurrencyServiceImpl
 io.ucoin.ucoinj.core.client.dao.mem.MemoryCurrencyDaoImpl
 io.ucoin.ucoinj.core.client.dao.mem.MemoryPeerDaoImpl
 io.ucoin.ucoinj.elasticsearch.service.ElasticSearchService
-io.ucoin.ucoinj.elasticsearch.service.CurrencyIndexerService
-io.ucoin.ucoinj.elasticsearch.service.BlockIndexerService
+io.ucoin.ucoinj.elasticsearch.service.currency.BlockIndexerService
 io.ucoin.ucoinj.elasticsearch.service.ExecutorServiceImpl
 io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService
 io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService
+io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService
 io.ucoin.ucoinj.elasticsearch.service.registry.RegistryRecordIndexerService
 io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCategoryIndexerService
 io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCitiesIndexerService

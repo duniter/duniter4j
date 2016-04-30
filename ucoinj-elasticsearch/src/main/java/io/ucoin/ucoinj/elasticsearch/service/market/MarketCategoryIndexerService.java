@@ -94,7 +94,7 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
         Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
-                .put("analyzer", createDefaultAnalyzer())
+                //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());

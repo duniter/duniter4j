@@ -1,4 +1,4 @@
-package io.ucoin.ucoinj.elasticsearch.service;
+package io.ucoin.ucoinj.elasticsearch.service.currency;
 
 /*
  * #%L
@@ -28,6 +28,7 @@ import io.ucoin.ucoinj.core.client.model.bma.BlockchainBlock;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.client.service.bma.BlockchainRemoteService;
 import io.ucoin.ucoinj.elasticsearch.TestResource;
+import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

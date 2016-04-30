@@ -51,7 +51,7 @@ import java.net.UnknownHostException;
  */
 public class ElasticSearchService implements Bean,InitializingBean, Closeable {
 
-    private static final Logger log = LoggerFactory.getLogger(CurrencyIndexerService.class);
+    private static final Logger log = LoggerFactory.getLogger(ElasticSearchService.class);
     private Client client;
     private Node node;
     private boolean localNode = false;

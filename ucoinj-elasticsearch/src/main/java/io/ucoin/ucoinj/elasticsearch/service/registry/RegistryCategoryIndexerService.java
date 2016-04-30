@@ -30,6 +30,7 @@ import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.core.util.StringUtils;
 import io.ucoin.ucoinj.elasticsearch.config.Configuration;
 import io.ucoin.ucoinj.elasticsearch.service.BaseIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.ServiceLocator;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -58,6 +59,14 @@ public class RegistryCategoryIndexerService extends BaseIndexerService {
 
     public static final String INDEX_NAME = "registry";
     public static final String INDEX_TYPE = "category";
+
+    private Configuration config;
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
+        config = Configuration.instance();
+    }
 
     /**
      * Delete currency index, and all data
@@ -97,7 +106,7 @@ public class RegistryCategoryIndexerService extends BaseIndexerService {
         Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
-                .put("analyzer", createDefaultAnalyzer())
+                //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());
@@ -140,6 +149,11 @@ public class RegistryCategoryIndexerService extends BaseIndexerService {
 
 
     public XContentBuilder createIndexMapping() {
+        String stringAnalyzer = config.getIndexStringAnalyzer();
+        if (StringUtils.isBlank(stringAnalyzer)) {
+            stringAnalyzer = "english";
+        }
+
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                     .startObject("properties")
@@ -147,6 +161,7 @@ public class RegistryCategoryIndexerService extends BaseIndexerService {
                     // name
                     .startObject("name")
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // description
@@ -157,6 +172,7 @@ public class RegistryCategoryIndexerService extends BaseIndexerService {
                     // parent
                     .startObject("parent")
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // tags

@@ -23,8 +23,7 @@ package io.ucoin.ucoinj.elasticsearch.action;
  */
 
 import io.ucoin.ucoinj.elasticsearch.action.currency.RestCurrencyIndexAction;
-import io.ucoin.ucoinj.elasticsearch.action.market.RestMarketDemandIndexAction;
-import io.ucoin.ucoinj.elasticsearch.action.market.RestMarketOfferIndexAction;
+import io.ucoin.ucoinj.elasticsearch.action.market.RestMarketRecordIndexAction;
 import io.ucoin.ucoinj.elasticsearch.action.registry.RestRegistryRecordIndexAction;
 import io.ucoin.ucoinj.elasticsearch.action.security.RestSecurityAuthAction;
 import io.ucoin.ucoinj.elasticsearch.action.security.RestSecurityGetChallengeAction;
@@ -36,8 +35,7 @@ public class RestModule extends AbstractModule implements Module {
     @Override protected void configure() {
         bind(RestCurrencyIndexAction.class).asEagerSingleton();
 
-        bind(RestMarketOfferIndexAction.class).asEagerSingleton();
-        bind(RestMarketDemandIndexAction.class).asEagerSingleton();
+        bind(RestMarketRecordIndexAction.class).asEagerSingleton();
 
         bind(RestRegistryRecordIndexAction.class).asEagerSingleton();
 

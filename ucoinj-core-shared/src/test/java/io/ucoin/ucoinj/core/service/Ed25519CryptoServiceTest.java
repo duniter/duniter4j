@@ -67,6 +67,17 @@ public class Ed25519CryptoServiceTest {
         Assert.assertTrue(validSignature);
 	}
 
+    @Test
+    public void hash() throws Exception {
+
+        String record = "{\"isCompany\":false,\"title\":\"toto\",\"description\":\"toto\",\"pictures\":[],\"time\":1461162142,\"issuer\":\"G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\"}";
+
+        String hash = service.hash(record);
+
+        Assert.assertEquals("AC31F1E3EAEB7A535A3BF1182AA53100BB3B610C5D63643ACB145EB99764B0CA", hash);
+    }
+
+
 
 	/* -- internal methods */
 

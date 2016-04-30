@@ -23,9 +23,11 @@ package io.ucoin.ucoinj.elasticsearch.service;
  */
 
 
+import io.ucoin.ucoinj.elasticsearch.service.currency.BlockIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.market.MarketCategoryIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.market.MarketRecordIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCategoryIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryRecordIndexerService;
 import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCitiesIndexerService;
 import org.slf4j.Logger;
@@ -52,8 +54,8 @@ public class ServiceLocator extends io.ucoin.ucoinj.core.client.service.ServiceL
 
     /* -- ElasticSearch Service-- */
 
-    public CurrencyIndexerService getCurrencyIndexerService() {
-        return getBean(CurrencyIndexerService.class);
+    public RegistryCurrencyIndexerService getRegistryCurrencyIndexerService() {
+        return getBean(RegistryCurrencyIndexerService.class);
     }
 
     public ElasticSearchService getElasticSearchService() {

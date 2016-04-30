@@ -25,11 +25,13 @@ package io.ucoin.ucoinj.core.service;
 
 import com.lambdaworks.crypto.SCrypt;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
+import io.ucoin.ucoinj.core.util.crypto.CryptoUtils;
 import io.ucoin.ucoinj.core.util.crypto.KeyPair;
 import jnr.ffi.byref.LongLongByReference;
 import org.abstractj.kalium.NaCl;
 import org.abstractj.kalium.NaCl.Sodium;
 
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 
 import static io.ucoin.ucoinj.core.util.crypto.CryptoUtils.*;
@@ -54,6 +56,11 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
     private static int SCRYPT_PARAMS_N = 4096;
     private static int SCRYPT_PARAMS_r = 16;
     private static int SCRYPT_PARAMS_p = 1;
+
+    protected final static char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
+
+    // Hash
+    private static int HASH_BYTES = 256;
 
     private final Sodium naCl;
 
@@ -117,6 +124,14 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
         return verify(messageBinary, signatureBinary, publicKeyBinary);
     }
 
+    @Override
+    public String hash(String message) {
+        byte[] hash = new byte[Sodium.SHA256BYTES];
+        byte[] messageBinary = decodeUTF8(message);
+        naCl.crypto_hash_sha256(hash, messageBinary, messageBinary.length);
+        return bytesToHex(hash).toUpperCase();
+    }
+
     /* -- Internal methods -- */
 
     protected byte[] sign(byte[] message, byte[] secretKey) {
@@ -141,6 +156,16 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
         boolean validSignature = (result == 0);
 
         return validSignature;
+    }
+
+    protected static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for ( int j = 0; j < bytes.length; j++ ) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_CHARS[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_CHARS[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
 }

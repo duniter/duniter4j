@@ -26,7 +26,7 @@ package io.ucoin.ucoinj.web.application;
 import io.ucoin.ucoinj.core.client.model.local.Peer;
 import io.ucoin.ucoinj.core.exception.TechnicalException;
 import io.ucoin.ucoinj.elasticsearch.config.ConfigurationOption;
-import io.ucoin.ucoinj.elasticsearch.service.CurrencyIndexerService;
+import io.ucoin.ucoinj.elasticsearch.service.registry.RegistryCurrencyIndexerService;
 import io.ucoin.ucoinj.web.config.WebConfiguration;
 import io.ucoin.ucoinj.web.pages.admin.JobManagerPage;
 import io.ucoin.ucoinj.web.pages.admin.ToolsPage;
@@ -42,10 +42,7 @@ import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.util.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.ServletContext;
 
 @Component("wicketApplication")
 public class Application extends AuthenticatedWebApplication {
@@ -127,7 +124,7 @@ public class Application extends AuthenticatedWebApplication {
         if (localEsNode) {
 
             // Make sure main index exists
-            CurrencyIndexerService currencyIndexerService = ServiceLocator.instance().getCurrencyIndexerService();
+            RegistryCurrencyIndexerService currencyIndexerService = ServiceLocator.instance().getRegistryCurrencyIndexerService();
             currencyIndexerService.createIndexIfNotExists();
 
             // Make sure currency from default peer exists

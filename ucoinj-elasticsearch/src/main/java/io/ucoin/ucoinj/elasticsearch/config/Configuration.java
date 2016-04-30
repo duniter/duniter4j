@@ -310,4 +310,8 @@ public class Configuration  {
     public int getIndexBulkSize() {
         return applicationConfig.getOptionAsInt(ConfigurationOption.INDEX_BULK_SIZE.getKey());
     }
+
+    public String getIndexStringAnalyzer() {
+        return applicationConfig.getOption(ConfigurationOption.INDEX_STRING_ANALYZER.getKey());
+    }
 }
