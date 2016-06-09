@@ -7,6 +7,6 @@
 .classpath
 .settings
 .idea
-ucoinj-cesium/src/cesium/**/*.*
+duniter4j-cesium/src/cesium/**/*.*
 target
 */target

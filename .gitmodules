@@ -1,6 +1,6 @@
-[submodule "ucoinj-cesium/src/main/cesium"]
-	path = ucoinj-cesium/src/main/cesium
+[submodule "duniter4j-cesium/src/main/cesium"]
+	path = duniter4j-cesium/src/main/cesium
 	url = git://github.com/ucoin-io/cesium.git
-[submodule "ucoinj-elasticsearch/src/main/resources/cities"]
-	path = ucoinj-elasticsearch/src/main/resources/cities
+[submodule "duniter4j-elasticsearch/src/main/resources/cities"]
+	path = duniter4j-elasticsearch/src/main/resources/cities
 	url = git://github.com/David-Haim/CountriesToCitiesJSON.git
