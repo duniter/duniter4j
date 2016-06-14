@@ -5,14 +5,11 @@
   <artifactId>duniter4j</artifactId>
   <version>0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>UCoin Java Client</name>
+  <name>Duniter4j : a Duniter Java Client API</name>
 
   <properties>
     <!-- source file encoding -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-    <!-- UCoin version -->
-    <ucoin.version>0.9.7</ucoin.version>
 
     <!-- Commons versions -->
     <file.encoding>UTF-8</file.encoding>
@@ -39,9 +36,6 @@
     <!-- Unit test -->
     <junit.version>4.12</junit.version>
     <jetty.version>9.0.4.v20130625</jetty.version>
-
-    <!-- IDE & Development process -->
-    <maven-eclipse-plugin.version>2.9</maven-eclipse-plugin.version>
 
     <!--license-maven-plugin config -->
     <maven.license.file>${project.basedir}/LICENSE</maven.license.file>
@@ -105,14 +99,14 @@
   </modules>
 
   <scm>
-    <url>https://github.com/ucoin-io/duniter4j/</url>
-    <connection>scm:svn:https://github.com/ucoin-io/duniter4j/</connection>
-    <developerConnection>scm:svn:https://github.com/ucoin-io/duniter4j/</developerConnection>
+    <url>https://github.com/duniter/duniter4j/</url>
+    <connection>scm:svn:https://github.com/duniter/duniter4j/</connection>
+    <developerConnection>scm:svn:https://github.com/duniter/duniter4j/</developerConnection>
   </scm>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/ucoin-io/duniter4j/issues</url>
+    <url>https://github.com/duniter/duniter4j/issues</url>
   </issueManagement>
 
   <dependencyManagement>
@@ -362,22 +356,6 @@
           <groupId>org.nuiton.i18n</groupId>
           <artifactId>i18n-maven-plugin</artifactId>
           <version>${nuitonI18nVersion}</version>
-        </plugin>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-eclipse-plugin</artifactId>
-          <version>${maven-eclipse-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>net.alchim31.maven</groupId>
-          <artifactId>yuicompressor-maven-plugin</artifactId>
-          <version>${yuicompressor-maven-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>com.tunyk.mvn.plugins.htmlcompressor</groupId>
-          <artifactId>htmlcompressor-maven-plugin</artifactId>
-          <version>${htmlcompressor-maven-plugin.version}</version>
         </plugin>
 
         <plugin>

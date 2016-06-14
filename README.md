@@ -1,9 +1,7 @@
 duniter4j
 ======
 
-uCoin Java Client API.
-
-
+duniter4j is a Java Client API for [Duniter](http://duniter.org).
 
 ## Architecture
 
@@ -11,18 +9,18 @@ duniter4j has four main components :
 
  - shared: common classes
  
- - core-client: a Client API to access to a uCoin network.
+ - core-client: a Client API to access to a Duniter network.
    
  - elasticsearch: a tools to index all blockchain and more.
     
- - web: a web client (HTML + JS + REST service), elasticsearch for data navigation, payement and more !
+ - web: an web/mobile client, for data navigation, payment and more !
 
 
 ## Test it
 
 The elasticsearch component is ready to use !
 
- - Install Java JRE 7 or more.
+ - Install Java JRE 8 or more.
  
     - Windows: see [Oracle web site](http://oracle.com/java/index.html)
     
@@ -52,13 +50,13 @@ cd duniter4j-elasticsearch-X.Y
 Example on meta_brouzouf test currency :
 
 ```bash
-$ ./duniter4j-elasticsearch.sh start index -h  metab.ucoin.io -p 9201
+$ ./duniter4j-elasticsearch.sh start index -h  cgeek.fr -p 9330
 2016-01-07 23:34:34,771  INFO Starting duniter4j :: ElasticSearch Indexer with arguments [start, index, -h, metab.ucoin.io, -p, 9201]
 2016-01-07 23:34:34,856  INFO Application basedir: /home/user/.duniter4j-elasticsearch
 2016-01-07 23:34:34,861  INFO Starts i18n with locale [fr] at [/home/user/.duniter4j-elasticsearch/data/i18n]
 2016-01-07 23:34:35,683  INFO Starts ElasticSearch node with cluster name [duniter4j-elasticsearch] at [/home/user/.duniter4j-elasticsearch/data].
 *** duniter4j :: Elasticsearch successfully started *** >> To quit, press [Q] or enter
-2016-01-07 23:34:45,015  INFO Indexing last blocks of [meta_brouzouf] from peer [metab.ucoin.io:9201]
+2016-01-07 23:34:45,015  INFO Indexing last blocks of [test_net] from peer [cgeek.fr:9330]
 2016-01-07 23:35:01,597  INFO Indexing block #999 / 47144 (2%)...
 2016-01-07 23:35:15,554  INFO Indexing block #1998 / 47144 (4%)...
 2016-01-07 23:35:30,713  INFO Indexing block #2997 / 47144 (6%)...
@@ -98,23 +96,23 @@ When a blockchain currency has been indexed, you can test some fun queries :
 
  - get a block by number (e.g the block #0):
     
-    http://localhost:9200/meta_brouzouf/block/0 -> with some additional metadata given by ES
+    http://localhost:9200/test_net/block/0 -> with some additional metadata given by ES
     
-    http://localhost:9200/meta_brouzouf/block/0/_source -> the original JSON block
+    http://localhost:9200/test_net/block/0/_source -> the original JSON block
         
  - Block #125 with only hash, dividend and memberCount:
  
-    http://localhost:9200/meta_brouzouf/block/125/_source?_source=number,hash,dividend,membersCount
+    http://localhost:9200/test_net/block/125/_source?_source=number,hash,dividend,membersCount
       
  - All blocks using a pubkey (or whatever):
  
-    http://localhost:9200/meta_brouzouf/block/_search?q=9sbUKBMvJVxtEVhC4N9zV1GFTdaempezehAmtwA8zjKQ1
+    http://localhost:9200/test_net/block/_search?q=9sbUKBMvJVxtEVhC4N9zV1GFTdaempezehAmtwA8zjKQ1
        
  - All blocks with a dividend, with only some selected fields (like dividend, number, hahs).
    Note : Query executed in command line, using CURL:
 
 ```bash
-curl -XGET 'http://localhost:9200/meta_brouzouf/block/_search' -d '{
+curl -XGET 'http://localhost:9200/test_net/block/_search' -d '{
 "query": {
         "filtered" : {
             "filter": {
@@ -129,7 +127,7 @@ curl -XGET 'http://localhost:9200/meta_brouzouf/block/_search' -d '{
  - Get blocks from 0 to 100 
 
 ```bash
-curl -XGET 'http://localhost:9200/meta_brouzouf/block/_search' -d '{
+curl -XGET 'http://localhost:9200/test_net/block/_search' -d '{
     "query": {
         "filtered" : {
             "filter": {
@@ -169,7 +167,7 @@ More documentation here :
   - Get the source code, then compile using Maven:
 
 ```
-	git clone https://github.com/ucoin-io/duniter4j.git
+	git clone https://github.com/duniter/duniter4j.git
 	cd duniter4j
 	git submodule init
 	git submodule sync
@@ -186,8 +184,8 @@ $ mvn install -DskipTests -DperformRelease
 
 ## Roadmap
 
- - Detect blockchain rollback
- 
  - Allow to store data in embedded database (SQLLite or HsqlDB) 
  
- - Refactor to only use HTML + JS in UI (remove wicket dependencies) 
+ - Add an embedded [Cesium](https://www.github.com/duniter/cesium) inside the ElasticSearch plugin 
+
+ - Detect blockchain rollback

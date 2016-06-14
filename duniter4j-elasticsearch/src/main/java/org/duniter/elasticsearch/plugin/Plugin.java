@@ -38,7 +38,7 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
 
     @Override
     public String description() {
-        return "duniter4j ElasticSearch Plugin";
+        return "Duniter4j ElasticSearch Plugin";
     }
 
     @Override
@@ -47,5 +47,11 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
         modules.add(new SecurityModule());
         modules.add(new RestModule());
         return modules;
+    }
+
+    /* -- protected methods -- */
+
+    protected void initInstance() {
+
     }
 }
