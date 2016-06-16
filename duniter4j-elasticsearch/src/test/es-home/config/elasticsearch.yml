@@ -94,3 +94,11 @@ http.port: 9292
 # Require explicit names when deleting indices:
 #
 # action.destructive_requires_name: true
+
+#duniter.disable: true
+duniter.host: cgeek.fr
+duniter.port: 9330
+
+duniter.string.analyzer: french
+
+duniter.dev.enable: true
