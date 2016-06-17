@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.service.currency;
+package org.duniter.elasticsearch.service.blockchain;
 
 /*
  * #%L
@@ -32,7 +32,6 @@ import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointProtocol;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.bma.gson.JsonAttributeParser;
-import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
@@ -44,11 +43,10 @@ import org.duniter.core.model.ProgressionModelImpl;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.StringUtils;
-import org.duniter.elasticsearch.config.Configuration;
-import org.duniter.elasticsearch.service.BaseIndexerService;
+import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.service.exception.DuplicateIndexIdException;
-import org.duniter.elasticsearch.service.registry.RegistryCurrencyIndexerService;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -60,7 +58,9 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -72,8 +72,6 @@ import org.elasticsearch.search.aggregations.metrics.max.Max;
 import org.elasticsearch.search.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
 import org.nuiton.i18n.I18n;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -81,9 +79,9 @@ import java.util.*;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class BlockIndexerService extends BaseIndexerService {
+public class BlockBlockchainService extends AbstractService<BlockBlockchainService> {
 
-    private static final Logger log = LoggerFactory.getLogger(BlockIndexerService.class);
+    private static final ESLogger log = ESLoggerFactory.getLogger(BlockBlockchainService.class.getName());
 
     public static final String INDEX_TYPE_BLOCK = "block";
 
@@ -91,33 +89,26 @@ public class BlockIndexerService extends BaseIndexerService {
 
     private static final int SYNC_MISSING_BLOCK_MAX_RETRY = 5;
 
-    private RegistryCurrencyIndexerService registryCurrencyIndexerService;
-
-    private BlockchainRemoteService blockchainService;
+    private BlockchainRemoteService blockchainRemoteService;
 
     private Gson gson;
 
-    private Configuration config;
+    @Inject
+    public BlockBlockchainService(Client client, PluginSettings settings){
+        super(client, settings);
+        this.gson = GsonUtils.newBuilder().create();
+    }
 
-    public BlockIndexerService() {
-        gson = GsonUtils.newBuilder().create();
+    @Inject
+    public void setBlockBlockchainService(ServiceLocator serviceLocator) {
+        blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        registryCurrencyIndexerService = ServiceLocator.instance().getRegistryCurrencyIndexerService();
-        blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
-        config = Configuration.instance();
-    }
-
-    @Override
-    public void close() throws IOException {
-        super.close();
-        registryCurrencyIndexerService = null;
-        blockchainService = null;
-        config = null;
+    public void close() {
+        blockchainRemoteService = null;
         gson = null;
+        super.close();
     }
 
     public void indexLastBlocks(Peer peer) {
@@ -125,15 +116,15 @@ public class BlockIndexerService extends BaseIndexerService {
     }
 
     public void indexLastBlocks(Peer peer, ProgressionModel progressionModel) {
-        boolean bulkIndex = config.isIndexBulkEnable();
+        boolean bulkIndex = getPluginSettings().isIndexBulkEnable();
 
         progressionModel.setStatus(ProgressionModel.Status.RUNNING);
         progressionModel.setTotal(100);
         long timeStart = System.currentTimeMillis();
 
         try {
-            // Get the currency name from node
-            BlockchainParameters parameter = blockchainService.getParameters(peer);
+            // Get the blockchain name from node
+            BlockchainParameters parameter = blockchainRemoteService.getParameters(peer);
             if (parameter == null) {
                 progressionModel.setStatus(ProgressionModel.Status.FAILED);
                 log.error(String.format("Could not connect to node [%s]",
@@ -144,27 +135,28 @@ public class BlockIndexerService extends BaseIndexerService {
 
             progressionModel.setTask(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.task", currencyName, peer.getHost(), peer.getPort()));
             log.info(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.task",
-                    currencyName, config.getNodeBmaHost(), config.getNodeBmaPort()));
+                    currencyName, getPluginSettings().getNodeBmaHost(), getPluginSettings().getNodeBmaPort()));
 
-            // Create index currency if need
-            registryCurrencyIndexerService.createIndexIfNotExists();
+            // Create index blockchain if need
+            // FIXME: avoid circular dependency
+            //currencyRegistryService.createIndexIfNotExists();
 
-            Currency currency = registryCurrencyIndexerService.getCurrencyById(currencyName);
-            if (currency == null) {
-                registryCurrencyIndexerService.indexCurrencyFromPeer(peer);
-            }
+            //Currency currency = currencyRegistryService.getCurrencyById(currencyName);
+            //if (currency == null) {
+            //    currencyRegistryService.indexCurrencyFromPeer(peer);
+            //}
 
             // Check if index exists
             createIndexIfNotExists(currencyName);
 
             // Then index all blocks
-            BlockchainBlock currentBlock = blockchainService.getCurrentBlock(peer);
+            BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);
 
             if (currentBlock != null) {
                 int maxBlockNumber = currentBlock.getNumber();
 
                 // DEV mode
-                if (!config.isFullMode() && maxBlockNumber > 5000) {
+                if (getPluginSettings().isDevMode() && maxBlockNumber > 5000) {
                     maxBlockNumber = 5000;
                 }
 
@@ -240,7 +232,7 @@ public class BlockIndexerService extends BaseIndexerService {
         log.info(String.format("Creating index [%s]", currencyName));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(currencyName);
-        Settings indexSettings = Settings.settingsBuilder()
+        org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
                 //.put("analyzer", createDefaultAnalyzer())
@@ -252,7 +244,7 @@ public class BlockIndexerService extends BaseIndexerService {
 
     public void createBlock(BlockchainBlock block) throws DuplicateIndexIdException {
         ObjectUtils.checkNotNull(block, "block could not be null") ;
-        ObjectUtils.checkNotNull(block.getCurrency(), "block attribute 'currency' could not be null");
+        ObjectUtils.checkNotNull(block.getCurrency(), "block attribute 'blockchain' could not be null");
         ObjectUtils.checkNotNull(block.getNumber(), "block attribute 'number' could not be null");
 
         BlockchainBlock existingBlock = getBlockById(block.getCurrency(), block.getNumber());
@@ -272,7 +264,7 @@ public class BlockIndexerService extends BaseIndexerService {
      */
     public void saveBlock(BlockchainBlock block, boolean updateWhenSameHash, boolean wait) throws DuplicateIndexIdException {
         ObjectUtils.checkNotNull(block, "block could not be null") ;
-        ObjectUtils.checkNotNull(block.getCurrency(), "block attribute 'currency' could not be null");
+        ObjectUtils.checkNotNull(block.getCurrency(), "block attribute 'blockchain' could not be null");
         ObjectUtils.checkNotNull(block.getNumber(), "block attribute 'number' could not be null");
         ObjectUtils.checkNotNull(block.getHash(), "block attribute 'hash' could not be null");
 
@@ -377,7 +369,7 @@ public class BlockIndexerService extends BaseIndexerService {
         ObjectUtils.checkArgument(json.length() > 0);
 
         JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
-        JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("currency");
+        JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("blockchain");
 
         String currencyName = blockCurrencyParser.getValueAsString(json);
         int number = blockNumberParser.getValueAsInt(json);
@@ -595,7 +587,7 @@ public class BlockIndexerService extends BaseIndexerService {
             return CollectionUtils.extractSingleton(currencies);
         }
         catch(JsonSyntaxException e) {
-            throw new TechnicalException(String.format("Error while getting indexed block #%s for currency [%s]", blockId, currencyName), e);
+            throw new TechnicalException(String.format("Error while getting indexed block #%s for blockchain [%s]", blockId, currencyName), e);
         }
 
     }
@@ -658,7 +650,7 @@ public class BlockIndexerService extends BaseIndexerService {
             }
 
             try {
-                String blockAsJson = blockchainService.getBlockAsJson(peer, curNumber);
+                String blockAsJson = blockchainRemoteService.getBlockAsJson(peer, curNumber);
                 indexBlockAsJson(currencyName, curNumber, blockAsJson.getBytes(), false, true /*wait*/);
 
                 // If last block
@@ -682,7 +674,7 @@ public class BlockIndexerService extends BaseIndexerService {
         Client client = getClient();
         boolean debug = log.isDebugEnabled();
 
-        int batchSize = config.getIndexBulkSize();
+        int batchSize = getPluginSettings().getIndexBulkSize();
         String currentBlockJson = null;
         JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
 
@@ -698,7 +690,7 @@ public class BlockIndexerService extends BaseIndexerService {
 
             String[] blocksAsJson = null;
             try {
-                blocksAsJson = blockchainService.getBlocksAsJson(peer, batchSize, batchFirstNumber);
+                blocksAsJson = blockchainRemoteService.getBlocksAsJson(peer, batchSize, batchFirstNumber);
             } catch(HttpBadRequestException e) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Error while getting blocks from #%s (count=%s): %s. Skipping blocks.", batchFirstNumber, batchSize, e.getMessage()));

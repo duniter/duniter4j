@@ -15,6 +15,7 @@
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
                 <exclude>org.elasticsearch:elasticsearch</exclude>
+                <exclude>net.java.dev.jna:jna</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>
@@ -31,6 +32,7 @@
             <outputDirectory/>
             <includes>
                 <include>plugin-descriptor.properties</include>
+                <include>plugin-security.policy</include>
             </includes>
         </fileSet>
     </fileSets>

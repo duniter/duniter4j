@@ -1,68 +1,550 @@
-[2016-02-02 19:00:21,260][INFO ][node                     ] [Lucas Brand] version[2.2.0], pid[4389], build[8ff36d1/2016-01-27T13:32:39Z]
-[2016-02-02 19:00:21,261][INFO ][node                     ] [Lucas Brand] initializing ...
-[2016-02-02 19:00:21,353][INFO ][plugins                  ] [Lucas Brand] modules [], plugins [], sites []
-[2016-02-02 19:00:21,389][INFO ][env                      ] [Lucas Brand] using [1] data paths, mounts [[/home (/dev/sdb5)]], net usable_space [202.6gb], net total_space [436.4gb], spins? [possibly], types [ext4]
-[2016-02-02 19:00:21,389][INFO ][env                      ] [Lucas Brand] heap size [3.4gb], compressed ordinary object pointers [true]
-[2016-02-02 19:00:23,318][INFO ][node                     ] [Lucas Brand] initialized
-[2016-02-02 19:00:23,318][INFO ][node                     ] [Lucas Brand] starting ...
-[2016-02-02 19:00:23,381][INFO ][transport                ] [Lucas Brand] publish_address {127.0.0.1:9300}, bound_addresses {127.0.0.1:9300}, {[::1]:9300}
-[2016-02-02 19:00:23,390][INFO ][discovery                ] [Lucas Brand] elasticsearch/0vD7T8u-Rmajbu8MH0yb_w
-[2016-02-02 19:00:26,433][INFO ][cluster.service          ] [Lucas Brand] new_master {Lucas Brand}{0vD7T8u-Rmajbu8MH0yb_w}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
-[2016-02-02 19:00:26,443][INFO ][http                     ] [Lucas Brand] publish_address {127.0.0.1:9292}, bound_addresses {127.0.0.1:9292}, {[::1]:9292}
-[2016-02-02 19:00:26,443][INFO ][node                     ] [Lucas Brand] started
-[2016-02-02 19:00:26,535][INFO ][gateway                  ] [Lucas Brand] recovered [0] indices into cluster_state
-[2016-02-02 19:01:28,760][INFO ][node                     ] [Lucas Brand] stopping ...
-[2016-02-02 19:01:28,770][INFO ][node                     ] [Lucas Brand] stopped
-[2016-02-02 19:01:28,770][INFO ][node                     ] [Lucas Brand] closing ...
-[2016-02-02 19:01:28,773][INFO ][node                     ] [Lucas Brand] closed
-[2016-02-02 19:01:32,954][INFO ][node                     ] [Hephaestus] version[2.2.0], pid[4590], build[8ff36d1/2016-01-27T13:32:39Z]
-[2016-02-02 19:01:32,955][INFO ][node                     ] [Hephaestus] initializing ...
-[2016-02-02 19:01:33,045][INFO ][plugins                  ] [Hephaestus] modules [], plugins [], sites []
-[2016-02-02 19:01:33,075][INFO ][env                      ] [Hephaestus] using [1] data paths, mounts [[/home (/dev/sdb5)]], net usable_space [202.6gb], net total_space [436.4gb], spins? [possibly], types [ext4]
-[2016-02-02 19:01:33,075][INFO ][env                      ] [Hephaestus] heap size [3.4gb], compressed ordinary object pointers [true]
-[2016-02-02 19:01:34,914][INFO ][node                     ] [Hephaestus] initialized
-[2016-02-02 19:01:34,914][INFO ][node                     ] [Hephaestus] starting ...
-[2016-02-02 19:01:34,973][INFO ][transport                ] [Hephaestus] publish_address {127.0.0.1:9300}, bound_addresses {127.0.0.1:9300}, {[::1]:9300}
-[2016-02-02 19:01:34,981][INFO ][discovery                ] [Hephaestus] elasticsearch/KPUfVSTIRRicjnPSp6TjLQ
-[2016-02-02 19:01:38,024][INFO ][cluster.service          ] [Hephaestus] new_master {Hephaestus}{KPUfVSTIRRicjnPSp6TjLQ}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
-[2016-02-02 19:01:38,037][INFO ][http                     ] [Hephaestus] publish_address {127.0.0.1:9292}, bound_addresses {127.0.0.1:9292}, {[::1]:9292}
-[2016-02-02 19:01:38,038][INFO ][node                     ] [Hephaestus] started
-[2016-02-02 19:01:38,105][INFO ][gateway                  ] [Hephaestus] recovered [0] indices into cluster_state
-[2016-02-02 19:02:06,623][INFO ][node                     ] [Hephaestus] stopping ...
-[2016-02-02 19:02:06,633][INFO ][node                     ] [Hephaestus] stopped
-[2016-02-02 19:02:06,633][INFO ][node                     ] [Hephaestus] closing ...
-[2016-02-02 19:02:06,637][INFO ][node                     ] [Hephaestus] closed
-[2016-02-02 19:02:24,839][INFO ][node                     ] [Sergeant Fury] version[2.2.0], pid[4758], build[8ff36d1/2016-01-27T13:32:39Z]
-[2016-02-02 19:02:24,840][INFO ][node                     ] [Sergeant Fury] initializing ...
-[2016-02-02 19:02:24,922][INFO ][plugins                  ] [Sergeant Fury] modules [], plugins [], sites []
-[2016-02-02 19:02:24,946][INFO ][env                      ] [Sergeant Fury] using [1] data paths, mounts [[/home (/dev/sdb5)]], net usable_space [202.6gb], net total_space [436.4gb], spins? [possibly], types [ext4]
-[2016-02-02 19:02:24,946][INFO ][env                      ] [Sergeant Fury] heap size [3.4gb], compressed ordinary object pointers [true]
-[2016-02-02 19:02:26,789][INFO ][node                     ] [Sergeant Fury] initialized
-[2016-02-02 19:02:26,789][INFO ][node                     ] [Sergeant Fury] starting ...
-[2016-02-02 19:02:26,851][INFO ][transport                ] [Sergeant Fury] publish_address {127.0.0.1:9300}, bound_addresses {127.0.0.1:9300}, {[::1]:9300}
-[2016-02-02 19:02:26,860][INFO ][discovery                ] [Sergeant Fury] elasticsearch/dG65jlrZSDCOeJg0Q074Cw
-[2016-02-02 19:02:29,905][INFO ][cluster.service          ] [Sergeant Fury] new_master {Sergeant Fury}{dG65jlrZSDCOeJg0Q074Cw}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
-[2016-02-02 19:02:29,914][INFO ][http                     ] [Sergeant Fury] publish_address {127.0.0.1:9292}, bound_addresses {127.0.0.1:9292}, {[::1]:9292}
-[2016-02-02 19:02:29,915][INFO ][node                     ] [Sergeant Fury] started
-[2016-02-02 19:02:29,985][INFO ][gateway                  ] [Sergeant Fury] recovered [0] indices into cluster_state
-[2016-02-02 19:02:43,546][INFO ][node                     ] [Sergeant Fury] stopping ...
-[2016-02-02 19:02:43,555][INFO ][node                     ] [Sergeant Fury] stopped
-[2016-02-02 19:02:43,555][INFO ][node                     ] [Sergeant Fury] closing ...
-[2016-02-02 19:02:43,559][INFO ][node                     ] [Sergeant Fury] closed
-[2016-02-02 19:02:49,922][INFO ][node                     ] [Lady Mandarin] version[2.2.0], pid[4918], build[8ff36d1/2016-01-27T13:32:39Z]
-[2016-02-02 19:02:49,923][INFO ][node                     ] [Lady Mandarin] initializing ...
-[2016-02-02 19:02:50,007][INFO ][plugins                  ] [Lady Mandarin] modules [], plugins [], sites []
-[2016-02-02 19:02:50,045][INFO ][env                      ] [Lady Mandarin] using [1] data paths, mounts [[/home (/dev/sdb5)]], net usable_space [202.6gb], net total_space [436.4gb], spins? [possibly], types [ext4]
-[2016-02-02 19:02:50,045][INFO ][env                      ] [Lady Mandarin] heap size [3.4gb], compressed ordinary object pointers [true]
-[2016-02-02 19:02:51,888][INFO ][node                     ] [Lady Mandarin] initialized
-[2016-02-02 19:02:51,888][INFO ][node                     ] [Lady Mandarin] starting ...
-[2016-02-02 19:02:51,950][INFO ][transport                ] [Lady Mandarin] publish_address {127.0.0.1:9300}, bound_addresses {127.0.0.1:9300}, {[::1]:9300}
-[2016-02-02 19:02:51,960][INFO ][discovery                ] [Lady Mandarin] elasticsearch/hCDo3Pj5SnKGJzrKTawrSw
-[2016-02-02 19:02:55,005][INFO ][cluster.service          ] [Lady Mandarin] new_master {Lady Mandarin}{hCDo3Pj5SnKGJzrKTawrSw}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
-[2016-02-02 19:02:55,015][INFO ][http                     ] [Lady Mandarin] publish_address {127.0.0.1:9292}, bound_addresses {127.0.0.1:9292}, {[::1]:9292}
-[2016-02-02 19:02:55,015][INFO ][node                     ] [Lady Mandarin] started
-[2016-02-02 19:02:55,084][INFO ][gateway                  ] [Lady Mandarin] recovered [0] indices into cluster_state
-[2016-02-02 19:25:37,053][INFO ][node                     ] [Lady Mandarin] stopping ...
-[2016-02-02 19:25:37,064][INFO ][node                     ] [Lady Mandarin] stopped
-[2016-02-02 19:25:37,065][INFO ][node                     ] [Lady Mandarin] closing ...
-[2016-02-02 19:25:37,068][INFO ][node                     ] [Lady Mandarin] closed
+[2016-06-17 00:07:43,497][INFO ][node                     ] [Arishem the Judge] version[2.3.3], pid[12289], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 00:07:43,499][INFO ][node                     ] [Arishem the Judge] initializing ...
+[2016-06-17 00:07:44,952][INFO ][plugins                  ] [Arishem the Judge] modules [], plugins [duniter], sites []
+[2016-06-17 00:07:45,147][INFO ][env                      ] [Arishem the Judge] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 00:07:45,147][INFO ][env                      ] [Arishem the Judge] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 00:07:50,432][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@56382bc9
+[2016-06-17 00:07:50,472][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@6a916402
+[2016-06-17 00:07:50,473][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@3811510
+[2016-06-17 00:07:50,473][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@7f2d31af
+[2016-06-17 00:07:50,474][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@346f41a9
+[2016-06-17 00:07:50,476][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@2e26173
+[2016-06-17 00:07:50,477][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@1e95b653
+[2016-06-17 00:07:50,488][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 00:07:50,865][INFO ][node                     ] [Arishem the Judge] initialized
+[2016-06-17 00:07:50,865][INFO ][node                     ] [Arishem the Judge] starting ...
+[2016-06-17 00:07:50,866][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 00:07:50,866][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 00:07:50,954][ERROR][bootstrap                ] [Arishem the Judge] Exception
+java.util.ServiceConfigurationError: org.duniter.core.beans.Bean: Provider org.duniter.core.service.Ed25519CryptoServiceImpl could not be instantiated
+	at java.util.ServiceLoader.fail(ServiceLoader.java:232)
+	at java.util.ServiceLoader.access$100(ServiceLoader.java:185)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:384)
+	at java.util.ServiceLoader$LazyIterator.access$700(ServiceLoader.java:323)
+	at java.util.ServiceLoader$LazyIterator$2.run(ServiceLoader.java:407)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:409)
+	at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+	at org.duniter.core.beans.BeanFactory.newBean(BeanFactory.java:79)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:57)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:140)
+	at org.duniter.core.client.service.ServiceLocator.getHttpService(ServiceLocator.java:111)
+	at org.duniter.core.client.service.bma.BaseRemoteServiceImpl.afterPropertiesSet(BaseRemoteServiceImpl.java:45)
+	at org.duniter.core.client.service.bma.WotRemoteServiceImpl.afterPropertiesSet(WotRemoteServiceImpl.java:80)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:66)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:140)
+	at org.duniter.core.client.service.ServiceLocator.getWotRemoteService(ServiceLocator.java:129)
+	at org.duniter.elasticsearch.service.market.RecordMarketService.start(RecordMarketService.java:79)
+	at org.duniter.elasticsearch.service.market.RecordMarketService.start(RecordMarketService.java:55)
+	at org.elasticsearch.node.Node.start(Node.java:255)
+	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at com.intellij.rt.execution.application.AppMain.main(AppMain.java:144)
+Caused by: java.lang.ExceptionInInitializerError
+	at jnr.ffi.LibraryLoader.getSearchPaths(LibraryLoader.java:318)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:290)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:269)
+	at org.abstractj.kalium.NaCl$SingletonHolder.<clinit>(NaCl.java:41)
+	at org.abstractj.kalium.NaCl.sodium(NaCl.java:28)
+	at org.duniter.core.service.Ed25519CryptoServiceImpl.<init>(Ed25519CryptoServiceImpl.java:66)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at java.lang.Class.newInstance(Class.java:442)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:380)
+	... 25 more
+Caused by: java.security.AccessControlException: access denied ("java.io.FilePermission" "/etc/ld.so.conf" "read")
+	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
+	at java.security.AccessController.checkPermission(AccessController.java:884)
+	at java.lang.SecurityManager.checkPermission(SecurityManager.java:549)
+	at java.lang.SecurityManager.checkRead(SecurityManager.java:888)
+	at java.io.File.exists(File.java:814)
+	at jnr.ffi.LibraryLoader$StaticDataHolder.<clinit>(LibraryLoader.java:386)
+	... 37 more
+[2016-06-17 00:07:50,960][INFO ][node                     ] [Arishem the Judge] stopping ...
+[2016-06-17 00:07:50,966][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 00:07:50,967][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 00:07:50,967][INFO ][node                     ] [Arishem the Judge] stopped
+[2016-06-17 00:07:50,967][INFO ][node                     ] [Arishem the Judge] closing ...
+[2016-06-17 00:07:50,972][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 00:07:50,972][INFO ][org.duniter.core.client.service.ServiceLocator] Closing ServiceLocator...
+[2016-06-17 00:07:50,973][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 00:07:50,975][INFO ][node                     ] [Arishem the Judge] closed
+[2016-06-17 14:20:33,701][INFO ][node                     ] [Gargouille] version[2.3.3], pid[16348], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 14:20:33,801][INFO ][node                     ] [Gargouille] initializing ...
+[2016-06-17 14:20:35,763][INFO ][plugins                  ] [Gargouille] modules [], plugins [duniter], sites []
+[2016-06-17 14:20:35,848][INFO ][env                      ] [Gargouille] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 14:20:35,848][INFO ][env                      ] [Gargouille] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 14:20:41,808][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@5731d3a
+[2016-06-17 14:20:41,889][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@3664f108
+[2016-06-17 14:20:41,891][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@3458eca5
+[2016-06-17 14:20:41,906][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@47768e74
+[2016-06-17 14:20:41,907][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@5fef2aac
+[2016-06-17 14:20:41,909][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@5d342959
+[2016-06-17 14:20:41,910][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@2721044
+[2016-06-17 14:20:41,968][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 14:20:41,968][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
+[2016-06-17 14:20:43,057][ERROR][bootstrap                ] Exception
+org.elasticsearch.common.inject.ProvisionException: Guice provision errors:
+
+1) Error injecting method, java.util.ServiceConfigurationError: org.duniter.core.beans.Bean: Provider org.duniter.core.service.Ed25519CryptoServiceImpl could not be instantiated
+  at org.duniter.elasticsearch.service.blockchain.BlockBlockchainService.setBlockBlockchainService(Unknown Source)
+  while locating org.duniter.elasticsearch.service.blockchain.BlockBlockchainService
+
+1 error
+	at org.elasticsearch.common.inject.InjectorImpl$4.get(InjectorImpl.java:832)
+	at org.elasticsearch.common.inject.InheritingState.makeAllBindingsToEagerSingletons(InheritingState.java:157)
+	at org.elasticsearch.common.inject.InjectorImpl.readOnlyAllSingletons(InjectorImpl.java:908)
+	at org.elasticsearch.common.inject.ModulesBuilder.createInjector(ModulesBuilder.java:50)
+	at org.elasticsearch.node.Node.<init>(Node.java:213)
+	at org.elasticsearch.node.Node.<init>(Node.java:140)
+	at org.elasticsearch.node.NodeBuilder.build(NodeBuilder.java:143)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:178)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at com.intellij.rt.execution.application.AppMain.main(AppMain.java:144)
+Caused by: java.util.ServiceConfigurationError: org.duniter.core.beans.Bean: Provider org.duniter.core.service.Ed25519CryptoServiceImpl could not be instantiated
+	at java.util.ServiceLoader.fail(ServiceLoader.java:232)
+	at java.util.ServiceLoader.access$100(ServiceLoader.java:185)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:384)
+	at java.util.ServiceLoader$LazyIterator.access$700(ServiceLoader.java:323)
+	at java.util.ServiceLoader$LazyIterator$2.run(ServiceLoader.java:407)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:409)
+	at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+	at org.duniter.core.beans.BeanFactory.newBean(BeanFactory.java:82)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:57)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:140)
+	at org.duniter.core.client.service.ServiceLocator.getHttpService(ServiceLocator.java:111)
+	at org.duniter.core.client.service.bma.BaseRemoteServiceImpl.afterPropertiesSet(BaseRemoteServiceImpl.java:45)
+	at org.duniter.core.client.service.bma.BlockchainRemoteServiceImpl.afterPropertiesSet(BlockchainRemoteServiceImpl.java:102)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:66)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:140)
+	at org.duniter.core.client.service.ServiceLocator.getBlockchainRemoteService(ServiceLocator.java:99)
+	at org.duniter.elasticsearch.service.blockchain.BlockBlockchainService.setBlockBlockchainService(BlockBlockchainService.java:104)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.elasticsearch.common.inject.SingleMethodInjector$1.invoke(SingleMethodInjector.java:56)
+	at org.elasticsearch.common.inject.SingleMethodInjector.inject(SingleMethodInjector.java:77)
+	at org.elasticsearch.common.inject.MembersInjectorImpl.injectMembers(MembersInjectorImpl.java:96)
+	at org.elasticsearch.common.inject.ConstructorInjector.construct(ConstructorInjector.java:95)
+	at org.elasticsearch.common.inject.ConstructorBindingImpl$Factory.get(ConstructorBindingImpl.java:104)
+	at org.elasticsearch.common.inject.InjectorImpl$4$1.call(InjectorImpl.java:823)
+	at org.elasticsearch.common.inject.InjectorImpl.callInContext(InjectorImpl.java:879)
+	at org.elasticsearch.common.inject.InjectorImpl$4.get(InjectorImpl.java:818)
+	... 14 more
+Caused by: java.lang.ExceptionInInitializerError
+	at jnr.ffi.LibraryLoader.getSearchPaths(LibraryLoader.java:318)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:290)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:269)
+	at org.abstractj.kalium.NaCl$SingletonHolder.<clinit>(NaCl.java:41)
+	at org.abstractj.kalium.NaCl.sodium(NaCl.java:28)
+	at org.duniter.core.service.Ed25519CryptoServiceImpl.<init>(Ed25519CryptoServiceImpl.java:66)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at java.lang.Class.newInstance(Class.java:442)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:380)
+	... 41 more
+Caused by: java.security.AccessControlException: access denied ("java.io.FilePermission" "/etc/ld.so.conf" "read")
+	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
+	at java.security.AccessController.checkPermission(AccessController.java:884)
+	at java.lang.SecurityManager.checkPermission(SecurityManager.java:549)
+	at java.lang.SecurityManager.checkRead(SecurityManager.java:888)
+	at java.io.File.exists(File.java:814)
+	at jnr.ffi.LibraryLoader$StaticDataHolder.<clinit>(LibraryLoader.java:386)
+	... 53 more
+[2016-06-17 14:21:25,027][INFO ][node                     ] [Nicholas Maunder] version[2.3.3], pid[16433], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 14:21:25,028][INFO ][node                     ] [Nicholas Maunder] initializing ...
+[2016-06-17 14:21:25,630][INFO ][plugins                  ] [Nicholas Maunder] modules [], plugins [duniter], sites []
+[2016-06-17 14:21:25,665][INFO ][env                      ] [Nicholas Maunder] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 14:21:25,666][INFO ][env                      ] [Nicholas Maunder] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 14:21:29,212][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@439f2d87
+[2016-06-17 14:21:29,261][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@7574d4ad
+[2016-06-17 14:21:29,262][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@27bc1d44
+[2016-06-17 14:21:29,263][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@1d2d8846
+[2016-06-17 14:21:29,264][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@2dcd0e41
+[2016-06-17 14:21:29,266][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@74431b9c
+[2016-06-17 14:21:29,268][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@4e3283f6
+[2016-06-17 14:21:29,288][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 14:21:29,288][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
+[2016-06-17 14:21:29,955][ERROR][bootstrap                ] Exception
+org.elasticsearch.common.inject.ProvisionException: Guice provision errors:
+
+1) Error injecting method, java.util.ServiceConfigurationError: org.duniter.core.beans.Bean: Provider org.duniter.core.service.Ed25519CryptoServiceImpl could not be instantiated
+  at org.duniter.elasticsearch.service.blockchain.BlockBlockchainService.setBlockBlockchainService(Unknown Source)
+  while locating org.duniter.elasticsearch.service.blockchain.BlockBlockchainService
+
+1 error
+	at org.elasticsearch.common.inject.InjectorImpl$4.get(InjectorImpl.java:832)
+	at org.elasticsearch.common.inject.InheritingState.makeAllBindingsToEagerSingletons(InheritingState.java:157)
+	at org.elasticsearch.common.inject.InjectorImpl.readOnlyAllSingletons(InjectorImpl.java:908)
+	at org.elasticsearch.common.inject.ModulesBuilder.createInjector(ModulesBuilder.java:50)
+	at org.elasticsearch.node.Node.<init>(Node.java:213)
+	at org.elasticsearch.node.Node.<init>(Node.java:140)
+	at org.elasticsearch.node.NodeBuilder.build(NodeBuilder.java:143)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:178)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+Caused by: java.util.ServiceConfigurationError: org.duniter.core.beans.Bean: Provider org.duniter.core.service.Ed25519CryptoServiceImpl could not be instantiated
+	at java.util.ServiceLoader.fail(ServiceLoader.java:232)
+	at java.util.ServiceLoader.access$100(ServiceLoader.java:185)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:384)
+	at java.util.ServiceLoader$LazyIterator.access$700(ServiceLoader.java:323)
+	at java.util.ServiceLoader$LazyIterator$2.run(ServiceLoader.java:407)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:409)
+	at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+	at org.duniter.core.beans.BeanFactory.newBean(BeanFactory.java:82)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:57)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:140)
+	at org.duniter.core.client.service.ServiceLocator.getHttpService(ServiceLocator.java:111)
+	at org.duniter.core.client.service.bma.BaseRemoteServiceImpl.afterPropertiesSet(BaseRemoteServiceImpl.java:45)
+	at org.duniter.core.client.service.bma.BlockchainRemoteServiceImpl.afterPropertiesSet(BlockchainRemoteServiceImpl.java:102)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:66)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:140)
+	at org.duniter.core.client.service.ServiceLocator.getBlockchainRemoteService(ServiceLocator.java:99)
+	at org.duniter.elasticsearch.service.blockchain.BlockBlockchainService.setBlockBlockchainService(BlockBlockchainService.java:104)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.elasticsearch.common.inject.SingleMethodInjector$1.invoke(SingleMethodInjector.java:56)
+	at org.elasticsearch.common.inject.SingleMethodInjector.inject(SingleMethodInjector.java:77)
+	at org.elasticsearch.common.inject.MembersInjectorImpl.injectMembers(MembersInjectorImpl.java:96)
+	at org.elasticsearch.common.inject.ConstructorInjector.construct(ConstructorInjector.java:95)
+	at org.elasticsearch.common.inject.ConstructorBindingImpl$Factory.get(ConstructorBindingImpl.java:104)
+	at org.elasticsearch.common.inject.InjectorImpl$4$1.call(InjectorImpl.java:823)
+	at org.elasticsearch.common.inject.InjectorImpl.callInContext(InjectorImpl.java:879)
+	at org.elasticsearch.common.inject.InjectorImpl$4.get(InjectorImpl.java:818)
+	... 9 more
+Caused by: java.lang.ExceptionInInitializerError
+	at jnr.ffi.LibraryLoader.getSearchPaths(LibraryLoader.java:318)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:290)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:269)
+	at org.abstractj.kalium.NaCl$SingletonHolder.<clinit>(NaCl.java:41)
+	at org.abstractj.kalium.NaCl.sodium(NaCl.java:28)
+	at org.duniter.core.service.Ed25519CryptoServiceImpl.<init>(Ed25519CryptoServiceImpl.java:66)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at java.lang.Class.newInstance(Class.java:442)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:380)
+	... 36 more
+Caused by: java.security.AccessControlException: access denied ("java.io.FilePermission" "/etc/ld.so.conf" "read")
+	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
+	at java.security.AccessController.checkPermission(AccessController.java:884)
+	at java.lang.SecurityManager.checkPermission(SecurityManager.java:549)
+	at java.lang.SecurityManager.checkRead(SecurityManager.java:888)
+	at java.io.File.exists(File.java:814)
+	at jnr.ffi.LibraryLoader$StaticDataHolder.<clinit>(LibraryLoader.java:386)
+	... 48 more
+[2016-06-17 14:22:20,332][INFO ][node                     ] [Zombie] version[2.3.3], pid[16488], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 14:22:20,332][INFO ][node                     ] [Zombie] initializing ...
+[2016-06-17 14:22:21,068][INFO ][plugins                  ] [Zombie] modules [], plugins [duniter], sites []
+[2016-06-17 14:22:21,101][INFO ][env                      ] [Zombie] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 14:22:21,101][INFO ][env                      ] [Zombie] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 14:22:23,859][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@5731d3a
+[2016-06-17 14:22:23,917][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@3664f108
+[2016-06-17 14:22:23,918][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@3458eca5
+[2016-06-17 14:22:23,919][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@47768e74
+[2016-06-17 14:22:23,920][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@5fef2aac
+[2016-06-17 14:22:23,922][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@5d342959
+[2016-06-17 14:22:23,923][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@2721044
+[2016-06-17 14:22:23,938][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 14:22:23,939][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
+[2016-06-17 14:22:24,287][ERROR][bootstrap                ] Exception
+org.elasticsearch.common.inject.ProvisionException: Guice provision errors:
+
+1) Error injecting method, java.util.ServiceConfigurationError: org.duniter.core.beans.Bean: Provider org.duniter.core.service.Ed25519CryptoServiceImpl could not be instantiated
+  at org.duniter.elasticsearch.service.blockchain.BlockBlockchainService.setBlockBlockchainService(Unknown Source)
+  while locating org.duniter.elasticsearch.service.blockchain.BlockBlockchainService
+
+1 error
+	at org.elasticsearch.common.inject.InjectorImpl$4.get(InjectorImpl.java:832)
+	at org.elasticsearch.common.inject.InheritingState.makeAllBindingsToEagerSingletons(InheritingState.java:157)
+	at org.elasticsearch.common.inject.InjectorImpl.readOnlyAllSingletons(InjectorImpl.java:908)
+	at org.elasticsearch.common.inject.ModulesBuilder.createInjector(ModulesBuilder.java:50)
+	at org.elasticsearch.node.Node.<init>(Node.java:213)
+	at org.elasticsearch.node.Node.<init>(Node.java:140)
+	at org.elasticsearch.node.NodeBuilder.build(NodeBuilder.java:143)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:178)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at com.intellij.rt.execution.application.AppMain.main(AppMain.java:144)
+Caused by: java.util.ServiceConfigurationError: org.duniter.core.beans.Bean: Provider org.duniter.core.service.Ed25519CryptoServiceImpl could not be instantiated
+	at java.util.ServiceLoader.fail(ServiceLoader.java:232)
+	at java.util.ServiceLoader.access$100(ServiceLoader.java:185)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:384)
+	at java.util.ServiceLoader$LazyIterator.access$700(ServiceLoader.java:323)
+	at java.util.ServiceLoader$LazyIterator$2.run(ServiceLoader.java:407)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:409)
+	at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+	at org.duniter.core.beans.BeanFactory.newBean(BeanFactory.java:82)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:57)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:140)
+	at org.duniter.core.client.service.ServiceLocator.getHttpService(ServiceLocator.java:111)
+	at org.duniter.core.client.service.bma.BaseRemoteServiceImpl.afterPropertiesSet(BaseRemoteServiceImpl.java:45)
+	at org.duniter.core.client.service.bma.BlockchainRemoteServiceImpl.afterPropertiesSet(BlockchainRemoteServiceImpl.java:102)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:66)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:140)
+	at org.duniter.core.client.service.ServiceLocator.getBlockchainRemoteService(ServiceLocator.java:99)
+	at org.duniter.elasticsearch.service.blockchain.BlockBlockchainService.setBlockBlockchainService(BlockBlockchainService.java:104)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.elasticsearch.common.inject.SingleMethodInjector$1.invoke(SingleMethodInjector.java:56)
+	at org.elasticsearch.common.inject.SingleMethodInjector.inject(SingleMethodInjector.java:77)
+	at org.elasticsearch.common.inject.MembersInjectorImpl.injectMembers(MembersInjectorImpl.java:96)
+	at org.elasticsearch.common.inject.ConstructorInjector.construct(ConstructorInjector.java:95)
+	at org.elasticsearch.common.inject.ConstructorBindingImpl$Factory.get(ConstructorBindingImpl.java:104)
+	at org.elasticsearch.common.inject.InjectorImpl$4$1.call(InjectorImpl.java:823)
+	at org.elasticsearch.common.inject.InjectorImpl.callInContext(InjectorImpl.java:879)
+	at org.elasticsearch.common.inject.InjectorImpl$4.get(InjectorImpl.java:818)
+	... 14 more
+Caused by: java.lang.ExceptionInInitializerError
+	at jnr.ffi.LibraryLoader.getSearchPaths(LibraryLoader.java:318)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:290)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:269)
+	at org.abstractj.kalium.NaCl$SingletonHolder.<clinit>(NaCl.java:41)
+	at org.abstractj.kalium.NaCl.sodium(NaCl.java:28)
+	at org.duniter.core.service.Ed25519CryptoServiceImpl.<init>(Ed25519CryptoServiceImpl.java:66)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at java.lang.Class.newInstance(Class.java:442)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:380)
+	... 41 more
+Caused by: java.security.AccessControlException: access denied ("java.io.FilePermission" "/etc/ld.so.conf" "read")
+	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
+	at java.security.AccessController.checkPermission(AccessController.java:884)
+	at java.lang.SecurityManager.checkPermission(SecurityManager.java:549)
+	at java.lang.SecurityManager.checkRead(SecurityManager.java:888)
+	at java.io.File.exists(File.java:814)
+	at jnr.ffi.LibraryLoader$StaticDataHolder.<clinit>(LibraryLoader.java:386)
+	... 53 more
+[2016-06-17 14:25:25,194][INFO ][node                     ] [Shriek] version[2.3.3], pid[16615], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 14:25:25,194][INFO ][node                     ] [Shriek] initializing ...
+[2016-06-17 14:25:25,914][INFO ][plugins                  ] [Shriek] modules [], plugins [duniter], sites []
+[2016-06-17 14:25:25,944][INFO ][env                      ] [Shriek] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 14:25:25,944][INFO ][env                      ] [Shriek] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 14:25:28,268][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@1de13f34
+[2016-06-17 14:25:28,326][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@6ce26986
+[2016-06-17 14:25:28,328][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@34009349
+[2016-06-17 14:25:28,330][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@7f2b584b
+[2016-06-17 14:25:28,332][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@342beaf6
+[2016-06-17 14:25:28,338][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@2abc55c4
+[2016-06-17 14:25:28,340][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@25ce435
+[2016-06-17 14:25:28,367][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 14:25:28,367][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
+[2016-06-17 14:25:30,498][INFO ][node                     ] [Shriek] initialized
+[2016-06-17 14:25:30,498][INFO ][node                     ] [Shriek] starting ...
+[2016-06-17 14:25:30,507][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:25:30,530][ERROR][bootstrap                ] [Shriek] Exception
+java.lang.NullPointerException
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction$AsyncSingleAction.<init>(TransportMasterNodeAction.java:129)
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction.doExecute(TransportMasterNodeAction.java:107)
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction.doExecute(TransportMasterNodeAction.java:51)
+	at org.elasticsearch.action.support.TransportAction.execute(TransportAction.java:137)
+	at org.elasticsearch.action.support.TransportAction.execute(TransportAction.java:85)
+	at org.elasticsearch.client.node.NodeClient.doExecute(NodeClient.java:58)
+	at org.elasticsearch.client.support.AbstractClient.execute(AbstractClient.java:359)
+	at org.elasticsearch.client.support.AbstractClient$IndicesAdmin.execute(AbstractClient.java:1226)
+	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:86)
+	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:56)
+	at org.duniter.elasticsearch.service.AbstractService.existsIndex(AbstractService.java:124)
+	at org.duniter.elasticsearch.service.registry.CurrencyRegistryService.deleteAllCurrencies(CurrencyRegistryService.java:292)
+	at org.duniter.elasticsearch.job.BlockIndexer.resetAllCurrencies(BlockIndexer.java:116)
+	at org.duniter.elasticsearch.job.BlockIndexer.resetAllData(BlockIndexer.java:109)
+	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:87)
+	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:26)
+	at org.elasticsearch.node.Node.start(Node.java:255)
+	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+[2016-06-17 14:25:30,534][INFO ][node                     ] [Shriek] stopping ...
+[2016-06-17 14:25:30,535][INFO ][node                     ] [Shriek] stopped
+[2016-06-17 14:25:30,535][INFO ][node                     ] [Shriek] closing ...
+[2016-06-17 14:25:30,543][INFO ][node                     ] [Shriek] closed
+[2016-06-17 14:26:19,318][INFO ][node                     ] [Hank Pym] version[2.3.3], pid[16728], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 14:26:19,319][INFO ][node                     ] [Hank Pym] initializing ...
+[2016-06-17 14:26:19,884][INFO ][plugins                  ] [Hank Pym] modules [], plugins [duniter], sites []
+[2016-06-17 14:26:19,913][INFO ][env                      ] [Hank Pym] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 14:26:19,913][INFO ][env                      ] [Hank Pym] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 14:26:22,620][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@47187f50
+[2016-06-17 14:26:22,656][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@7f2b584b
+[2016-06-17 14:26:22,657][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@222acad
+[2016-06-17 14:26:22,659][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@3ca3648
+[2016-06-17 14:26:22,659][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@2abc55c4
+[2016-06-17 14:26:22,662][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@19ad75e5
+[2016-06-17 14:26:22,663][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@42cf6349
+[2016-06-17 14:26:22,682][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 14:26:22,683][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
+[2016-06-17 14:26:23,933][INFO ][node                     ] [Hank Pym] initialized
+[2016-06-17 14:26:23,933][INFO ][node                     ] [Hank Pym] starting ...
+[2016-06-17 14:26:23,942][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:26:23,956][ERROR][bootstrap                ] [Hank Pym] Exception
+java.lang.NullPointerException
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction$AsyncSingleAction.<init>(TransportMasterNodeAction.java:129)
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction.doExecute(TransportMasterNodeAction.java:107)
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction.doExecute(TransportMasterNodeAction.java:51)
+	at org.elasticsearch.action.support.TransportAction.execute(TransportAction.java:137)
+	at org.elasticsearch.action.support.TransportAction.execute(TransportAction.java:85)
+	at org.elasticsearch.client.node.NodeClient.doExecute(NodeClient.java:58)
+	at org.elasticsearch.client.support.AbstractClient.execute(AbstractClient.java:359)
+	at org.elasticsearch.client.support.AbstractClient$IndicesAdmin.execute(AbstractClient.java:1226)
+	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:86)
+	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:56)
+	at org.duniter.elasticsearch.service.AbstractService.existsIndex(AbstractService.java:124)
+	at org.duniter.elasticsearch.service.registry.CurrencyRegistryService.deleteAllCurrencies(CurrencyRegistryService.java:292)
+	at org.duniter.elasticsearch.job.BlockIndexer.resetAllCurrencies(BlockIndexer.java:116)
+	at org.duniter.elasticsearch.job.BlockIndexer.resetAllData(BlockIndexer.java:109)
+	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:87)
+	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:26)
+	at org.elasticsearch.node.Node.start(Node.java:255)
+	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+[2016-06-17 14:26:23,967][INFO ][node                     ] [Hank Pym] stopping ...
+[2016-06-17 14:26:23,968][INFO ][node                     ] [Hank Pym] stopped
+[2016-06-17 14:26:23,969][INFO ][node                     ] [Hank Pym] closing ...
+[2016-06-17 14:26:23,988][INFO ][node                     ] [Hank Pym] closed
+[2016-06-17 14:26:43,568][INFO ][node                     ] [Deadly Ernest] version[2.3.3], pid[16784], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 14:26:43,569][INFO ][node                     ] [Deadly Ernest] initializing ...
+[2016-06-17 14:26:44,144][INFO ][plugins                  ] [Deadly Ernest] modules [], plugins [duniter], sites []
+[2016-06-17 14:26:44,170][INFO ][env                      ] [Deadly Ernest] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 14:26:44,170][INFO ][env                      ] [Deadly Ernest] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 14:26:46,735][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@1de13f34
+[2016-06-17 14:26:46,770][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@6ce26986
+[2016-06-17 14:26:46,772][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@34009349
+[2016-06-17 14:26:46,773][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@7f2b584b
+[2016-06-17 14:26:46,773][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@342beaf6
+[2016-06-17 14:26:46,776][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@2abc55c4
+[2016-06-17 14:26:46,777][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@25ce435
+[2016-06-17 14:26:46,794][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 14:26:46,794][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
+[2016-06-17 14:26:47,742][INFO ][node                     ] [Deadly Ernest] initialized
+[2016-06-17 14:26:47,743][INFO ][node                     ] [Deadly Ernest] starting ...
+[2016-06-17 14:28:14,538][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:28:44,333][ERROR][bootstrap                ] [Deadly Ernest] Exception
+java.lang.NullPointerException
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction$AsyncSingleAction.<init>(TransportMasterNodeAction.java:129)
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction.doExecute(TransportMasterNodeAction.java:107)
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction.doExecute(TransportMasterNodeAction.java:51)
+	at org.elasticsearch.action.support.TransportAction.execute(TransportAction.java:137)
+	at org.elasticsearch.action.support.TransportAction.execute(TransportAction.java:85)
+	at org.elasticsearch.client.node.NodeClient.doExecute(NodeClient.java:58)
+	at org.elasticsearch.client.support.AbstractClient.execute(AbstractClient.java:359)
+	at org.elasticsearch.client.support.AbstractClient$IndicesAdmin.execute(AbstractClient.java:1226)
+	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:86)
+	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:56)
+	at org.duniter.elasticsearch.service.AbstractService.existsIndex(AbstractService.java:124)
+	at org.duniter.elasticsearch.service.registry.CurrencyRegistryService.deleteAllCurrencies(CurrencyRegistryService.java:292)
+	at org.duniter.elasticsearch.job.BlockIndexer.resetAllCurrencies(BlockIndexer.java:116)
+	at org.duniter.elasticsearch.job.BlockIndexer.resetAllData(BlockIndexer.java:109)
+	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:87)
+	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:26)
+	at org.elasticsearch.node.Node.start(Node.java:255)
+	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+[2016-06-17 14:28:44,342][INFO ][node                     ] [Deadly Ernest] stopping ...
+[2016-06-17 14:28:44,344][INFO ][node                     ] [Deadly Ernest] stopped
+[2016-06-17 14:28:44,344][INFO ][node                     ] [Deadly Ernest] closing ...
+[2016-06-17 14:28:44,357][INFO ][node                     ] [Deadly Ernest] closed
+[2016-06-17 14:33:22,926][INFO ][node                     ] [Benny Beckley] version[2.3.3], pid[17051], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 14:33:22,926][INFO ][node                     ] [Benny Beckley] initializing ...
+[2016-06-17 14:33:23,639][INFO ][plugins                  ] [Benny Beckley] modules [], plugins [duniter], sites []
+[2016-06-17 14:33:23,673][INFO ][env                      ] [Benny Beckley] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 14:33:23,673][INFO ][env                      ] [Benny Beckley] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 14:33:26,023][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@36baa049
+[2016-06-17 14:33:26,069][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@724aefc3
+[2016-06-17 14:33:26,070][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@7650ded6
+[2016-06-17 14:33:26,071][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@1a47a1e8
+[2016-06-17 14:33:26,072][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@24eeac69
+[2016-06-17 14:33:26,074][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@1084f78c
+[2016-06-17 14:33:26,076][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@6d8796c1
+[2016-06-17 14:33:26,094][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 14:33:26,094][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
+[2016-06-17 14:33:27,148][INFO ][node                     ] [Benny Beckley] initialized
+[2016-06-17 14:33:27,153][INFO ][node                     ] [Benny Beckley] starting ...
+[2016-06-17 14:33:27,157][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:33:27,478][INFO ][transport                ] [Benny Beckley] publish_address {127.0.0.1:9300}, bound_addresses {[::1]:9300}, {127.0.0.1:9300}
+[2016-06-17 14:33:27,488][INFO ][discovery                ] [Benny Beckley] elasticsearch/ERtxwf1iRrGMEdv5AlmsTw
+[2016-06-17 14:33:30,605][INFO ][cluster.service          ] [Benny Beckley] new_master {Benny Beckley}{ERtxwf1iRrGMEdv5AlmsTw}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
+[2016-06-17 14:33:30,692][INFO ][http                     ] [Benny Beckley] publish_address {127.0.0.1:9200}, bound_addresses {[::1]:9200}, {127.0.0.1:9200}
+[2016-06-17 14:33:30,692][INFO ][node                     ] [Benny Beckley] started
+[2016-06-17 14:33:30,976][INFO ][gateway                  ] [Benny Beckley] recovered [0] indices into cluster_state
+[2016-06-17 14:38:28,883][INFO ][node                     ] [Benny Beckley] stopping ...
+[2016-06-17 14:38:28,944][INFO ][node                     ] [Benny Beckley] stopped
+[2016-06-17 14:38:28,944][INFO ][node                     ] [Benny Beckley] closing ...
+[2016-06-17 14:38:28,951][INFO ][node                     ] [Benny Beckley] closed
+[2016-06-17 14:38:45,136][INFO ][node                     ] [Abyss] version[2.3.3], pid[17629], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-06-17 14:38:45,137][INFO ][node                     ] [Abyss] initializing ...
+[2016-06-17 14:38:46,656][INFO ][plugins                  ] [Abyss] modules [], plugins [duniter], sites []
+[2016-06-17 14:38:46,971][INFO ][env                      ] [Abyss] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [255.7gb], net total_space [289.4gb], spins? [possibly], types [ext4]
+[2016-06-17 14:38:46,971][INFO ][env                      ] [Abyss] heap size [859mb], compressed ordinary object pointers [true]
+[2016-06-17 14:38:52,477][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.ColorConverter@36baa049
+[2016-06-17 14:38:52,542][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.KeyStrokeConverter@724aefc3
+[2016-06-17 14:38:52,543][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.LocaleConverter@7650ded6
+[2016-06-17 14:38:52,544][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URIConverter@1a47a1e8
+[2016-06-17 14:38:52,544][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.converter.URLConverter@24eeac69
+[2016-06-17 14:38:52,547][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.converter.VersionConverter@1084f78c
+[2016-06-17 14:38:52,549][INFO ][org.nuiton.converter.ConverterUtil] register converter org.nuiton.util.version.VersionConverter@6d8796c1
+[2016-06-17 14:38:52,617][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator (guice)
+[2016-06-17 14:38:52,617][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
+[2016-06-17 14:38:55,540][INFO ][node                     ] [Abyss] initialized
+[2016-06-17 14:38:55,540][INFO ][node                     ] [Abyss] starting ...
+[2016-06-17 14:38:55,543][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:38:55,556][ERROR][bootstrap                ] [Abyss] Exception
+java.lang.NullPointerException
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction$AsyncSingleAction.<init>(TransportMasterNodeAction.java:129)
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction.doExecute(TransportMasterNodeAction.java:107)
+	at org.elasticsearch.action.support.master.TransportMasterNodeAction.doExecute(TransportMasterNodeAction.java:51)
+	at org.elasticsearch.action.support.TransportAction.execute(TransportAction.java:137)
+	at org.elasticsearch.action.support.TransportAction.execute(TransportAction.java:85)
+	at org.elasticsearch.client.node.NodeClient.doExecute(NodeClient.java:58)
+	at org.elasticsearch.client.support.AbstractClient.execute(AbstractClient.java:359)
+	at org.elasticsearch.client.support.AbstractClient$IndicesAdmin.execute(AbstractClient.java:1226)
+	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:86)
+	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:56)
+	at org.duniter.elasticsearch.service.AbstractService.existsIndex(AbstractService.java:124)
+	at org.duniter.elasticsearch.service.registry.CurrencyRegistryService.deleteAllCurrencies(CurrencyRegistryService.java:292)
+	at org.duniter.elasticsearch.job.BlockIndexer.resetAllCurrencies(BlockIndexer.java:116)
+	at org.duniter.elasticsearch.job.BlockIndexer.resetAllData(BlockIndexer.java:109)
+	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:87)
+	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:26)
+	at org.elasticsearch.node.Node.start(Node.java:255)
+	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at com.intellij.rt.execution.application.AppMain.main(AppMain.java:144)
+[2016-06-17 14:38:55,572][INFO ][node                     ] [Abyss] stopping ...
+[2016-06-17 14:38:55,582][INFO ][node                     ] [Abyss] stopped
+[2016-06-17 14:38:55,582][INFO ][node                     ] [Abyss] closing ...
+[2016-06-17 14:38:55,597][INFO ][node                     ] [Abyss] closed

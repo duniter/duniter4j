@@ -27,24 +27,24 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.ObjectUtils;
+import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.model.SearchResult;
-import org.duniter.elasticsearch.service.BaseIndexerService;
-import org.duniter.elasticsearch.service.ServiceLocator;
-import org.duniter.elasticsearch.service.currency.BlockIndexerService;
+import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.service.exception.InvalidSignatureException;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -53,6 +53,10 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.suggest.SuggestRequestBuilder;
 import org.elasticsearch.action.suggest.SuggestResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -63,8 +67,6 @@ import org.elasticsearch.search.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -75,44 +77,41 @@ import java.util.Objects;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class RegistryCurrencyIndexerService extends BaseIndexerService {
+public class CurrencyRegistryService extends AbstractService<CurrencyRegistryService> {
 
-    private static final Logger log = LoggerFactory.getLogger(RegistryCurrencyIndexerService.class);
+    private static final ESLogger log = ESLoggerFactory.getLogger(CurrencyRegistryService.class.getName());
 
     public static final String INDEX_NAME = "registry";
 
-    public static final String INDEX_TYPE = "currency";
+    public static final String INDEX_TYPE = "blockchain";
 
     public static final String REGEX_WORD_SEPARATOR = "[-\\t@# ]+";
     public static final String REGEX_SPACE = "[\\t\\n\\r ]+";
 
     private CryptoService cryptoService;
-    private BlockIndexerService blockIndexerService;
     private Gson gson;
 
-    public RegistryCurrencyIndexerService() {
-        super();
+    @Inject
+    public CurrencyRegistryService(Client client, PluginSettings settings) {
+        super(client, settings);
         this.gson = GsonUtils.newBuilder().create();
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-
+    public CurrencyRegistryService start() {
         this.cryptoService = ServiceLocator.instance().getCryptoService();
-        this.blockIndexerService = ServiceLocator.instance().getBlockIndexerService();
+        return super.start();
     }
 
     @Override
-    public void close() throws IOException {
-        super.close();
+    public void close() {
         this.cryptoService = null;
-        this.blockIndexerService = null;
         this.gson = null;
+        super.close();
     }
 
     /**
-     * Delete currency index, and all data
+     * Delete blockchain index, and all data
      * @throws JsonProcessingException
      */
     public void deleteIndex() throws JsonProcessingException {
@@ -120,7 +119,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Create index need for currency registry, if need
+     * Create index need for blockchain registry, if need
      */
     public void createIndexIfNotExists() {
         try {
@@ -134,7 +133,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Create index need for currency registry
+     * Create index need for blockchain registry
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
@@ -152,10 +151,10 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Retrieve the currency data, from peer
+     * Retrieve the blockchain data, from peer
      *
      * @param peer
-     * @return the created currency
+     * @return the created blockchain
      */
     public Currency indexCurrencyFromPeer(Peer peer) {
         BlockchainRemoteService blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
@@ -175,15 +174,17 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
         indexCurrency(result);
 
         // Index the first block
-        blockIndexerService.createIndexIfNotExists(parameters.getCurrency());
-        blockIndexerService.indexBlock(firstBlock, false);
-        blockIndexerService.indexCurrentBlock(firstBlock, true);
+        // FIXME : attention au dependence circulaire : cela devrait plutot etre fait à l'exetrieure e registry
+        //         par exemple dans l'action REST
+        //blockBlockchainService.createIndexIfNotExists(parameters.getCurrency());
+        //blockBlockchainService.indexBlock(firstBlock, false);
+        //blockBlockchainService.indexCurrentBlock(firstBlock, true);
 
         return result;
     }
 
     /**
-     * Index a currency
+     * Index a blockchain
      * @param currency
      */
     public void indexCurrency(Currency currency) {
@@ -247,7 +248,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Find currency that match the givent string query (Full text search)
+     * Find blockchain that match the givent string query (Full text search)
      * @param query
      * @return
      */
@@ -292,7 +293,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
             return;
         }
 
-        log.info(String.format("Deleting all currency indexes"));
+        log.info(String.format("Deleting all blockchain indexes"));
 
         // Prepare request
         SearchRequestBuilder request = getClient()
@@ -305,17 +306,17 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
         // Delete every currencies
         List<Currency> currencies = toCurrencies(response);
         for (Currency currency: currencies){
-            log.info(String.format("Deleting currency [%s]...", currency.getCurrencyName()));
+            log.info(String.format("Deleting blockchain [%s]...", currency.getCurrencyName()));
             deleteIndexIfExists(currency.getCurrencyName());
         }
 
         deleteIndexIfExists(INDEX_NAME);
 
-        log.info("All currency successfully deleted");
+        log.info("All blockchain successfully deleted");
     }
 
     /**
-     * find currency that match string query (full text search), and return a generic VO for search result.
+     * find blockchain that match string query (full text search), and return a generic VO for search result.
      * @param query
      * @return a list of generic search result
      */
@@ -356,7 +357,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Retrieve a currency from its name
+     * Retrieve a blockchain from its name
      * @param currencyId
      * @return
      */
@@ -395,15 +396,15 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Save a currency (update or create) into the currency index.
+     * Save a blockchain (update or create) into the blockchain index.
      * @param currency
      * @param senderPubkey
      * @throws DuplicateIndexIdException
-     * @throws AccessDeniedException if exists and user if not the original currency sender
+     * @throws AccessDeniedException if exists and user if not the original blockchain sender
      */
     public void saveCurrency(Currency currency, String senderPubkey) throws DuplicateIndexIdException {
-        ObjectUtils.checkNotNull(currency, "currency could not be null") ;
-        ObjectUtils.checkNotNull(currency.getCurrencyName(), "currency attribute 'currencyName' could not be null");
+        ObjectUtils.checkNotNull(currency, "blockchain could not be null") ;
+        ObjectUtils.checkNotNull(currency.getCurrencyName(), "blockchain attribute 'currencyName' could not be null");
 
         Currency existingCurrency = getCurrencyById(currency.getCurrencyName());
 
@@ -419,7 +420,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
         // Exists, so check the owner signature
         else {
             if (!Objects.equals(currency.getSenderPubkey(), senderPubkey)) {
-                throw new AccessDeniedException("Could not change currency, because it has been registered by another public key.");
+                throw new AccessDeniedException("Could not change blockchain, because it has been registered by another public key.");
             }
 
             // Make sure the sender is not changed
@@ -431,7 +432,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Get the full list of currencies names, from currency index
+     * Get the full list of currencies names, from blockchain index
      * @return
      */
     public List<String> getAllCurrencyNames() {
@@ -452,9 +453,9 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Registrer a new currency.
+     * Registrer a new blockchain.
      * @param pubkey the sender pubkey
-     * @param jsonCurrency the currency, as JSON
+     * @param jsonCurrency the blockchain, as JSON
      * @param signature the signature of sender.
      * @throws InvalidSignatureException if signature not correspond to sender pubkey
      */
@@ -465,7 +466,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
 
         if (!cryptoService.verify(jsonCurrency, signature, pubkey)) {
             String currencyName = GsonUtils.getValueFromJSONAsString(jsonCurrency, "currencyName");
-            log.warn(String.format("Currency not added, because bad signature. currency [%s]", currencyName));
+            log.warn(String.format("Currency not added, because bad signature. blockchain [%s]", currencyName));
             throw new InvalidSignatureException("Bad signature");
         }
 
@@ -475,8 +476,8 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
             Preconditions.checkNotNull(currency);
             Preconditions.checkNotNull(currency.getCurrencyName());
         } catch(Throwable t) {
-            log.error("Error while reading currency JSON: " + jsonCurrency);
-            throw new TechnicalException("Error while reading currency JSON: " + jsonCurrency, t);
+            log.error("Error while reading blockchain JSON: " + jsonCurrency);
+            throw new TechnicalException("Error while reading blockchain JSON: " + jsonCurrency, t);
         }
 
         saveCurrency(currency, pubkey);
@@ -489,7 +490,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                 .startObject("properties")
 
-                // currency name
+                // blockchain name
                 .startObject("currencyName")
                 .field("type", "string")
                 .endObject()
@@ -518,19 +519,21 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
     }
 
     protected void createCurrency(Currency currency) throws DuplicateIndexIdException, JsonProcessingException {
-        ObjectUtils.checkNotNull(currency, "currency could not be null") ;
-        ObjectUtils.checkNotNull(currency.getCurrencyName(), "currency attribute 'currencyName' could not be null");
+        ObjectUtils.checkNotNull(currency, "blockchain could not be null") ;
+        ObjectUtils.checkNotNull(currency.getCurrencyName(), "blockchain attribute 'currencyName' could not be null");
 
         Currency existingCurrency = getCurrencyById(currency.getCurrencyName());
         if (existingCurrency != null) {
             throw new DuplicateIndexIdException(String.format("Currency with name [%s] already exists.", currency.getCurrencyName()));
         }
 
-        // register to currency
+        // register to blockchain
         indexCurrency(currency);
 
         // Create sub indexes
-        ServiceLocator.instance().getBlockIndexerService().createIndex(currency.getCurrencyName());
+        // FIXME : circular reference
+        // may be use an EVentBus (guava)
+        //blockBlockchainService.createIndex(currency.getCurrencyName());
     }
 
     protected List<Currency> toCurrencies(SearchResponse response) {
@@ -566,7 +569,7 @@ public class RegistryCurrencyIndexerService extends BaseIndexerService {
 
             return result;
         } catch(IOException e) {
-            throw new TechnicalException("Error while reading currency search result: " + e.getMessage(), e);
+            throw new TechnicalException("Error while reading blockchain search result: " + e.getMessage(), e);
         }
     }
 

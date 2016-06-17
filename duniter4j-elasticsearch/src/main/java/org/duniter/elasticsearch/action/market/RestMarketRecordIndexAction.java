@@ -23,7 +23,7 @@ package org.duniter.elasticsearch.action.market;
  */
 
 import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.service.ServiceLocator;
+import org.duniter.elasticsearch.service.market.RecordMarketService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -39,17 +39,20 @@ public class RestMarketRecordIndexAction extends BaseRestHandler {
 
     private static final ESLogger log = ESLoggerFactory.getLogger(RestMarketRecordIndexAction.class.getName());
 
+    private RecordMarketService service;
+
     @Inject
-    public RestMarketRecordIndexAction(Settings settings, RestController controller, Client client) {
+    public RestMarketRecordIndexAction(Settings settings, RestController controller, Client client, RecordMarketService service) {
         super(settings, controller, client);
         controller.registerHandler(POST, "/market/record", this);
+        this.service = service;
     }
 
     @Override
     protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
 
         try {
-            String recordId = ServiceLocator.instance().getMarketRecordIndexerService().indexRecordFromJson(request.content().toUtf8());
+            String recordId = service.indexRecordFromJson(request.content().toUtf8());
 
             restChannel.sendResponse(new BytesRestResponse(OK, recordId));
         }

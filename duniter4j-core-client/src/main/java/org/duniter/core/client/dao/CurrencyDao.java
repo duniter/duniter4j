@@ -57,7 +57,7 @@ public interface CurrencyDao extends Bean, EntityDao<Currency> {
     Long getCurrencyIdByName(String currencyName);
 
     /**
-     * Return a (cached) list of currency ids
+     * Return a (cached) list of blockchain ids
      * @return
      */
     Set<Long> getCurrencyIds();

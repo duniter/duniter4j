@@ -29,16 +29,17 @@ import com.google.gson.reflect.TypeToken;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.StringUtils;
-import org.duniter.elasticsearch.config.Configuration;
-import org.duniter.elasticsearch.service.BaseIndexerService;
+import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.service.AbstractService;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Map;
@@ -46,9 +47,9 @@ import java.util.Map;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class RegistryCitiesIndexerService extends BaseIndexerService {
+public class CitiesRegistryService extends AbstractService<CitiesRegistryService> {
 
-    private static final Logger log = LoggerFactory.getLogger(RegistryCitiesIndexerService.class);
+    private static final ESLogger log = ESLoggerFactory.getLogger(CitiesRegistryService.class.getName());
 
     private static final String CITIES_BULK_FILENAME = "registry-cities-bulk-insert.json";
 
@@ -61,27 +62,20 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
 
     private Gson gson;
 
-    private Configuration config;
-
-    public RegistryCitiesIndexerService() {
+    @Inject
+    public CitiesRegistryService(Client client, PluginSettings settings) {
+        super(client, settings);
         gson = GsonUtils.newBuilder().create();
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        config = Configuration.instance();
-    }
-
-    @Override
-    public void close() throws IOException {
-        super.close();
-        config = null;
+    public void close() {
         gson = null;
+        super.close();
     }
 
     /**
-     * Delete currency index, and all data
+     * Delete blockchain index, and all data
      * @throws JsonProcessingException
      */
     public void deleteIndex() throws JsonProcessingException {
@@ -94,7 +88,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Create index need for currency registry, if need
+     * Create index need for blockchain registry, if need
      */
     public void createIndexIfNotExists() {
         try {
@@ -115,7 +109,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
         log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(INDEX_NAME);
-        Settings indexSettings = Settings.settingsBuilder()
+        org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
                 //.put("analyzer", createDefaultAnalyzer())
@@ -169,7 +163,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
 
     public File createCitiesBulkFile() {
 
-        File result = new File(config.getTempDirectory(), CITIES_BULK_FILENAME);
+        File result = new File(getPluginSettings().getTempDirectory(), CITIES_BULK_FILENAME);
 
         InputStream ris = null;
         BufferedReader bf = null;
@@ -269,7 +263,7 @@ public class RegistryCitiesIndexerService extends BaseIndexerService {
 
     public File createCitiesBulkFile2() {
 
-        File result = new File(config.getTempDirectory(), CITIES_BULK_FILENAME);
+        File result = new File(getPluginSettings().getTempDirectory(), CITIES_BULK_FILENAME);
         File inputFile = new File(CITIES_SOURCE_FILE2);
 
         InputStream ris = null;

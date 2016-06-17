@@ -24,9 +24,8 @@ package org.duniter.elasticsearch;
 
 
 import com.google.common.collect.Lists;
+import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.service.ServiceLocator;
-import org.duniter.elasticsearch.config.Configuration;
-import org.duniter.elasticsearch.config.ConfigurationOption;
 import org.apache.commons.io.FileUtils;
 import org.junit.runner.Description;
 import org.nuiton.i18n.I18n;
@@ -99,12 +98,12 @@ public class TestResource extends org.duniter.core.test.TestResource {
      */
     protected void initConfiguration(String configFilename) {
         String[] configArgs = getConfigArgs();
-        Configuration config = new Configuration(configFilename, configArgs);
-        Configuration.setInstance(config);
+        //PluginSettings config = new PluginSettings(configFilename, configArgs);
+        //PluginSettings.setInstance(config);
     }
 
     protected void initI18n() throws IOException {
-        Configuration config = Configuration.instance();
+        /*PluginSettings config ;//= PluginSettings.instance();
 
         // --------------------------------------------------------------------//
         // init i18n
@@ -129,7 +128,7 @@ public class TestResource extends org.duniter.core.test.TestResource {
         }
         I18n.init(new UserI18nInitializer(
                         i18nDirectory, new DefaultI18nInitializer(getI18nBundleName())),
-                i18nLocale);
+                i18nLocale);*/
     }
 
     protected String[] getConfigArgs() {

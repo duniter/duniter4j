@@ -34,7 +34,7 @@ public class RestCurrencyIndexAction extends BaseRestHandler {
     @Inject
     public RestCurrencyIndexAction(Settings settings, RestController controller, Client client) {
         super(settings, controller, client);
-        controller.registerHandler(RestRequest.Method.POST, "/currency", this);
+        controller.registerHandler(RestRequest.Method.POST, "/blockchain", this);
     }
 
     @Override

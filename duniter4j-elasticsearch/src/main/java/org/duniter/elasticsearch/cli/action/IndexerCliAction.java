@@ -24,21 +24,6 @@ package org.duniter.elasticsearch.cli.action;
  * #L%
  */
 
-import org.duniter.core.client.model.bma.BlockchainParameters;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
-import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.service.bma.BlockchainRemoteService;
-import org.duniter.core.util.websocket.WebsocketClientEndpoint;
-import org.duniter.elasticsearch.config.Configuration;
-import org.duniter.elasticsearch.service.ServiceLocator;
-import org.duniter.elasticsearch.service.currency.BlockIndexerService;
-import org.duniter.elasticsearch.service.market.MarketCategoryIndexerService;
-import org.duniter.elasticsearch.service.market.MarketRecordIndexerService;
-import org.duniter.elasticsearch.service.registry.RegistryCategoryIndexerService;
-import org.duniter.elasticsearch.service.registry.RegistryCitiesIndexerService;
-import org.duniter.elasticsearch.service.registry.RegistryCurrencyIndexerService;
-import org.duniter.elasticsearch.service.registry.RegistryRecordIndexerService;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +31,7 @@ public class IndexerCliAction {
 	/* Logger */
 	private static final Logger log = LoggerFactory.getLogger(IndexerCliAction.class);
 
+    /*
     public void indexBlocksFromNode() {
 
         final boolean async = ServiceLocator.instance().getElasticSearchService().isNodeInstance();
@@ -53,21 +39,21 @@ public class IndexerCliAction {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                Configuration config = Configuration.instance();
+                PluginSettings config = PluginSettings.instance();
                 final Peer peer = checkConfigAndGetPeer(config);
-                final BlockIndexerService blockIndexerService = ServiceLocator.instance().getBlockIndexerService();
+                final BlockBlockchainService blockIndexerService = ServiceLocator.instance().getBlockIndexerService();
 
-                // Will create the currency if not exist
+                // Will create the blockchain if not exist
                 blockIndexerService.indexLastBlocks(peer);
 
                 if (async) {
                     ServiceLocator.instance().getBlockchainRemoteService().addNewBlockListener(peer, new WebsocketClientEndpoint.MessageHandler() {
                         @Override
                         public void handleMessage(String message) {
-                            String currencyName = GsonUtils.getValueFromJSONAsString(message, "currency");
-                            blockIndexerService.indexBlockAsJson(peer, message, true /*refresh*/, true /*wait*/);
-                            blockIndexerService.indexCurrentBlockAsJson(currencyName, message, true /*wait*/);
-                        }
+                            String currencyName = GsonUtils.getValueFromJSONAsString(message, "blockchain");
+                            *///blockIndexerService.indexBlockAsJson(peer, message, true /*refresh*/, true /*wait*/);
+                            //blockIndexerService.indexCurrentBlockAsJson(currencyName, message, true /*wait*/);
+               /*         }
                     });
                 }
             }
@@ -92,18 +78,18 @@ public class IndexerCliAction {
     }
 
     public void resetAllCurrencies() {
-        RegistryCurrencyIndexerService currencyIndexerService = ServiceLocator.instance().getRegistryCurrencyIndexerService();
+        CurrencyRegistryService currencyIndexerService = ServiceLocator.instance().getRegistryCurrencyIndexerService();
         currencyIndexerService.deleteAllCurrencies();
     }
 
     public void resetDataBlocks() {
         BlockchainRemoteService blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
-        BlockIndexerService indexerService = ServiceLocator.instance().getBlockIndexerService();
-        Configuration config = Configuration.instance();
+        BlockBlockchainService indexerService = ServiceLocator.instance().getBlockIndexerService();
+        PluginSettings config = PluginSettings.instance();
         Peer peer = checkConfigAndGetPeer(config);
 
         try {
-            // Get the currency name from node
+            // Get the blockchain name from node
             BlockchainParameters parameter = blockchainService.getParameters(peer);
             if (parameter == null) {
                 log.error(String.format("Could not connect to node [%s:%s]",
@@ -114,7 +100,7 @@ public class IndexerCliAction {
 
             log.info(String.format("Reset data for index [%s]", currencyName));
 
-            // Delete then create index on currency
+            // Delete then create index on blockchain
             boolean indexExists = indexerService.existsIndex(currencyName);
             if (indexExists) {
                 indexerService.deleteIndex(currencyName);
@@ -129,8 +115,8 @@ public class IndexerCliAction {
     }
 
     public void resetMarketRecords() {
-        MarketRecordIndexerService recordIndexerService = ServiceLocator.instance().getMarketRecordIndexerService();
-        MarketCategoryIndexerService categoryIndexerService = ServiceLocator.instance().getMarketCategoryIndexerService();
+        RecordMarketService recordIndexerService = ServiceLocator.instance().getMarketRecordIndexerService();
+        CategoryMarketService categoryIndexerService = ServiceLocator.instance().getMarketCategoryIndexerService();
 
         try {
             // Delete then create index on records
@@ -150,9 +136,9 @@ public class IndexerCliAction {
     }
 
     public void resetRegistry() {
-        RegistryRecordIndexerService recordIndexerService = ServiceLocator.instance().getRegistryRecordIndexerService();
-        RegistryCategoryIndexerService categoryIndexerService = ServiceLocator.instance().getRegistryCategoryIndexerService();
-        RegistryCitiesIndexerService citiesIndexerService = ServiceLocator.instance().getRegistryCitiesIndexerService();
+        RecordRegistryService recordIndexerService = ServiceLocator.instance().getRegistryRecordIndexerService();
+        CategoryRegistryService categoryIndexerService = ServiceLocator.instance().getRegistryCategoryIndexerService();
+        CitiesRegistryService citiesIndexerService = ServiceLocator.instance().getRegistryCitiesIndexerService();
 
         try {
             // Delete then create index on records
@@ -179,11 +165,11 @@ public class IndexerCliAction {
         } catch(Exception e) {
             log.error("Error during reset registry records: " + e.getMessage(), e);
         }
-    }
+    }*/
 
     /* -- internal methods -- */
 
-    protected Peer checkConfigAndGetPeer(Configuration config) {
+    /*protected Peer checkConfigAndGetPeer(PluginSettings config) {
         if (StringUtils.isBlank(config.getNodeBmaHost())) {
             log.error("ERROR: node host is required");
             System.exit(-1);
@@ -197,5 +183,5 @@ public class IndexerCliAction {
 
         Peer peer = new Peer(config.getNodeBmaHost(), config.getNodeBmaPort());
         return peer;
-    }
+    }*/
 }

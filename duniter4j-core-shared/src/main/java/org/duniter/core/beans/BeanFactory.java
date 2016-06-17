@@ -42,10 +42,12 @@ public class BeanFactory implements Closeable{
 
     private final Map<Class<?>, Object> beansCache;
     private final ServiceLoader<Bean> beansLoader;
+    private final Map<Class<? extends Bean>, Class<? extends Bean>> beansClassMap;
 
     public BeanFactory() {
         beansCache = new HashMap<>();
         beansLoader = ServiceLoader.load(Bean.class);
+        beansClassMap = new HashMap<>();
     }
 
     public <S extends Bean> S getBean(Class<S> clazz) {
@@ -73,19 +75,44 @@ public class BeanFactory implements Closeable{
 
 
     public <S extends Bean> S newBean(Class<S> clazz) {
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("Asking bean on type [%s]...", clazz.getName()));
+        }
 
         for (Bean bean: beansLoader) {
 
             if (clazz.isInstance(bean)) {
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Creating new bean of type [%s]", clazz.getName()));
+                    log.debug(String.format(" Creating new bean of type [%s]", clazz.getName()));
                 }
                 return (S)bean;
             }
         }
 
+        for (Map.Entry<Class<? extends Bean>, Class<? extends Bean>> beanDef : beansClassMap.entrySet()) {
+            if (log.isTraceEnabled()) {
+                log.trace(String.format(" Check against type [%s]", beanDef.getKey().getName()));
+            }
+            if (clazz.equals(beanDef.getKey())) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Creating new bean of type [%s] with class [%s]", clazz.getName(), beanDef.getValue().getName()));
+                }
+
+                Class<?  extends Bean> beanDefClass = beanDef.getValue();
+                try {
+                    Bean bean = beanDefClass.newInstance();
+                    if (clazz.isInstance(bean)) {
+                        return (S) beanDefClass.newInstance();
+                    }
+                } catch(Exception e) {
+                    // skip
+                }
+            }
+        }
+
         throw new TechnicalException(String.format("Unable to create bean with type [%s]: not configured for the service loader [%s]", clazz.getName(), Bean.class.getCanonicalName()));
     }
+
 
     @Override
     public void close() throws IOException {
@@ -102,5 +129,21 @@ public class BeanFactory implements Closeable{
                 }
             }
         }
+    }
+
+    public <S extends Bean> BeanFactory bind(Class<S> def, Class<? extends S> beanClass) {
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("Bind on type [%s] with class [%s]", def.getName(), beanClass.getName()));
+        }
+        beansClassMap.put(def, beanClass);
+        return this;
+    }
+
+    public BeanFactory add(Class<? extends Bean> beanClass) {
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("Adding bean of type [%s]", beanClass.getName()));
+        }
+        beansClassMap.put(beanClass, beanClass);
+        return this;
     }
 }

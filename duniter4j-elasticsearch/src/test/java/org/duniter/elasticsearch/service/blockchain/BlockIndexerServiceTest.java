@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.service.currency;
+package org.duniter.elasticsearch.service.blockchain;
 
 /*
  * #%L
@@ -28,7 +28,6 @@ import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.elasticsearch.TestResource;
-import org.duniter.elasticsearch.service.ServiceLocator;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,15 +41,15 @@ public class BlockIndexerServiceTest {
 	@ClassRule
 	public static final TestResource resource = TestResource.create();
 
-    private BlockIndexerService service;
+    private BlockBlockchainService service;
     private BlockchainRemoteService blockchainRemoteService;
     private Configuration config;
     private Peer peer;
 
     @Before
     public void setUp() throws Exception {
-        service = ServiceLocator.instance().getBlockIndexerService();
-        blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
+        //service = ServiceLocator.instance().getBlockIndexerService();
+        //blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
         config = Configuration.instance();
         peer = createTestPeer();
 

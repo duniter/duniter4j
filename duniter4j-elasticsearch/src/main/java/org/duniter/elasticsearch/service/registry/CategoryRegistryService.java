@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.service.market;
+package org.duniter.elasticsearch.service.registry;
 
 /*
  * #%L
@@ -25,45 +25,52 @@ package org.duniter.elasticsearch.service.market;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.duniter.core.exception.TechnicalException;
-import org.duniter.elasticsearch.service.BaseIndexerService;
+import org.duniter.core.util.StringUtils;
+import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.service.AbstractService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class MarketCategoryIndexerService extends BaseIndexerService {
+public class CategoryRegistryService extends AbstractService<CategoryRegistryService> {
 
-    private static final Logger log = LoggerFactory.getLogger(MarketCategoryIndexerService.class);
-    private static final String CATEGORIES_BULK_CLASSPATH_FILE = "market-categories-bulk-insert.json";
+    private static final ESLogger log = ESLoggerFactory.getLogger(CategoryRegistryService.class.getName());
 
+    private static final String CATEGORIES_BULK_CLASSPATH_FILE = "registry-categories-bulk-insert.json";
 
-    public static final String INDEX_NAME = "market";
+    public static final String INDEX_NAME = "registry";
     public static final String INDEX_TYPE = "category";
 
+    @Inject
+    public CategoryRegistryService(Client client, PluginSettings settings) {
+        super(client, settings);
+    }
+
     /**
-     * Delete currency index, and all data
+     * Delete blockchain index, and all data
      * @throws JsonProcessingException
      */
     public void deleteIndex() throws JsonProcessingException {
         deleteIndexIfExists(INDEX_NAME);
     }
 
-
     public boolean existsIndex() {
         return super.existsIndex(INDEX_NAME);
     }
 
     /**
-     * Create index need for currency registry, if need
+     * Create index need for blockchain registry, if need
      */
     public void createIndexIfNotExists() {
         try {
@@ -84,7 +91,7 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
         log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(INDEX_NAME);
-        Settings indexSettings = Settings.settingsBuilder()
+        org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
                 //.put("analyzer", createDefaultAnalyzer())
@@ -119,7 +126,7 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
 
     public void initCategories() {
         if (log.isDebugEnabled()) {
-            log.debug("Initializing all market categories");
+            log.debug("Initializing all registry categories");
         }
 
         // Insert categories
@@ -130,6 +137,11 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
 
 
     public XContentBuilder createIndexMapping() {
+        String stringAnalyzer = getPluginSettings().getIndexStringAnalyzer();
+        if (StringUtils.isBlank(stringAnalyzer)) {
+            stringAnalyzer = "english";
+        }
+
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                     .startObject("properties")
@@ -137,6 +149,7 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
                     // name
                     .startObject("name")
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // description
@@ -147,6 +160,7 @@ public class MarketCategoryIndexerService extends BaseIndexerService {
                     // parent
                     .startObject("parent")
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // tags

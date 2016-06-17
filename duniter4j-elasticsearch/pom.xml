@@ -24,9 +24,13 @@
     </i18n.bundleCsvFile>
     <config.i18nBundleName>${i18n.bundleOutputName}</config.i18nBundleName>
 
-    <maven.jar.main.class>
+    <!--maven.jar.main.class>
       org.duniter.elasticsearch.cli.Main
+    </maven.jar.main.class-->
+    <maven.jar.main.class>
+      org.elasticsearch.bootstrap.Elasticsearch
     </maven.jar.main.class>
+    <exec.classpathScope>provided</exec.classpathScope>
 
     <duniter4j-elasticsearch.config>${project.basedir}/src/test/resources/duniter4j-elasticsearch-test.properties</duniter4j-elasticsearch.config>
   </properties>
@@ -68,7 +72,7 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <!--scope>provided</scope-->
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>
@@ -195,12 +199,12 @@
                   <attach>true</attach>
                   <finalName>${bundlePrefix}</finalName>
                   <descriptors>
+                    <!--descriptor>
+                      ${basedir}/src/main/assembly/standalone.xml
+                    </descriptor-->
                     <descriptor>
-                      src/main/assembly/standalone.xml
+                        ${basedir}/src/main/assembly/plugin.xml
                     </descriptor>
-                    <descriptors>
-                      <descriptor>${basedir}/src/main/assembly/plugin.xml</descriptor>
-                    </descriptors>
                   </descriptors>
                 </configuration>
               </execution>
@@ -261,9 +265,13 @@
                   <classpathScope>${exec.classpathScope}</classpathScope>
                   <commandlineArgs>start</commandlineArgs>
                   <systemProperties>
-                    <property >
+                    <property>
                       <key>duniter4j-elasticsearch.config</key>
                       <value>${duniter4j-elasticsearch.config}</value>
+                    </property>
+                    <property>
+                      <key>es.path.home</key>
+                      <value>${basedir}/src/test/es-home</value>
                     </property>
                   </systemProperties>
                 </configuration>

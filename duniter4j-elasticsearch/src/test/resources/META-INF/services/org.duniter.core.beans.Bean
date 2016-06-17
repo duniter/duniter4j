@@ -10,4 +10,4 @@ org.duniter.core.client.service.local.CurrencyServiceImpl
 org.duniter.core.client.dao.mem.MemoryCurrencyDaoImpl
 org.duniter.core.client.dao.mem.MemoryPeerDaoImpl
 org.duniter.elasticsearch.service.ElasticSearchService
-org.duniter.elasticsearch.service.registry.RegistryCurrencyIndexerService
+org.duniter.elasticsearch.service.registry.CurrencyRegistryService

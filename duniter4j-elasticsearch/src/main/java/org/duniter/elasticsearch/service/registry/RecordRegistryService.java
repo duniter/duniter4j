@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.service.market;
+package org.duniter.elasticsearch.service.registry;
 
 /*
  * #%L
@@ -27,68 +27,73 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
+import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
-import org.duniter.elasticsearch.config.Configuration;
-import org.duniter.elasticsearch.service.BaseIndexerService;
-import org.duniter.elasticsearch.service.ServiceLocator;
+import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.exception.InvalidFormatException;
 import org.duniter.elasticsearch.service.exception.InvalidSignatureException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class MarketRecordIndexerService extends BaseIndexerService {
+public class RecordRegistryService extends AbstractService<RecordRegistryService> {
 
-    private static final Logger log = LoggerFactory.getLogger(MarketRecordIndexerService.class);
+    private static final ESLogger log = ESLoggerFactory.getLogger(RecordRegistryService.class.getName());
 
     private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
 
-    public static final String INDEX_NAME = "market";
-
+    public static final String INDEX_NAME = "registry";
     public static final String INDEX_TYPE = "record";
+
+    private Gson gson;
 
     private WotRemoteService wotRemoteService;
 
     private CryptoService cryptoService;
 
-    private Configuration config;
-
-    public MarketRecordIndexerService() {
-
+    @Inject
+    public RecordRegistryService(Client client, PluginSettings settings) {
+        super(client, settings);
+        gson = GsonUtils.newBuilder().create();
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
+    public RecordRegistryService start() {
         wotRemoteService = ServiceLocator.instance().getWotRemoteService();
         cryptoService = ServiceLocator.instance().getCryptoService();
-        config = Configuration.instance();
+        return super.start();
     }
 
     @Override
-    public void close() throws IOException {
-        super.close();
+    public void close(){
         wotRemoteService = null;
+        gson = null;
+        super.close();
     }
 
     /**
-     * Delete currency index, and all data
+     * Delete blockchain index, and all data
      * @throws JsonProcessingException
      */
     public void deleteIndex() throws JsonProcessingException {
@@ -101,7 +106,7 @@ public class MarketRecordIndexerService extends BaseIndexerService {
     }
 
     /**
-     * Create index need for currency registry, if need
+     * Create index need for blockchain registry, if need
      */
     public void createIndexIfNotExists() {
         try {
@@ -119,41 +124,92 @@ public class MarketRecordIndexerService extends BaseIndexerService {
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
+        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
+
         CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(INDEX_NAME);
-        Settings indexSettings = Settings.settingsBuilder()
-                .put("number_of_shards", 3)
-                .put("number_of_replicas", 2)
+        org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
+                .put("number_of_shards", 1)
+                .put("number_of_replicas", 1)
                 //.put("analyzer", createDefaultAnalyzer())
                 .build();
-
-        // Create record index type
-        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(INDEX_NAME, createIndexMapping(INDEX_TYPE));
+        createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());
         createIndexRequestBuilder.execute().actionGet();
     }
 
     /**
-     * Index a new record
+     *
      * @param recordJson
      * @return the record id
      */
     public String indexRecordFromJson(String recordJson) {
 
-        return indexRecordFromJson(recordJson, INDEX_TYPE);
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode actualObj = mapper.readTree(recordJson);
+            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
+            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
+                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
+                throw new InvalidFormatException("Invalid record JSON format. Required fields [issuer,signature]");
+            }
+            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
+            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+
+            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
+                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
+
+            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
+                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
+            }
+
+            // TODO verify hash
+            //if (!cryptoService.verifyHash(recordNoSign, signature, issuer)) {
+            //    throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
+            //}
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
+            }
+
+        }
+        catch(IOException | JsonSyntaxException e) {
+            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
+        }
+
+        // Preparing indexBlocksFromNode
+        IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, INDEX_TYPE)
+                .setSource(recordJson);
+
+        // Execute indexBlocksFromNode
+        IndexResponse response = indexRequest
+                .setRefresh(false)
+                .execute().actionGet();
+
+        return response.getId();
+    }
+
+
+    public void insertRecordFromBulkFile(File bulkFile) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Inserting records from file");
+        }
+
+        // Insert cities
+        bulkFromFile(bulkFile, INDEX_NAME, INDEX_TYPE);
     }
 
     /* -- Internal methods -- */
 
 
-    public XContentBuilder createIndexMapping(String indexType) {
-        String stringAnalyzer = config.getIndexStringAnalyzer();
+    public XContentBuilder createIndexMapping() {
+        String stringAnalyzer = getPluginSettings().getIndexStringAnalyzer();
         if (StringUtils.isBlank(stringAnalyzer)) {
             stringAnalyzer = "english";
         }
 
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(indexType)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
                     .startObject("properties")
 
                     // title
@@ -173,16 +229,6 @@ public class MarketRecordIndexerService extends BaseIndexerService {
                     .field("type", "integer")
                     .endObject()
 
-                    // price
-                    .startObject("price")
-                    .field("type", "double")
-                    .endObject()
-
-                    // price Id UD
-                    .startObject("priceInUD")
-                    .field("type", "boolean")
-                    .endObject()
-
                     // issuer
                     .startObject("issuer")
                     .field("type", "string")
@@ -199,22 +245,10 @@ public class MarketRecordIndexerService extends BaseIndexerService {
                     .field("type", "geo_point")
                     .endObject()
 
-                    // pictures
-                    .startObject("pictures")
-                    .field("type", "nested")
-                    .startObject("properties")
-                    .startObject("src") // src
-                    .field("type", "attachment")
+                    // avatar
+                    .startObject("avatar")
+                    .field("type", "string")
                     .field("index", "not_analyzed")
-                    .endObject()
-                    .startObject("title") // title
-                    .field("title", "string")
-                    .field("analyzer", stringAnalyzer)
-                    .startObject("norms") // disabled norms on title
-                    .field("enabled", "false")
-                    .endObject()
-                    .endObject()
-                    .endObject()
                     .endObject()
 
                     // categories
@@ -246,53 +280,8 @@ public class MarketRecordIndexerService extends BaseIndexerService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, indexType, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE, ioe.getMessage()), ioe);
         }
-    }
-
-    public String indexRecordFromJson(String recordJson, String indexType) {
-
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode actualObj = mapper.readTree(recordJson);
-            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
-            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
-                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
-                throw new InvalidFormatException("Invalid record JSON format. Required fields [issuer,signature]");
-            }
-            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
-
-            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
-
-            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
-                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
-
-            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
-                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
-            }
-
-            // TODO : check if issuer is a valid member
-            //wotRemoteService.getRequirments();
-
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
-            }
-
-        }
-        catch(IOException | JsonSyntaxException e) {
-            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
-        }
-
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = getClient().prepareIndex(INDEX_NAME, indexType)
-                .setSource(recordJson);
-
-        // Execute indexBlocksFromNode
-        IndexResponse response = indexRequest
-                .setRefresh(false)
-                .execute().actionGet();
-
-        return response.getId();
     }
 
 }

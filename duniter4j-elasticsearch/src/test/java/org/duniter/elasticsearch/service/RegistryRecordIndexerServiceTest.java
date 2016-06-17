@@ -23,7 +23,7 @@ package org.duniter.elasticsearch.service;
  */
 
 import org.duniter.elasticsearch.TestResource;
-import org.duniter.elasticsearch.service.registry.RegistryRecordIndexerService;
+import org.duniter.elasticsearch.service.registry.RecordRegistryService;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -41,11 +41,11 @@ public class RegistryRecordIndexerServiceTest {
     @ClassRule
     public static final TestResource resource = TestResource.create();
 
-    private RegistryRecordIndexerService service;
+    private RecordRegistryService service;
 
     @Before
     public void setUp() throws Exception {
-        service = ServiceLocator.instance().getRegistryRecordIndexerService();
+        //service = ServiceLocator.instance().getRegistryRecordIndexerService();
     }
 
     @Test

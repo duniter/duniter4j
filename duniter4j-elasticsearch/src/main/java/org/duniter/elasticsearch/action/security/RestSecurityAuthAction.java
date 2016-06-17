@@ -23,10 +23,10 @@ package org.duniter.elasticsearch.action.security;
  */
 
 import org.duniter.core.client.model.bma.gson.GsonUtils;
+import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.security.challenge.ChallengeMessageStore;
 import org.duniter.elasticsearch.security.token.SecurityTokenStore;
-import org.duniter.elasticsearch.service.ServiceLocator;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;

@@ -25,10 +25,7 @@ package org.duniter.core.client.service;
 
 import org.duniter.core.beans.Bean;
 import org.duniter.core.beans.BeanFactory;
-import org.duniter.core.client.service.bma.BlockchainRemoteService;
-import org.duniter.core.client.service.bma.NetworkRemoteService;
-import org.duniter.core.client.service.bma.TransactionRemoteService;
-import org.duniter.core.client.service.bma.WotRemoteService;
+import org.duniter.core.client.service.bma.*;
 import org.duniter.core.client.service.elasticsearch.CurrencyRegistryRemoteService;
 import org.duniter.core.client.service.local.CurrencyService;
 import org.duniter.core.client.service.local.PeerService;
@@ -54,6 +51,10 @@ public class ServiceLocator implements Closeable {
     private BeanFactory beanFactory = null;
 
     protected ServiceLocator() {
+    }
+
+    protected ServiceLocator(BeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
     }
 
     public void init() {
@@ -132,7 +133,6 @@ public class ServiceLocator implements Closeable {
         return getBean(CurrencyRegistryRemoteService.class);
     }
 
-
     public <S extends Bean> S getBean(Class<S> clazz) {
         if (beanFactory == null) {
             initBeanFactory();
@@ -146,6 +146,10 @@ public class ServiceLocator implements Closeable {
         if (beanFactory == null) {
             beanFactory = new BeanFactory();
         }
+    }
+
+    public BeanFactory getBeanFactory() {
+        return beanFactory;
     }
 
 }

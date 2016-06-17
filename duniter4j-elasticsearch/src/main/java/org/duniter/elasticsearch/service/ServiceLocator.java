@@ -23,70 +23,69 @@ package org.duniter.elasticsearch.service;
  */
 
 
-import org.duniter.elasticsearch.service.currency.BlockIndexerService;
-import org.duniter.elasticsearch.service.market.MarketCategoryIndexerService;
-import org.duniter.elasticsearch.service.market.MarketRecordIndexerService;
-import org.duniter.elasticsearch.service.registry.RegistryCategoryIndexerService;
-import org.duniter.elasticsearch.service.registry.RegistryCurrencyIndexerService;
-import org.duniter.elasticsearch.service.registry.RegistryRecordIndexerService;
-import org.duniter.elasticsearch.service.registry.RegistryCitiesIndexerService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.duniter.core.beans.BeanFactory;
+import org.duniter.core.client.dao.CurrencyDao;
+import org.duniter.core.client.dao.PeerDao;
+import org.duniter.core.client.dao.mem.MemoryCurrencyDaoImpl;
+import org.duniter.core.client.dao.mem.MemoryPeerDaoImpl;
+import org.duniter.core.client.service.DataContext;
+import org.duniter.core.client.service.HttpService;
+import org.duniter.core.client.service.HttpServiceImpl;
+import org.duniter.core.client.service.bma.*;
+import org.duniter.core.client.service.local.CurrencyService;
+import org.duniter.core.client.service.local.CurrencyServiceImpl;
+import org.duniter.core.client.service.local.PeerService;
+import org.duniter.core.client.service.local.PeerServiceImpl;
+import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.service.CryptoService;
+import org.duniter.core.service.Ed25519CryptoServiceImpl;
+import org.duniter.elasticsearch.PluginSettings;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.inject.Singleton;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 
-public class ServiceLocator extends org.duniter.core.client.service.ServiceLocator {
+import java.io.IOException;
 
+@Singleton
+public class ServiceLocator
+        extends org.duniter.core.client.service.ServiceLocator
+        {
+    private static final ESLogger log = ESLoggerFactory.getLogger(ServiceLocator.class.getName());
 
-    /* Logger */
-    private static final Logger log = LoggerFactory.getLogger(ServiceLocator.class);
-
-    /**
-     * The shared instance of this ServiceLocator.
-     */
-    private static ServiceLocator instance = new ServiceLocator();
-
-    static {
-        org.duniter.core.client.service.ServiceLocator.setInstance(instance);
+    public ServiceLocator() {
+        super(createBeanFactory());
+        log.info("Starting ServiceLocator (guice)");
+        org.duniter.core.client.service.ServiceLocator.setInstance(this);
+        log.info("Starting ServiceLocator [OK]");
     }
 
-    public static ServiceLocator instance() {
-        return instance;
+    @Override
+    public void close() {
+        try {
+            super.close();
+        }
+        catch (IOException e) {
+            throw new TechnicalException(e);
+        }
+        org.duniter.core.client.service.ServiceLocator.setInstance(null);
     }
 
-    /* -- ElasticSearch Service-- */
+    /* -- Internal methods -- */
 
-    public RegistryCurrencyIndexerService getRegistryCurrencyIndexerService() {
-        return getBean(RegistryCurrencyIndexerService.class);
-    }
-
-    public ElasticSearchService getElasticSearchService() {
-        return getBean(ElasticSearchService.class);
-    }
-
-    public BlockIndexerService getBlockIndexerService() {
-        return getBean(BlockIndexerService.class);
-    }
-
-    public ExecutorService getExecutorService() {
-        return getBean(ExecutorService.class);
-    }
-
-    public MarketRecordIndexerService getMarketRecordIndexerService() {
-        return getBean(MarketRecordIndexerService.class);
-    }
-
-    public MarketCategoryIndexerService getMarketCategoryIndexerService() {
-        return getBean(MarketCategoryIndexerService.class);
-    }
-
-    public RegistryRecordIndexerService getRegistryRecordIndexerService() {
-        return getBean(RegistryRecordIndexerService.class);
-    }
-
-    public RegistryCategoryIndexerService getRegistryCategoryIndexerService() {
-        return getBean(RegistryCategoryIndexerService.class);
-    }
-
-    public RegistryCitiesIndexerService getRegistryCitiesIndexerService() {
-        return getBean(RegistryCitiesIndexerService.class);
+    protected static BeanFactory createBeanFactory() {
+        BeanFactory beanFactory = new BeanFactory()
+                .bind(BlockchainRemoteService.class, BlockchainRemoteServiceImpl.class)
+                .bind(NetworkRemoteService.class, NetworkRemoteServiceImpl.class)
+                .bind(WotRemoteService.class, WotRemoteServiceImpl.class)
+                .bind(TransactionRemoteService.class, TransactionRemoteServiceImpl.class)
+                .bind(CryptoService.class, Ed25519CryptoServiceImpl.class)
+                .bind(PeerService.class, PeerServiceImpl.class)
+                .bind(CurrencyService.class, CurrencyServiceImpl.class)
+                .bind(HttpService.class, HttpServiceImpl.class)
+                .bind(CurrencyDao.class, MemoryCurrencyDaoImpl.class)
+                .bind(PeerDao.class, MemoryPeerDaoImpl.class)
+                .add(DataContext.class);
+        return beanFactory;
     }
 }

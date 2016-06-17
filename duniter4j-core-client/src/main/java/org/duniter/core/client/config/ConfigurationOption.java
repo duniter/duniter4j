@@ -127,7 +127,7 @@ public enum ConfigurationOption implements ConfigOptionDef {
             false),
 
     NODE_CURRENCY(
-            "duniter4j.node.currency",
+            "duniter4j.node.blockchain",
             n("duniter4j.config.option.node.currency.description"),
             "meta_brouzouf",
             String.class,
