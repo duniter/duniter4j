@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.service;
  */
 
 
+import org.duniter.core.beans.Bean;
 import org.duniter.core.beans.BeanFactory;
 import org.duniter.core.client.dao.CurrencyDao;
 import org.duniter.core.client.dao.PeerDao;
@@ -41,23 +42,33 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.Ed25519CryptoServiceImpl;
 import org.duniter.elasticsearch.PluginSettings;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.inject.Injector;
+import org.elasticsearch.common.inject.Provider;
 import org.elasticsearch.common.inject.Singleton;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.ServiceLoader;
 
 @Singleton
 public class ServiceLocator
         extends org.duniter.core.client.service.ServiceLocator
         {
-    private static final ESLogger log = ESLoggerFactory.getLogger(ServiceLocator.class.getName());
+    private static final ESLogger logger = ESLoggerFactory.getLogger(ServiceLocator.class.getName());
 
-    public ServiceLocator() {
-        super(createBeanFactory());
-        log.info("Starting ServiceLocator (guice)");
+
+    @Inject
+    public ServiceLocator(Injector injector) {
+        super();
+        if (logger.isDebugEnabled()) {
+            logger.debug("Starting Duniter4j client ServiceLocator...");
+        }
+        //setBeanFactory(new BeanFactory(injector));
+        setBeanFactory(createBeanFactory());
+
         org.duniter.core.client.service.ServiceLocator.setInstance(this);
-        log.info("Starting ServiceLocator [OK]");
     }
 
     @Override
@@ -73,8 +84,20 @@ public class ServiceLocator
 
     /* -- Internal methods -- */
 
-    protected static BeanFactory createBeanFactory() {
-        BeanFactory beanFactory = new BeanFactory()
+    class BeanFactory extends org.duniter.core.beans.BeanFactory{
+        private final Injector injector;
+        public BeanFactory(Injector injector) {
+            super();
+            this.injector = injector;
+        }
+
+        public <S extends Bean> S newBean(Class<S> clazz) {
+            return injector.getInstance(clazz);
+        }
+    }
+
+    protected static org.duniter.core.beans.BeanFactory createBeanFactory() {
+        org.duniter.core.beans.BeanFactory beanFactory = new org.duniter.core.beans.BeanFactory()
                 .bind(BlockchainRemoteService.class, BlockchainRemoteServiceImpl.class)
                 .bind(NetworkRemoteService.class, NetworkRemoteServiceImpl.class)
                 .bind(WotRemoteService.class, WotRemoteServiceImpl.class)
@@ -87,5 +110,18 @@ public class ServiceLocator
                 .bind(PeerDao.class, MemoryPeerDaoImpl.class)
                 .add(DataContext.class);
         return beanFactory;
+    }
+
+    public static class Provider<T extends Bean> implements org.elasticsearch.common.inject.Provider<T> {
+
+        private final Class<T> clazz;
+
+        public Provider(Class<T> clazz) {
+            this.clazz = clazz;
+        }
+
+        public T get() {
+            return ServiceLocator.instance().getBean(clazz);
+        }
     }
 }

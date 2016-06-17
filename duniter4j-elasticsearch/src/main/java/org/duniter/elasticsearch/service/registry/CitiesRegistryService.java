@@ -47,7 +47,7 @@ import java.util.Map;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class CitiesRegistryService extends AbstractService<CitiesRegistryService> {
+public class CitiesRegistryService extends AbstractService {
 
     private static final ESLogger log = ESLoggerFactory.getLogger(CitiesRegistryService.class.getName());
 
@@ -60,18 +60,12 @@ public class CitiesRegistryService extends AbstractService<CitiesRegistryService
     public static final String INDEX_NAME = "registry";
     public static final String INDEX_TYPE = "city";
 
-    private Gson gson;
+    private final Gson gson;
 
     @Inject
     public CitiesRegistryService(Client client, PluginSettings settings) {
         super(client, settings);
         gson = GsonUtils.newBuilder().create();
-    }
-
-    @Override
-    public void close() {
-        gson = null;
-        super.close();
     }
 
     /**
@@ -108,7 +102,7 @@ public class CitiesRegistryService extends AbstractService<CitiesRegistryService
     public void createIndex() throws JsonProcessingException {
         log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
 
-        CreateIndexRequestBuilder createIndexRequestBuilder = getClient().admin().indices().prepareCreate(INDEX_NAME);
+        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX_NAME);
         org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
@@ -163,7 +157,7 @@ public class CitiesRegistryService extends AbstractService<CitiesRegistryService
 
     public File createCitiesBulkFile() {
 
-        File result = new File(getPluginSettings().getTempDirectory(), CITIES_BULK_FILENAME);
+        File result = new File(pluginSettings.getTempDirectory(), CITIES_BULK_FILENAME);
 
         InputStream ris = null;
         BufferedReader bf = null;
@@ -263,7 +257,7 @@ public class CitiesRegistryService extends AbstractService<CitiesRegistryService
 
     public File createCitiesBulkFile2() {
 
-        File result = new File(getPluginSettings().getTempDirectory(), CITIES_BULK_FILENAME);
+        File result = new File(pluginSettings.getTempDirectory(), CITIES_BULK_FILENAME);
         File inputFile = new File(CITIES_SOURCE_FILE2);
 
         InputStream ris = null;

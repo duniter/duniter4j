@@ -23,7 +23,7 @@ package org.duniter.elasticsearch.action.registry;
  */
 
 import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.service.registry.RecordRegistryService;
+import org.duniter.elasticsearch.service.RegistryService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -39,10 +39,10 @@ public class RestRegistryRecordIndexAction extends BaseRestHandler {
 
     private static final ESLogger log = ESLoggerFactory.getLogger(RestRegistryRecordIndexAction.class.getName());
 
-    private RecordRegistryService service;
+    private RegistryService service;
 
     @Inject
-    public RestRegistryRecordIndexAction(Settings settings, RestController controller, Client client, RecordRegistryService service) {
+    public RestRegistryRecordIndexAction(Settings settings, RestController controller, Client client, RegistryService service) {
         super(settings, controller, client);
         controller.registerHandler(POST, "/registry/record", this);
         this.service = service;

@@ -28,6 +28,7 @@ import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.elasticsearch.TestResource;
+import org.duniter.elasticsearch.service.BlockchainService;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ public class BlockIndexerServiceTest {
 	@ClassRule
 	public static final TestResource resource = TestResource.create();
 
-    private BlockBlockchainService service;
+    private BlockchainService service;
     private BlockchainRemoteService blockchainRemoteService;
     private Configuration config;
     private Peer peer;

@@ -79,33 +79,37 @@ public class BeanFactory implements Closeable{
             log.trace(String.format("Asking bean on type [%s]...", clazz.getName()));
         }
 
-        for (Bean bean: beansLoader) {
+        synchronized (beansLoader) {
+            for (Bean bean : beansLoader) {
 
-            if (clazz.isInstance(bean)) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format(" Creating new bean of type [%s]", clazz.getName()));
+                if (clazz.isInstance(bean)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format(" Creating new bean of type [%s]", clazz.getName()));
+                    }
+                    return (S) bean;
                 }
-                return (S)bean;
             }
         }
 
-        for (Map.Entry<Class<? extends Bean>, Class<? extends Bean>> beanDef : beansClassMap.entrySet()) {
-            if (log.isTraceEnabled()) {
-                log.trace(String.format(" Check against type [%s]", beanDef.getKey().getName()));
-            }
-            if (clazz.equals(beanDef.getKey())) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Creating new bean of type [%s] with class [%s]", clazz.getName(), beanDef.getValue().getName()));
+        synchronized (beansClassMap) {
+            for (Map.Entry<Class<? extends Bean>, Class<? extends Bean>> beanDef : beansClassMap.entrySet()) {
+                if (log.isTraceEnabled()) {
+                    log.trace(String.format(" Check against type [%s]", beanDef.getKey().getName()));
                 }
-
-                Class<?  extends Bean> beanDefClass = beanDef.getValue();
-                try {
-                    Bean bean = beanDefClass.newInstance();
-                    if (clazz.isInstance(bean)) {
-                        return (S) beanDefClass.newInstance();
+                if (clazz.equals(beanDef.getKey())) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("Creating new bean of type [%s] with class [%s]", clazz.getName(), beanDef.getValue().getName()));
                     }
-                } catch(Exception e) {
-                    // skip
+
+                    Class<? extends Bean> beanDefClass = beanDef.getValue();
+                    try {
+                        Bean bean = beanDefClass.newInstance();
+                        if (clazz.isInstance(bean)) {
+                            return (S) beanDefClass.newInstance();
+                        }
+                    } catch (Exception e) {
+                        // skip
+                    }
                 }
             }
         }

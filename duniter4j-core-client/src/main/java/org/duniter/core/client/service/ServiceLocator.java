@@ -95,6 +95,10 @@ public class ServiceLocator implements Closeable {
         return instance;
     }
 
+    protected void setBeanFactory(BeanFactory beanFactory) {
+        this.beanFactory = beanFactory;
+    }
+
     public BlockchainRemoteService getBlockchainRemoteService() {
         return getBean(BlockchainRemoteService.class);
     }

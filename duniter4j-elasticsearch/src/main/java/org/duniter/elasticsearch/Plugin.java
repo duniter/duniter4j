@@ -24,7 +24,8 @@ package org.duniter.elasticsearch;
 
 import com.google.common.collect.Lists;
 import org.duniter.elasticsearch.action.RestModule;
-import org.duniter.elasticsearch.job.BlockIndexer;
+import org.duniter.elasticsearch.node.DuniterNode;
+import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.security.SecurityModule;
 import org.duniter.elasticsearch.service.ServiceModule;
 import org.elasticsearch.common.component.LifecycleComponent;
@@ -76,18 +77,9 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
         if (disable) {
             return components;
         }
-        components.add(BlockIndexer.class);
-        //components.add(PluginSettings.class);
-        // Market
-        //components.add(CategoryMarketService.class);
-        //components.add(RecordMarketService.class);
-        // Registry
-        //components.add(CurrencyRegistryService.class);
-        //components.add(CategoryRegistryService.class);
-        //components.add(CitiesRegistryService.class);
-        //components.add(RecordRegistryService.class);
-        // BC
-        //components.add(BlockBlockchainService.class);
+        components.add(PluginSettings.class);
+        components.add(ThreadPool.class);
+        components.add(DuniterNode.class);
         return components;
     }
 

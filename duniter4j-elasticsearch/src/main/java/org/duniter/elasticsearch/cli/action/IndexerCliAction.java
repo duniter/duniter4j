@@ -41,7 +41,7 @@ public class IndexerCliAction {
             public void run() {
                 PluginSettings config = PluginSettings.instance();
                 final Peer peer = checkConfigAndGetPeer(config);
-                final BlockBlockchainService blockIndexerService = ServiceLocator.instance().getBlockIndexerService();
+                final BlockchainService blockIndexerService = ServiceLocator.instance().getBlockIndexerService();
 
                 // Will create the blockchain if not exist
                 blockIndexerService.indexLastBlocks(peer);
@@ -84,7 +84,7 @@ public class IndexerCliAction {
 
     public void resetDataBlocks() {
         BlockchainRemoteService blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
-        BlockBlockchainService indexerService = ServiceLocator.instance().getBlockIndexerService();
+        BlockchainService indexerService = ServiceLocator.instance().getBlockIndexerService();
         PluginSettings config = PluginSettings.instance();
         Peer peer = checkConfigAndGetPeer(config);
 

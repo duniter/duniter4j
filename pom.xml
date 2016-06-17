@@ -10,6 +10,7 @@
   <properties>
     <!-- source file encoding -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <javaVersion>8</javaVersion>
 
     <!-- Commons versions -->
     <file.encoding>UTF-8</file.encoding>
@@ -434,8 +435,8 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.2</version>
           <configuration>
-            <source>1.7</source>
-            <target>1.7</target>
+            <source>${javaVersion}</source>
+            <target>${javaVersion}</target>
             <optimize>true</optimize>
             <debug>true</debug>
             <encoding>${project.build.sourceEncoding}</encoding>
@@ -697,19 +698,13 @@
                 <configuration>
                   <addSvnKeyWords>false</addSvnKeyWords>
                   <excludes>
-                    <exclude>**/site/**/*.*</exclude>
-                    <exclude>**/misc/**/*.*</exclude>
-                    <exclude>**/webapp/js/jquery-mobile/**/*.*</exclude>
-                    <exclude>**/webapp/css/jquery-mobile/**/*.*</exclude>
-                    <exclude>**/webapp/META-INF/**/*.*</exclude>
-                    <exclude>**/webapp/WEB-INF/**/*.*</exclude>
+                    <exclude>**/*.json</exclude>
                     <exclude>**/*.properties</exclude>
                     <exclude>**/*.xml</exclude>
-                    <exclude>**/jquery.tokeninput.js</exclude>
-                    <exclude>**/jquery.watermark.js</exclude>
-                    <exclude>**/jquery.qtip.*</exclude>
-                    <!-- since sh scripts must begins by the line #!/bin/sh, can not use the mojo for the mojo -->
                     <exclude>**/*.sh</exclude>
+                    <exclude>**/site/**/*.*</exclude>
+                    <exclude>**/misc/**/*.*</exclude>
+                    <exclude>**/es-home/**/*.*</exclude>
                   </excludes>
                 </configuration>
                 <phase>process-resources</phase>

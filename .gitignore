@@ -13,3 +13,4 @@ target
 duniter4j-elasticsearch/src/main/misc/.index.sh.kate-swp
 duniter4j-elasticsearch/src/main/misc/fr-cities.ods
 duniter4j-elasticsearch/src/main/misc/geoflar-communes-2015.geojson
+duniter4j.iml

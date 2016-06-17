@@ -11,12 +11,23 @@ duniter4j has four main components :
  
  - core-client: a Client API to access to a Duniter network.
    
- - elasticsearch: a tools to index all blockchain and more.
+ - elasticsearch: a ES plugin, to store blockchain, registry, market and more.
     
- - web: an web/mobile client, for data navigation, payment and more !
+
+## Install
+
+ - Install ElasticSearch 2.3.3
+ 
+ - Install plugins :
+ 
+   /bin/plugin install elastic/elasticsearch
+   
+   /bin/plugin install duniter/duniter4j
 
 
 ## Test it
+
+
 
 The elasticsearch component is ready to use !
 

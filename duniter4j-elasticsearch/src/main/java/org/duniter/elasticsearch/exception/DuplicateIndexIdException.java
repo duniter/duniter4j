@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.service.exception;
+package org.duniter.elasticsearch.exception;
 
 /*
  * #%L
@@ -26,23 +26,24 @@ package org.duniter.elasticsearch.service.exception;
 import org.duniter.core.exception.BusinessException;
 
 /**
+ *
  * Created by Benoit on 03/04/2015.
  */
-public class AccessDeniedException extends BusinessException{
+public class DuplicateIndexIdException extends BusinessException{
 
-    public AccessDeniedException() {
+    public DuplicateIndexIdException() {
         super();
     }
 
-    public AccessDeniedException(String message, Throwable cause) {
+    public DuplicateIndexIdException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public AccessDeniedException(String message) {
+    public DuplicateIndexIdException(String message) {
         super(message);
     }
 
-    public AccessDeniedException(Throwable cause) {
+    public DuplicateIndexIdException(Throwable cause) {
         super(cause);
     }
 

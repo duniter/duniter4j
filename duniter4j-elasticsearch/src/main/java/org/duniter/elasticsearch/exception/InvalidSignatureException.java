@@ -1,10 +1,10 @@
-package org.duniter.elasticsearch.service.exception;
+package org.duniter.elasticsearch.exception;
 
 /*
  * #%L
- * Duniter4j :: ElasticSearch Plugin
+ * UCoin Java Client :: Web
  * %%
- * Copyright (C) 2014 - 2016 EIS
+ * Copyright (C) 2014 - 2015 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,25 +22,28 @@ package org.duniter.elasticsearch.service.exception;
  * #L%
  */
 
+
 import org.duniter.core.exception.BusinessException;
 
 /**
- * Created by blavenie on 01/03/16.
+ * Created by Benoit on 03/04/2015.
  */
-public class InvalidFormatException extends BusinessException {
-    public InvalidFormatException() {
+public class InvalidSignatureException extends BusinessException {
+
+
+    public InvalidSignatureException() {
         super();
     }
 
-    public InvalidFormatException(String message, Throwable cause) {
+    public InvalidSignatureException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public InvalidFormatException(String message) {
+    public InvalidSignatureException(String message) {
         super(message);
     }
 
-    public InvalidFormatException(Throwable cause) {
+    public InvalidSignatureException(Throwable cause) {
         super(cause);
     }
 }

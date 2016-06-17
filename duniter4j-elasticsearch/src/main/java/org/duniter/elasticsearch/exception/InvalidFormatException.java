@@ -1,10 +1,10 @@
-package org.duniter.elasticsearch.service.exception;
+package org.duniter.elasticsearch.exception;
 
 /*
  * #%L
- * UCoin Java Client :: Core API
+ * Duniter4j :: ElasticSearch Plugin
  * %%
- * Copyright (C) 2014 - 2015 EIS
+ * Copyright (C) 2014 - 2016 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,28 +22,25 @@ package org.duniter.elasticsearch.service.exception;
  * #L%
  */
 
-
 import org.duniter.core.exception.BusinessException;
 
 /**
- * Created by Benoit on 03/04/2015.
+ * Created by blavenie on 01/03/16.
  */
-public class DuplicateIndexIdException extends BusinessException{
-
-    public DuplicateIndexIdException() {
+public class InvalidFormatException extends BusinessException {
+    public InvalidFormatException() {
         super();
     }
 
-    public DuplicateIndexIdException(String message, Throwable cause) {
+    public InvalidFormatException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public DuplicateIndexIdException(String message) {
+    public InvalidFormatException(String message) {
         super(message);
     }
 
-    public DuplicateIndexIdException(Throwable cause) {
+    public InvalidFormatException(Throwable cause) {
         super(cause);
     }
-
 }

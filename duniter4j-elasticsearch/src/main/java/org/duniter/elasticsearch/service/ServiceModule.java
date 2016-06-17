@@ -22,14 +22,22 @@ package org.duniter.elasticsearch.service;
  * #L%
  */
 
+import org.duniter.core.beans.Bean;
+import org.duniter.core.client.dao.CurrencyDao;
+import org.duniter.core.client.dao.PeerDao;
+import org.duniter.core.client.dao.mem.MemoryCurrencyDaoImpl;
+import org.duniter.core.client.dao.mem.MemoryPeerDaoImpl;
+import org.duniter.core.client.service.DataContext;
+import org.duniter.core.client.service.HttpService;
+import org.duniter.core.client.service.HttpServiceImpl;
+import org.duniter.core.client.service.bma.*;
+import org.duniter.core.client.service.local.CurrencyService;
+import org.duniter.core.client.service.local.CurrencyServiceImpl;
+import org.duniter.core.client.service.local.PeerService;
+import org.duniter.core.client.service.local.PeerServiceImpl;
+import org.duniter.core.service.CryptoService;
+import org.duniter.core.service.Ed25519CryptoServiceImpl;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.service.blockchain.BlockBlockchainService;
-import org.duniter.elasticsearch.service.market.CategoryMarketService;
-import org.duniter.elasticsearch.service.market.RecordMarketService;
-import org.duniter.elasticsearch.service.registry.CategoryRegistryService;
-import org.duniter.elasticsearch.service.registry.CitiesRegistryService;
-import org.duniter.elasticsearch.service.registry.CurrencyRegistryService;
-import org.duniter.elasticsearch.service.registry.RecordRegistryService;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
@@ -37,18 +45,43 @@ public class ServiceModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
         bind(ServiceLocator.class).asEagerSingleton();
+
+        // ES service
         bind(PluginSettings.class).asEagerSingleton();
-        // Market
-        bind(CategoryMarketService.class).asEagerSingleton();
-        bind(RecordMarketService.class).asEagerSingleton();
+        bind(RegistryService.class);
+        bind(MarketService.class);
+        bind(BlockchainService.class);
 
-        // Registry
-        bind(CurrencyRegistryService.class);
-        bind(CategoryRegistryService.class);
-        bind(CitiesRegistryService.class);
-        bind(RecordRegistryService.class);
-
-        // BC
-        bind(BlockBlockchainService.class);
+        // Duniter Client API beans
+        bindWithLocator(BlockchainRemoteService.class);
+        bindWithLocator(NetworkRemoteService.class);
+        bindWithLocator(WotRemoteService.class);
+        bindWithLocator(TransactionRemoteService.class);
+        bindWithLocator(CryptoService.class);
+        bindWithLocator(PeerService.class);
+        bindWithLocator(CurrencyService.class);
+        bindWithLocator(HttpService.class);
+        bindWithLocator(CurrencyDao.class);
+        bindWithLocator(PeerDao.class);
+        bindWithLocator(DataContext.class);
+/*
+        bindWithLocator(BlockchainRemoteServiceImpl.class);
+        bindWithLocator(NetworkRemoteServiceImpl.class);
+        bindWithLocator(WotRemoteServiceImpl.class);
+        bindWithLocator(TransactionRemoteServiceImpl.class);
+        bindWithLocator(Ed25519CryptoServiceImpl.class);
+        bindWithLocator(PeerServiceImpl.class);
+        bindWithLocator(CurrencyServiceImpl.class);
+        bindWithLocator(HttpServiceImpl.class);
+        bindWithLocator(MemoryCurrencyDaoImpl.class);
+        bindWithLocator(MemoryPeerDaoImpl.class);
+        bindWithLocator(DataContext.class);*/
     }
+
+    /* protected methods */
+
+    protected <T extends Bean> void bindWithLocator(Class<T> clazz) {
+        bind(clazz).toProvider(new ServiceLocator.Provider<>(clazz));
+    }
+
 }

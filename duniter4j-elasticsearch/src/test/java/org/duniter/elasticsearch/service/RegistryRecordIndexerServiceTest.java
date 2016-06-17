@@ -23,14 +23,11 @@ package org.duniter.elasticsearch.service;
  */
 
 import org.duniter.elasticsearch.TestResource;
-import org.duniter.elasticsearch.service.registry.RecordRegistryService;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
 
 /**
  * Created by Benoit on 06/05/2015.
@@ -41,16 +38,17 @@ public class RegistryRecordIndexerServiceTest {
     @ClassRule
     public static final TestResource resource = TestResource.create();
 
-    private RecordRegistryService service;
+    private RegistryService service;
 
     @Before
     public void setUp() throws Exception {
+        // FIXME use google guice ?
         //service = ServiceLocator.instance().getRegistryRecordIndexerService();
     }
 
     @Test
     public void insertTestData() {
-        service.insertRecordFromBulkFile(new File("src/test/resources/registry-test-records.json"));
+        //service.insertRecordFromBulkFile(new File("src/test/resources/registry-test-records.json"));
     }
 
 }

@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import org.duniter.core.beans.Bean;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
@@ -37,12 +38,15 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -56,97 +60,26 @@ import java.net.UnknownHostException;
 /**
  * Created by Benoit on 08/04/2015.
  */
-public abstract class AbstractService<T> implements LifecycleComponent<T>{
+public abstract class AbstractService implements Bean {
 
-    private static final ESLogger log = ESLoggerFactory.getLogger(AbstractService.class.getName());
-
-    private Lifecycle.State state;
-
-    private Client client;
-    private AdminClient admin;
-
-    private PluginSettings pluginSettings;
-
-    private ObjectMapper objectMapper;
+    protected final ESLogger logger;
+    protected final Client client;
+    protected final PluginSettings pluginSettings;
+    protected final ObjectMapper objectMapper;
 
     @Inject
     public AbstractService(Client client, PluginSettings pluginSettings) {
+        this.logger = Loggers.getLogger(getClass());
         this.client = client;
         this.pluginSettings = pluginSettings;
         this.objectMapper = new ObjectMapper();
-        this.state = Lifecycle.State.INITIALIZED;
-    }
-
-
-    @Override
-    public Lifecycle.State lifecycleState() {
-        return state;
-    }
-
-    @Override
-    public void addLifecycleListener(LifecycleListener var1){
-        // TODO
-    }
-
-    @Override
-    public void removeLifecycleListener(LifecycleListener var1){
-        // TODO
-    }
-
-    @Override
-    public T start(){
-        state = Lifecycle.State.STARTED;
-        return (T)this;
-    }
-
-    @Override
-    public T stop(){
-        state = Lifecycle.State.STOPPED;
-        return (T)this;
-    }
-
-    @Override
-    public void close() {
-        state = Lifecycle.State.STOPPED;
     }
 
     /* -- protected methods  -- */
 
-    protected void setState(Lifecycle.State state) {
-        this.state = state;
-    }
-
-    protected Client getClient() {
-        return client;
-    }
-
-    protected PluginSettings getPluginSettings() {
-        return pluginSettings;
-    }
-
-    protected ObjectMapper getObjectMapper() {
-        return objectMapper;
-    }
-
     protected boolean existsIndex(String indexes) {
-        //if (admin == null) {
-            Settings.Builder settings = Settings.settingsBuilder()
-                    .put("cluster.name", "duniter4j-elasticsearch")
-                    .put("client.transport.sniff", true);
-            Client client = null;
-            try {
-                client = TransportClient.builder().settings(settings)
-                        .build()
-                        .addTransportAddress(new InetSocketTransportAddress(
-                                InetAddress.getByName("localhost"), 9300));
-            } catch (UnknownHostException e) {
-                throw new TechnicalException(e);
-            }
-        //    admin = client.admin();
-        //}
         IndicesExistsRequestBuilder requestBuilder = client.admin().indices().prepareExists(indexes);
         IndicesExistsResponse response = requestBuilder.execute().actionGet();
-
         return response.isExists();
     }
 
@@ -154,7 +87,9 @@ public abstract class AbstractService<T> implements LifecycleComponent<T>{
         if (!existsIndex(indexName)) {
             return;
         }
-        log.info(String.format("Deleting index [%s]", indexName));
+        if (logger.isInfoEnabled()) {
+            logger.info(String.format("Deleting index [%s]", indexName));
+        }
 
         DeleteIndexRequestBuilder deleteIndexRequestBuilder = client.admin().indices().prepareDelete(indexName);
         deleteIndexRequestBuilder.execute().actionGet();
@@ -238,8 +173,8 @@ public abstract class AbstractService<T> implements LifecycleComponent<T>{
             StringBuilder builder = new StringBuilder();
             while(line != null) {
                 if (StringUtils.isNotBlank(line)) {
-                    if (log.isTraceEnabled()) {
-                        log.trace(String.format("[%s] Add to bulk: %s", indexName, line));
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("[%s] Add to bulk: %s", indexName, line));
                     }
                     builder.append(line).append('\n');
                 }
@@ -264,7 +199,7 @@ public abstract class AbstractService<T> implements LifecycleComponent<T>{
         }
 
         try {
-            getClient().bulk(bulkRequest).actionGet();
+            client.bulk(bulkRequest).actionGet();
         } catch(Exception e) {
             throw new TechnicalException(String.format("[%s] Error while inserting rows into %s", indexName, indexType), e);
         }

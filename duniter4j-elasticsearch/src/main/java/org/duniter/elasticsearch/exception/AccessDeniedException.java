@@ -1,8 +1,8 @@
-package org.duniter.elasticsearch.service.exception;
+package org.duniter.elasticsearch.exception;
 
 /*
  * #%L
- * UCoin Java Client :: Web
+ * UCoin Java Client :: Core API
  * %%
  * Copyright (C) 2014 - 2015 EIS
  * %%
@@ -28,22 +28,22 @@ import org.duniter.core.exception.BusinessException;
 /**
  * Created by Benoit on 03/04/2015.
  */
-public class InvalidSignatureException extends BusinessException {
+public class AccessDeniedException extends BusinessException{
 
-
-    public InvalidSignatureException() {
+    public AccessDeniedException() {
         super();
     }
 
-    public InvalidSignatureException(String message, Throwable cause) {
+    public AccessDeniedException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public InvalidSignatureException(String message) {
+    public AccessDeniedException(String message) {
         super(message);
     }
 
-    public InvalidSignatureException(Throwable cause) {
+    public AccessDeniedException(Throwable cause) {
         super(cause);
     }
+
 }

@@ -99,10 +99,12 @@ http.cors.enabled: true
 
 security.manager.enabled: false
 
+
 #duniter.disable: true
 duniter.host: cgeek.fr
 duniter.port: 9330
 
 duniter.string.analyzer: french
+duniter.indices.reload: true
 
-duniter.dev.enable: true
+#duniter.dev.enable: true
