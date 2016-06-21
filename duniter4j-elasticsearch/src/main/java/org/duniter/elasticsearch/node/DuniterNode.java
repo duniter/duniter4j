@@ -1,5 +1,27 @@
 package org.duniter.elasticsearch.node;
 
+/*
+ * #%L
+ * Duniter4j :: ElasticSearch Plugin
+ * %%
+ * Copyright (C) 2014 - 2016 EIS
+ * %%
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the 
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public 
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/gpl-3.0.html>.
+ * #L%
+ */
+
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.BlockchainService;
@@ -66,6 +88,10 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
 
             injector.getInstance(BlockchainService.class)
                     .indexLastBlocks(peer);
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Reloading all Duniter indices... [OK]");
+            }
         }
         else {
             if (logger.isInfoEnabled()) {
@@ -75,10 +101,11 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
             injector.getInstance(RegistryService.class).createIndexIfNotExists();
 
             injector.getInstance(MarketService.class).createIndexIfNotExists();
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Checking Duniter indices... [OK]");
+            }
         }
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Duniter indices created.");
-        }
     }
 }

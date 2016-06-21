@@ -14,22 +14,9 @@ duniter4j has four main components :
  - elasticsearch: a ES plugin, to store blockchain, registry, market and more.
     
 
-## Install
+## Install as ES plugin
 
- - Install ElasticSearch 2.3.3
- 
- - Install plugins :
- 
-   /bin/plugin install elastic/elasticsearch
-   
-   /bin/plugin install duniter/duniter4j
-
-
-## Test it
-
-
-
-The elasticsearch component is ready to use !
+### Install Java 
 
  - Install Java JRE 8 or more.
  
@@ -47,7 +34,22 @@ sudo apt-get install openjdk-8-jre
        exists on: /usr/local/lib or /opt/local/lib. If not, create a symbolic link.
        
     No installation need for Windows (include in binaries) 
-  
+
+### Install ElasticSearch 2.3.3
+
+ Download lastest release of ElasticSearch
+ 
+### Install ElasticSearch plugins
+ 
+   /bin/plugin install mapper-attachments
+   
+   /bin/plugin install https://github.com/duniter/duniter4j/releases/download/0.2.0/duniter4j-elasticsearch-0.2.0.zip
+
+
+## Install from standalone bundle 
+
+ - Installa Java (see on top) 
+ 
  - Download lastest release of file duniter4j-elasticsearch-X.Y-standalone.zip
  
  - Unzip, then start a elasticsearch node, just do :
@@ -58,7 +60,7 @@ cd duniter4j-elasticsearch-X.Y
 ./duniter4j-elasticsearch.sh start index -h <node_host> -p <node_port>
 ```
 
-Example on meta_brouzouf test currency :
+Example on test_net test currency :
 
 ```bash
 $ ./duniter4j-elasticsearch.sh start index -h  cgeek.fr -p 9330
@@ -101,7 +103,7 @@ Options:
 
 ```
 
-## Use it
+## Use API (Developer)
 
 When a blockchain currency has been indexed, you can test some fun queries :
 
@@ -157,7 +159,7 @@ More documentation here :
   - a good [tutorial](http://okfnlabs.org/blog/2013/07/01/elasticsearch-query-tutorial.html) 
 
 
-## Compile
+## Compile from source
  
  Install required dependencies:
  

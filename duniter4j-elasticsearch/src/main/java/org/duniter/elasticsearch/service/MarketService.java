@@ -264,9 +264,14 @@ public class MarketService extends AbstractService {
                     .field("type", "double")
                     .endObject()
 
-                    // price Id UD
-                    .startObject("priceInUD")
-                    .field("type", "boolean")
+                    // price Unit
+                    .startObject("unit")
+                    .field("type", "string")
+                    .endObject()
+
+                    // currency
+                    .startObject("currency")
+                    .field("type", "string")
                     .endObject()
 
                     // issuer
@@ -285,24 +290,52 @@ public class MarketService extends AbstractService {
                     .field("type", "geo_point")
                     .endObject()
 
+                    // thumbnail
+                    .startObject("thumbnail")
+                    .field("type", "attachment")
+                        .startObject("fields") // src
+                        .startObject("content") // title
+                            .field("index", "no")
+                        .endObject()
+                        .startObject("title") // title
+                            .field("type", "string")
+                            .field("store", "no")
+                        .endObject()
+                        .startObject("author") // title
+                            .field("store", "no")
+                        .endObject()
+                        .startObject("content_type") // title
+                            .field("store", "yes")
+                        .endObject()
+                    .endObject()
+                    .endObject()
+
                     // pictures
                     .startObject("pictures")
                     .field("type", "nested")
-                    .startObject("properties")
-                    .startObject("src") // src
-                    // FISME : add attachment plugin
-                    //.field("type", "attachment")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-                    .startObject("title") // title
-                    .field("type", "string")
-                    .field("analyzer", stringAnalyzer)
-                    .startObject("norms") // disabled norms on title
-                    .field("enabled", "false")
-                    .endObject()
-                    .endObject()
-                    .endObject()
+                    .field("dynamic", "false")
+                        .startObject("properties")
+                            .startObject("file") // src
+                                .field("type", "attachment")
+                                .startObject("fields") // src
+                                    .startObject("content") // title
+                                        .field("index", "no")
+                                    .endObject()
+                                    .startObject("title") // title
+                                        .field("type", "string")
+                                        .field("store", "yes")
+                                        .field("analyzer", stringAnalyzer)
+                                    .endObject()
+                                    .startObject("author") // title
+                                        .field("type", "string")
+                                        .field("store", "no")
+                                    .endObject()
+                                    .startObject("content_type") // title
+                                        .field("store", "yes")
+                                    .endObject()
+                                .endObject()
+                            .endObject()
+                        .endObject()
                     .endObject()
 
                     // categories
