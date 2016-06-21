@@ -57,8 +57,8 @@ cluster.name: duniter4j-elasticsearch
 # Set a custom port for HTTP:
 #
 # http.port: 9200
-#http.port: 9200
-http.cors.enabled: true
+
+http.cors.enabled: false
 #
 # For more information, see the documentation at:
 # <http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-network.html>
@@ -105,6 +105,6 @@ duniter.host: cgeek.fr
 duniter.port: 9330
 
 duniter.string.analyzer: french
-duniter.indices.reload: true
+#duniter.indices.reload: true
 
 #duniter.dev.enable: true

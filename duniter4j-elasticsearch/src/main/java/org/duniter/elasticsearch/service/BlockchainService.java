@@ -84,7 +84,7 @@ public class BlockchainService extends AbstractService {
     private static final int SYNC_MISSING_BLOCK_MAX_RETRY = 5;
 
     private BlockchainRemoteService blockchainRemoteService;
-    //private CurrencyRegistryService currencyRegistryService;
+    private RegistryService registryService;
 
     private Gson gson;
 
@@ -95,6 +95,11 @@ public class BlockchainService extends AbstractService {
         threadPool.scheduleOnStarted(() -> {
             blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
         });
+    }
+
+    @Inject
+    public void setRegistryService(RegistryService registryService) {
+        this.registryService = registryService;
     }
 
     public BlockchainService indexLastBlocks(Peer peer) {
@@ -124,13 +129,9 @@ public class BlockchainService extends AbstractService {
                     currencyName, pluginSettings.getNodeBmaHost(), pluginSettings.getNodeBmaPort()));
 
             // Create index blockchain if need
-            // FIXME: avoid circular dependency
-            //currencyRegistryService.createIndexIfNotExists();
-
-            //Currency currency = currencyRegistryService.getCurrencyById(currencyName);
-            //if (currency == null) {
-            //    currencyRegistryService.indexCurrencyFromPeer(peer);
-            //}
+            if (!registryService.isCurrencyExists(currencyName)) {
+                registryService.indexCurrencyFromPeer(peer);
+            }
 
             // Check if index exists
             createIndexIfNotExists(currencyName);

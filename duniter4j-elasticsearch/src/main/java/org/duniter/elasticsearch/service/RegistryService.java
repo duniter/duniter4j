@@ -44,6 +44,7 @@ import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
@@ -166,6 +167,11 @@ public class RegistryService extends AbstractService {
         bulkFromClasspathFile(CATEGORIES_BULK_CLASSPATH_FILE, INDEX, RECORD_CATEGORY_TYPE);
 
         return this;
+    }
+
+    public boolean isCurrencyExists(String currencyName) {
+        String pubkey = getSenderPubkeyByCurrencyId(currencyName);
+        return !StringUtils.isEmpty(pubkey);
     }
 
     /**

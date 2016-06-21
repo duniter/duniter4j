@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.service.blockchain;
+package org.duniter.elasticsearch.service;
 
 /*
  * #%L
@@ -28,16 +28,15 @@ import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.elasticsearch.TestResource;
-import org.duniter.elasticsearch.service.BlockchainService;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class BlockIndexerServiceTest {
+public class BlockchainServiceTest {
 
-	private static final Logger log = LoggerFactory.getLogger(BlockIndexerServiceTest.class);
+	private static final Logger log = LoggerFactory.getLogger(BlockchainServiceTest.class);
 
 	@ClassRule
 	public static final TestResource resource = TestResource.create();

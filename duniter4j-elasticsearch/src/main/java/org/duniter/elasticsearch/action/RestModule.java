@@ -33,13 +33,11 @@ import org.elasticsearch.common.inject.Module;
 public class RestModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
-        //bind(RestCurrencyIndexAction.class).asEagerSingleton();
-
+        bind(RestCurrencyIndexAction.class).asEagerSingleton();
         bind(RestMarketRecordIndexAction.class).asEagerSingleton();
+        bind(RestRegistryRecordIndexAction.class).asEagerSingleton();
 
-        //bind(RestRegistryRecordIndexAction.class).asEagerSingleton();
-
-        //bind(RestSecurityGetChallengeAction.class).asEagerSingleton();
-        //bind(RestSecurityAuthAction.class).asEagerSingleton();
+        bind(RestSecurityGetChallengeAction.class).asEagerSingleton();
+        bind(RestSecurityAuthAction.class).asEagerSingleton();
     }
 }

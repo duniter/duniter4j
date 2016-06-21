@@ -17,20 +17,23 @@ import org.elasticsearch.common.settings.Settings;
 public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
 
     private final PluginSettings pluginSettings;
+    private final ThreadPool threadPool;
+    private final Injector injector;
 
     @Inject
     public DuniterNode(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
         super(settings);
         this.pluginSettings = pluginSettings;
+        this.threadPool = threadPool;
+        this.injector = injector;
 
-        threadPool.scheduleOnStarted(() -> {
-            createIndices(injector);
-        });
     }
 
     @Override
     protected void doStart() {
-
+        threadPool.scheduleOnStarted(() -> {
+            createIndices();
+        });
     }
 
     @Override
@@ -43,14 +46,14 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
 
     }
 
-    protected void createIndices(Injector injector) {
-        if (logger.isInfoEnabled()) {
-            logger.info("Creating Duniter indices...");
-        }
+    protected void createIndices() {
 
         boolean reloadIndices = pluginSettings.reloadIndices();
         Peer peer = pluginSettings.checkAndGetPeer();
         if (reloadIndices) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Reloading all Duniter indices...");
+            }
             injector.getInstance(RegistryService.class)
                     .deleteIndex()
                     .createIndexIfNotExists()
@@ -65,6 +68,10 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
                     .indexLastBlocks(peer);
         }
         else {
+            if (logger.isInfoEnabled()) {
+                logger.info("Checking Duniter indices...");
+            }
+
             injector.getInstance(RegistryService.class).createIndexIfNotExists();
 
             injector.getInstance(MarketService.class).createIndexIfNotExists();

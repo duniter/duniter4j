@@ -187,7 +187,7 @@ public class MarketService extends AbstractService {
 
     public void fillRecordCategories() {
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s/%s] fill data", INDEX, RECORD_CATEGORY_TYPE));
+            logger.debug(String.format("[%s/%s] Fill data", INDEX, RECORD_CATEGORY_TYPE));
         }
 
         // Insert categories
