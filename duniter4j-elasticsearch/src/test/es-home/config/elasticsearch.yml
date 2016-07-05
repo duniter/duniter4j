@@ -105,6 +105,9 @@ duniter.host: cgeek.fr
 duniter.port: 9330
 
 duniter.string.analyzer: french
-#duniter.indices.reload: true
+
+duniter.indices.reload: true
 
 #duniter.dev.enable: true
+
+#script.groovy.sandbox.enabled: true

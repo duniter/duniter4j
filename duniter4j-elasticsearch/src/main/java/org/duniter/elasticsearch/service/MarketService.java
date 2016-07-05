@@ -338,6 +338,11 @@ public class MarketService extends AbstractService {
                         .endObject()
                     .endObject()
 
+                    // picturesCount
+                    .startObject("picturesCount")
+                    .field("type", "integer")
+                    .endObject()
+
                     // categories
                     .startObject("categories")
                     .field("type", "nested")
