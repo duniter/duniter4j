@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.action;
  */
 
 import org.duniter.elasticsearch.action.currency.RestCurrencyIndexAction;
+import org.duniter.elasticsearch.action.market.RestMarketCommentIndexAction;
 import org.duniter.elasticsearch.action.market.RestMarketRecordIndexAction;
 import org.duniter.elasticsearch.action.registry.RestRegistryRecordIndexAction;
 import org.duniter.elasticsearch.action.security.RestSecurityAuthAction;
@@ -35,6 +36,7 @@ public class RestModule extends AbstractModule implements Module {
     @Override protected void configure() {
         bind(RestCurrencyIndexAction.class).asEagerSingleton();
         bind(RestMarketRecordIndexAction.class).asEagerSingleton();
+        bind(RestMarketCommentIndexAction.class).asEagerSingleton();
         bind(RestRegistryRecordIndexAction.class).asEagerSingleton();
 
         bind(RestSecurityGetChallengeAction.class).asEagerSingleton();

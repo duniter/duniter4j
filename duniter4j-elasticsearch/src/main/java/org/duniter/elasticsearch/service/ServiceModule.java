@@ -51,6 +51,7 @@ public class ServiceModule extends AbstractModule implements Module {
         bind(RegistryService.class);
         bind(MarketService.class);
         bind(BlockchainService.class);
+        bind(MessageService.class);
 
         // Duniter Client API beans
         bindWithLocator(BlockchainRemoteService.class);

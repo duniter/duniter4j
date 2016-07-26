@@ -54,6 +54,7 @@ public class MarketService extends AbstractService {
     public static final String INDEX = "market";
     public static final String RECORD_CATEGORY_TYPE = "category";
     public static final String RECORD_TYPE = "record";
+    public static final String RECORD_COMMENT_TYPE = "comment";
 
     private static final String CATEGORIES_BULK_CLASSPATH_FILE = "market-categories-bulk-insert.json";
     private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
@@ -114,6 +115,7 @@ public class MarketService extends AbstractService {
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(RECORD_CATEGORY_TYPE, createRecordCategoryType());
         createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
+        createIndexRequestBuilder.addMapping(RECORD_COMMENT_TYPE, createRecordCommentType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -176,6 +178,50 @@ public class MarketService extends AbstractService {
         // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_TYPE)
                 .setSource(recordJson);
+
+        // Execute indexBlocksFromNode
+        IndexResponse response = indexRequest
+                .setRefresh(false)
+                .execute().actionGet();
+
+        return response.getId();
+    }
+
+    public String indexCommentFromJson(String commentJson) {
+
+        try {
+            JsonNode actualObj = objectMapper.readTree(commentJson);
+            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
+            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
+                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
+                throw new InvalidFormatException(String.format("Invalid comment JSON format. Required fields [%s,%s]",
+                        Record.PROPERTY_ISSUER, Record.PROPERTY_SIGNATURE));
+            }
+            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
+            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+
+            String recordNoSign = commentJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
+                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
+
+            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
+                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
+            }
+
+            // TODO : check if issuer is a valid member
+            //wotRemoteService.getRequirments();
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Indexing a comment from issuer [%s]", issuer.substring(0, 8)));
+            }
+
+        }
+        catch(IOException | JsonSyntaxException e) {
+            throw new InvalidFormatException("Invalid comment JSON: " + e.getMessage(), e);
+        }
+
+        // Preparing indexBlocksFromNode
+        IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_COMMENT_TYPE)
+                .setSource(commentJson);
 
         // Execute indexBlocksFromNode
         IndexResponse response = indexRequest
@@ -315,10 +361,10 @@ public class MarketService extends AbstractService {
                     .field("type", "nested")
                     .field("dynamic", "false")
                         .startObject("properties")
-                            .startObject("file") // src
+                            .startObject("file") // file
                                 .field("type", "attachment")
-                                .startObject("fields") // src
-                                    .startObject("content") // title
+                                .startObject("fields")
+                                    .startObject("content") // content
                                         .field("index", "no")
                                     .endObject()
                                     .startObject("title") // title
@@ -326,11 +372,11 @@ public class MarketService extends AbstractService {
                                         .field("store", "yes")
                                         .field("analyzer", stringAnalyzer)
                                     .endObject()
-                                    .startObject("author") // title
+                                    .startObject("author") // author
                                         .field("type", "string")
                                         .field("store", "no")
                                     .endObject()
-                                    .startObject("content_type") // title
+                                    .startObject("content_type") // content_type
                                         .field("store", "yes")
                                     .endObject()
                                 .endObject()
@@ -373,6 +419,52 @@ public class MarketService extends AbstractService {
         }
         catch(IOException ioe) {
             throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
+        }
+    }
+
+    public XContentBuilder createRecordCommentType() {
+        String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
+
+        try {
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_COMMENT_TYPE)
+                    .startObject("properties")
+
+                    // issuer
+                    .startObject("issuer")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // time
+                    .startObject("time")
+                    .field("type", "integer")
+                    .endObject()
+
+                    // message
+                    .startObject("message")
+                    .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
+                    .endObject()
+
+                    // record
+                    .startObject("record")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // reply to
+                    .startObject("reply_to")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    .endObject()
+                    .endObject().endObject();
+
+            return mapping;
+        }
+        catch(IOException ioe) {
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_COMMENT_TYPE, ioe.getMessage()), ioe);
         }
     }
 

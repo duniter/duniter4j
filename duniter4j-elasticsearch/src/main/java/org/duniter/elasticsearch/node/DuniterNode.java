@@ -26,6 +26,7 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.MarketService;
+import org.duniter.elasticsearch.service.MessageService;
 import org.duniter.elasticsearch.service.RegistryService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
@@ -85,6 +86,9 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
                     .deleteIndex()
                     .createIndexIfNotExists()
                     .fillRecordCategories();
+            injector.getInstance(MessageService.class)
+                    .deleteIndex()
+                    .createIndexIfNotExists();
 
             injector.getInstance(BlockchainService.class)
                     .indexLastBlocks(peer);

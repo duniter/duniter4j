@@ -360,7 +360,7 @@ Caused by: java.security.AccessControlException: access denied ("java.io.FilePer
 [2016-06-17 14:25:28,367][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
 [2016-06-17 14:25:30,498][INFO ][node                     ] [Shriek] initialized
 [2016-06-17 14:25:30,498][INFO ][node                     ] [Shriek] starting ...
-[2016-06-17 14:25:30,507][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:25:30,507][DEBUG][org.duniter.elasticsearch.job.ThreadPool] Starting indexing blocks from node [cgeek.fr:9330]...
 [2016-06-17 14:25:30,530][ERROR][bootstrap                ] [Shriek] Exception
 java.lang.NullPointerException
 	at org.elasticsearch.action.support.master.TransportMasterNodeAction$AsyncSingleAction.<init>(TransportMasterNodeAction.java:129)
@@ -375,10 +375,10 @@ java.lang.NullPointerException
 	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:56)
 	at org.duniter.elasticsearch.service.AbstractService.existsIndex(AbstractService.java:124)
 	at org.duniter.elasticsearch.service.registry.CurrencyRegistryService.deleteAllCurrencies(CurrencyRegistryService.java:292)
-	at org.duniter.elasticsearch.job.BlockIndexer.resetAllCurrencies(BlockIndexer.java:116)
-	at org.duniter.elasticsearch.job.BlockIndexer.resetAllData(BlockIndexer.java:109)
-	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:87)
-	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:26)
+	at org.duniter.elasticsearch.job.ThreadPool.resetAllCurrencies(BlockIndexer.java:116)
+	at org.duniter.elasticsearch.job.ThreadPool.resetAllData(BlockIndexer.java:109)
+	at org.duniter.elasticsearch.job.ThreadPool.start(BlockIndexer.java:87)
+	at org.duniter.elasticsearch.job.ThreadPool.start(BlockIndexer.java:26)
 	at org.elasticsearch.node.Node.start(Node.java:255)
 	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
 	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
@@ -403,7 +403,7 @@ java.lang.NullPointerException
 [2016-06-17 14:26:22,683][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
 [2016-06-17 14:26:23,933][INFO ][node                     ] [Hank Pym] initialized
 [2016-06-17 14:26:23,933][INFO ][node                     ] [Hank Pym] starting ...
-[2016-06-17 14:26:23,942][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:26:23,942][DEBUG][org.duniter.elasticsearch.job.ThreadPool] Starting indexing blocks from node [cgeek.fr:9330]...
 [2016-06-17 14:26:23,956][ERROR][bootstrap                ] [Hank Pym] Exception
 java.lang.NullPointerException
 	at org.elasticsearch.action.support.master.TransportMasterNodeAction$AsyncSingleAction.<init>(TransportMasterNodeAction.java:129)
@@ -418,10 +418,10 @@ java.lang.NullPointerException
 	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:56)
 	at org.duniter.elasticsearch.service.AbstractService.existsIndex(AbstractService.java:124)
 	at org.duniter.elasticsearch.service.registry.CurrencyRegistryService.deleteAllCurrencies(CurrencyRegistryService.java:292)
-	at org.duniter.elasticsearch.job.BlockIndexer.resetAllCurrencies(BlockIndexer.java:116)
-	at org.duniter.elasticsearch.job.BlockIndexer.resetAllData(BlockIndexer.java:109)
-	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:87)
-	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:26)
+	at org.duniter.elasticsearch.job.ThreadPool.resetAllCurrencies(BlockIndexer.java:116)
+	at org.duniter.elasticsearch.job.ThreadPool.resetAllData(BlockIndexer.java:109)
+	at org.duniter.elasticsearch.job.ThreadPool.start(BlockIndexer.java:87)
+	at org.duniter.elasticsearch.job.ThreadPool.start(BlockIndexer.java:26)
 	at org.elasticsearch.node.Node.start(Node.java:255)
 	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
 	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
@@ -446,7 +446,7 @@ java.lang.NullPointerException
 [2016-06-17 14:26:46,794][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
 [2016-06-17 14:26:47,742][INFO ][node                     ] [Deadly Ernest] initialized
 [2016-06-17 14:26:47,743][INFO ][node                     ] [Deadly Ernest] starting ...
-[2016-06-17 14:28:14,538][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:28:14,538][DEBUG][org.duniter.elasticsearch.job.ThreadPool] Starting indexing blocks from node [cgeek.fr:9330]...
 [2016-06-17 14:28:44,333][ERROR][bootstrap                ] [Deadly Ernest] Exception
 java.lang.NullPointerException
 	at org.elasticsearch.action.support.master.TransportMasterNodeAction$AsyncSingleAction.<init>(TransportMasterNodeAction.java:129)
@@ -461,10 +461,10 @@ java.lang.NullPointerException
 	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:56)
 	at org.duniter.elasticsearch.service.AbstractService.existsIndex(AbstractService.java:124)
 	at org.duniter.elasticsearch.service.registry.CurrencyRegistryService.deleteAllCurrencies(CurrencyRegistryService.java:292)
-	at org.duniter.elasticsearch.job.BlockIndexer.resetAllCurrencies(BlockIndexer.java:116)
-	at org.duniter.elasticsearch.job.BlockIndexer.resetAllData(BlockIndexer.java:109)
-	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:87)
-	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:26)
+	at org.duniter.elasticsearch.job.ThreadPool.resetAllCurrencies(BlockIndexer.java:116)
+	at org.duniter.elasticsearch.job.ThreadPool.resetAllData(BlockIndexer.java:109)
+	at org.duniter.elasticsearch.job.ThreadPool.start(BlockIndexer.java:87)
+	at org.duniter.elasticsearch.job.ThreadPool.start(BlockIndexer.java:26)
 	at org.elasticsearch.node.Node.start(Node.java:255)
 	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
 	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
@@ -489,7 +489,7 @@ java.lang.NullPointerException
 [2016-06-17 14:33:26,094][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
 [2016-06-17 14:33:27,148][INFO ][node                     ] [Benny Beckley] initialized
 [2016-06-17 14:33:27,153][INFO ][node                     ] [Benny Beckley] starting ...
-[2016-06-17 14:33:27,157][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:33:27,157][DEBUG][org.duniter.elasticsearch.job.ThreadPool] Starting indexing blocks from node [cgeek.fr:9330]...
 [2016-06-17 14:33:27,478][INFO ][transport                ] [Benny Beckley] publish_address {127.0.0.1:9300}, bound_addresses {[::1]:9300}, {127.0.0.1:9300}
 [2016-06-17 14:33:27,488][INFO ][discovery                ] [Benny Beckley] elasticsearch/ERtxwf1iRrGMEdv5AlmsTw
 [2016-06-17 14:33:30,605][INFO ][cluster.service          ] [Benny Beckley] new_master {Benny Beckley}{ERtxwf1iRrGMEdv5AlmsTw}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
@@ -516,7 +516,7 @@ java.lang.NullPointerException
 [2016-06-17 14:38:52,617][INFO ][org.duniter.elasticsearch.service.ServiceLocator] Starting ServiceLocator [OK]
 [2016-06-17 14:38:55,540][INFO ][node                     ] [Abyss] initialized
 [2016-06-17 14:38:55,540][INFO ][node                     ] [Abyss] starting ...
-[2016-06-17 14:38:55,543][DEBUG][org.duniter.elasticsearch.job.BlockIndexer] Starting indexing blocks from node [cgeek.fr:9330]...
+[2016-06-17 14:38:55,543][DEBUG][org.duniter.elasticsearch.job.ThreadPool] Starting indexing blocks from node [cgeek.fr:9330]...
 [2016-06-17 14:38:55,556][ERROR][bootstrap                ] [Abyss] Exception
 java.lang.NullPointerException
 	at org.elasticsearch.action.support.master.TransportMasterNodeAction$AsyncSingleAction.<init>(TransportMasterNodeAction.java:129)
@@ -531,10 +531,10 @@ java.lang.NullPointerException
 	at org.elasticsearch.action.ActionRequestBuilder.execute(ActionRequestBuilder.java:56)
 	at org.duniter.elasticsearch.service.AbstractService.existsIndex(AbstractService.java:124)
 	at org.duniter.elasticsearch.service.registry.CurrencyRegistryService.deleteAllCurrencies(CurrencyRegistryService.java:292)
-	at org.duniter.elasticsearch.job.BlockIndexer.resetAllCurrencies(BlockIndexer.java:116)
-	at org.duniter.elasticsearch.job.BlockIndexer.resetAllData(BlockIndexer.java:109)
-	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:87)
-	at org.duniter.elasticsearch.job.BlockIndexer.start(BlockIndexer.java:26)
+	at org.duniter.elasticsearch.job.ThreadPool.resetAllCurrencies(BlockIndexer.java:116)
+	at org.duniter.elasticsearch.job.ThreadPool.resetAllData(BlockIndexer.java:109)
+	at org.duniter.elasticsearch.job.ThreadPool.start(BlockIndexer.java:87)
+	at org.duniter.elasticsearch.job.ThreadPool.start(BlockIndexer.java:26)
 	at org.elasticsearch.node.Node.start(Node.java:255)
 	at org.elasticsearch.bootstrap.Bootstrap.start(Bootstrap.java:206)
 	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:272)
@@ -548,3 +548,75 @@ java.lang.NullPointerException
 [2016-06-17 14:38:55,582][INFO ][node                     ] [Abyss] stopped
 [2016-06-17 14:38:55,582][INFO ][node                     ] [Abyss] closing ...
 [2016-06-17 14:38:55,597][INFO ][node                     ] [Abyss] closed
+[2016-06-17 16:12:04,866][INFO ][node                     ] [David Cannon] version[2.3.3], pid[20539], build[NA/NA]
+[2016-06-17 16:12:04,866][INFO ][node                     ] [David Cannon] initializing ...
+[2016-06-17 16:12:04,887][ERROR][bootstrap                ] Exception
+java.lang.ExceptionInInitializerError
+	at org.apache.lucene.codecs.Codec.reloadCodecs(Codec.java:133)
+	at org.elasticsearch.plugins.PluginsService.reloadLuceneSPI(PluginsService.java:454)
+	at org.elasticsearch.plugins.PluginsService.loadBundles(PluginsService.java:430)
+	at org.elasticsearch.plugins.PluginsService.<init>(PluginsService.java:129)
+	at org.elasticsearch.node.Node.<init>(Node.java:158)
+	at org.elasticsearch.node.Node.<init>(Node.java:140)
+	at org.elasticsearch.node.NodeBuilder.build(NodeBuilder.java:143)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:178)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:606)
+	at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:294)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.IllegalArgumentException: An SPI class of type org.apache.lucene.codecs.Codec with name 'Lucene54' does not exist.  You need to add the corresponding JAR file supporting this SPI to your classpath.  The current classpath supports the following names: []
+	at org.apache.lucene.util.NamedSPILoader.lookup(NamedSPILoader.java:114)
+	at org.apache.lucene.codecs.Codec$Holder.<clinit>(Codec.java:60)
+	... 16 more
+[2016-06-17 16:15:53,526][INFO ][node                     ] [Sun Girl] version[2.3.3], pid[21922], build[NA/NA]
+[2016-06-17 16:15:53,526][INFO ][node                     ] [Sun Girl] initializing ...
+[2016-06-17 16:15:53,543][ERROR][bootstrap                ] Exception
+java.lang.ExceptionInInitializerError
+	at org.apache.lucene.codecs.Codec.reloadCodecs(Codec.java:133)
+	at org.elasticsearch.plugins.PluginsService.reloadLuceneSPI(PluginsService.java:454)
+	at org.elasticsearch.plugins.PluginsService.loadBundles(PluginsService.java:430)
+	at org.elasticsearch.plugins.PluginsService.<init>(PluginsService.java:129)
+	at org.elasticsearch.node.Node.<init>(Node.java:158)
+	at org.elasticsearch.node.Node.<init>(Node.java:140)
+	at org.elasticsearch.node.NodeBuilder.build(NodeBuilder.java:143)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:178)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:606)
+	at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:294)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.IllegalArgumentException: An SPI class of type org.apache.lucene.codecs.Codec with name 'Lucene54' does not exist.  You need to add the corresponding JAR file supporting this SPI to your classpath.  The current classpath supports the following names: []
+	at org.apache.lucene.util.NamedSPILoader.lookup(NamedSPILoader.java:114)
+	at org.apache.lucene.codecs.Codec$Holder.<clinit>(Codec.java:60)
+	... 16 more
+[2016-06-17 16:16:36,983][INFO ][node                     ] [Maverick] version[2.3.3], pid[22012], build[NA/NA]
+[2016-06-17 16:16:36,983][INFO ][node                     ] [Maverick] initializing ...
+[2016-06-17 16:16:37,001][ERROR][bootstrap                ] Exception
+java.lang.ExceptionInInitializerError
+	at org.apache.lucene.codecs.Codec.reloadCodecs(Codec.java:133)
+	at org.elasticsearch.plugins.PluginsService.reloadLuceneSPI(PluginsService.java:454)
+	at org.elasticsearch.plugins.PluginsService.loadBundles(PluginsService.java:430)
+	at org.elasticsearch.plugins.PluginsService.<init>(PluginsService.java:129)
+	at org.elasticsearch.node.Node.<init>(Node.java:158)
+	at org.elasticsearch.node.Node.<init>(Node.java:140)
+	at org.elasticsearch.node.NodeBuilder.build(NodeBuilder.java:143)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:178)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:606)
+	at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:294)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.IllegalArgumentException: An SPI class of type org.apache.lucene.codecs.Codec with name 'Lucene54' does not exist.  You need to add the corresponding JAR file supporting this SPI to your classpath.  The current classpath supports the following names: []
+	at org.apache.lucene.util.NamedSPILoader.lookup(NamedSPILoader.java:114)
+	at org.apache.lucene.codecs.Codec$Holder.<clinit>(Codec.java:60)
+	... 16 more
