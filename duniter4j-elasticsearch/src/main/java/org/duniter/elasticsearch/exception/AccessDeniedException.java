@@ -23,27 +23,27 @@ package org.duniter.elasticsearch.exception;
  */
 
 
-import org.duniter.core.exception.BusinessException;
+import org.elasticsearch.rest.RestStatus;
 
 /**
  * Created by Benoit on 03/04/2015.
  */
-public class AccessDeniedException extends BusinessException{
-
-    public AccessDeniedException() {
-        super();
-    }
-
-    public AccessDeniedException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public AccessDeniedException(String message) {
-        super(message);
-    }
+public class AccessDeniedException extends DuniterElasticsearchException{
 
     public AccessDeniedException(Throwable cause) {
         super(cause);
     }
 
+    public AccessDeniedException(String msg, Object... args) {
+        super(msg, args);
+    }
+
+    public AccessDeniedException(String msg, Throwable cause, Object... args) {
+        super(msg, args, cause);
+    }
+
+    @Override
+    public RestStatus status() {
+        return RestStatus.FORBIDDEN;
+    }
 }

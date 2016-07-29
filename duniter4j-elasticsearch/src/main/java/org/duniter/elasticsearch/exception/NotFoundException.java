@@ -2,7 +2,7 @@ package org.duniter.elasticsearch.exception;
 
 /*
  * #%L
- * UCoin Java Client :: Web
+ * UCoin Java Client :: Core API
  * %%
  * Copyright (C) 2014 - 2015 EIS
  * %%
@@ -23,29 +23,28 @@ package org.duniter.elasticsearch.exception;
  */
 
 
+import org.duniter.core.exception.BusinessException;
 import org.elasticsearch.rest.RestStatus;
 
 /**
  * Created by Benoit on 03/04/2015.
  */
-public class InvalidSignatureException extends DuniterElasticsearchException {
+public class NotFoundException extends DuniterElasticsearchException{
 
-
-    public InvalidSignatureException(Throwable cause) {
+    public NotFoundException(Throwable cause) {
         super(cause);
     }
 
-    public InvalidSignatureException(String msg, Object... args) {
+    public NotFoundException(String msg, Object... args) {
         super(msg, args);
     }
 
-    public InvalidSignatureException(String msg, Throwable cause, Object... args) {
+    public NotFoundException(String msg, Throwable cause, Object... args) {
         super(msg, args, cause);
     }
 
-
     @Override
     public RestStatus status() {
-        return RestStatus.BAD_REQUEST;
+        return RestStatus.NOT_FOUND;
     }
 }

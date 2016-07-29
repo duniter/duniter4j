@@ -24,27 +24,29 @@ package org.duniter.elasticsearch.exception;
 
 
 import org.duniter.core.exception.BusinessException;
+import org.elasticsearch.rest.RestStatus;
 
 /**
  *
  * Created by Benoit on 03/04/2015.
  */
-public class DuplicateIndexIdException extends BusinessException{
-
-    public DuplicateIndexIdException() {
-        super();
-    }
-
-    public DuplicateIndexIdException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public DuplicateIndexIdException(String message) {
-        super(message);
-    }
+public class DuplicateIndexIdException extends DuniterElasticsearchException{
 
     public DuplicateIndexIdException(Throwable cause) {
         super(cause);
     }
 
+    public DuplicateIndexIdException(String msg, Object... args) {
+        super(msg, args);
+    }
+
+    public DuplicateIndexIdException(String msg, Throwable cause, Object... args) {
+        super(msg, args, cause);
+    }
+
+
+    @Override
+    public RestStatus status() {
+        return RestStatus.BAD_REQUEST;
+    }
 }

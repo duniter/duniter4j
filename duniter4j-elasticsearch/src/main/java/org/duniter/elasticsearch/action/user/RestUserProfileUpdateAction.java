@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.action.market;
+package org.duniter.elasticsearch.action.user;
 
 /*
  * #%L
@@ -25,7 +25,7 @@ package org.duniter.elasticsearch.action.market;
 import org.duniter.core.exception.BusinessException;
 import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
-import org.duniter.elasticsearch.service.MarketService;
+import org.duniter.elasticsearch.service.UserService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -34,29 +34,28 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.*;
 
 import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
 import static org.elasticsearch.rest.RestStatus.OK;
 
-public class RestMarketCommentIndexAction extends BaseRestHandler {
+public class RestUserProfileUpdateAction extends BaseRestHandler {
 
-    private static final ESLogger log = ESLoggerFactory.getLogger(RestMarketCommentIndexAction.class.getName());
+    private static final ESLogger log = ESLoggerFactory.getLogger(RestUserProfileUpdateAction.class.getName());
 
-    private MarketService service;
+    private UserService service;
 
     @Inject
-    public RestMarketCommentIndexAction(Settings settings, RestController controller, Client client, MarketService service) {
+    public RestUserProfileUpdateAction(Settings settings, RestController controller, Client client, UserService service) {
         super(settings, controller, client);
-        controller.registerHandler(POST, "/market/comment", this);
+        controller.registerHandler(POST, "/user/profile/{id}/_update", this);
         this.service = service;
     }
 
     @Override
     protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
+        String id = request.param("id");
 
         try {
-            String recordId = service.indexCommentFromJson(request.content().toUtf8());
-
-            restChannel.sendResponse(new BytesRestResponse(OK, recordId));
+            service.updateProfileFromJson(request.content().toUtf8(), id);
+            restChannel.sendResponse(new BytesRestResponse(OK, id));
         }
         catch(DuniterElasticsearchException | BusinessException e) {
             log.error(e.getMessage(), e);

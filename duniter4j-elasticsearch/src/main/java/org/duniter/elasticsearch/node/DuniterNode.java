@@ -24,10 +24,7 @@ package org.duniter.elasticsearch.node;
 
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.service.BlockchainService;
-import org.duniter.elasticsearch.service.MarketService;
-import org.duniter.elasticsearch.service.MessageService;
-import org.duniter.elasticsearch.service.RegistryService;
+import org.duniter.elasticsearch.service.*;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -90,8 +87,17 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
                     .deleteIndex()
                     .createIndexIfNotExists();
 
+            injector.getInstance(UserService.class)
+                    .deleteIndex()
+                    .createIndexIfNotExists();
+
+            injector.getInstance(HistoryService.class)
+                    .deleteIndex()
+                    .createIndexIfNotExists();
+
             injector.getInstance(BlockchainService.class)
                     .indexLastBlocks(peer);
+
 
             if (logger.isInfoEnabled()) {
                 logger.info("Reloading all Duniter indices... [OK]");
@@ -103,8 +109,10 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
             }
 
             injector.getInstance(RegistryService.class).createIndexIfNotExists();
-
             injector.getInstance(MarketService.class).createIndexIfNotExists();
+            injector.getInstance(MessageService.class).createIndexIfNotExists();
+            injector.getInstance(UserService.class).createIndexIfNotExists();
+            injector.getInstance(HistoryService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking Duniter indices... [OK]");

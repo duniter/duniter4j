@@ -31,7 +31,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
@@ -50,8 +49,6 @@ import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
-import org.duniter.elasticsearch.model.SearchResult;
-import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -59,8 +56,6 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.action.suggest.SuggestRequestBuilder;
-import org.elasticsearch.action.suggest.SuggestResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -68,15 +63,11 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
-import org.elasticsearch.search.highlight.HighlightField;
-import org.elasticsearch.search.sort.SortOrder;
-import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -89,14 +80,9 @@ public class RegistryService extends AbstractService {
     public static final String RECORD_TYPE = "record";
     public static final String RECORD_CATEGORY_TYPE = "category";
     public static final String CURRENCY_TYPE = "currency";
-    private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
     private static final String CATEGORIES_BULK_CLASSPATH_FILE = "registry-categories-bulk-insert.json";
-    public static final String REGEX_WORD_SEPARATOR = "[-\\t@# ]+";
-    public static final String REGEX_SPACE = "[\\t\\n\\r ]+";
 
     private final Gson gson;
-    private WotRemoteService wotRemoteService;
-    private CryptoService cryptoService;
     private BlockchainRemoteService blockchainRemoteService;
 
     @Inject
@@ -105,10 +91,8 @@ public class RegistryService extends AbstractService {
                            WotRemoteService wotRemoteService,
                            CryptoService cryptoService,
                            BlockchainRemoteService blockchainRemoteService) {
-        super(client, settings);
+        super(client, settings, cryptoService);
         gson = GsonUtils.newBuilder().create();
-        this.wotRemoteService = wotRemoteService;
-        this.cryptoService = cryptoService;
         this.blockchainRemoteService = blockchainRemoteService;
     }
 
@@ -181,50 +165,19 @@ public class RegistryService extends AbstractService {
      */
     public String indexRecordFromJson(String recordJson) {
 
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode actualObj = mapper.readTree(recordJson);
-            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
-            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
-                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
-                throw new InvalidFormatException("Invalid record JSON format. Required fields [issuer,signature]");
-            }
-            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
-            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
+        String issuer = getIssuer(actualObj);
 
-            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
-                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
-
-            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
-                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
-            }
-
-            // TODO verify hash
-            //if (!cryptoService.verifyHash(recordNoSign, signature, issuer)) {
-            //    throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
-            //}
-
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
-            }
-
-        }
-        catch(IOException | JsonSyntaxException e) {
-            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Indexing a registry record from issuer [%s]", issuer.substring(0, 8)));
         }
 
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_TYPE)
-                .setSource(recordJson);
-
-        // Execute indexBlocksFromNode
-        IndexResponse response = indexRequest
+        IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
+                .setSource(recordJson)
                 .setRefresh(false)
                 .execute().actionGet();
-
         return response.getId();
     }
-
 
     public void insertRecordFromBulkFile(File bulkFile) {
 
@@ -442,10 +395,24 @@ public class RegistryService extends AbstractService {
                     .field("type", "geo_point")
                     .endObject()
 
-                    // avatar
-                    .startObject("avatar")
+                    // thumbnail
+                    .startObject("thumbnail")
+                    .field("type", "attachment")
+                    .startObject("fields") // src
+                    .startObject("content") // title
+                    .field("index", "no")
+                    .endObject()
+                    .startObject("title") // title
                     .field("type", "string")
-                    .field("index", "not_analyzed")
+                    .field("store", "no")
+                    .endObject()
+                    .startObject("author") // title
+                    .field("store", "no")
+                    .endObject()
+                    .startObject("content_type") // title
+                    .field("store", "yes")
+                    .endObject()
+                    .endObject()
                     .endObject()
 
                     // categories

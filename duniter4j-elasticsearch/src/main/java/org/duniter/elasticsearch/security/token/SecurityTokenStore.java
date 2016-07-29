@@ -48,8 +48,8 @@ public class SecurityTokenStore {
 
     @Inject
     public SecurityTokenStore(Settings settings) {
-        this.prefix = settings.get("duniter4j.auth.token.prefix", "duniter4j-");
-        this.validityDurationInSeconds = settings.getAsInt("duniter4j.auth.tokenValidityDuration", 30*60 /*30min*/ );
+        this.prefix = settings.get("duniter.auth.token.prefix", "duniter-");
+        this.validityDurationInSeconds = settings.getAsInt("duniter.auth.tokenValidityDuration", 600 /*= 10min*/ );
         this.tokenCache = initGeneratedMessageCache();
     }
 

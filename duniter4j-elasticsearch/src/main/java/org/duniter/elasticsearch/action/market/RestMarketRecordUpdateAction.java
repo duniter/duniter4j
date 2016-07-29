@@ -34,29 +34,27 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.*;
 
 import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
 import static org.elasticsearch.rest.RestStatus.OK;
 
-public class RestMarketCommentIndexAction extends BaseRestHandler {
+public class RestMarketRecordUpdateAction extends BaseRestHandler {
 
-    private static final ESLogger log = ESLoggerFactory.getLogger(RestMarketCommentIndexAction.class.getName());
+    private static final ESLogger log = ESLoggerFactory.getLogger(RestMarketRecordUpdateAction.class.getName());
 
     private MarketService service;
 
     @Inject
-    public RestMarketCommentIndexAction(Settings settings, RestController controller, Client client, MarketService service) {
+    public RestMarketRecordUpdateAction(Settings settings, RestController controller, Client client, MarketService service) {
         super(settings, controller, client);
-        controller.registerHandler(POST, "/market/comment", this);
+        controller.registerHandler(POST, "/market/record/{id}/_update", this);
         this.service = service;
     }
 
     @Override
     protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
-
+        String id = request.param("id");
         try {
-            String recordId = service.indexCommentFromJson(request.content().toUtf8());
-
-            restChannel.sendResponse(new BytesRestResponse(OK, recordId));
+            service.updateRecordFromJson(request.content().toUtf8(), id);
+            restChannel.sendResponse(new BytesRestResponse(OK, id));
         }
         catch(DuniterElasticsearchException | BusinessException e) {
             log.error(e.getMessage(), e);

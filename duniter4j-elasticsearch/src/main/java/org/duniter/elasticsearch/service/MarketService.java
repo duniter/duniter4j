@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonSyntaxException;
+import org.duniter.core.client.model.elasticsearch.DeleteRecord;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
@@ -37,6 +38,7 @@ import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -57,15 +59,12 @@ public class MarketService extends AbstractService {
     public static final String RECORD_COMMENT_TYPE = "comment";
 
     private static final String CATEGORIES_BULK_CLASSPATH_FILE = "market-categories-bulk-insert.json";
-    private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
 
-    private CryptoService cryptoService;
     private WotRemoteService wotRemoteService;
 
     @Inject
     public MarketService(Client client, PluginSettings settings, CryptoService cryptoService, WotRemoteService wotRemoteService) {
-        super(client, settings);
-        this.cryptoService = cryptoService;
+        super(client, settings, cryptoService);
         this.wotRemoteService = wotRemoteService;
     }
 
@@ -145,90 +144,69 @@ public class MarketService extends AbstractService {
 
     public String indexRecordFromJson(String recordJson) {
 
-        try {
-            JsonNode actualObj = objectMapper.readTree(recordJson);
-            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
-            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
-                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
-                throw new InvalidFormatException("Invalid record JSON format. Required fields [issuer,signature]");
-            }
-            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
+        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
+        String issuer = getIssuer(actualObj);
 
-            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
-
-            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
-                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
-
-            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
-                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
-            }
-
-            // TODO : check if issuer is a valid member
-            //wotRemoteService.getRequirments();
-
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
-            }
-
-        }
-        catch(IOException | JsonSyntaxException e) {
-            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Indexing market record from issuer [%s]", issuer.substring(0, 8)));
         }
 
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_TYPE)
-                .setSource(recordJson);
-
-        // Execute indexBlocksFromNode
-        IndexResponse response = indexRequest
+        IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
+                .setSource(recordJson)
                 .setRefresh(false)
                 .execute().actionGet();
 
         return response.getId();
     }
 
+    public void updateRecordFromJson(String recordJson, String id) {
+
+        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
+        String issuer = getIssuer(actualObj);
+
+        // Check same document issuer
+        checkSameDocumentIssuer(INDEX, RECORD_TYPE, id, issuer);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Updating market record [%s] from issuer [%s]", id, issuer.substring(0, 8)));
+        }
+
+        client.prepareUpdate(INDEX, RECORD_TYPE, id)
+                .setDoc(recordJson)
+                .execute().actionGet();
+    }
+
     public String indexCommentFromJson(String commentJson) {
 
-        try {
-            JsonNode actualObj = objectMapper.readTree(commentJson);
-            Set<String> fieldNames = Sets.newHashSet(actualObj.fieldNames());
-            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
-                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
-                throw new InvalidFormatException(String.format("Invalid comment JSON format. Required fields [%s,%s]",
-                        Record.PROPERTY_ISSUER, Record.PROPERTY_SIGNATURE));
-            }
-            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
-            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+        JsonNode actualObj = readAndVerifyIssuerSignature(commentJson);
+        String issuer = getIssuer(actualObj);
 
-            String recordNoSign = commentJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
-                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
-
-            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
-                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
-            }
-
-            // TODO : check if issuer is a valid member
-            //wotRemoteService.getRequirments();
-
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Indexing a comment from issuer [%s]", issuer.substring(0, 8)));
-            }
-
-        }
-        catch(IOException | JsonSyntaxException e) {
-            throw new InvalidFormatException("Invalid comment JSON: " + e.getMessage(), e);
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Indexing a comment from issuer [%s]", issuer.substring(0, 8)));
         }
 
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_COMMENT_TYPE)
-                .setSource(commentJson);
-
-        // Execute indexBlocksFromNode
-        IndexResponse response = indexRequest
+        IndexResponse response = client.prepareIndex(INDEX, RECORD_COMMENT_TYPE)
+                .setSource(commentJson)
                 .setRefresh(false)
                 .execute().actionGet();
-
         return response.getId();
+    }
+
+    public void updateCommentFromJson(String commentJson, String id) {
+
+        JsonNode actualObj = readAndVerifyIssuerSignature(commentJson);
+        String issuer = getIssuer(actualObj);
+
+        // Check same document issuer
+        checkSameDocumentIssuer(INDEX, RECORD_COMMENT_TYPE, id, issuer);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Updating comment [%s] from issuer [%s]", id, issuer.substring(0, 8)));
+        }
+
+        // Execute indexBlocksFromNode
+        client.prepareUpdate(INDEX, RECORD_COMMENT_TYPE, id)
+                .execute().actionGet();
     }
 
     public void fillRecordCategories() {

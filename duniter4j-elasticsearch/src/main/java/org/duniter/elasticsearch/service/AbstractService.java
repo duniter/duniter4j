@@ -23,55 +23,68 @@ package org.duniter.elasticsearch.service;
  */
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.google.gson.JsonSyntaxException;
 import org.duniter.core.beans.Bean;
+import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.exception.AccessDeniedException;
+import org.duniter.elasticsearch.exception.InvalidFormatException;
+import org.duniter.elasticsearch.exception.InvalidSignatureException;
+import org.duniter.elasticsearch.exception.NotFoundException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.client.AdminClient;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.component.AbstractComponent;
-import org.elasticsearch.common.component.Lifecycle;
-import org.elasticsearch.common.component.LifecycleComponent;
-import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.node.NodeBuilder;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Created by Benoit on 08/04/2015.
  */
 public abstract class AbstractService implements Bean {
 
+    protected static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
+    protected static final String REGEX_WORD_SEPARATOR = "[-\\t@# ]+";
+    protected static final String REGEX_SPACE = "[\\t\\n\\r ]+";
+
     protected final ESLogger logger;
     protected final Client client;
     protected final PluginSettings pluginSettings;
     protected final ObjectMapper objectMapper;
+    protected final CryptoService cryptoService;
 
-    @Inject
+    public AbstractService(Client client, PluginSettings pluginSettings, CryptoService cryptoService) {
+        this.logger = Loggers.getLogger(getClass());
+        this.client = client;
+        this.pluginSettings = pluginSettings;
+        this.cryptoService = cryptoService;
+        this.objectMapper = new ObjectMapper();
+    }
+
     public AbstractService(Client client, PluginSettings pluginSettings) {
         this.logger = Loggers.getLogger(getClass());
         this.client = client;
         this.pluginSettings = pluginSettings;
+        this.cryptoService = null;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -112,6 +125,65 @@ public abstract class AbstractService implements Bean {
         } catch(IOException e) {
             throw new TechnicalException("Error while preparing default index analyzer: " + e.getMessage(), e);
         }
+    }
+
+    protected JsonNode readAndVerifyIssuerSignature(String recordJson) throws ElasticsearchException {
+
+        try {
+            JsonNode actualObj = objectMapper.readTree(recordJson);
+            readAndVerifyIssuerSignature(recordJson, actualObj);
+            return actualObj;
+        }
+        catch(IOException | JsonSyntaxException e) {
+            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
+        }
+    }
+
+    protected void readAndVerifyIssuerSignature(String recordJson, JsonNode actualObj) throws ElasticsearchException {
+
+        try {
+            Set<String> fieldNames = ImmutableSet.copyOf(actualObj.fieldNames());
+            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
+                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
+                throw new InvalidFormatException(String.format("Invalid record JSON format. Required fields [%s,%s]", Record.PROPERTY_ISSUER, Record.PROPERTY_SIGNATURE));
+            }
+            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
+            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+
+            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
+                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
+
+            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
+                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
+            }
+
+            // TODO: check issuer is in the WOT ?
+        }
+        catch(JsonSyntaxException e) {
+            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
+        }
+    }
+
+    protected void checkSameDocumentIssuer(String index, String type, String id, String expectedIssuer) throws ElasticsearchException {
+
+        GetResponse response = client.prepareGet(index, type, id)
+                .setFields(Record.PROPERTY_ISSUER)
+                .execute().actionGet();
+        boolean failed = !response.isExists();
+        if (failed) {
+            throw new NotFoundException(String.format("Document [%s/%s/%s] not exists.", index, type, id));
+        } else {
+            String docIssuer = (String)response.getFields().get(Record.PROPERTY_ISSUER).getValue();
+            if (!Objects.equals(expectedIssuer, docIssuer)) {
+                throw new AccessDeniedException(String.format("Could not delete this document: not issuer."));
+            }
+        }
+    }
+
+
+
+    protected String getIssuer(JsonNode actualObj) {
+        return  actualObj.get(Record.PROPERTY_ISSUER).asText();
     }
 
     protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {

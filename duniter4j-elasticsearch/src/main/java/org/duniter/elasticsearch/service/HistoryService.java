@@ -25,17 +25,12 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Sets;
-import com.google.gson.JsonSyntaxException;
-import org.duniter.core.client.model.elasticsearch.MessageRecord;
-import org.duniter.core.client.service.bma.WotRemoteService;
+import org.duniter.core.client.model.elasticsearch.DeleteRecord;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.exception.InvalidFormatException;
-import org.duniter.elasticsearch.exception.InvalidSignatureException;
+import org.duniter.elasticsearch.exception.NotFoundException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -44,21 +39,17 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class MessageService extends AbstractService {
+public class HistoryService extends AbstractService {
 
-    public static final String INDEX = "message";
-    public static final String RECORD_TYPE = "record";
-
-    private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
-
+    public static final String INDEX = "history";
+    public static final String DELETE_TYPE = "delete";
 
     @Inject
-    public MessageService(Client client, PluginSettings settings, CryptoService cryptoService) {
+    public HistoryService(Client client, PluginSettings settings, CryptoService cryptoService) {
         super(client, settings, cryptoService);
     }
 
@@ -66,7 +57,7 @@ public class MessageService extends AbstractService {
      * Delete blockchain index, and all data
      * @throws JsonProcessingException
      */
-    public MessageService deleteIndex() {
+    public HistoryService deleteIndex() {
         deleteIndexIfExists(INDEX);
         return this;
     }
@@ -79,7 +70,7 @@ public class MessageService extends AbstractService {
     /**
      * Create index need for blockchain registry, if need
      */
-    public MessageService createIndexIfNotExists() {
+    public HistoryService createIndexIfNotExists() {
         try {
             if (!existsIndex(INDEX)) {
                 createIndex();
@@ -96,8 +87,8 @@ public class MessageService extends AbstractService {
      * Create index need for category registry
      * @throws JsonProcessingException
      */
-    public MessageService createIndex() throws JsonProcessingException {
-        logger.info(String.format("Creating index [%s/%s]", INDEX, RECORD_TYPE));
+    public HistoryService createIndex() throws JsonProcessingException {
+        logger.info(String.format("Creating index [%s/%s]", INDEX, DELETE_TYPE));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
         Settings indexSettings = Settings.settingsBuilder()
@@ -106,36 +97,91 @@ public class MessageService extends AbstractService {
                 //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
+        createIndexRequestBuilder.addMapping(DELETE_TYPE, createDeleteType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
     }
 
-    public String indexRecordFromJson(String recordJson) {
 
+    public String indexDeleteFromJson(String recordJson) {
         JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = getIssuer(actualObj);
+        String issuer = actualObj.get(DeleteRecord.PROPERTY_ISSUER).asText();
 
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
+        String index = actualObj.get(DeleteRecord.PROPERTY_INDEX).asText();
+        String type = actualObj.get(DeleteRecord.PROPERTY_TYPE).asText();
+        String id = actualObj.get(DeleteRecord.PROPERTY_ID).asText();
+
+        if (!existsIndex(index)) {
+            throw new NotFoundException(String.format("Index [%s] not exists.", index));
         }
 
-        IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
+        // Check document issuer
+        checkSameDocumentIssuer(index, type, id, issuer);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Deleting document [%s/%s/%s] - issuer [%s]", index, type, id, issuer.substring(0, 8)));
+        }
+
+        // Add deletion to history
+        IndexResponse response = client.prepareIndex(INDEX, DELETE_TYPE)
                 .setSource(recordJson)
                 .setRefresh(false)
                 .execute().actionGet();
 
+        // Delete the document
+        client.prepareDelete(index, type, id).execute().actionGet();
+
         return response.getId();
     }
 
+
     /* -- Internal methods -- */
 
-    public XContentBuilder createRecordType() {
+
+    public XContentBuilder createDeleteType() {
+        try {
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(DELETE_TYPE)
+                    .startObject("properties")
+
+                    // index
+                    .startObject("index")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // type
+                    .startObject("type")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // id
+                    .startObject("id")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // time
+                    .startObject("time")
+                    .field("type", "integer")
+                    .endObject()
+
+                    .endObject()
+                    .endObject().endObject();
+
+            return mapping;
+        }
+        catch(IOException ioe) {
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, DELETE_TYPE, ioe.getMessage()), ioe);
+        }
+    }
+
+    public XContentBuilder createRecordCommentType() {
         String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
 
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(DELETE_TYPE)
                     .startObject("properties")
 
                     // issuer
@@ -155,45 +201,16 @@ public class MessageService extends AbstractService {
                     .field("analyzer", stringAnalyzer)
                     .endObject()
 
-                    // pictures
-                    .startObject("pictures")
-                    .field("type", "nested")
-                    .field("dynamic", "false")
-                    .startObject("properties")
-                    .startObject("file") // file
-                    .field("type", "attachment")
-                    .startObject("fields")
-                    .startObject("content") // content
-                    .field("index", "no")
-                    .endObject()
-                    .startObject("title") // title
+                    // record
+                    .startObject("record")
                     .field("type", "string")
-                    .field("store", "yes")
-                    .field("analyzer", stringAnalyzer)
-                    .endObject()
-                    .startObject("author") // author
-                    .field("type", "string")
-                    .field("store", "no")
-                    .endObject()
-                    .startObject("content_type") // content_type
-                    .field("store", "yes")
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
+                    .field("index", "not_analyzed")
                     .endObject()
 
-                    // picturesCount
-                    .startObject("picturesCount")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // tags
-                    .startObject("tags")
-                    .field("type", "completion")
-                    .field("search_analyzer", "simple")
-                    .field("analyzer", "simple")
-                    .field("preserve_separators", "false")
+                    // reply to
+                    .startObject("reply_to")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     .endObject()
@@ -202,7 +219,7 @@ public class MessageService extends AbstractService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, DELETE_TYPE, ioe.getMessage()), ioe);
         }
     }
 

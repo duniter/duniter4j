@@ -1,8 +1,8 @@
-package org.duniter.elasticsearch.exception;
+package org.duniter.core.client.model.elasticsearch;
 
 /*
  * #%L
- * Duniter4j :: ElasticSearch Plugin
+ * Duniter4j :: Core Client API
  * %%
  * Copyright (C) 2014 - 2016 EIS
  * %%
@@ -22,27 +22,40 @@ package org.duniter.elasticsearch.exception;
  * #L%
  */
 
-import org.duniter.core.exception.BusinessException;
-import org.elasticsearch.rest.RestStatus;
-
 /**
  * Created by blavenie on 01/03/16.
  */
-public class InvalidFormatException extends DuniterElasticsearchException {
-    public InvalidFormatException(Throwable cause) {
-        super(cause);
+public class DeleteRecord extends Record {
+
+    public static final String PROPERTY_INDEX="index";
+    public static final String PROPERTY_TYPE="type";
+    public static final String PROPERTY_ID="id";
+
+    private String index;
+    private String type;
+    private String id;
+
+    public String getIndex() {
+        return index;
     }
 
-    public InvalidFormatException(String msg, Object... args) {
-        super(msg, args);
+    public void setIndex(String index) {
+        this.index = index;
     }
 
-    public InvalidFormatException(String msg, Throwable cause, Object... args) {
-        super(msg, args, cause);
+    public String getType() {
+        return type;
     }
 
-    @Override
-    public RestStatus status() {
-        return RestStatus.BAD_REQUEST;
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

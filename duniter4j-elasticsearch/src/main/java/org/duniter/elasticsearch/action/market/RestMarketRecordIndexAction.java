@@ -23,6 +23,8 @@ package org.duniter.elasticsearch.action.market;
  */
 
 import org.duniter.core.exception.BusinessException;
+import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
+import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
 import org.duniter.elasticsearch.service.MarketService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -56,9 +58,9 @@ public class RestMarketRecordIndexAction extends BaseRestHandler {
 
             restChannel.sendResponse(new BytesRestResponse(OK, recordId));
         }
-        catch(BusinessException e) {
+        catch(DuniterElasticsearchException | BusinessException e) {
             log.error(e.getMessage(), e);
-            restChannel.sendResponse(new BytesRestResponse(BAD_REQUEST, String.format("{error: {ucode: 'XXX', message:'%s'}}", e.getMessage())));
+            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
         }
         catch(Exception e) {
             log.error(e.getMessage(), e);

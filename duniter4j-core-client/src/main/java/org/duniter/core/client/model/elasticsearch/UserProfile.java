@@ -1,10 +1,10 @@
-package org.duniter.elasticsearch.exception;
+package org.duniter.core.client.model.elasticsearch;
 
 /*
  * #%L
- * UCoin Java Client :: Web
+ * Duniter4j :: Core Client API
  * %%
- * Copyright (C) 2014 - 2015 EIS
+ * Copyright (C) 2014 - 2016 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,30 +22,13 @@ package org.duniter.elasticsearch.exception;
  * #L%
  */
 
-
-import org.elasticsearch.rest.RestStatus;
-
 /**
- * Created by Benoit on 03/04/2015.
+ * Created by blavenie on 01/03/16.
  */
-public class InvalidSignatureException extends DuniterElasticsearchException {
+public class UserProfile extends Record {
 
+    public static final String PROPERTY_TITLE = "title";
+    public static final String PROPERTY_DESCRIPTION="description";
+    public static final String PROPERTY_CITY="city";
 
-    public InvalidSignatureException(Throwable cause) {
-        super(cause);
-    }
-
-    public InvalidSignatureException(String msg, Object... args) {
-        super(msg, args);
-    }
-
-    public InvalidSignatureException(String msg, Throwable cause, Object... args) {
-        super(msg, args, cause);
-    }
-
-
-    @Override
-    public RestStatus status() {
-        return RestStatus.BAD_REQUEST;
-    }
 }
