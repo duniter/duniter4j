@@ -119,6 +119,7 @@ public class UserService extends AbstractService {
 
         IndexResponse response = client.prepareIndex(INDEX, PROFILE_TYPE)
                 .setSource(profileJson)
+                .setId(issuer) // always use the issuer pubkey as id
                 .setRefresh(false)
                 .execute().actionGet();
         return response.getId();
