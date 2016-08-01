@@ -34,69 +34,68 @@
   <fileSets>
 
     <fileSet>
-      <directory>target</directory>
+      <directory>target/elasticsearch-${elasticsearch.version}</directory>
       <outputDirectory/>
+      <excludes>
+        <exclude>config/elasticsearch.yml</exclude>
+      </excludes>
+    </fileSet>
+
+    <!-- default configuration file -->
+    <fileSet>
+      <directory>src/main/assembly/config</directory>
+      <outputDirectory>config</outputDirectory>
+      <includes>
+        <include>elasticsearch.yml</include>
+      </includes>
+    </fileSet>
+
+    <!-- mapper attachment plugin -->
+    <fileSet>
+      <directory>src/test/es-home</directory>
+      <outputDirectory/>
+      <includes>
+        <include>plugins/mapper-attachments/**/*.*</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
+      <directory>target</directory>
+      <outputDirectory>plugins/${project.artifactId}</outputDirectory>
       <includes>
         <include>${project.build.finalName}.${project.packaging}</include>
       </includes>
     </fileSet>
 
     <fileSet>
+      <directory>src/main/filtered-resources</directory>
+      <outputDirectory>plugins/${project.artifactId}</outputDirectory>
+      <filtered>true</filtered>
+      <includes>
+        <include>plugin-descriptor.properties</include>
+      </includes>
+    </fileSet>
+
+    <fileSet>
       <directory>target/lib</directory>
-      <outputDirectory>lib</outputDirectory>
+      <outputDirectory>plugins/${project.artifactId}</outputDirectory>
       <includes>
         <include>*.jar</include>
       </includes>
       <excludes>
-        <exclude>junit-*.jar</exclude>
+        <exclude>guava-*.jar</exclude>
+        <exclude>jna-4.1.0.jar</exclude>
+        <exclude>jackson-core-*.jar</exclude>
       </excludes>
     </fileSet>
 
     <fileSet>
-      <directory>src/main/assembly/min</directory>
-      <outputDirectory/>
-      <filtered>true</filtered>
-      <fileMode>0755</fileMode>
+      <outputDirectory>plugins/${project.artifactId}</outputDirectory>
       <includes>
-        <include>duniter4j-elasticsearch.sh</include>
-        <include>duniter4j-elasticsearch.bat</include>
-        <include>version.appup</include>
-        <include>README*</include>
-      </includes>
-    </fileSet>
-    
-    <!-- configuration file -->
-    <fileSet>
-      <directory>src/main/assembly/min</directory>
-      <outputDirectory/>
-      <includes>
-        <include>duniter4j.config</include>
+        <include>LICENSE</include>
       </includes>
     </fileSet>
 
-	<!-- I18N component -->
-	<fileSet>
-      <directory>target/classes/META-INF</directory>
-      <outputDirectory>i18n</outputDirectory>
-      <includes>
-        <include>duniter4j-elasticsearch-i18n*.properties</include>
-        <include>duniter4j-elasticsearch-i18n*.csv</include>
-      </includes>
-    </fileSet>
-    <fileSet>
-      <directory>src/main/assembly/min</directory>
-      <outputDirectory>i18n</outputDirectory>
-      <filtered>true</filtered>
-      <includes>
-        <include>version.appup</include>
-      </includes>
-    </fileSet>
-
-    <fileSet>
-      <includes>
-        <include>LICENSE*</include>
-      </includes>
-    </fileSet>
 
   </fileSets>
 </assembly>

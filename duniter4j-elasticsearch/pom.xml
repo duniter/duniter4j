@@ -72,7 +72,6 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>
@@ -181,6 +180,27 @@
                   <silent>true</silent>
                   <includeScope>runtime</includeScope>
                   <excludeScope>test</excludeScope>
+                  <excludeGroupIds>org.elasticsearch,net.java.dev.jna,com.google.guava</excludeGroupIds>
+                  <excludeArtifactIds>elasticsearch,jna,guava</excludeArtifactIds>
+                </configuration>
+              </execution>
+              <execution>
+                <id>unpack-dependencies</id>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <phase>prepare-package</phase>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.elasticsearch.distribution.zip</groupId>
+                      <artifactId>elasticsearch</artifactId>
+                      <version>${elasticsearch.version}</version>
+                      <type>zip</type>
+                    </artifactItem>
+                  </artifactItems>
+                  <outputDirectory>${project.build.directory}</outputDirectory>
+                  <silent>true</silent>
                 </configuration>
               </execution>
             </executions>
@@ -199,11 +219,11 @@
                   <attach>true</attach>
                   <finalName>${bundlePrefix}</finalName>
                   <descriptors>
-                    <!--descriptor>
-                      ${basedir}/src/main/assembly/standalone.xml
-                    </descriptor-->
                     <descriptor>
                         ${basedir}/src/main/assembly/plugin.xml
+                    </descriptor>
+                    <descriptor>
+                      ${basedir}/src/main/assembly/standalone.xml
                     </descriptor>
                   </descriptors>
                 </configuration>
