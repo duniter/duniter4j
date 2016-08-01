@@ -2,6 +2,7 @@
 <assembly>
     <id>plugin</id>
 
+
     <formats>
         <format>zip</format>
     </formats>
@@ -16,6 +17,8 @@
             <excludes>
                 <exclude>org.elasticsearch:elasticsearch</exclude>
                 <exclude>net.java.dev.jna:jna</exclude>
+                <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+                <exclude>log4j:log4j</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>
@@ -23,7 +26,7 @@
     <fileSets>
         <fileSet>
             <includes>
-                <include>LICENSE*</include>
+                <include>LICENSE</include>
             </includes>
         </fileSet>
 

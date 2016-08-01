@@ -51,10 +51,12 @@ public class ServiceLocator implements Closeable {
     private BeanFactory beanFactory = null;
 
     protected ServiceLocator() {
+        init();
     }
 
     protected ServiceLocator(BeanFactory beanFactory) {
         this.beanFactory = beanFactory;
+        init();
     }
 
     public void init() {

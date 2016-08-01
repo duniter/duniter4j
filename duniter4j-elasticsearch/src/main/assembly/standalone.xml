@@ -38,7 +38,17 @@
       <outputDirectory/>
       <excludes>
         <exclude>config/elasticsearch.yml</exclude>
+        <exclude>config/logging.yml</exclude>
       </excludes>
+    </fileSet>
+
+    <fileSet>
+      <directory>target/elasticsearch-${elasticsearch.version}/config</directory>
+      <outputDirectory>config/old</outputDirectory>
+      <includes>
+        <include>plugin-descriptor.properties</include>
+        <include>plugin-security.policy</include>
+      </includes>
     </fileSet>
 
     <!-- default configuration file -->
@@ -47,17 +57,18 @@
       <outputDirectory>config</outputDirectory>
       <includes>
         <include>elasticsearch.yml</include>
+        <include>logging.yml</include>
       </includes>
     </fileSet>
 
-    <!-- mapper attachment plugin -->
+    <!-- mapper attachment plugin
     <fileSet>
-      <directory>src/test/es-home</directory>
-      <outputDirectory/>
+      <directory>target/assembly</directory>
+      <outputDirectory>plugins</outputDirectory>
       <includes>
-        <include>plugins/mapper-attachments/**/*.*</include>
+        <include>mapper-attachments-${elasticsearch.mapper-attachments.version}.zip</include>
       </includes>
-    </fileSet>
+    </fileSet>-->
 
     <fileSet>
       <directory>target</directory>
@@ -68,25 +79,12 @@
     </fileSet>
 
     <fileSet>
-      <directory>src/main/filtered-resources</directory>
+      <directory>target/classes</directory>
       <outputDirectory>plugins/${project.artifactId}</outputDirectory>
-      <filtered>true</filtered>
       <includes>
         <include>plugin-descriptor.properties</include>
+        <include>plugin-security.policy</include>
       </includes>
-    </fileSet>
-
-    <fileSet>
-      <directory>target/lib</directory>
-      <outputDirectory>plugins/${project.artifactId}</outputDirectory>
-      <includes>
-        <include>*.jar</include>
-      </includes>
-      <excludes>
-        <exclude>guava-*.jar</exclude>
-        <exclude>jna-4.1.0.jar</exclude>
-        <exclude>jackson-core-*.jar</exclude>
-      </excludes>
     </fileSet>
 
     <fileSet>
@@ -95,7 +93,19 @@
         <include>LICENSE</include>
       </includes>
     </fileSet>
-
-
   </fileSets>
+
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>plugins/${project.artifactId}</outputDirectory>
+      <useProjectArtifact>true</useProjectArtifact>
+      <useTransitiveFiltering>true</useTransitiveFiltering>
+      <excludes>
+        <exclude>org.elasticsearch:elasticsearch</exclude>
+        <exclude>net.java.dev.jna:jna</exclude>
+        <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+        <exclude>log4j:log4j</exclude>
+      </excludes>
+    </dependencySet>
+  </dependencySets>
 </assembly>

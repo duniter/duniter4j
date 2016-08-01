@@ -48,6 +48,9 @@ public class BeanFactory implements Closeable{
         beansCache = new HashMap<>();
         beansLoader = ServiceLoader.load(Bean.class);
         beansClassMap = new HashMap<>();
+        if (log.isTraceEnabled()) {
+            log.trace("Creating new BeanFactory...");
+        }
     }
 
     public <S extends Bean> S getBean(Class<S> clazz) {
