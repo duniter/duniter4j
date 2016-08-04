@@ -33,6 +33,8 @@
     <exec.classpathScope>provided</exec.classpathScope>
 
     <duniter4j-elasticsearch.config>${project.basedir}/src/test/resources/duniter4j-elasticsearch-test.properties</duniter4j-elasticsearch.config>
+
+    <cesium.download.url>https://github.com/duniter/cesium/releases/download/${cesium.version}/cesium-web-${cesium.version}.zip</cesium.download.url>
   </properties>
 
   <dependencies>
@@ -338,13 +340,15 @@
             <executions>
               <execution>
                 <id>copy-dependencies</id>
-                <phase>initialize</phase>
+                <phase>prepare-package</phase>
                 <goals>
                   <goal>copy-dependencies</goal>
                 </goals>
                 <configuration>
                   <outputDirectory>${project.build.directory}/es-home/plugins/${project.artifactId}</outputDirectory>
                   <excludeArtifactIds>jna,jackson-core,log4j,elasticsearch</excludeArtifactIds>
+                  <overWriteSnapshots>true</overWriteSnapshots>
+                  <silent>true</silent>
                 </configuration>
               </execution>
             </executions>
@@ -368,6 +372,32 @@
             </dependencies>
             <executions>
               <execution>
+                <id>unpack-elasticsearch-binaries</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <copy todir="${es.home}">
+                      <fileset dir="${project.build.directory}/elasticsearch-${elasticsearch.version}">
+                      </fileset>
+                    </copy>
+                    <chmod perm="u+x">
+                      <fileset dir="${es.home}/bin">
+                        <include name="elasticsearch"/>
+                      </fileset>
+                    </chmod>
+                    <copy todir="${es.home}/config"
+                          overwrite="true"
+                          filtering="true">
+                      <fileset dir="${basedir}/src/main/assembly/config">
+                      </fileset>
+                    </copy>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
                 <id>download-attachment-mapper-plugin</id>
                 <phase>initialize</phase>
                 <goals>
@@ -375,19 +405,6 @@
                 </goals>
                 <configuration>
                   <target>
-                    <copy todir="${project.build.directory}/es-home">
-                      <fileset dir="${project.build.directory}/elasticsearch-${elasticsearch.version}">
-                      </fileset>
-                    </copy>
-                    <chmod perm="u+x">
-                      <fileset dir="${project.build.directory}/es-home/bin">
-                        <include name="elasticsearch"/>
-                      </fileset>
-                    </chmod>
-                    <copy todir="${project.build.directory}/es-home/config" overwrite="true">
-                      <fileset dir="${basedir}/src/main/assembly/config">
-                      </fileset>
-                    </copy>
 
                     <!-- download attachment plugin -->
                     <get src="https://download.elastic.co/elasticsearch/release/org/elasticsearch/plugin/mapper-attachments/${elasticsearch.version}/mapper-attachments-${elasticsearch.version}.zip"
@@ -395,20 +412,54 @@
                          verbose="false"
                          usetimestamp="true"/>
                     <unzip src="${project.build.directory}/mapper-attachments-${elasticsearch.version}.zip"
-                           dest="${project.build.directory}/es-home/plugins/mapper-attachments"
+                           dest="${es.home}/plugins/mapper-attachments"
                            overwrite="true">
                     </unzip>
-                    <copy todir="${project.build.directory}/es-home/plugins/${project.artifactId}">
-                      <fileset dir="${project.build.directory}/classes">
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>download-cesium</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+
+                    <!-- download cesium >
+                    <get src="${cesium.download.url}"
+                         dest="${project.build.directory}/cesium-web-${cesium.version}.zip"
+                         verbose="false"
+                         usetimestamp="true"/>
+                    <unzip src="${project.build.directory}/cesium-web-${cesium.version}.zip"
+                           dest="${duniter4j.plugin.directory}/_site"
+                           overwrite="true">
+                    </unzip-->
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>install-duniter-plugin</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <!-- Copy descriptor file and security files -->
+                    <copy todir="${duniter4j.plugin.directory}"
+                          filtering="true">
+                      <fileset dir="${basedir}/src/main/filtered-resources">
                         <include name="plugin-descriptor.properties"/>
                         <include name="plugin-security.policy"/>
                       </fileset>
                     </copy>
 
-                    <!-- remove redundant lib in duniter plugin -->
+                    <!-- Remove redundant lib in duniter plugin -->
                     <ac:for param="file" xmlns:ac="antlib:net.sf.antcontrib">
                       <path>
-                        <fileset dir="${project.build.directory}/es-home/plugins/${project.artifactId}">
+                        <fileset dir="${duniter4j.plugin.directory}">
                           <include name="**/*.jar"/>
                         </fileset>
                       </path>
@@ -416,20 +467,20 @@
                         <local name="filename" />
                         <basename property="filename" file="@{file}"/>
                         <ac:if>
-                          <available file="${project.build.directory}/es-home/lib/${filename}"/>
+                          <available file="${es.home}/lib/${filename}"/>
                           <then>
                             <!--echo message="Remove lib from plugin: ${filename}"/-->
-                            <delete file="${project.build.directory}/es-home/plugins/${project.artifactId}/${filename}"/>
+                            <delete file="${duniter4j.plugin.directory}/${filename}"/>
                           </then>
                         </ac:if>
                       </sequential>
                     </ac:for>
                     <delete>
-                      <fileset dir="${project.build.directory}/es-home/plugins/${project.artifactId}">
+                      <fileset dir="${duniter4j.plugin.directory}">
                         <include name="guava-*.jar"/>
                       </fileset>
                     </delete>
-                    <copy todir="${project.build.directory}/es-home/plugins/${project.artifactId}">
+                    <copy todir="${duniter4j.plugin.directory}">
                       <fileset dir="${project.build.directory}">
                         <include name="${project.artifactId}-${project.version}.${project.packaging}"/>
                       </fileset>
@@ -450,10 +501,10 @@
                 <goals>
                   <goal>exec</goal>
                 </goals>
-                <phase>compile</phase>
+                <phase>package</phase>
                 <configuration>
-                  <executable>${project.build.directory}/es-home/bin/elasticsearch</executable>
-                  <workingDirectory>${basedir}/src/test/es-home</workingDirectory>
+                  <executable>${es.home}/bin/elasticsearch</executable>
+                  <workingDirectory>${es.home}</workingDirectory>
                 </configuration>
               </execution>
             </executions>
@@ -466,12 +517,10 @@
         <exec.classpathScope>runtime</exec.classpathScope>
         <duniter4j.log.file>${project.build.directory}/exec.log</duniter4j.log.file>
 
-        <duniter4j.basedir>${project.build.directory}</duniter4j.basedir>
-        <duniter4j.plugins.directory>${basedir}}/src/test/es-home/plugins</duniter4j.plugins.directory>
+        <es.home>${project.build.directory}/es-home</es.home>
+        <duniter4j.basedir>${es.home}</duniter4j.basedir>
+        <duniter4j.plugin.directory>${es.home}/plugins/${project.artifactId}</duniter4j.plugin.directory>
         <es.http.cors.allow-origin>*</es.http.cors.allow-origin>
-        <!--exec.args>
-          start index - -host metab.ucoin.fr - -port 9201
-        </exec.args-->
       </properties>
     </profile>
   </profiles>

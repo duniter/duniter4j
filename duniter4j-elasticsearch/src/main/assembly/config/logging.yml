@@ -16,7 +16,7 @@ logger:
 
   org.apache.http: INFO
 
-  org.duniter: TRACE
+  org.duniter: INFO
 
   # gateway
   #gateway: DEBUG

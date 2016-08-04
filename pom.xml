@@ -26,6 +26,8 @@
     <elasticsearch.version>2.3.3</elasticsearch.version>
     <jna.version>4.1.0</jna.version>
 
+    <cesium.version>0.1.26</cesium.version>
+
     <nuitonConfigVersion>3.0-rc-2</nuitonConfigVersion>
     <nuitonI18nVersion>3.3</nuitonI18nVersion>
 

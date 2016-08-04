@@ -1,0 +1,311 @@
+[2016-08-01 16:09:05,743][WARN ][bootstrap                ] JNA not found. native methods will be disabled.
+java.lang.ClassNotFoundException: com.sun.jna.Native
+	at java.net.URLClassLoader.findClass(URLClassLoader.java:381)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:424)
+	at java.lang.ClassLoader.loadClass(ClassLoader.java:357)
+	at java.lang.Class.forName0(Native Method)
+	at java.lang.Class.forName(Class.java:264)
+	at org.elasticsearch.bootstrap.Natives.<clinit>(Natives.java:45)
+	at org.elasticsearch.bootstrap.Bootstrap.initializeNatives(Bootstrap.java:89)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:144)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:294)
+	at java.lang.Thread.run(Thread.java:745)
+[2016-08-01 16:09:05,745][WARN ][bootstrap                ] cannot check if running as root because JNA is not available
+[2016-08-01 16:09:05,745][WARN ][bootstrap                ] cannot install syscall filters because JNA is not available
+[2016-08-01 16:09:05,745][WARN ][bootstrap                ] cannot register console handler because JNA is not available
+[2016-08-01 16:09:05,799][INFO ][node                     ] [Steel Raven] version[2.3.3], pid[4186], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-08-01 16:09:05,799][INFO ][node                     ] [Steel Raven] initializing ...
+[2016-08-01 16:09:05,908][INFO ][plugins                  ] [Steel Raven] modules [], plugins [duniter], sites []
+[2016-08-01 16:09:05,923][INFO ][env                      ] [Steel Raven] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [88.4gb], net total_space [101.7gb], spins? [no], types [ext4]
+[2016-08-01 16:09:05,923][INFO ][env                      ] [Steel Raven] heap size [3.4gb], compressed ordinary object pointers [true]
+[2016-08-01 16:09:07,410][ERROR][bootstrap                ] Exception
+java.util.ServiceConfigurationError: org.duniter.core.beans.Bean: Provider org.duniter.core.service.Ed25519CryptoServiceImpl could not be instantiated
+	at java.util.ServiceLoader.fail(ServiceLoader.java:232)
+	at java.util.ServiceLoader.access$100(ServiceLoader.java:185)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:384)
+	at java.util.ServiceLoader$LazyIterator.next(ServiceLoader.java:404)
+	at java.util.ServiceLoader$1.next(ServiceLoader.java:480)
+	at org.duniter.core.beans.BeanFactory.newBean(BeanFactory.java:83)
+	at org.duniter.core.beans.BeanFactory.getBean(BeanFactory.java:57)
+	at org.duniter.core.client.service.ServiceLocator.getBean(ServiceLocator.java:144)
+	at org.duniter.elasticsearch.service.ServiceLocator$Provider.get(ServiceLocator.java:124)
+	at org.duniter.elasticsearch.service.ServiceLocator$Provider.get(ServiceLocator.java:115)
+	at org.elasticsearch.common.inject.InternalFactoryToProviderAdapter.get(InternalFactoryToProviderAdapter.java:46)
+	at org.elasticsearch.common.inject.SingleParameterInjector.inject(SingleParameterInjector.java:42)
+	at org.elasticsearch.common.inject.SingleParameterInjector.getAll(SingleParameterInjector.java:66)
+	at org.elasticsearch.common.inject.ConstructorInjector.construct(ConstructorInjector.java:85)
+	at org.elasticsearch.common.inject.ConstructorBindingImpl$Factory.get(ConstructorBindingImpl.java:104)
+	at org.elasticsearch.common.inject.SingleParameterInjector.inject(SingleParameterInjector.java:42)
+	at org.elasticsearch.common.inject.SingleParameterInjector.getAll(SingleParameterInjector.java:66)
+	at org.elasticsearch.common.inject.ConstructorInjector.construct(ConstructorInjector.java:85)
+	at org.elasticsearch.common.inject.ConstructorBindingImpl$Factory.get(ConstructorBindingImpl.java:104)
+	at org.elasticsearch.common.inject.ProviderToInternalFactoryAdapter$1.call(ProviderToInternalFactoryAdapter.java:47)
+	at org.elasticsearch.common.inject.InjectorImpl.callInContext(InjectorImpl.java:886)
+	at org.elasticsearch.common.inject.ProviderToInternalFactoryAdapter.get(ProviderToInternalFactoryAdapter.java:43)
+	at org.elasticsearch.common.inject.Scopes$1$1.get(Scopes.java:59)
+	at org.elasticsearch.common.inject.InternalFactoryToProviderAdapter.get(InternalFactoryToProviderAdapter.java:46)
+	at org.elasticsearch.common.inject.InjectorBuilder$1.call(InjectorBuilder.java:201)
+	at org.elasticsearch.common.inject.InjectorBuilder$1.call(InjectorBuilder.java:193)
+	at org.elasticsearch.common.inject.InjectorImpl.callInContext(InjectorImpl.java:879)
+	at org.elasticsearch.common.inject.InjectorBuilder.loadEagerSingletons(InjectorBuilder.java:193)
+	at org.elasticsearch.common.inject.InjectorBuilder.injectDynamically(InjectorBuilder.java:175)
+	at org.elasticsearch.common.inject.InjectorBuilder.build(InjectorBuilder.java:110)
+	at org.elasticsearch.common.inject.Guice.createInjector(Guice.java:96)
+	at org.elasticsearch.common.inject.Guice.createInjector(Guice.java:70)
+	at org.elasticsearch.common.inject.ModulesBuilder.createInjector(ModulesBuilder.java:46)
+	at org.elasticsearch.node.Node.<init>(Node.java:213)
+	at org.elasticsearch.node.Node.<init>(Node.java:140)
+	at org.elasticsearch.node.NodeBuilder.build(NodeBuilder.java:143)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:178)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.codehaus.mojo.exec.ExecJavaMojo$1.run(ExecJavaMojo.java:294)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.UnsatisfiedLinkError: libsodium.so: cannot open shared object file: No such file or directory
+	at jnr.ffi.provider.jffi.NativeLibrary.loadNativeLibraries(NativeLibrary.java:87)
+	at jnr.ffi.provider.jffi.NativeLibrary.getNativeLibraries(NativeLibrary.java:70)
+	at jnr.ffi.provider.jffi.NativeLibrary.getSymbolAddress(NativeLibrary.java:49)
+	at jnr.ffi.provider.jffi.NativeLibrary.findSymbolAddress(NativeLibrary.java:59)
+	at jnr.ffi.provider.jffi.AsmLibraryLoader.generateInterfaceImpl(AsmLibraryLoader.java:117)
+	at jnr.ffi.provider.jffi.AsmLibraryLoader.loadLibrary(AsmLibraryLoader.java:59)
+	at jnr.ffi.provider.jffi.NativeLibraryLoader.loadLibrary(NativeLibraryLoader.java:43)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:290)
+	at jnr.ffi.LibraryLoader.load(LibraryLoader.java:269)
+	at org.abstractj.kalium.NaCl$SingletonHolder.<clinit>(NaCl.java:41)
+	at org.abstractj.kalium.NaCl.sodium(NaCl.java:28)
+	at org.duniter.core.service.Ed25519CryptoServiceImpl.<init>(Ed25519CryptoServiceImpl.java:66)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at java.lang.Class.newInstance(Class.java:442)
+	at java.util.ServiceLoader$LazyIterator.nextService(ServiceLoader.java:380)
+	... 42 more
+[2016-08-01 16:14:57,898][INFO ][node                     ] [Martha Johansson] version[2.3.3], pid[27898], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-08-01 16:14:57,898][INFO ][node                     ] [Martha Johansson] initializing ...
+[2016-08-01 16:14:58,008][INFO ][plugins                  ] [Martha Johansson] modules [], plugins [duniter], sites []
+[2016-08-01 16:14:58,020][INFO ][env                      ] [Martha Johansson] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [88.3gb], net total_space [101.7gb], spins? [no], types [ext4]
+[2016-08-01 16:14:58,020][INFO ][env                      ] [Martha Johansson] heap size [3.4gb], compressed ordinary object pointers [true]
+[2016-08-01 16:14:59,269][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.service.CryptoService]
+[2016-08-01 16:14:59,269][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.WotRemoteService]
+[2016-08-01 16:14:59,269][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.WotRemoteService]
+[2016-08-01 16:14:59,271][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.HttpService]
+[2016-08-01 16:14:59,271][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.HttpService]
+[2016-08-01 16:14:59,450][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.local.PeerService]
+[2016-08-01 16:14:59,450][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.local.PeerService]
+[2016-08-01 16:14:59,451][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.local.CurrencyService]
+[2016-08-01 16:14:59,451][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.local.CurrencyService]
+[2016-08-01 16:14:59,451][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.BlockchainRemoteService]
+[2016-08-01 16:14:59,451][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.BlockchainRemoteService]
+[2016-08-01 16:14:59,451][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.NetworkRemoteService]
+[2016-08-01 16:14:59,451][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.NetworkRemoteService]
+[2016-08-01 16:14:59,453][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.dao.CurrencyDao]
+[2016-08-01 16:14:59,453][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.DataContext]
+[2016-08-01 16:14:59,454][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.dao.PeerDao]
+[2016-08-01 16:14:59,544][DEBUG][org.duniter.elasticsearch.service.ServiceLocator] Starting Duniter4j client ServiceLocator...
+[2016-08-01 16:14:59,596][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.WotRemoteService]
+[2016-08-01 16:14:59,596][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.WotRemoteService]
+[2016-08-01 16:14:59,596][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.HttpService]
+[2016-08-01 16:14:59,597][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.HttpService]
+[2016-08-01 16:14:59,600][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.local.PeerService]
+[2016-08-01 16:14:59,600][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.local.PeerService]
+[2016-08-01 16:14:59,600][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.local.CurrencyService]
+[2016-08-01 16:14:59,600][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.local.CurrencyService]
+[2016-08-01 16:14:59,600][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.BlockchainRemoteService]
+[2016-08-01 16:14:59,601][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.BlockchainRemoteService]
+[2016-08-01 16:14:59,601][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.NetworkRemoteService]
+[2016-08-01 16:14:59,601][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.NetworkRemoteService]
+[2016-08-01 16:14:59,601][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.dao.CurrencyDao]
+[2016-08-01 16:14:59,601][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.DataContext]
+[2016-08-01 16:14:59,601][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.dao.PeerDao]
+[2016-08-01 16:14:59,601][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.service.CryptoService]
+[2016-08-01 16:14:59,605][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.TransactionRemoteService]
+[2016-08-01 16:14:59,605][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.TransactionRemoteService]
+[2016-08-01 16:14:59,610][INFO ][node                     ] [Martha Johansson] initialized
+[2016-08-01 16:14:59,610][INFO ][node                     ] [Martha Johansson] starting ...
+[2016-08-01 16:14:59,623][DEBUG][org.duniter.elasticsearch.PluginSettings] [Martha Johansson] I18N directory: /home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/data/i18n
+[2016-08-01 16:14:59,623][INFO ][org.duniter.elasticsearch.PluginSettings] [Martha Johansson] Starts i18n with locale [fr] at [/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/data/i18n]
+[2016-08-01 16:14:59,640][DEBUG][org.duniter.elasticsearch.threadpool.ThreadPool] [Martha Johansson] Starting Duniter4j ThreadPool...
+[2016-08-01 16:14:59,733][INFO ][transport                ] [Martha Johansson] publish_address {127.0.0.1:9300}, bound_addresses {[::1]:9300}, {127.0.0.1:9300}
+[2016-08-01 16:14:59,737][INFO ][discovery                ] [Martha Johansson] duniter4j-elasticsearch/8ibNn5-uQSOZ4GYp08X4jg
+[2016-08-01 16:15:02,797][INFO ][cluster.service          ] [Martha Johansson] new_master {Martha Johansson}{8ibNn5-uQSOZ4GYp08X4jg}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
+[2016-08-01 16:15:02,820][INFO ][http                     ] [Martha Johansson] publish_address {127.0.0.1:9200}, bound_addresses {[::1]:9200}, {127.0.0.1:9200}
+[2016-08-01 16:15:02,820][INFO ][node                     ] [Martha Johansson] started
+[2016-08-01 16:15:02,859][INFO ][gateway                  ] [Martha Johansson] recovered [0] indices into cluster_state
+[2016-08-01 16:15:09,643][INFO ][org.duniter.elasticsearch.node.DuniterNode] [Martha Johansson] Checking Duniter indices...
+[2016-08-01 16:15:09,650][INFO ][org.duniter.elasticsearch.service.RegistryService] Creating index [registry]
+[2016-08-01 16:15:09,775][DEBUG][action.admin.indices.create] [Martha Johansson] [registry] failed to create
+MapperParsingException[Failed to parse mapping [record]: No handler for type [attachment] declared on field [thumbnail]]; nested: MapperParsingException[No handler for type [attachment] declared on field [thumbnail]];
+	at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$1.execute(MetaDataCreateIndexService.java:332)
+	at org.elasticsearch.cluster.ClusterStateUpdateTask.execute(ClusterStateUpdateTask.java:45)
+	at org.elasticsearch.cluster.service.InternalClusterService.runTasksForExecutor(InternalClusterService.java:468)
+	at org.elasticsearch.cluster.service.InternalClusterService$UpdateTask.run(InternalClusterService.java:772)
+	at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.runAndClean(PrioritizedEsThreadPoolExecutor.java:231)
+	at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.run(PrioritizedEsThreadPoolExecutor.java:194)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: MapperParsingException[No handler for type [attachment] declared on field [thumbnail]]
+	at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseProperties(ObjectMapper.java:303)
+	at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseObjectOrDocumentTypeProperties(ObjectMapper.java:218)
+	at org.elasticsearch.index.mapper.object.RootObjectMapper$TypeParser.parse(RootObjectMapper.java:139)
+	at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:118)
+	at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:99)
+	at org.elasticsearch.index.mapper.MapperService.parse(MapperService.java:508)
+	at org.elasticsearch.index.mapper.MapperService.merge(MapperService.java:288)
+	at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$1.execute(MetaDataCreateIndexService.java:329)
+	... 8 more
+[2016-08-01 16:15:09,778][WARN ][org.duniter.elasticsearch.threadpool.ThreadPool] [Martha Johansson] failed to run org.duniter.elasticsearch.threadpool.ThreadPool$$Lambda$3/1990808042@19112bae
+MapperParsingException[Failed to parse mapping [record]: No handler for type [attachment] declared on field [thumbnail]]; nested: MapperParsingException[No handler for type [attachment] declared on field [thumbnail]];
+	at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$1.execute(MetaDataCreateIndexService.java:332)
+	at org.elasticsearch.cluster.ClusterStateUpdateTask.execute(ClusterStateUpdateTask.java:45)
+	at org.elasticsearch.cluster.service.InternalClusterService.runTasksForExecutor(InternalClusterService.java:468)
+	at org.elasticsearch.cluster.service.InternalClusterService$UpdateTask.run(InternalClusterService.java:772)
+	at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.runAndClean(PrioritizedEsThreadPoolExecutor.java:231)
+	at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.run(PrioritizedEsThreadPoolExecutor.java:194)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: MapperParsingException[No handler for type [attachment] declared on field [thumbnail]]
+	at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseProperties(ObjectMapper.java:303)
+	at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseObjectOrDocumentTypeProperties(ObjectMapper.java:218)
+	at org.elasticsearch.index.mapper.object.RootObjectMapper$TypeParser.parse(RootObjectMapper.java:139)
+	at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:118)
+	at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:99)
+	at org.elasticsearch.index.mapper.MapperService.parse(MapperService.java:508)
+	at org.elasticsearch.index.mapper.MapperService.merge(MapperService.java:288)
+	at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$1.execute(MetaDataCreateIndexService.java:329)
+	... 8 more
+[2016-08-01 16:18:25,719][INFO ][node                     ] [Martha Johansson] stopping ...
+[2016-08-01 16:18:25,731][INFO ][node                     ] [Martha Johansson] stopped
+[2016-08-01 16:18:25,732][INFO ][node                     ] [Martha Johansson] closing ...
+[2016-08-01 16:18:25,736][INFO ][node                     ] [Martha Johansson] closed
+[2016-08-01 16:23:45,935][INFO ][node                     ] [Mangog] version[2.3.3], pid[28939], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-08-01 16:23:45,936][INFO ][node                     ] [Mangog] initializing ...
+[2016-08-01 16:23:46,119][INFO ][plugins                  ] [Mangog] modules [], plugins [duniter], sites []
+[2016-08-01 16:23:46,130][INFO ][env                      ] [Mangog] using [1] data paths, mounts [[/ (/dev/sda1)]], net usable_space [88.3gb], net total_space [101.7gb], spins? [no], types [ext4]
+[2016-08-01 16:23:46,131][INFO ][env                      ] [Mangog] heap size [3.4gb], compressed ordinary object pointers [true]
+[2016-08-01 16:23:47,553][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.service.CryptoService]
+[2016-08-01 16:23:47,553][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.WotRemoteService]
+[2016-08-01 16:23:47,553][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.WotRemoteService]
+[2016-08-01 16:23:47,555][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.HttpService]
+[2016-08-01 16:23:47,555][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.HttpService]
+[2016-08-01 16:23:47,766][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.local.PeerService]
+[2016-08-01 16:23:47,766][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.local.PeerService]
+[2016-08-01 16:23:47,767][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.local.CurrencyService]
+[2016-08-01 16:23:47,767][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.local.CurrencyService]
+[2016-08-01 16:23:47,767][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.BlockchainRemoteService]
+[2016-08-01 16:23:47,767][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.BlockchainRemoteService]
+[2016-08-01 16:23:47,767][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.NetworkRemoteService]
+[2016-08-01 16:23:47,767][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.NetworkRemoteService]
+[2016-08-01 16:23:47,769][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.dao.CurrencyDao]
+[2016-08-01 16:23:47,769][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.DataContext]
+[2016-08-01 16:23:47,769][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.dao.PeerDao]
+[2016-08-01 16:23:47,894][DEBUG][org.duniter.elasticsearch.service.ServiceLocator] Starting Duniter4j client ServiceLocator...
+[2016-08-01 16:23:47,948][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.WotRemoteService]
+[2016-08-01 16:23:47,948][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.WotRemoteService]
+[2016-08-01 16:23:47,948][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.HttpService]
+[2016-08-01 16:23:47,948][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.HttpService]
+[2016-08-01 16:23:47,951][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.local.PeerService]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.local.PeerService]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.local.CurrencyService]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.local.CurrencyService]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.BlockchainRemoteService]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.BlockchainRemoteService]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.NetworkRemoteService]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.NetworkRemoteService]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.dao.CurrencyDao]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.DataContext]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.dao.PeerDao]
+[2016-08-01 16:23:47,952][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.service.CryptoService]
+[2016-08-01 16:23:47,956][DEBUG][org.duniter.core.beans.BeanFactory]  Creating new bean of type [org.duniter.core.client.service.bma.TransactionRemoteService]
+[2016-08-01 16:23:47,956][DEBUG][org.duniter.core.beans.BeanFactory] Initializing bean of type [org.duniter.core.client.service.bma.TransactionRemoteService]
+[2016-08-01 16:23:47,959][INFO ][node                     ] [Mangog] initialized
+[2016-08-01 16:23:47,959][INFO ][node                     ] [Mangog] starting ...
+[2016-08-01 16:23:47,969][DEBUG][org.duniter.elasticsearch.PluginSettings] [Mangog] I18N directory: /home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/data/i18n
+[2016-08-01 16:23:47,969][INFO ][org.duniter.elasticsearch.PluginSettings] [Mangog] Starts i18n with locale [fr] at [/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/data/i18n]
+[2016-08-01 16:23:47,985][DEBUG][org.duniter.elasticsearch.threadpool.ThreadPool] [Mangog] Starting Duniter4j ThreadPool...
+[2016-08-01 16:23:48,030][INFO ][transport                ] [Mangog] publish_address {127.0.0.1:9300}, bound_addresses {[::1]:9300}, {127.0.0.1:9300}
+[2016-08-01 16:23:48,033][INFO ][discovery                ] [Mangog] duniter4j-elasticsearch/KJmh6LLQQ5WSusnJpTBtTg
+[2016-08-01 16:23:51,071][INFO ][cluster.service          ] [Mangog] new_master {Mangog}{KJmh6LLQQ5WSusnJpTBtTg}{127.0.0.1}{127.0.0.1:9300}, reason: zen-disco-join(elected_as_master, [0] joins received)
+[2016-08-01 16:23:51,097][INFO ][http                     ] [Mangog] publish_address {127.0.0.1:9200}, bound_addresses {[::1]:9200}, {127.0.0.1:9200}
+[2016-08-01 16:23:51,097][INFO ][node                     ] [Mangog] started
+[2016-08-01 16:23:51,125][INFO ][gateway                  ] [Mangog] recovered [0] indices into cluster_state
+[2016-08-01 16:23:57,987][INFO ][org.duniter.elasticsearch.node.DuniterNode] [Mangog] Checking Duniter indices...
+[2016-08-01 16:23:57,997][INFO ][org.duniter.elasticsearch.service.RegistryService] Creating index [registry]
+[2016-08-01 16:23:58,135][DEBUG][action.admin.indices.create] [Mangog] [registry] failed to create
+MapperParsingException[Failed to parse mapping [record]: No handler for type [attachment] declared on field [thumbnail]]; nested: MapperParsingException[No handler for type [attachment] declared on field [thumbnail]];
+	at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$1.execute(MetaDataCreateIndexService.java:332)
+	at org.elasticsearch.cluster.ClusterStateUpdateTask.execute(ClusterStateUpdateTask.java:45)
+	at org.elasticsearch.cluster.service.InternalClusterService.runTasksForExecutor(InternalClusterService.java:468)
+	at org.elasticsearch.cluster.service.InternalClusterService$UpdateTask.run(InternalClusterService.java:772)
+	at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.runAndClean(PrioritizedEsThreadPoolExecutor.java:231)
+	at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.run(PrioritizedEsThreadPoolExecutor.java:194)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: MapperParsingException[No handler for type [attachment] declared on field [thumbnail]]
+	at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseProperties(ObjectMapper.java:303)
+	at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseObjectOrDocumentTypeProperties(ObjectMapper.java:218)
+	at org.elasticsearch.index.mapper.object.RootObjectMapper$TypeParser.parse(RootObjectMapper.java:139)
+	at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:118)
+	at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:99)
+	at org.elasticsearch.index.mapper.MapperService.parse(MapperService.java:508)
+	at org.elasticsearch.index.mapper.MapperService.merge(MapperService.java:288)
+	at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$1.execute(MetaDataCreateIndexService.java:329)
+	... 8 more
+[2016-08-01 16:23:58,137][WARN ][org.duniter.elasticsearch.threadpool.ThreadPool] [Mangog] failed to run org.duniter.elasticsearch.threadpool.ThreadPool$$Lambda$3/1548269356@722fa8bf
+MapperParsingException[Failed to parse mapping [record]: No handler for type [attachment] declared on field [thumbnail]]; nested: MapperParsingException[No handler for type [attachment] declared on field [thumbnail]];
+	at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$1.execute(MetaDataCreateIndexService.java:332)
+	at org.elasticsearch.cluster.ClusterStateUpdateTask.execute(ClusterStateUpdateTask.java:45)
+	at org.elasticsearch.cluster.service.InternalClusterService.runTasksForExecutor(InternalClusterService.java:468)
+	at org.elasticsearch.cluster.service.InternalClusterService$UpdateTask.run(InternalClusterService.java:772)
+	at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.runAndClean(PrioritizedEsThreadPoolExecutor.java:231)
+	at org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor$TieBreakingPrioritizedRunnable.run(PrioritizedEsThreadPoolExecutor.java:194)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: MapperParsingException[No handler for type [attachment] declared on field [thumbnail]]
+	at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseProperties(ObjectMapper.java:303)
+	at org.elasticsearch.index.mapper.object.ObjectMapper$TypeParser.parseObjectOrDocumentTypeProperties(ObjectMapper.java:218)
+	at org.elasticsearch.index.mapper.object.RootObjectMapper$TypeParser.parse(RootObjectMapper.java:139)
+	at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:118)
+	at org.elasticsearch.index.mapper.DocumentMapperParser.parse(DocumentMapperParser.java:99)
+	at org.elasticsearch.index.mapper.MapperService.parse(MapperService.java:508)
+	at org.elasticsearch.index.mapper.MapperService.merge(MapperService.java:288)
+	at org.elasticsearch.cluster.metadata.MetaDataCreateIndexService$1.execute(MetaDataCreateIndexService.java:329)
+	... 8 more
+[2016-08-01 16:24:34,779][INFO ][node                     ] [Mangog] stopping ...
+[2016-08-01 16:24:34,819][INFO ][node                     ] [Mangog] stopped
+[2016-08-01 16:24:34,819][INFO ][node                     ] [Mangog] closing ...
+[2016-08-01 16:24:34,825][INFO ][node                     ] [Mangog] closed
+[2016-08-01 16:25:17,447][INFO ][node                     ] [Hawkshaw] version[2.3.3], pid[29194], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-08-01 16:25:17,448][INFO ][node                     ] [Hawkshaw] initializing ...
+[2016-08-01 16:25:17,541][ERROR][bootstrap                ] Exception
+java.lang.IllegalStateException: failed to load bundle [file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/jempbox-1.8.10.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/bcprov-jdk15on-1.52.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/commons-compress-1.10.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/commons-codec-1.10.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/fontbox-1.8.10.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/mapper-attachments-2.3.3.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/stax-api-1.0.1.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/poi-ooxml-schemas-3.13.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/poi-scratchpad-3.13.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/tagsoup-1.2.1.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/juniversalchardet-1.0.3.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/tika-core-1.11.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/bcpkix-jdk15on-1.52.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/pdfbox-1.8.10.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/tika-parsers-1.11.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/commons-logging-1.1.3.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/commons-io-2.4.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/poi-3.13.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/poi-ooxml-3.13.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/bcmail-jdk15on-1.52.jar, file:/home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/xmlbeans-2.6.0.jar] due to jar hell
+	at org.elasticsearch.plugins.PluginsService.loadBundles(PluginsService.java:421)
+	at org.elasticsearch.plugins.PluginsService.<init>(PluginsService.java:129)
+	at org.elasticsearch.node.Node.<init>(Node.java:158)
+	at org.elasticsearch.node.Node.<init>(Node.java:140)
+	at org.elasticsearch.node.NodeBuilder.build(NodeBuilder.java:143)
+	at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:178)
+	at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:270)
+	at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:35)
+Caused by: java.lang.IllegalStateException: jar hell!
+class: org.apache.commons.codec.binary.Base32
+jar1: /home/blavenie/.m2/repository/commons-codec/commons-codec/1.6/commons-codec-1.6.jar
+jar2: /home/blavenie/git/duniter4j/duniter4j-elasticsearch/src/test/es-home/plugins/mapper-attachments/commons-codec-1.10.jar
+	at org.elasticsearch.bootstrap.JarHell.checkClass(JarHell.java:282)
+	at org.elasticsearch.bootstrap.JarHell.checkJarHell(JarHell.java:186)
+	at org.elasticsearch.plugins.PluginsService.loadBundles(PluginsService.java:419)
+	... 7 more
