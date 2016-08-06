@@ -120,19 +120,6 @@
 
     <plugins>
       <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifest>
-              <useUniqueVersions>false</useUniqueVersions>
-              <addClasspath>true</addClasspath>
-              <classpathPrefix>./lib/</classpathPrefix>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-
-      <plugin>
         <groupId>org.nuiton.i18n</groupId>
         <artifactId>i18n-maven-plugin</artifactId>
 
@@ -280,7 +267,7 @@
         <activeByDefault>false</activeByDefault>
       </activation>
       <build>
-        <defaultGoal>package</defaultGoal>
+        <defaultGoal>integration-test</defaultGoal>
         <plugins>
           <plugin>
             <artifactId>maven-enforcer-plugin</artifactId>
@@ -313,11 +300,11 @@
             <artifactId>maven-dependency-plugin</artifactId>
             <executions>
               <execution>
-                <id>unpack-dependencies</id>
+                <id>unpack-elasticsearch</id>
                 <goals>
                   <goal>unpack</goal>
                 </goals>
-                <phase>prepare-package</phase>
+                <phase>initialize</phase>
                 <configuration>
                   <artifactItems>
                     <artifactItem>
@@ -331,24 +318,37 @@
                   <silent>true</silent>
                 </configuration>
               </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
+              <execution>
+                <id>unpack-mapper-attachments-plugin</id>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <phase>initialize</phase>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>org.elasticsearch.plugin</groupId>
+                      <artifactId>mapper-attachments</artifactId>
+                      <version>${elasticsearch.version}</version>
+                      <type>zip</type>
+                    </artifactItem>
+                  </artifactItems>
+                  <outputDirectory>${es.home}/plugins/mapper-attachments</outputDirectory>
+                  <silent>true</silent>
+                </configuration>
+              </execution>
               <execution>
                 <id>copy-dependencies</id>
-                <phase>prepare-package</phase>
+                <phase>initialize</phase>
                 <goals>
                   <goal>copy-dependencies</goal>
                 </goals>
                 <configuration>
-                  <outputDirectory>${project.build.directory}/es-home/plugins/${project.artifactId}</outputDirectory>
+                  <outputDirectory>${es.home}/plugins/${project.artifactId}</outputDirectory>
                   <excludeArtifactIds>jna,jackson-core,log4j,elasticsearch</excludeArtifactIds>
                   <overWriteSnapshots>true</overWriteSnapshots>
                   <silent>true</silent>
+                  <includeScope>runtime</includeScope>
                 </configuration>
               </execution>
             </executions>
@@ -372,49 +372,31 @@
             </dependencies>
             <executions>
               <execution>
-                <id>unpack-elasticsearch-binaries</id>
-                <phase>initialize</phase>
+                <id>install-elasticsearch-binaries</id>
+                <phase>generate-resources</phase>
                 <goals>
                   <goal>run</goal>
                 </goals>
                 <configuration>
                   <target>
-                    <copy todir="${es.home}">
-                      <fileset dir="${project.build.directory}/elasticsearch-${elasticsearch.version}">
-                      </fileset>
-                    </copy>
-                    <chmod perm="u+x">
-                      <fileset dir="${es.home}/bin">
-                        <include name="elasticsearch"/>
+                    <!-- Change execution right -->
+                    <chmod perm="ug+x">
+                      <fileset dir="${es.home}">
+                        <include name="bin/elasticsearch"/>
+                        <include name="bin/plugin"/>
                       </fileset>
                     </chmod>
+                    <chmod perm="ug+rw">
+                      <fileset dir="${es.home}/lib"/>
+                    </chmod>
+
+                    <!-- Override config files -->
                     <copy todir="${es.home}/config"
                           overwrite="true"
                           filtering="true">
                       <fileset dir="${basedir}/src/main/assembly/config">
                       </fileset>
                     </copy>
-                  </target>
-                </configuration>
-              </execution>
-              <execution>
-                <id>download-attachment-mapper-plugin</id>
-                <phase>initialize</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-
-                    <!-- download attachment plugin -->
-                    <get src="https://download.elastic.co/elasticsearch/release/org/elasticsearch/plugin/mapper-attachments/${elasticsearch.version}/mapper-attachments-${elasticsearch.version}.zip"
-                         dest="${project.build.directory}/mapper-attachments-${elasticsearch.version}.zip"
-                         verbose="false"
-                         usetimestamp="true"/>
-                    <unzip src="${project.build.directory}/mapper-attachments-${elasticsearch.version}.zip"
-                           dest="${es.home}/plugins/mapper-attachments"
-                           overwrite="true">
-                    </unzip>
                   </target>
                 </configuration>
               </execution>
@@ -427,7 +409,7 @@
                 <configuration>
                   <target>
 
-                    <!-- download cesium >
+                    <!-- download cesium -->
                     <get src="${cesium.download.url}"
                          dest="${project.build.directory}/cesium-web-${cesium.version}.zip"
                          verbose="false"
@@ -435,18 +417,26 @@
                     <unzip src="${project.build.directory}/cesium-web-${cesium.version}.zip"
                            dest="${duniter4j.plugin.directory}/_site"
                            overwrite="true">
-                    </unzip-->
+                    </unzip>
                   </target>
                 </configuration>
               </execution>
               <execution>
                 <id>install-duniter-plugin</id>
-                <phase>prepare-package</phase>
+                <phase>pre-integration-test</phase>
                 <goals>
                   <goal>run</goal>
                 </goals>
                 <configuration>
                   <target>
+
+                    <!-- Copy plugin main jar  -->
+                    <copy todir="${duniter4j.plugin.directory}">
+                      <fileset dir="${project.build.directory}">
+                        <include name="${project.artifactId}-${project.version}.${project.packaging}"/>
+                      </fileset>
+                    </copy>
+
                     <!-- Copy descriptor file and security files -->
                     <copy todir="${duniter4j.plugin.directory}"
                           filtering="true">
@@ -455,6 +445,13 @@
                         <include name="plugin-security.policy"/>
                       </fileset>
                     </copy>
+                    <!-- Copy main libs -->
+                    <move todir="${es.home}/lib">
+                      <fileset dir="${duniter4j.plugin.directory}">
+                        <include name="tyrus-*.jar"/>
+                        <include name="javax.websocket-api-*.jar"/>
+                      </fileset>
+                    </move>
 
                     <!-- Remove redundant lib in duniter plugin -->
                     <ac:for param="file" xmlns:ac="antlib:net.sf.antcontrib">
@@ -480,11 +477,6 @@
                         <include name="guava-*.jar"/>
                       </fileset>
                     </delete>
-                    <copy todir="${duniter4j.plugin.directory}">
-                      <fileset dir="${project.build.directory}">
-                        <include name="${project.artifactId}-${project.version}.${project.packaging}"/>
-                      </fileset>
-                    </copy>
 
                   </target>
                 </configuration>
@@ -501,7 +493,7 @@
                 <goals>
                   <goal>exec</goal>
                 </goals>
-                <phase>package</phase>
+                <phase>integration-test</phase>
                 <configuration>
                   <executable>${es.home}/bin/elasticsearch</executable>
                   <workingDirectory>${es.home}</workingDirectory>
@@ -517,7 +509,7 @@
         <exec.classpathScope>runtime</exec.classpathScope>
         <duniter4j.log.file>${project.build.directory}/exec.log</duniter4j.log.file>
 
-        <es.home>${project.build.directory}/es-home</es.home>
+        <es.home>${project.build.directory}/elasticsearch-${elasticsearch.version}</es.home>
         <duniter4j.basedir>${es.home}</duniter4j.basedir>
         <duniter4j.plugin.directory>${es.home}/plugins/${project.artifactId}</duniter4j.plugin.directory>
         <es.http.cors.allow-origin>*</es.http.cors.allow-origin>

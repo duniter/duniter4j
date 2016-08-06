@@ -29,7 +29,7 @@ import org.nuiton.config.ApplicationConfig;
 import org.nuiton.config.ApplicationConfigHelper;
 import org.nuiton.config.ApplicationConfigProvider;
 import org.nuiton.config.ArgumentsParserException;
-import org.nuiton.util.version.Version;
+import org.nuiton.version.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

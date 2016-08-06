@@ -202,3 +202,32 @@ $ mvn install -DskipTests -DperformRelease
  - Add an embedded [Cesium](https://www.github.com/duniter/cesium) inside the ElasticSearch plugin 
 
  - Detect blockchain rollback
+
+
+## Troubleshooting
+
+### Could not find an implementation class.
+
+Message:
+
+```
+java.lang.RuntimeException: java.lang.RuntimeException: Could not find an implementation class.
+        at org.duniter.core.util.websocket.WebsocketClientEndpoint.<init>(WebsocketClientEndpoint.java:56)
+        at org.duniter.core.client.service.bma.BlockchainRemoteServiceImpl.addNewBlockListener(BlockchainRemoteServiceImpl.java:545)
+        at org.duniter.elasticsearch.service.BlockchainService.listenAndIndexNewBlock(BlockchainService.java:106)
+```
+
+Cause:
+
+Plugin use Websocket to get notification from a Duniter nodes. The current library ([Tyrus](https://tyrus.java.net/)) is loaded throw java Service Loader, that need access to file `META-INF/services/javax.websocket.ContainerProvider` contains by Tyrus.
+ElasticSearch use separated classloader, for each plugin, that disable access to META-INF resource.
+
+Solution :
+
+Move Tyrus libraries into elasticsearch `lib/` directory :
+
+```
+    cd <ES_HOME>
+    mv plugins/duniter4j-elasticsearch/tyrus-*.jar lib
+    mv plugins/duniter4j-elasticsearch/javax.websocket-api-*.jar lib
+```

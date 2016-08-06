@@ -29,6 +29,7 @@ import org.duniter.elasticsearch.action.market.RestMarketCommentUpdateAction;
 import org.duniter.elasticsearch.action.market.RestMarketRecordIndexAction;
 import org.duniter.elasticsearch.action.market.RestMarketRecordUpdateAction;
 import org.duniter.elasticsearch.action.registry.RestRegistryRecordIndexAction;
+import org.duniter.elasticsearch.action.registry.RestRegistryRecordUpdateAction;
 import org.duniter.elasticsearch.action.security.RestSecurityAuthAction;
 import org.duniter.elasticsearch.action.security.RestSecurityGetChallengeAction;
 import org.duniter.elasticsearch.action.user.RestUserProfileIndexAction;
@@ -51,6 +52,7 @@ public class RestModule extends AbstractModule implements Module {
 
         // Registry
         bind(RestRegistryRecordIndexAction.class).asEagerSingleton();
+        bind(RestRegistryRecordUpdateAction.class).asEagerSingleton();
 
         // User
         bind(RestUserProfileIndexAction.class).asEagerSingleton();

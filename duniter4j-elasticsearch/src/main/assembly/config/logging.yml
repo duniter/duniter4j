@@ -18,6 +18,11 @@ logger:
 
   org.duniter: INFO
 
+  #org.duniter.elasticsearch: DEBUG
+
+  org.nuiton.i18n: WARN
+  org.nuiton.config: WARN
+
   # gateway
   #gateway: DEBUG
   #index.gateway: DEBUG

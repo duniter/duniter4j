@@ -169,6 +169,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.indices.reload", false);
     }
 
+    public boolean enableBlockchainSync()  {
+        return settings.getAsBoolean("duniter.blockchain.sync.enable", false);
+    }
+
     public File getTempDirectory() {
         return Configuration.instance().getTempDirectory();
     }
@@ -201,7 +205,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         // init i18n
         // --------------------------------------------------------------------//
 
-        File i18nDirectory = new File(clientConfig.getDataDirectory(), "i18n");
+        File i18nDirectory = clientConfig.getI18nDirectory();
         if (i18nDirectory.exists()) {
             // clean i18n cache
             FileUtils.cleanDirectory(i18nDirectory);

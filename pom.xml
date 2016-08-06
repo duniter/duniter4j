@@ -28,8 +28,8 @@
 
     <cesium.version>0.1.26</cesium.version>
 
-    <nuitonConfigVersion>3.0-rc-2</nuitonConfigVersion>
-    <nuitonI18nVersion>3.3</nuitonI18nVersion>
+    <nuitonConfigVersion>3.0-rc-4</nuitonConfigVersion>
+    <nuitonI18nVersion>3.5</nuitonI18nVersion>
 
     <!-- UI versions -->
     <spring.version>4.2.1.RELEASE</spring.version>
@@ -428,12 +428,6 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>wagon-maven-plugin</artifactId>
           <version>1.0</version>
-        </plugin>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-antrun-plugin</artifactId>
-          <version>1.8</version>
         </plugin>
 
         <plugin>

@@ -102,6 +102,13 @@ public class BlockchainService extends AbstractService {
         this.registryService = registryService;
     }
 
+    public BlockchainService listenAndIndexNewBlock(Peer peer){
+        blockchainRemoteService.addNewBlockListener(peer, message -> {
+            indexBlockAsJson(peer, message, true /*refresh*/, true /*wait*/);
+        });
+        return this;
+    }
+
     public BlockchainService indexLastBlocks(Peer peer) {
         return indexLastBlocks(peer, new ProgressionModelImpl());
     }

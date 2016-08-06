@@ -539,6 +539,8 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
                     peer.getHost(),
                     peer.getPort()));
 
+            log.info(String.format("Starting to listen block from [%s]...", wsBlockURI.toString()));
+
             // Get the websocket, or open new one if not exists
             WebsocketClientEndpoint wsClientEndPoint = blockWsEndPoints.get(wsBlockURI);
             if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {

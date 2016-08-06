@@ -56,6 +56,8 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import java.io.*;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Benoit on 08/04/2015.
@@ -187,6 +189,10 @@ public abstract class AbstractService implements Bean {
     }
 
     protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {
+        bulkFromClasspathFile(classpathFile, indexName, indexType, null);
+    }
+
+    protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType, StringReaderHandler handler) {
         InputStream is = null;
         try {
             is = getClass().getClassLoader().getResourceAsStream(classpathFile);
@@ -194,7 +200,7 @@ public abstract class AbstractService implements Bean {
                 throw new TechnicalException(String.format("Could not retrieve data file [%s] need to fill index [%s]: ", classpathFile, indexName));
             }
 
-            bulkFromStream(is, indexName, indexType);
+            bulkFromStream(is, indexName, indexType, handler);
         }
         finally {
             if (is != null) {
@@ -209,13 +215,17 @@ public abstract class AbstractService implements Bean {
     }
 
     protected void bulkFromFile(File file, String indexName, String indexType) {
+        bulkFromFile(file, indexName, indexType, null);
+    }
+
+    protected void bulkFromFile(File file, String indexName, String indexType, StringReaderHandler handler) {
         Preconditions.checkNotNull(file);
         Preconditions.checkArgument(file.exists());
 
         InputStream is = null;
         try {
             is = new BufferedInputStream(new FileInputStream(file));
-            bulkFromStream(is, indexName, indexType);
+            bulkFromStream(is, indexName, indexType, handler);
         }
         catch(FileNotFoundException e) {
             throw new TechnicalException(String.format("[%s] Could not find file %s", indexName, file.getPath()), e);
@@ -233,6 +243,10 @@ public abstract class AbstractService implements Bean {
     }
 
     protected void bulkFromStream(InputStream is, String indexName, String indexType) {
+        bulkFromStream(is, indexName, indexType, null);
+    }
+
+    protected void bulkFromStream(InputStream is, String indexName, String indexType, StringReaderHandler handler) {
         Preconditions.checkNotNull(is);
         BulkRequest bulkRequest = Requests.bulkRequest();
 
@@ -244,9 +258,13 @@ public abstract class AbstractService implements Bean {
             String line = br.readLine();
             StringBuilder builder = new StringBuilder();
             while(line != null) {
+                line = line.trim();
                 if (StringUtils.isNotBlank(line)) {
                     if (logger.isTraceEnabled()) {
                         logger.trace(String.format("[%s] Add to bulk: %s", indexName, line));
+                    }
+                    if (handler != null) {
+                        line = handler.onReadLine(line.trim());
                     }
                     builder.append(line).append('\n');
                 }
@@ -274,6 +292,34 @@ public abstract class AbstractService implements Bean {
             client.bulk(bulkRequest).actionGet();
         } catch(Exception e) {
             throw new TechnicalException(String.format("[%s] Error while inserting rows into %s", indexName, indexType), e);
+        }
+    }
+
+    public interface StringReaderHandler {
+
+        String onReadLine(String line);
+    }
+
+    public class AddSequenceAttributeHandler implements StringReaderHandler {
+        private int order;
+        private final String attributeName;
+        private final Pattern filterPattern;
+        public AddSequenceAttributeHandler(String attributeName, String filterRegex, int startValue) {
+            this.order = startValue;
+            this.attributeName = attributeName;
+            this.filterPattern = Pattern.compile(filterRegex);
+        }
+
+        @Override
+        public String onReadLine(String line) {
+            // add 'order' field into
+            if (filterPattern.matcher(line).matches()) {
+                return String.format("%s, \"%s\": %d}",
+                        line.substring(0, line.length()-1),
+                        attributeName,
+                        order++);
+            }
+            return line;
         }
     }
 }

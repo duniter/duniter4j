@@ -41,6 +41,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +56,6 @@ import java.nio.charset.StandardCharsets;
 public class HttpServiceImpl implements HttpService, Closeable, InitializingBean{
 
     private static final Logger log = LoggerFactory.getLogger(HttpServiceImpl.class);
-
-    private static final String USER_AGENT = "Android";
 
     public static final String URL_PEER_ALIVE = "/blockchain/parameters";
 
@@ -190,24 +189,24 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                 }
                 case HttpStatus.SC_UNAUTHORIZED:
                 case HttpStatus.SC_FORBIDDEN:
-                    throw new TechnicalException("duniter4j.client.authentication");
+                    throw new TechnicalException(I18n.t("duniter4j.client.authentication"));
                 case HttpStatus.SC_BAD_REQUEST:
                     try {
                         Error error = (Error)parseResponse(response, Error.class);
                         throw new HttpBadRequestException(error);
                     }
                     catch(IOException e) {
-                        throw new HttpBadRequestException("duniter4j.client.status" + response.getStatusLine().toString());
+                        throw new HttpBadRequestException(I18n.t("duniter4j.client.status", response.getStatusLine().toString()));
                     }
                 default:
-                    throw new TechnicalException("duniter4j.client.status" + response.getStatusLine().toString());
+                    throw new TechnicalException(I18n.t("duniter4j.client.status", response.getStatusLine().toString()));
             }
         }
         catch (ConnectException e) {
-            throw new TechnicalException("duniter4j.client.core.connect", e);
+            throw new TechnicalException(I18n.t("duniter4j.client.core.connect", request.toString()), e);
         }
         catch (SocketTimeoutException e) {
-            throw new TechnicalException("duniter4j.client.core.timeout", e);
+            throw new TechnicalException(I18n.t("duniter4j.client.core.timeout"), e);
         }
         catch (IOException e) {
             throw new TechnicalException(e.getMessage(), e);
@@ -272,10 +271,10 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                 else {
                     log.warn("Error while parsing JSON response", e);
                 }
-                throw new JsonSyntaxException("ucoin.client.core.invalidResponse", e);
+                throw new JsonSyntaxException(I18n.t("duniter4j.client.core.invalidResponse"), e);
             }
             catch (Exception e) {
-                throw new TechnicalException("ucoin.client.core.invalidResponse", e);
+                throw new TechnicalException(I18n.t("duniter4j.client.core.invalidResponse"), e);
             }
             finally {
                 if (content!= null) {
@@ -285,7 +284,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         }
 
         if (result == null) {
-            throw new TechnicalException("ucoin.client.core.emptyResponse");
+            throw new TechnicalException(I18n.t("duniter4j.client.core.emptyResponse"));
         }
 
         return result;
@@ -318,14 +317,14 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                 }
                 case HttpStatus.SC_UNAUTHORIZED:
                 case HttpStatus.SC_FORBIDDEN:
-                    throw new TechnicalException("ucoin.client.authentication");
+                    throw new TechnicalException(I18n.t("duniter4j.client.authentication"));
                 default:
-                    throw new TechnicalException("ucoin.client.status" + response.getStatusLine().toString());
+                    throw new TechnicalException(I18n.t("duniter4j.client.status", response.getStatusLine().toString()));
             }
 
         }
         catch (ConnectException e) {
-            throw new TechnicalException("ucoin.client.core.connect", e);
+            throw new TechnicalException(I18n.t("duniter4j.client.core.connect"), e);
         }
         catch (IOException e) {
             throw new TechnicalException(e.getMessage(), e);

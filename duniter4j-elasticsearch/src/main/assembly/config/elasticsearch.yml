@@ -102,12 +102,18 @@ security.manager.enabled: false
 
 
 #duniter.disable: true
-duniter.host: cgeek.fr
-duniter.port: 9330
+#duniter.host: cgeek.fr
+#duniter.port: 9330
+
+duniter.host: 192.168.0.5
+duniter.port: 9201
 
 duniter.string.analyzer: french
 
 #duniter.indices.reload: true
+
+# Should synchronize node blockchain ?
+duniter.blockchain.sync.enable: true
 
 #duniter.dev.enable: true
 

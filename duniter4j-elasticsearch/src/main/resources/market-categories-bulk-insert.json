@@ -1,10 +1,10 @@
 { "index": { "_id": "cat71"}}
-{ "name": "EMPLOI" , "parent": null}
+{ "name": "Emploi" , "parent": null}
 { "index": { "_id": "cat33"}}
 { "name": "Offres d'emploi", "parent": "cat33" }
 
 { "index": { "_id": "cat1" }}
-{ "name": "VEHICULES"  , "parent": null}
+{ "name": "Véhicules"  , "parent": null}
 { "index": { "_id": "cat2" }}
 { "name": "Voitures" , "parent": "cat2" }
 { "index": { "_id": "cat3" }}
@@ -25,7 +25,7 @@
 { "name": "Equipement Nautisme" , "parent": "cat3" }
 
 { "index": { "_id": "cat8" }}
-{ "name": "IMMOBILIER"  , "parent": null}
+{ "name": "Immobilier"  , "parent": null}
 { "index": { "_id": "cat9" }}
 { "name": "Ventes immobilières" , "parent": "cat8" }
 { "index": { "_id": "cat10" }}
@@ -36,7 +36,7 @@
 { "name": "Bureaux &amp; Commerces" , "parent": "cat8" }
 
 { "index": { "_id": "cat66" }}
-{ "name": "VACANCES"  , "parent": null}
+{ "name": "Vacances"  , "parent": null}
 { "index": { "_id": "cat12" }}
 { "name": "Locations &amp; Gîtes" , "parent": "cat66" }
 { "index": { "_id": "cat67" }}
@@ -49,7 +49,7 @@
 { "name": "Hébergements insolites" , "parent": "cat66" }
 
 { "index": { "_id": "cat14" }}
-{ "name": "MULTIMEDIA"  , "parent": null}
+{ "name": "Multimédia"  , "parent": null}
 { "index": { "_id": "cat15" }}
 { "name": "Informatique" , "parent": "cat14" }
 { "index": { "_id": "cat43" }}
@@ -60,7 +60,7 @@
 { "name": "Téléphonie" , "parent": "cat14" }
 
 { "index": { "_id": "cat18" }}
-{ "name": "MAISON"  , "parent": null}
+{ "name": "Maison"  , "parent": null}
 { "index": { "_id": "cat19" }}
 { "name": "Ameublement" , "parent": "cat18" }
 { "index": { "_id": "cat20" }}
@@ -89,7 +89,7 @@
 { "name": "Vêtements bébé" , "parent": "cat18" }
 
 { "index": { "_id": "cat24" }}
-{ "name": "LOISIRS"  , "parent": null}
+{ "name": "Loisirs"  , "parent": null}
 { "index": { "_id": "cat25" }}
 { "name": "DVD / Films" , "parent": "cat24" }
 { "index": { "_id": "cat26" }}
@@ -112,7 +112,7 @@
 { "name": "Vins &amp; Gastronomie" , "parent": "cat24" }
 
 { "index": { "_id": "cat56" }}
-{ "name": "MATERIEL PROFESSIONNEL"  , "parent": null}
+{ "name": "Matériel professionnel"  , "parent": null}
 { "index": { "_id": "cat57" }}
 { "name": "Matériel Agricole" , "parent": "cat56" }
 { "index": { "_id": "cat58" }}
@@ -133,7 +133,7 @@
 { "name": "Matériel Médical" , "parent": "cat56" }
 
 { "index": { "_id": "cat31" }}
-{ "name": "SERVICES"  , "parent": null}
+{ "name": "Services"  , "parent": null}
 { "index": { "_id": "cat34" }}
 { "name": "Prestations de services" , "parent": "cat31" }
 { "index": { "_id": "cat35" }}
@@ -146,6 +146,6 @@
 { "name": "Covoiturage" , "parent": "cat31" }
 { "index": { "_id": "cat37" }}
 
-{ "name": "DIVERS"  , "parent": null}
+{ "name": "Divers"  , "parent": null}
 { "index": { "_id": "cat38" }}
 { "name": "Autres" , "parent": "cat37" }

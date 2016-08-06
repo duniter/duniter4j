@@ -25,20 +25,13 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Sets;
-import com.google.gson.JsonSyntaxException;
-import org.duniter.core.client.model.elasticsearch.DeleteRecord;
-import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.exception.InvalidFormatException;
-import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -46,7 +39,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -89,6 +81,9 @@ public class MarketService extends AbstractService {
         try {
             if (!existsIndex(INDEX)) {
                 createIndex();
+
+                // Fill categories
+                fillRecordCategories();
             }
         }
         catch(JsonProcessingException e) {
@@ -103,7 +98,7 @@ public class MarketService extends AbstractService {
      * @throws JsonProcessingException
      */
     public MarketService createIndex() throws JsonProcessingException {
-        logger.info(String.format("Creating index [%s/%s]", INDEX, RECORD_CATEGORY_TYPE));
+        logger.info(String.format("Creating index [%s]", INDEX));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
         Settings indexSettings = Settings.settingsBuilder()
@@ -209,13 +204,17 @@ public class MarketService extends AbstractService {
                 .execute().actionGet();
     }
 
-    public void fillRecordCategories() {
+    public MarketService fillRecordCategories() {
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("[%s/%s] Fill data", INDEX, RECORD_CATEGORY_TYPE));
         }
 
         // Insert categories
-        bulkFromClasspathFile(CATEGORIES_BULK_CLASSPATH_FILE, INDEX, RECORD_CATEGORY_TYPE);
+        bulkFromClasspathFile(CATEGORIES_BULK_CLASSPATH_FILE, INDEX, RECORD_CATEGORY_TYPE,
+                // Add order attribute (auto incremented)
+                new AddSequenceAttributeHandler("order", "\\{.*\"name\".*\\}", 1));
+
+        return this;
     }
 
     /* -- Internal methods -- */
@@ -229,6 +228,11 @@ public class MarketService extends AbstractService {
                     // name
                     .startObject("name")
                     .field("type", "string")
+                    .endObject()
+
+                    // order
+                    .startObject("order")
+                    .field("type", "integer")
                     .endObject()
 
                     // description

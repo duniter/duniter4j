@@ -25,10 +25,8 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang3.ArrayUtils;
@@ -36,7 +34,6 @@ import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.elasticsearch.Currency;
-import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.WotRemoteService;
@@ -47,7 +44,6 @@ import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
-import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -69,7 +65,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -103,6 +98,8 @@ public class RegistryService extends AbstractService {
         try {
             if (!existsIndex(INDEX)) {
                 createIndex();
+
+                fillRecordCategories();
             }
         }
         catch(JsonProcessingException e) {
@@ -148,7 +145,9 @@ public class RegistryService extends AbstractService {
         }
 
         // Insert categories
-        bulkFromClasspathFile(CATEGORIES_BULK_CLASSPATH_FILE, INDEX, RECORD_CATEGORY_TYPE);
+        bulkFromClasspathFile(CATEGORIES_BULK_CLASSPATH_FILE, INDEX, RECORD_CATEGORY_TYPE,
+                // Add order attribute
+                new AddSequenceAttributeHandler("order", "\\{.*\"name\".*\\}", 1));
 
         return this;
     }
@@ -177,6 +176,23 @@ public class RegistryService extends AbstractService {
                 .setRefresh(false)
                 .execute().actionGet();
         return response.getId();
+    }
+
+    public void updateRecordFromJson(String recordJson, String id) {
+
+        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
+        String issuer = getIssuer(actualObj);
+
+        // Check same document issuer
+        checkSameDocumentIssuer(INDEX, RECORD_TYPE, id, issuer);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Updating market record [%s] from issuer [%s]", id, issuer.substring(0, 8)));
+        }
+
+        client.prepareUpdate(INDEX, RECORD_TYPE, id)
+                .setDoc(recordJson)
+                .execute().actionGet();
     }
 
     public void insertRecordFromBulkFile(File bulkFile) {
@@ -210,13 +226,6 @@ public class RegistryService extends AbstractService {
         result.setPeers(new Peer[]{peer});
 
         indexCurrency(result);
-
-        // Index the first block
-        // FIXME : attention au dependence circulaire : cela devrait plutot etre fait à l'exetrieure e registry
-        //         par exemple dans l'action REST
-        //blockBlockchainService.createIndexIfNotExists(parameters.getCurrency());
-        //blockBlockchainService.indexBlock(firstBlock, false);
-        //blockBlockchainService.indexCurrentBlock(firstBlock, true);
 
         return result;
     }

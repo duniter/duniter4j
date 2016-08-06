@@ -60,7 +60,7 @@ public enum ConfigurationOption implements ConfigOptionDef {
     I18N_DIRECTORY(
             "duniter4j.i18n.directory",
             n("duniter4j.config.option.i18n.directory.description"),
-            "${duniter4j.basedir}/i18n",
+            "${duniter4j.data.directory}/i18n",
             File.class),
 
     TMP_DIRECTORY(

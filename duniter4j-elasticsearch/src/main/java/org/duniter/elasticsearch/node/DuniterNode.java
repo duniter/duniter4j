@@ -22,7 +22,11 @@ package org.duniter.elasticsearch.node;
  * #L%
  */
 
+import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.service.bma.BlockchainRemoteService;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.*;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -53,6 +57,8 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
     protected void doStart() {
         threadPool.scheduleOnStarted(() -> {
             createIndices();
+
+            synchronize();
         });
     }
 
@@ -69,20 +75,17 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
     protected void createIndices() {
 
         boolean reloadIndices = pluginSettings.reloadIndices();
-        Peer peer = pluginSettings.checkAndGetPeer();
+
         if (reloadIndices) {
             if (logger.isInfoEnabled()) {
                 logger.info("Reloading all Duniter indices...");
             }
             injector.getInstance(RegistryService.class)
                     .deleteIndex()
-                    .createIndexIfNotExists()
-                    .fillRecordCategories()
-                    .indexCurrencyFromPeer(peer);
+                    .createIndexIfNotExists();
             injector.getInstance(MarketService.class)
                     .deleteIndex()
-                    .createIndexIfNotExists()
-                    .fillRecordCategories();
+                    .createIndexIfNotExists();
             injector.getInstance(MessageService.class)
                     .deleteIndex()
                     .createIndexIfNotExists();
@@ -94,10 +97,6 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
             injector.getInstance(HistoryService.class)
                     .deleteIndex()
                     .createIndexIfNotExists();
-
-            injector.getInstance(BlockchainService.class)
-                    .indexLastBlocks(peer);
-
 
             if (logger.isInfoEnabled()) {
                 logger.info("Reloading all Duniter indices... [OK]");
@@ -118,6 +117,21 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
                 logger.info("Checking Duniter indices... [OK]");
             }
         }
+    }
 
+    protected void synchronize() {
+        if (pluginSettings.enableBlockchainSync()) {
+
+            Peer peer = pluginSettings.checkAndGetPeer();
+
+            // Index (or refresh) node's currency
+            injector.getInstance(RegistryService.class).indexCurrencyFromPeer(peer);
+
+            // Index blocks (and listen if new block appear)
+            injector.getInstance(BlockchainService.class)
+                    //.indexLastBlocks(peer)
+                    .listenAndIndexNewBlock(peer);
+
+        }
     }
 }
