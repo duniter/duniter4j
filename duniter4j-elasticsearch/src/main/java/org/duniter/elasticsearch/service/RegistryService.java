@@ -74,6 +74,7 @@ public class RegistryService extends AbstractService {
     public static final String INDEX = "registry";
     public static final String RECORD_TYPE = "record";
     public static final String RECORD_CATEGORY_TYPE = "category";
+    public static final String RECORD_COMMENT_TYPE = "comment";
     public static final String CURRENCY_TYPE = "currency";
     private static final String CATEGORIES_BULK_CLASSPATH_FILE = "registry-categories-bulk-insert.json";
 
@@ -125,6 +126,7 @@ public class RegistryService extends AbstractService {
         createIndexRequestBuilder.addMapping(CURRENCY_TYPE, createCurrencyType());
         createIndexRequestBuilder.addMapping(RECORD_CATEGORY_TYPE, createRecordCategoryType());
         createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
+        createIndexRequestBuilder.addMapping(RECORD_COMMENT_TYPE, createRecordCommentType(INDEX, RECORD_COMMENT_TYPE));
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -394,8 +396,19 @@ public class RegistryService extends AbstractService {
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // location
-                    .startObject("location")
+                    // pubkey
+                    .startObject("pubkey")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // address
+                    .startObject("address")
+                    .field("type", "string")
+                    .endObject()
+
+                    // city
+                    .startObject("city")
                     .field("type", "string")
                     .endObject()
 
@@ -424,17 +437,54 @@ public class RegistryService extends AbstractService {
                     .endObject()
                     .endObject()
 
-                    // categories
-                    .startObject("categories")
+                    // pictures
+                    .startObject("pictures")
                     .field("type", "nested")
+                    .field("dynamic", "false")
                     .startObject("properties")
-                    .startObject("cat1") // cat1
+                    .startObject("file") // file
+                    .field("type", "attachment")
+                    .startObject("fields")
+                    .startObject("content") // content
+                    .field("index", "no")
+                    .endObject()
+                    .startObject("title") // title
+                    .field("type", "string")
+                    .field("store", "yes")
+                    .field("analyzer", stringAnalyzer)
+                    .endObject()
+                    .startObject("author") // author
+                    .field("type", "string")
+                    .field("store", "no")
+                    .endObject()
+                    .startObject("content_type") // content_type
+                    .field("store", "yes")
+                    .endObject()
+                    .endObject()
+                    .endObject()
+                    .endObject()
+                    .endObject()
+
+                    // picturesCount
+                    .startObject("picturesCount")
+                    .field("type", "integer")
+                    .endObject()
+
+                    // category
+                    .startObject("category")
+                    .field("type", "nested")
+                    .field("dynamic", "false")
+                    .startObject("properties")
+                    .startObject("id") // author
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
-                    .startObject("cat2") // cat2
+                    .startObject("parent") // author
                     .field("type", "string")
                     .field("index", "not_analyzed")
+                    .endObject()
+                    .startObject("name") // author
+                    .field("type", "string")
                     .endObject()
                     .endObject()
                     .endObject()

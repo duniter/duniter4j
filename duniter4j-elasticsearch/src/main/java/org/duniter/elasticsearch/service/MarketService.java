@@ -109,7 +109,7 @@ public class MarketService extends AbstractService {
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(RECORD_CATEGORY_TYPE, createRecordCategoryType());
         createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
-        createIndexRequestBuilder.addMapping(RECORD_COMMENT_TYPE, createRecordCommentType());
+        createIndexRequestBuilder.addMapping(RECORD_COMMENT_TYPE, createRecordCommentType(INDEX, RECORD_COMMENT_TYPE));
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -371,17 +371,21 @@ public class MarketService extends AbstractService {
                     .field("type", "integer")
                     .endObject()
 
-                    // categories
-                    .startObject("categories")
+                    // category
+                    .startObject("category")
                     .field("type", "nested")
+                    .field("dynamic", "false")
                     .startObject("properties")
-                    .startObject("cat1") // cat1
+                    .startObject("id") // author
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
-                    .startObject("cat2") // cat2
+                    .startObject("parent") // author
                     .field("type", "string")
                     .field("index", "not_analyzed")
+                    .endObject()
+                    .startObject("name") // author
+                    .field("type", "string")
                     .endObject()
                     .endObject()
                     .endObject()
@@ -404,50 +408,6 @@ public class MarketService extends AbstractService {
         }
     }
 
-    public XContentBuilder createRecordCommentType() {
-        String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
 
-        try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_COMMENT_TYPE)
-                    .startObject("properties")
-
-                    // issuer
-                    .startObject("issuer")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // time
-                    .startObject("time")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // message
-                    .startObject("message")
-                    .field("type", "string")
-                    .field("analyzer", stringAnalyzer)
-                    .endObject()
-
-                    // record
-                    .startObject("record")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // reply to
-                    .startObject("reply_to")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    .endObject()
-                    .endObject().endObject();
-
-            return mapping;
-        }
-        catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_COMMENT_TYPE, ioe.getMessage()), ioe);
-        }
-    }
 
 }

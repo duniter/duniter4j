@@ -295,6 +295,52 @@ public abstract class AbstractService implements Bean {
         }
     }
 
+    protected XContentBuilder createRecordCommentType(String index, String type) {
+        String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
+
+        try {
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(type)
+                    .startObject("properties")
+
+                    // issuer
+                    .startObject("issuer")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // time
+                    .startObject("time")
+                    .field("type", "integer")
+                    .endObject()
+
+                    // message
+                    .startObject("message")
+                    .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
+                    .endObject()
+
+                    // record
+                    .startObject("record")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // reply to
+                    .startObject("reply_to")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    .endObject()
+                    .endObject().endObject();
+
+            return mapping;
+        }
+        catch(IOException ioe) {
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", index, type, ioe.getMessage()), ioe);
+        }
+    }
+
     public interface StringReaderHandler {
 
         String onReadLine(String line);
