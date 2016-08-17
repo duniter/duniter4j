@@ -25,6 +25,7 @@
     <scrypt.version>1.4.0</scrypt.version>
     <elasticsearch.version>2.3.3</elasticsearch.version>
     <jna.version>4.1.0</jna.version>
+    <tyrus.version>1.12</tyrus.version>
 
     <cesium.version>0.1.26</cesium.version>
 
@@ -349,6 +350,18 @@
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
         <version>2.6.4</version>
+      </dependency>
+
+      <!-- WebSocket -->
+      <dependency>
+        <groupId>org.glassfish.tyrus</groupId>
+        <artifactId>tyrus-client</artifactId>
+        <version>${tyrus.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.tyrus</groupId>
+        <artifactId>tyrus-container-grizzly-client</artifactId>
+        <version>${tyrus.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

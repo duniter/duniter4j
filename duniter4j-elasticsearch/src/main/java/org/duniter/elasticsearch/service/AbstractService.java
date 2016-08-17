@@ -65,7 +65,7 @@ import java.util.regex.Pattern;
 public abstract class AbstractService implements Bean {
 
     protected static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
-    protected static final String REGEX_WORD_SEPARATOR = "[-\\t@# ]+";
+    protected static final String REGEX_WORD_SEPARATOR = "[-\\t@# _]+";
     protected static final String REGEX_SPACE = "[\\t\\n\\r ]+";
 
     protected final ESLogger logger;

@@ -551,7 +551,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
             // add listener
             wsClientEndPoint.addMessageHandler(messageHandler);
 
-        } catch (URISyntaxException ex) {
+        } catch (URISyntaxException | ServiceConfigurationError ex) {
             throw new TechnicalException("could not create URI need for web socket on block: " + ex.getMessage());
         }
 

@@ -405,6 +405,7 @@ public class RegistryService extends AbstractService {
                     // address
                     .startObject("address")
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // city
@@ -475,16 +476,17 @@ public class RegistryService extends AbstractService {
                     .field("type", "nested")
                     .field("dynamic", "false")
                     .startObject("properties")
-                    .startObject("id") // author
+                    .startObject("id") // id
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
-                    .startObject("parent") // author
+                    .startObject("parent") // parent
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
-                    .startObject("name") // author
+                    .startObject("name") // name
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
                     .endObject()
                     .endObject()

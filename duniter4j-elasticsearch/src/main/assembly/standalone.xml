@@ -37,18 +37,20 @@
       <directory>target/elasticsearch-${elasticsearch.version}</directory>
       <outputDirectory/>
       <excludes>
+        <exclude>bin/elasticsearch</exclude>
+        <exclude>bin/plugin</exclude>
         <exclude>config/elasticsearch.yml</exclude>
         <exclude>config/logging.yml</exclude>
       </excludes>
     </fileSet>
-
     <fileSet>
-      <directory>target/elasticsearch-${elasticsearch.version}/config</directory>
-      <outputDirectory>config/old</outputDirectory>
+      <directory>target/elasticsearch-${elasticsearch.version}</directory>
+      <outputDirectory/>
       <includes>
-        <include>plugin-descriptor.properties</include>
-        <include>plugin-security.policy</include>
+        <include>bin/elasticsearch</include>
+        <include>bin/plugin</include>
       </includes>
+      <fileMode>0755</fileMode>
     </fileSet>
 
     <!-- default configuration file -->
@@ -60,15 +62,6 @@
         <include>logging.yml</include>
       </includes>
     </fileSet>
-
-    <!-- mapper attachment plugin
-    <fileSet>
-      <directory>target/assembly</directory>
-      <outputDirectory>plugins</outputDirectory>
-      <includes>
-        <include>mapper-attachments-${elasticsearch.mapper-attachments.version}.zip</include>
-      </includes>
-    </fileSet>-->
 
     <fileSet>
       <directory>target</directory>
@@ -105,7 +98,25 @@
         <exclude>net.java.dev.jna:jna</exclude>
         <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
         <exclude>log4j:log4j</exclude>
+        <exclude>com.google.guava:guava</exclude>
+        <!-- lib to include in elasticsearch/libs/ -->
+        <exclude>javax.websocket:javax.websocket-api</exclude>
+        <exclude>org.glassfish.tyrus:tyrus-client</exclude>
+        <exclude>org.glassfish.tyrus:tyrus-container-grizzly-client</exclude>
       </excludes>
+      <fileMode>0555</fileMode>
+    </dependencySet>
+
+    <dependencySet>
+      <outputDirectory>lib</outputDirectory>
+      <useProjectArtifact>true</useProjectArtifact>
+      <useTransitiveFiltering>true</useTransitiveFiltering>
+      <includes>
+        <include>javax.websocket:javax.websocket-api</include>
+        <include>org.glassfish.tyrus:tyrus-client</include>
+        <include>org.glassfish.tyrus:tyrus-container-grizzly-client</include>
+      </includes>
+      <fileMode>0555</fileMode>
     </dependencySet>
   </dependencySets>
 </assembly>

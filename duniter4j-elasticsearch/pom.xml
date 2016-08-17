@@ -24,16 +24,9 @@
     </i18n.bundleCsvFile>
     <config.i18nBundleName>${i18n.bundleOutputName}</config.i18nBundleName>
 
-    <!--maven.jar.main.class>
-      org.duniter.elasticsearch.cli.Main
-    </maven.jar.main.class-->
-    <maven.jar.main.class>
-      org.elasticsearch.bootstrap.Elasticsearch
-    </maven.jar.main.class>
-    <exec.classpathScope>provided</exec.classpathScope>
-
     <duniter4j-elasticsearch.config>${project.basedir}/src/test/resources/duniter4j-elasticsearch-test.properties</duniter4j-elasticsearch.config>
 
+    <assembly.skip>false</assembly.skip>
     <cesium.download.url>https://github.com/duniter/cesium/releases/download/${cesium.version}/cesium-web-${cesium.version}.zip</cesium.download.url>
   </properties>
 
@@ -70,7 +63,7 @@
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -151,115 +144,138 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>unpack-elasticsearch</id>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.elasticsearch.distribution.zip</groupId>
+                  <artifactId>elasticsearch</artifactId>
+                  <version>${elasticsearch.version}</version>
+                  <type>zip</type>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/</outputDirectory>
+              <silent>true</silent>
+              <skip>${assembly.skip}</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>unpack-mapper-attachments-plugin</id>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.elasticsearch.plugin</groupId>
+                  <artifactId>mapper-attachments</artifactId>
+                  <version>${elasticsearch.version}</version>
+                  <type>zip</type>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/elasticsearch-${elasticsearch.version}/plugins/mapper-attachments</outputDirectory>
+              <silent>true</silent>
+              <skip>${assembly.skip}</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>ant-contrib</groupId>
+            <artifactId>ant-contrib</artifactId>
+            <version>1.0b3</version>
+            <exclusions>
+              <exclusion>
+                <groupId>ant</groupId>
+                <artifactId>ant</artifactId>
+              </exclusion>
+            </exclusions>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>download-cesium</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+
+                <!-- download cesium -->
+                <get src="${cesium.download.url}"
+                     dest="${project.build.directory}/cesium-web-${cesium.version}.zip"
+                     verbose="false"
+                     usetimestamp="true"/>
+                <unzip src="${project.build.directory}/cesium-web-${cesium.version}.zip"
+                       dest="${project.build.directory}/elasticsearch-${elasticsearch.version}/plugins/${project.artifactId}/_site"
+                       overwrite="true">
+                </unzip>
+              </target>
+              <skip>${assembly.skip}</skip>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>assembly-plugin</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <attach>true</attach>
+              <appendAssemblyId>false</appendAssemblyId>
+              <finalName>${bundlePrefix}</finalName>
+              <descriptors>
+                <descriptor>
+                  ${basedir}/src/main/assembly/plugin.xml
+                </descriptor>
+              </descriptors>
+              <skipAssembly>${assembly.skip}</skipAssembly>
+            </configuration>
+          </execution>
+          <execution>
+            <id>assembly-standalone</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <attach>true</attach>
+              <finalName>${bundlePrefix}</finalName>
+              <descriptors>
+                <descriptor>
+                  ${basedir}/src/main/assembly/standalone.xml
+                </descriptor>
+              </descriptors>
+              <skipAssembly>${assembly.skip}</skipAssembly>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
   <profiles>
-      <profile>
-      <id>default-bundle</id>
-      <activation>
-        <property>
-          <name>performRelease</name>
-          <value>true</value>
-        </property>
-      </activation>
-      <build>
-        <defaultGoal>package</defaultGoal>
-        <plugins>
-          <plugin>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unpack-dependencies</id>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <phase>prepare-package</phase>
-                <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.elasticsearch.distribution.zip</groupId>
-                      <artifactId>elasticsearch</artifactId>
-                      <version>${elasticsearch.version}</version>
-                      <type>zip</type>
-                    </artifactItem>
-                  </artifactItems>
-                  <outputDirectory>${project.build.directory}/</outputDirectory>
-                  <silent>true</silent>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>download-attachment-mapper-plugin</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <!-- download file -->
-                    <get src="https://download.elastic.co/elasticsearch/release/org/elasticsearch/plugin/mapper-attachments/${elasticsearch.version}/mapper-attachments-${elasticsearch.version}.zip"
-                         dest="${project.build.directory}/mapper-attachments-${elasticsearch.version}.zip"
-                         verbose="false"
-                         usetimestamp="true"/>
-                    <unzip src="${project.build.directory}/mapper-attachments-${elasticsearch.version}.zip"
-                           dest="${project.build.directory}/elasticsearch-${elasticsearch.version}/plugins/mapper-attachments"
-                           overwrite="true">
-
-                    </unzip>
-                  </target>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>assembly-plugin</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-                <configuration>
-                  <attach>true</attach>
-                  <appendAssemblyId>false</appendAssemblyId>
-                  <finalName>${bundlePrefix}</finalName>
-                  <descriptors>
-                    <descriptor>
-                        ${basedir}/src/main/assembly/plugin.xml
-                    </descriptor>
-                  </descriptors>
-                </configuration>
-              </execution>
-              <execution>
-                <id>assembly-standalone</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-                <configuration>
-                  <attach>true</attach>
-                  <finalName>${bundlePrefix}</finalName>
-                  <descriptors>
-                    <descriptor>
-                      ${basedir}/src/main/assembly/standalone.xml
-                    </descriptor>
-                  </descriptors>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-
     <!-- use this profile to run the main class -->
     <profile>
       <id>run</id>
@@ -269,91 +285,6 @@
       <build>
         <defaultGoal>integration-test</defaultGoal>
         <plugins>
-          <plugin>
-            <artifactId>maven-enforcer-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>check-run</id>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <phase>initialize</phase>
-                <configuration>
-                  <rules>
-                    <requireProperty>
-                      <property>maven.jar.main.class</property>
-                      <message>Could not find the "maven.jar.main.class"
-                        required property, use
-                        -Dmaven.jar.main.class=your.main.class.fqn
-                      </message>
-                    </requireProperty>
-                  </rules>
-                  <ignoreCache>true</ignoreCache>
-                  <failFast>true</failFast>
-                  <fail>true</fail>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unpack-elasticsearch</id>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <phase>initialize</phase>
-                <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.elasticsearch.distribution.zip</groupId>
-                      <artifactId>elasticsearch</artifactId>
-                      <version>${elasticsearch.version}</version>
-                      <type>zip</type>
-                    </artifactItem>
-                  </artifactItems>
-                  <outputDirectory>${project.build.directory}/</outputDirectory>
-                  <silent>true</silent>
-                </configuration>
-              </execution>
-              <execution>
-                <id>unpack-mapper-attachments-plugin</id>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <phase>initialize</phase>
-                <configuration>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.elasticsearch.plugin</groupId>
-                      <artifactId>mapper-attachments</artifactId>
-                      <version>${elasticsearch.version}</version>
-                      <type>zip</type>
-                    </artifactItem>
-                  </artifactItems>
-                  <outputDirectory>${es.home}/plugins/mapper-attachments</outputDirectory>
-                  <silent>true</silent>
-                </configuration>
-              </execution>
-              <execution>
-                <id>copy-dependencies</id>
-                <phase>initialize</phase>
-                <goals>
-                  <goal>copy-dependencies</goal>
-                </goals>
-                <configuration>
-                  <outputDirectory>${es.home}/plugins/${project.artifactId}</outputDirectory>
-                  <excludeArtifactIds>jna,jackson-core,log4j,elasticsearch</excludeArtifactIds>
-                  <overWriteSnapshots>true</overWriteSnapshots>
-                  <silent>true</silent>
-                  <includeScope>runtime</includeScope>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
@@ -372,57 +303,7 @@
             </dependencies>
             <executions>
               <execution>
-                <id>install-elasticsearch-binaries</id>
-                <phase>generate-resources</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <!-- Change execution right -->
-                    <chmod perm="ug+x">
-                      <fileset dir="${es.home}">
-                        <include name="bin/elasticsearch"/>
-                        <include name="bin/plugin"/>
-                      </fileset>
-                    </chmod>
-                    <chmod perm="ug+rw">
-                      <fileset dir="${es.home}/lib"/>
-                    </chmod>
-
-                    <!-- Override config files -->
-                    <copy todir="${es.home}/config"
-                          overwrite="true"
-                          filtering="true">
-                      <fileset dir="${basedir}/src/main/assembly/config">
-                      </fileset>
-                    </copy>
-                  </target>
-                </configuration>
-              </execution>
-              <execution>
-                <id>download-cesium</id>
-                <phase>initialize</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-
-                    <!-- download cesium -->
-                    <get src="${cesium.download.url}"
-                         dest="${project.build.directory}/cesium-web-${cesium.version}.zip"
-                         verbose="false"
-                         usetimestamp="true"/>
-                    <unzip src="${project.build.directory}/cesium-web-${cesium.version}.zip"
-                           dest="${duniter4j.plugin.directory}/_site"
-                           overwrite="true">
-                    </unzip>
-                  </target>
-                </configuration>
-              </execution>
-              <execution>
-                <id>install-duniter-plugin</id>
+                <id>install-duniter-plugin-jar</id>
                 <phase>pre-integration-test</phase>
                 <goals>
                   <goal>run</goal>
@@ -430,53 +311,23 @@
                 <configuration>
                   <target>
 
-                    <!-- Copy plugin main jar  -->
-                    <copy todir="${duniter4j.plugin.directory}">
-                      <fileset dir="${project.build.directory}">
-                        <include name="${project.artifactId}-${project.version}.${project.packaging}"/>
-                      </fileset>
-                    </copy>
-
-                    <!-- Copy descriptor file and security files -->
-                    <copy todir="${duniter4j.plugin.directory}"
-                          filtering="true">
-                      <fileset dir="${basedir}/src/main/filtered-resources">
-                        <include name="plugin-descriptor.properties"/>
-                        <include name="plugin-security.policy"/>
-                      </fileset>
-                    </copy>
-                    <!-- Copy main libs -->
-                    <move todir="${es.home}/lib">
-                      <fileset dir="${duniter4j.plugin.directory}">
-                        <include name="tyrus-*.jar"/>
-                        <include name="javax.websocket-api-*.jar"/>
-                      </fileset>
-                    </move>
-
-                    <!-- Remove redundant lib in duniter plugin -->
-                    <ac:for param="file" xmlns:ac="antlib:net.sf.antcontrib">
-                      <path>
-                        <fileset dir="${duniter4j.plugin.directory}">
-                          <include name="**/*.jar"/>
-                        </fileset>
-                      </path>
-                      <sequential>
-                        <local name="filename" />
-                        <basename property="filename" file="@{file}"/>
-                        <ac:if>
-                          <available file="${es.home}/lib/${filename}"/>
-                          <then>
-                            <!--echo message="Remove lib from plugin: ${filename}"/-->
-                            <delete file="${duniter4j.plugin.directory}/${filename}"/>
-                          </then>
-                        </ac:if>
-                      </sequential>
-                    </ac:for>
-                    <delete>
-                      <fileset dir="${duniter4j.plugin.directory}">
-                        <include name="guava-*.jar"/>
-                      </fileset>
-                    </delete>
+                    <ac:if xmlns:ac="antlib:net.sf.antcontrib">
+                      <istrue value="${assembly.skip}"/>
+                      <then>
+                        <copy todir="${run.es.home}/plugins/${project.artifactId}">
+                          <fileset dir="${project.build.directory}" includes="*.jar">
+                          </fileset>
+                        </copy>
+                      </then>
+                      <else>
+                        <!-- Unzip standalone zip-->
+                        <unzip src="${project.build.directory}/${bundlePrefix}-standalone.zip"
+                               dest="${project.build.directory}"
+                               overwrite="true">
+                        </unzip>
+                        <move file="${project.build.directory}/${bundlePrefix}" tofile="${run.es.home}"/>
+                      </else>
+                    </ac:if>
 
                   </target>
                 </configuration>
@@ -487,16 +338,67 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.elasticsearch</groupId>
+                <artifactId>elasticsearch</artifactId>
+                <version>${elasticsearch.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${log4j.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>javax.websocket</groupId>
+                <artifactId>javax.websocket-api</artifactId>
+                <version>1.1</version>
+              </dependency>
+              <dependency>
+                <groupId>org.glassfish.tyrus</groupId>
+                <artifactId>tyrus-client</artifactId>
+                <version>${tyrus.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>org.glassfish.tyrus</groupId>
+                <artifactId>tyrus-container-grizzly-client</artifactId>
+                <version>${tyrus.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna-platform</artifactId>
+                <version>${jna.version}</version>
+                <exclusions>
+                  <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna</artifactId>
+                  </exclusion>
+                </exclusions>
+              </dependency>
+            </dependencies>
             <executions>
               <execution>
                 <id>run</id>
                 <goals>
-                  <goal>exec</goal>
+                  <goal>java</goal>
                 </goals>
                 <phase>integration-test</phase>
                 <configuration>
-                  <executable>${es.home}/bin/elasticsearch</executable>
-                  <workingDirectory>${es.home}</workingDirectory>
+                  <mainClass>org.elasticsearch.bootstrap.Elasticsearch</mainClass>
+                  <arguments>start</arguments>
+                  <includeProjectDependencies>false</includeProjectDependencies>
+                  <includePluginDependencies>true</includePluginDependencies>
+                  <systemProperties>
+                    <systemProperty>
+                      <key>es.path.home</key>
+                      <value>${run.es.home}</value>
+                    </systemProperty>
+                  </systemProperties>
                 </configuration>
               </execution>
             </executions>
@@ -505,14 +407,7 @@
       </build>
 
       <properties>
-        <exec.mainClass>${maven.jar.main.class}</exec.mainClass>
-        <exec.classpathScope>runtime</exec.classpathScope>
-        <duniter4j.log.file>${project.build.directory}/exec.log</duniter4j.log.file>
-
-        <es.home>${project.build.directory}/elasticsearch-${elasticsearch.version}</es.home>
-        <duniter4j.basedir>${es.home}</duniter4j.basedir>
-        <duniter4j.plugin.directory>${es.home}/plugins/${project.artifactId}</duniter4j.plugin.directory>
-        <es.http.cors.allow-origin>*</es.http.cors.allow-origin>
+        <run.es.home>${project.build.directory}/es-run-home</run.es.home>
       </properties>
     </profile>
   </profiles>

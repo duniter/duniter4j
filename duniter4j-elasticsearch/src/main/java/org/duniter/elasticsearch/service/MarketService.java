@@ -308,9 +308,16 @@ public class MarketService extends AbstractService {
                     .field("index", "not_analyzed")
                     .endObject()
 
+                    // type (offer, need, ...)
+                    .startObject("type")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
                     // location
                     .startObject("location")
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // geoPoint
@@ -386,6 +393,7 @@ public class MarketService extends AbstractService {
                     .endObject()
                     .startObject("name") // author
                     .field("type", "string")
+                    .field("analyzer", stringAnalyzer)
                     .endObject()
                     .endObject()
                     .endObject()

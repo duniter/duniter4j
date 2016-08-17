@@ -86,6 +86,9 @@ public class BlockchainService extends AbstractService {
     private BlockchainRemoteService blockchainRemoteService;
     private RegistryService registryService;
 
+    private JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
+    private JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("currency");
+
     private Gson gson;
 
     @Inject
@@ -105,6 +108,10 @@ public class BlockchainService extends AbstractService {
     public BlockchainService listenAndIndexNewBlock(Peer peer){
         blockchainRemoteService.addNewBlockListener(peer, message -> {
             indexBlockAsJson(peer, message, true /*refresh*/, true /*wait*/);
+
+            // Update the current block
+            indexCurrentBlockAsJson(message,  false /*wait*/);
+
         });
         return this;
     }
@@ -366,13 +373,13 @@ public class BlockchainService extends AbstractService {
         ObjectUtils.checkNotNull(json);
         ObjectUtils.checkArgument(json.length() > 0);
 
-        JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
-        JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("blockchain");
-
         String currencyName = blockCurrencyParser.getValueAsString(json);
         int number = blockNumberParser.getValueAsInt(json);
 
         logger.info(I18n.t("duniter4j.blockIndexerService.indexBlock", currencyName, peer, number));
+        if (logger.isTraceEnabled()) {
+            logger.trace(json);
+        }
 
         // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, BLOCK_TYPE)
@@ -406,23 +413,37 @@ public class BlockchainService extends AbstractService {
         indexCurrentBlockAsJson(currentBlock.getCurrency(), json, wait);
     }
 
+    /**
+     *
+     * @param currentBlockJson block as JSON
+     * @pram wait need to wait until block processed ?
+     */
+    public void indexCurrentBlockAsJson(String json, boolean wait) {
+        ObjectUtils.checkNotNull(json);
+        ObjectUtils.checkArgument(json.length() > 0);
+
+        String currencyName = blockCurrencyParser.getValueAsString(json);
+
+        indexCurrentBlockAsJson(currencyName, json, wait);
+    }
    /**
     *
     * @param currencyName
     * @param currentBlockJson block as JSON
     * @pram wait need to wait until block processed ?
     */
-    public void indexCurrentBlockAsJson(String currencyName, String currentBlockJson, boolean wait) {
-        ObjectUtils.checkNotNull(currentBlockJson);
-        ObjectUtils.checkArgument(currentBlockJson.length() > 0);
+    public void indexCurrentBlockAsJson(String currencyName, String json, boolean wait) {
+        ObjectUtils.checkNotNull(json);
+        ObjectUtils.checkArgument(json.length() > 0);
+        ObjectUtils.checkArgument(StringUtils.isNotBlank(currencyName));
 
         // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, BLOCK_TYPE)
                 .setId(CURRENT_BLOCK_ID)
                 .setRefresh(true)
-                .setSource(currentBlockJson);
+                .setSource(json);
 
-        // Execute indexBlocksFromNode
+        // Execute in a pool
         if (!wait) {
             boolean acceptedInPool = false;
             while(!acceptedInPool)
@@ -673,7 +694,6 @@ public class BlockchainService extends AbstractService {
 
         int batchSize = pluginSettings.getIndexBulkSize();
         String currentBlockJson = null;
-        JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
 
         for (int batchFirstNumber = firstNumber; batchFirstNumber < lastNumber; ) {
             // Check if stop (e.g. ask by user)

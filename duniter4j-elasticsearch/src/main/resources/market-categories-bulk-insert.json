@@ -1,7 +1,7 @@
 { "index": { "_id": "cat71"}}
 { "name": "Emploi" , "parent": null}
 { "index": { "_id": "cat33"}}
-{ "name": "Offres d'emploi", "parent": "cat33" }
+{ "name": "Offres d'emploi", "parent": "cat71" }
 
 { "index": { "_id": "cat1" }}
 { "name": "Véhicules"  , "parent": null}

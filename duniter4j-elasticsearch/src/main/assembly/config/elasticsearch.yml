@@ -58,7 +58,9 @@ cluster.name: duniter4j-elasticsearch
 #
 # http.port: 9200
 
-http.cors.enabled: false
+http.cors.allow-origin: "/.*/"
+http.cors.enabled: true
+
 #
 # For more information, see the documentation at:
 # <http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-network.html>
@@ -96,7 +98,6 @@ http.cors.enabled: false
 # Require explicit names when deleting indices:
 #
 # action.destructive_requires_name: true
-
 
 security.manager.enabled: false
 
