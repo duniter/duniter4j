@@ -218,13 +218,8 @@
               <target>
 
                 <!-- download cesium -->
-                <get src="${cesium.download.url}"
-                     dest="${project.build.directory}/cesium-web-${cesium.version}.zip"
-                     verbose="false"
-                     usetimestamp="true"/>
-                <unzip src="${project.build.directory}/cesium-web-${cesium.version}.zip"
-                       dest="${project.build.directory}/elasticsearch-${elasticsearch.version}/plugins/${project.artifactId}/_site"
-                       overwrite="true">
+                <get src="${cesium.download.url}" dest="${project.build.directory}/cesium-web-${cesium.version}.zip" verbose="false" usetimestamp="true" />
+                <unzip src="${project.build.directory}/cesium-web-${cesium.version}.zip" dest="${project.build.directory}/elasticsearch-${elasticsearch.version}/plugins/${project.artifactId}/_site" overwrite="true">
                 </unzip>
               </target>
               <skip>${assembly.skip}</skip>
@@ -311,10 +306,10 @@
                 <configuration>
                   <target>
                     <!--<chmod perm="ug+rw">
-                      <fileset dir="${es.home}/lib"/>
+                      <fileset dir="${es.home}/lib" />
                     </chmod>-->
                     <ac:if xmlns:ac="antlib:net.sf.antcontrib">
-                      <istrue value="${assembly.skip}"/>
+                      <istrue value="${assembly.skip}" />
                       <then>
                         <copy todir="${run.es.home}/plugins/${project.artifactId}">
                           <fileset dir="${project.build.directory}" includes="*.jar">
@@ -322,20 +317,17 @@
                         </copy>
                       </then>
                       <else>
-                        <delete dir="${project.build.directory}/${bundlePrefix}"/>
-                        <delete dir="${run.es.home}"/>
+                        <delete dir="${project.build.directory}/${bundlePrefix}" />
+                        <delete dir="${run.es.home}" />
                         <!-- Unzip standalone zip-->
-                        <unzip src="${project.build.directory}/${bundlePrefix}-standalone.zip"
-                               dest="${project.build.directory}"
-                               overwrite="true">
+                        <unzip src="${project.build.directory}/${bundlePrefix}-standalone.zip" dest="${project.build.directory}" overwrite="true">
                         </unzip>
-                        <move file="${project.build.directory}/${bundlePrefix}" tofile="${run.es.home}"/>
+                        <move file="${project.build.directory}/${bundlePrefix}" tofile="${run.es.home}" />
                       </else>
                     </ac:if>
 
                     <!-- Use files from src/test/es-home -->
-                    <copy todir="${run.es.home}"
-                          overwrite="true">
+                    <copy todir="${run.es.home}" overwrite="true">
                       <fileset dir="${project.basedir}/src/test/es-home" includes="**/*.*">
                       </fileset>
                     </copy>
