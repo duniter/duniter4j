@@ -21,7 +21,8 @@ logger:
   #org.duniter.elasticsearch: DEBUG
 
   org.nuiton.i18n: WARN
-  org.nuiton.config: WARN
+  org.nuiton.config: ERROR
+  org.nuiton.converter: WARN
 
   # gateway
   #gateway: DEBUG
