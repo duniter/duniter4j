@@ -32,6 +32,7 @@ import org.duniter.elasticsearch.action.registry.RestRegistryRecordIndexAction;
 import org.duniter.elasticsearch.action.registry.RestRegistryRecordUpdateAction;
 import org.duniter.elasticsearch.action.security.RestSecurityAuthAction;
 import org.duniter.elasticsearch.action.security.RestSecurityGetChallengeAction;
+import org.duniter.elasticsearch.action.site.RestCesiumConfigAction;
 import org.duniter.elasticsearch.action.user.RestUserProfileIndexAction;
 import org.duniter.elasticsearch.action.user.RestUserProfileUpdateAction;
 import org.elasticsearch.common.inject.AbstractModule;
@@ -64,6 +65,9 @@ public class RestModule extends AbstractModule implements Module {
 
         // History
         bind(RestHistoryDeleteIndexAction.class).asEagerSingleton();
+
+        // Cesium
+        bind(RestCesiumConfigAction.class).asEagerSingleton();
 
     }
 }

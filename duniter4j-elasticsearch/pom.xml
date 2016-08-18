@@ -310,7 +310,9 @@
                 </goals>
                 <configuration>
                   <target>
-
+                    <!--<chmod perm="ug+rw">
+                      <fileset dir="${es.home}/lib"/>
+                    </chmod>-->
                     <ac:if xmlns:ac="antlib:net.sf.antcontrib">
                       <istrue value="${assembly.skip}"/>
                       <then>
@@ -320,6 +322,8 @@
                         </copy>
                       </then>
                       <else>
+                        <delete dir="${project.build.directory}/${bundlePrefix}"/>
+                        <delete dir="${run.es.home}"/>
                         <!-- Unzip standalone zip-->
                         <unzip src="${project.build.directory}/${bundlePrefix}-standalone.zip"
                                dest="${project.build.directory}"
@@ -329,6 +333,12 @@
                       </else>
                     </ac:if>
 
+                    <!-- Use files from src/test/es-home -->
+                    <copy todir="${run.es.home}"
+                          overwrite="true">
+                      <fileset dir="${project.basedir}/src/test/es-home" includes="**/*.*">
+                      </fileset>
+                    </copy>
                   </target>
                 </configuration>
               </execution>
