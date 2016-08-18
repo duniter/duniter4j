@@ -105,9 +105,9 @@
   </modules>
 
   <scm>
-    <url>https://github.com/duniter/duniter4j/</url>
-    <connection>scm:svn:https://github.com/duniter/duniter4j/</connection>
-    <developerConnection>scm:svn:https://github.com/duniter/duniter4j/</developerConnection>
+    <url>https://github.com/duniter/duniter4j.git</url>
+    <connection>scm:svn:https://github.com/duniter/duniter4j.git</connection>
+    <developerConnection>scm:svn:https://github.com/duniter/duniter4j.git</developerConnection>
   </scm>
 
   <issueManagement>
