@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+@Ignore
 public class BlockchainServiceTest {
 
 	private static final Logger log = LoggerFactory.getLogger(BlockchainServiceTest.class);

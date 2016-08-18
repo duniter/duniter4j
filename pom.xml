@@ -78,7 +78,7 @@
     <distribution.site.id>eis-public-reports</distribution.site.id>
     <distribution.site.host>server.e-is.pro:22</distribution.site.host>
     <distribution.site.repository>scp://${distribution.site.host}/var/www</distribution.site.repository>
-    <distribution.site.projectId>reefdb</distribution.site.projectId>
+    <distribution.site.projectId>duniter4j</distribution.site.projectId>
     <distribution.repository.id>eis-nexus-deploy</distribution.repository.id>
     <distribution.repository.url>http://nexus.e-is.pro/nexus/content/repositories/duniter4j-releases</distribution.repository.url>
     <distribution.internet.url>${distribution.repository.url}</distribution.internet.url>
