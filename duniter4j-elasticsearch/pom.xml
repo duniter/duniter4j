@@ -305,13 +305,14 @@
                 </goals>
                 <configuration>
                   <target>
-                    <!--<chmod perm="ug+rw">
-                      <fileset dir="${es.home}/lib" />
-                    </chmod>-->
                     <ac:if xmlns:ac="antlib:net.sf.antcontrib">
                       <istrue value="${assembly.skip}" />
+                      <!-- reuse standalone files -->
                       <then>
-                        <copy todir="${run.es.home}/plugins/${project.artifactId}">
+                        <delete failonerror="false">
+                          <fileset dir="${run.es.home}/plugins/${project.artifactId}" includes="${project.artifactId}-*.jar" />
+                        </delete>
+                        <copy todir="${run.es.home}/plugins/${project.artifactId}" overwrite="true">
                           <fileset dir="${project.build.directory}" includes="*.jar">
                           </fileset>
                         </copy>

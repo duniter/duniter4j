@@ -100,33 +100,32 @@ public class RestCesiumConfigAction extends RestFilter {
             return configJsContent;
         }
 
-        // Compute the ES node address
-        String esNode = "localhost:9200";
+        // Get ES node address
         BoundTransportAddress host = transport.boundAddress();
-        if (host != null) {
-            TransportAddress address = host.publishAddress();
-            if (address != null) {
-                esNode = address.toString();
-            }
-        }
-
-        // Compute the Duniter node address
-        String duniterNode = String.format("%s:%s",
-                pluginSettings.getNodeBmaHost(),
-                pluginSettings.getNodeBmaPort());
+        TransportAddress esNodeAddress = host.publishAddress();
 
         // Compute the config file content
         configJsContent = String.format("angular.module(\"cesium.config\", [])\n" +
-                ".constant(\"APP_CONFIG\", {\n" +
-                "                \"DUNITER_NODE\": \"%s\",\n" +
-                "                \"DUNITER_NODE_ES\": \"%s\",\n" +
-                "                \"NEW_ISSUE_LINK\": \"https://github.com/duniter/cesium/issues/new?labels=bug\",\n" +
-                "                \"TIMEOUT\": 4000,\n" +
-                "                \"DEBUG\": false,\n" +
-                "                \"VERSION\": \"0.1.28\",\n" +
-                "                \"BUILD_DATE\": \"2016-08-18T16:45:31.702Z\"});",
-                duniterNode,
-                esNode
+                        ".constant(\"csConfig\", {\n" +
+                        "                \"node\": {\n" +
+                        "                    \"host\": \"%s\",\n" +
+                        "                    \"port\": \"%s\"\n" +
+                        "                },\n" +
+                        "                \"plugins\": {\n" +
+                        "                  \"es\": {\n" +
+                        "                    \"enable\": \"true\",\n" +
+                        "                    \"host\": \"%s\",\n" +
+                        "                    \"port\": \"%s\"\n" +
+                        "                  },\n" +
+                        "                },\n" +
+                        "                \"newIssueUrl\": \"https://github.com/duniter/cesium/issues/new?labels=bug\",\n" +
+                        "                \"time\": 4000,\n" +
+                        "                \"version\": \"0.2.1\",\n" +
+                        "             });",
+                pluginSettings.getNodeBmaHost(),
+                pluginSettings.getNodeBmaPort(),
+                esNodeAddress.getHost(),
+                esNodeAddress.getPort()
                 );
 
         return configJsContent;
