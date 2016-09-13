@@ -50,7 +50,7 @@ public class HistoryService extends AbstractService {
 
     @Inject
     public HistoryService(Client client, PluginSettings settings, CryptoService cryptoService) {
-        super(client, settings, cryptoService);
+        super("gchange." + INDEX, client, settings, cryptoService);
     }
 
     /**

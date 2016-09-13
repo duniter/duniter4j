@@ -84,7 +84,7 @@ public enum ConfigurationOption implements ConfigOptionDef {
     SITE_URL(
             "duniter4j.site.url",
             n("duniter4j.config.option.site.url.description"),
-            "http://ucoin.io/duniter4j",
+            "https://github.com/duniter/duniter4j",
             URL.class),
 
     ORGANIZATION_NAME(
@@ -143,14 +143,14 @@ public enum ConfigurationOption implements ConfigOptionDef {
     NODE_HOST(
             "duniter4j.node.host",
             n("duniter4j.config.option.node.host.description"),
-            "metab.ucoin.io",
+            "cgeek.fr",
             String.class,
             false),
 
     NODE_PORT(
             "duniter4j.node.port",
             n("duniter4j.config.option.node.port.description"),
-            "9201",
+            "9330",
             Integer.class,
             false),
 

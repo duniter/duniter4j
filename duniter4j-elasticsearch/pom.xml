@@ -27,7 +27,7 @@
     <duniter4j-elasticsearch.config>${project.basedir}/src/test/resources/duniter4j-elasticsearch-test.properties</duniter4j-elasticsearch.config>
 
     <assembly.skip>false</assembly.skip>
-    <cesium.download.url>https://github.com/duniter/cesium/releases/download/${cesium.version}/cesium-web-${cesium.version}.zip</cesium.download.url>
+    <cesium.download.url>https://github.com/duniter/cesium/releases/download/v${cesium.version}/cesium-v${cesium.version}-web.zip</cesium.download.url>
   </properties>
 
   <dependencies>
@@ -393,7 +393,9 @@
                 <phase>integration-test</phase>
                 <configuration>
                   <mainClass>org.elasticsearch.bootstrap.Elasticsearch</mainClass>
-                  <arguments>start</arguments>
+                  <arguments>
+                    <argument>start</argument>
+                  </arguments>
                   <includeProjectDependencies>false</includeProjectDependencies>
                   <includePluginDependencies>true</includePluginDependencies>
                   <systemProperties>

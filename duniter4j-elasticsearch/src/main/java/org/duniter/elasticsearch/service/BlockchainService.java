@@ -35,16 +35,18 @@ import org.duniter.core.client.model.bma.gson.JsonAttributeParser;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
+import org.duniter.core.client.service.exception.BlockNotFoundException;
 import org.duniter.core.client.service.exception.HttpBadRequestException;
 import org.duniter.core.client.service.exception.JsonSyntaxException;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.model.NullProgressionModel;
 import org.duniter.core.model.ProgressionModel;
 import org.duniter.core.model.ProgressionModelImpl;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.exception.*;
+import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
@@ -57,6 +59,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -83,18 +86,25 @@ public class BlockchainService extends AbstractService {
 
     private static final int SYNC_MISSING_BLOCK_MAX_RETRY = 5;
 
+    private final ProgressionModel nullProgressionModel = new NullProgressionModel();
+
     private BlockchainRemoteService blockchainRemoteService;
     private RegistryService registryService;
+    private ThreadPool threadPool;
 
     private JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
     private JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("currency");
+    private JsonAttributeParser blockHashParser = new JsonAttributeParser("hash");
+    private JsonAttributeParser blockPreviousHashParser = new JsonAttributeParser("previousHash");
 
     private Gson gson;
 
     @Inject
-    public BlockchainService(Client client, PluginSettings settings, ThreadPool threadPool, final ServiceLocator serviceLocator){
-        super(client, settings);
+    public BlockchainService(Client client, PluginSettings settings, ThreadPool threadPool,
+                             final ServiceLocator serviceLocator){
+        super("duniter.blockchain", client, settings);
         this.gson = GsonUtils.newBuilder().create();
+        this.threadPool = threadPool;
         threadPool.scheduleOnStarted(() -> {
             blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
         });
@@ -107,17 +117,14 @@ public class BlockchainService extends AbstractService {
 
     public BlockchainService listenAndIndexNewBlock(Peer peer){
         blockchainRemoteService.addNewBlockListener(peer, message -> {
-            indexBlockAsJson(peer, message, true /*refresh*/, true /*wait*/);
-
-            // Update the current block
-            indexCurrentBlockAsJson(message,  false /*wait*/);
-
+            indexLastBlockFromJson(peer, message);
         });
         return this;
     }
 
     public BlockchainService indexLastBlocks(Peer peer) {
-        return indexLastBlocks(peer, new ProgressionModelImpl());
+        indexLastBlocks(peer, nullProgressionModel);
+        return this;
     }
 
     public BlockchainService indexLastBlocks(Peer peer, ProgressionModel progressionModel) {
@@ -132,15 +139,13 @@ public class BlockchainService extends AbstractService {
             BlockchainParameters parameter = blockchainRemoteService.getParameters(peer);
             if (parameter == null) {
                 progressionModel.setStatus(ProgressionModel.Status.FAILED);
-                logger.error(String.format("Could not connect to node [%s]",
-                        peer.getUrl()));
+                logger.error(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.remoteParametersError",peer));
                 return this;
             }
             String currencyName = parameter.getCurrency();
 
-            progressionModel.setTask(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.task", currencyName, peer.getHost(), peer.getPort()));
-            logger.info(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.task",
-                    currencyName, pluginSettings.getNodeBmaHost(), pluginSettings.getNodeBmaPort()));
+            progressionModel.setTask(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.task", currencyName, peer));
+            logger.info(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.task", currencyName, peer));
 
             // Create index blockchain if need
             if (!registryService.isCurrencyExists(currencyName)) {
@@ -148,63 +153,80 @@ public class BlockchainService extends AbstractService {
             }
 
             // Check if index exists
-            createIndexIfNotExists(currencyName);
+            createIndexIfNotExists(currencyName, true/*wait cluster health*/);
 
             // Then index all blocks
-            BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);
+            BlockchainBlock peerCurrentBlock = blockchainRemoteService.getCurrentBlock(peer);
 
-            if (currentBlock != null) {
-                int maxBlockNumber = currentBlock.getNumber();
-
-                // DEV mode
-                if (pluginSettings.isDevMode() && maxBlockNumber > 5000) {
-                    maxBlockNumber = 5000;
-                }
+            if (peerCurrentBlock != null) {
+                final int peerCurrentBlockNumber = peerCurrentBlock.getNumber();
 
                 // Get the last indexed block number
                 int startNumber = 0;
 
-                int currentBlockNumber = -1;
+                // Check if a previous sync has been done
                 BlockchainBlock indexedCurrentBlock = getCurrentBlock(currencyName);
                 if (indexedCurrentBlock != null && indexedCurrentBlock.getNumber() != null) {
-                    currentBlockNumber = indexedCurrentBlock.getNumber();
+                    int indexedCurrentBlockNumber = indexedCurrentBlock.getNumber();
 
-                    // Previous block could have been not indexed : so start at the max(number)
-                    indexedCurrentBlock = getBlockById(currencyName, currentBlockNumber);
-                    // If exists on blockchain, so can use it
+                    // Make sure this block has been indexed by its number (not only with _id='current')
+                    indexedCurrentBlock = getBlockById(currencyName, indexedCurrentBlockNumber);
+
+                    // If current block exists on index, by _id=number AND _id=current
+                    // then keep it and sync only next blocks
                     if (indexedCurrentBlock != null) {
-                        startNumber = currentBlockNumber + 1;
+                        startNumber = indexedCurrentBlockNumber + 1;
                     }
                 }
 
-                // Before to start at '0' (first block), try to use the max(number)
+                // When current block not found,
+                // try to use the max(number), because block with _id='current' may not has been indexed
                 if (startNumber <= 1 ){
                     startNumber = getMaxBlockNumber(currencyName) + 1;
                 }
 
-                if (startNumber <= maxBlockNumber) {
+                // If some block has been already indexed: detect and resolve fork
+                if (startNumber > 0) {
+                    String peerStartPreviousHash;
+                    try {
+                        BlockchainBlock peerStartBlock = blockchainRemoteService.getBlock(peer, startNumber - 1);
+                        peerStartPreviousHash = peerStartBlock.getHash();
+                    }
+                    catch(BlockNotFoundException e) {
+                        // block not exists: use a fake hash for fork detection (will force to compare previous blocks)
+                        peerStartPreviousHash = "--";
+                    }
+                    boolean resolved = detectAndResolveFork(peer, currencyName, peerStartPreviousHash, startNumber - 1);
+                    if (!resolved) {
+                        // Bad blockchain ! skipping sync
+                        logger.error(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.invalidBlockchain", currencyName, peer));
+                        return this;
+                    }
+                }
+
+                if (startNumber <= peerCurrentBlockNumber) {
                     Collection<String> missingBlocks = bulkIndex
-                            ? indexBlocksUsingBulk(peer, currencyName, startNumber, maxBlockNumber, progressionModel)
-                            : indexBlocksNoBulk(peer, currencyName, startNumber, maxBlockNumber, progressionModel);
+                            ? indexBlocksUsingBulk(peer, currencyName, startNumber, peerCurrentBlockNumber, progressionModel)
+                            : indexBlocksNoBulk(peer, currencyName, startNumber, peerCurrentBlockNumber, progressionModel);
 
                     // If some blocks are missing, try to get it using other peers
                     if (CollectionUtils.isNotEmpty(missingBlocks)) {
                         progressionModel.setTask(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.otherPeers.task", currencyName));
-                        missingBlocks = indexMissingBlocksFromOtherPeers(peer, currentBlock, missingBlocks, 1);
+                        missingBlocks = indexMissingBlocksFromOtherPeers(peer, peerCurrentBlock, missingBlocks, 1);
                     }
 
                     if (CollectionUtils.isEmpty(missingBlocks)) {
-                        logger.info(String.format("All blocks indexed [%s ms]", (System.currentTimeMillis() - timeStart)));
+                        logger.info(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.succeed", currencyName, peer, (System.currentTimeMillis() - timeStart)));
                         progressionModel.setStatus(ProgressionModel.Status.SUCCESS);
                     }
                     else {
-                        logger.warn(String.format("Could not indexed all blocks. Missing %s blocks.", missingBlocks.size()));
+                        logger.warn(String.format("[%s] [%s] Could not indexed all blocks. Missing %s blocks.", currencyName, peer, missingBlocks.size()));
                         progressionModel.setStatus(ProgressionModel.Status.FAILED);
                     }
                 }
                 else {
                     if (logger.isDebugEnabled()) {
-                        logger.debug(String.format("Current block from peer [%s] is #%s. Index is up to date.", peer.getUrl(), maxBlockNumber));
+                        logger.debug(String.format("[%s] [%s] Already up to date at block #%s.", currencyName, peer, peerCurrentBlockNumber));
                     }
                     progressionModel.setStatus(ProgressionModel.Status.SUCCESS);
                 }
@@ -226,9 +248,14 @@ public class BlockchainService extends AbstractService {
         return super.existsIndex(currencyName);
     }
 
-    public BlockchainService createIndexIfNotExists(String currencyName) {
+    public BlockchainService createIndexIfNotExists(String currencyName, boolean waitClusterHealth) {
         if (!existsIndex(currencyName)) {
             createIndex(currencyName);
+
+            // when wait cluster state
+            if (waitClusterHealth) {
+                threadPool.waitClusterHealthStatus(ClusterHealthStatus.GREEN, ClusterHealthStatus.YELLOW);
+            }
         }
         return this;
     }
@@ -344,7 +371,7 @@ public class BlockchainService extends AbstractService {
      * @param number the block number
      * @param json block as JSON
      */
-    public void indexBlockAsJson(String currencyName, int number, byte[] json, boolean refresh, boolean wait) {
+    public BlockchainService indexBlockFromJson(String currencyName, int number, byte[] json, boolean refresh, boolean wait) {
         ObjectUtils.checkNotNull(json);
         ObjectUtils.checkArgument(json.length > 0);
 
@@ -361,24 +388,52 @@ public class BlockchainService extends AbstractService {
         else {
             indexRequest.execute().actionGet();
         }
+
+        return this;
+    }
+
+    /**
+     * Index the given block, as the last (current) block. This will check is a fork has occur, and apply a rollback so.
+     * @param peer a source peer
+     * @param json block as json
+     */
+    public BlockchainService indexLastBlockFromJson(Peer peer, String json) {
+        ObjectUtils.checkNotNull(json);
+        ObjectUtils.checkArgument(json.length() > 0);
+
+        indexBlockFromJson(peer, json, true /*refresh*/, true /*is current*/, true/*check fork*/, true/*wait*/);
+
+        return this;
     }
 
     /**
      *
      * @param json block as json
-     * @param refresh is a existing block ?
+     * @param refresh Could be an existing block ?
      * @param wait need to wait until processed ?
      */
-    public void indexBlockAsJson(Peer peer, String json, boolean refresh, boolean wait) {
+    public BlockchainService indexBlockFromJson(Peer peer, String json, boolean refresh, boolean isCurrent, boolean detectFork, boolean wait) {
         ObjectUtils.checkNotNull(json);
         ObjectUtils.checkArgument(json.length() > 0);
 
         String currencyName = blockCurrencyParser.getValueAsString(json);
         int number = blockNumberParser.getValueAsInt(json);
+        String hash = blockHashParser.getValueAsString(json);
 
-        logger.info(I18n.t("duniter4j.blockIndexerService.indexBlock", currencyName, peer, number));
+        logger.info(I18n.t("duniter4j.blockIndexerService.indexBlock", currencyName, peer, number, hash));
         if (logger.isTraceEnabled()) {
             logger.trace(json);
+        }
+
+        // Detecting fork and rollback is necessary
+        if (detectFork) {
+            String previousHash = blockPreviousHashParser.getValueAsString(json);
+            boolean resolved = detectAndResolveFork(peer, currencyName, previousHash, number - 1);
+            if (!resolved) {
+                // Bad blockchain ! Skipping block indexation
+                logger.error(I18n.t("duniter4j.blockIndexerService.detectFork.invalidBlockchain", currencyName, peer, number, hash));
+                return this;
+            }
         }
 
         // Preparing indexBlocksFromNode
@@ -394,6 +449,13 @@ public class BlockchainService extends AbstractService {
         else {
             indexRequest.execute().actionGet();
         }
+
+        // Update current
+        if (isCurrent) {
+            indexCurrentBlockFromJson(currencyName, json, true /*wait*/);
+        }
+
+        return this;
     }
 
     /**
@@ -410,29 +472,16 @@ public class BlockchainService extends AbstractService {
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         String json = gson.toJson(currentBlock);
 
-        indexCurrentBlockAsJson(currentBlock.getCurrency(), json, wait);
+        indexCurrentBlockFromJson(currentBlock.getCurrency(), json, wait);
     }
 
-    /**
-     *
-     * @param currentBlockJson block as JSON
-     * @pram wait need to wait until block processed ?
-     */
-    public void indexCurrentBlockAsJson(String json, boolean wait) {
-        ObjectUtils.checkNotNull(json);
-        ObjectUtils.checkArgument(json.length() > 0);
-
-        String currencyName = blockCurrencyParser.getValueAsString(json);
-
-        indexCurrentBlockAsJson(currencyName, json, wait);
-    }
    /**
     *
     * @param currencyName
-    * @param currentBlockJson block as JSON
+    * @param json block as JSON
     * @pram wait need to wait until block processed ?
     */
-    public void indexCurrentBlockAsJson(String currencyName, String json, boolean wait) {
+    public void indexCurrentBlockFromJson(String currencyName, String json, boolean wait) {
         ObjectUtils.checkNotNull(json);
         ObjectUtils.checkArgument(json.length() > 0);
         ObjectUtils.checkArgument(StringUtils.isNotBlank(currencyName));
@@ -554,6 +603,11 @@ public class BlockchainService extends AbstractService {
                     .field("type", "string")
                     .endObject()
 
+                    // previous hash
+                    .startObject("previousHash")
+                    .field("type", "string")
+                    .endObject()
+
                     // membercount
                     .startObject("memberCount")
                     .field("type", "integer")
@@ -597,13 +651,13 @@ public class BlockchainService extends AbstractService {
         // Execute query
         try {
             SearchResponse searchResponse = searchRequest.execute().actionGet();
-            List<BlockchainBlock> currencies = toBlocks(searchResponse, false);
-            if (CollectionUtils.isEmpty(currencies)) {
+            List<BlockchainBlock> blocks = toBlocks(searchResponse, false);
+            if (CollectionUtils.isEmpty(blocks)) {
                 return null;
             }
 
             // Return the unique result
-            return CollectionUtils.extractSingleton(currencies);
+            return CollectionUtils.extractSingleton(blocks);
         }
         catch(JsonSyntaxException e) {
             throw new TechnicalException(String.format("Error while getting indexed block #%s for blockchain [%s]", blockId, currencyName), e);
@@ -670,12 +724,12 @@ public class BlockchainService extends AbstractService {
 
             try {
                 String blockAsJson = blockchainRemoteService.getBlockAsJson(peer, curNumber);
-                indexBlockAsJson(currencyName, curNumber, blockAsJson.getBytes(), false, true /*wait*/);
+                indexBlockFromJson(currencyName, curNumber, blockAsJson.getBytes(), false, true /*wait*/);
 
                 // If last block
                 if (curNumber == lastNumber - 1) {
                     // update the current block
-                    indexCurrentBlockAsJson(currencyName, blockAsJson, true /*wait*/);
+                    indexCurrentBlockFromJson(currencyName, blockAsJson, true /*wait*/);
                 }
             }
             catch(Throwable t) {
@@ -707,10 +761,11 @@ public class BlockchainService extends AbstractService {
 
             String[] blocksAsJson = null;
             try {
-                blocksAsJson = blockchainRemoteService.getBlocksAsJson(peer, batchSize, batchFirstNumber);
-            } catch(HttpBadRequestException e) {
+                final int batchFirstNumberFinal = batchFirstNumber;
+                blocksAsJson = executeWithRetry(()->blockchainRemoteService.getBlocksAsJson(peer, batchSize, batchFirstNumberFinal));
+            } catch(TechnicalException e) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Error while getting blocks from #%s (count=%s): %s. Skipping blocks.", batchFirstNumber, batchSize, e.getMessage()));
+                    logger.debug(String.format("[%s] [%s] Error while getting blocks from #%s (count=%s): %s. Skipping blocks.",currencyName, peer, batchFirstNumber, batchSize, e.getMessage()));
                 }
             }
 
@@ -778,11 +833,11 @@ public class BlockchainService extends AbstractService {
 
             // Report progress
             reportIndexBlocksProgress(progressionModel, currencyName, peer, firstNumber, lastNumber, batchFirstNumber);
-
+            batchFirstNumber++; // increment for next loop
         }
 
         if (StringUtils.isNotBlank(currentBlockJson)) {
-            indexCurrentBlockAsJson(currencyName, currentBlockJson, false);
+            indexCurrentBlockFromJson(currencyName, currentBlockJson, false);
         }
 
         return missingBlockNumbers;
@@ -860,7 +915,7 @@ public class BlockchainService extends AbstractService {
                             }
 
                             // Index the missing block
-                            indexBlockAsJson(currencyName, blockNumber, blockAsJson.getBytes(), false, true/*wait*/);
+                            indexBlockFromJson(currencyName, blockNumber, blockAsJson.getBytes(), false, true/*wait*/);
 
                             // Remove this block number from the final missing list
                             newMissingBlocks.remove(blockNumber);
@@ -921,5 +976,105 @@ public class BlockchainService extends AbstractService {
             logger.info(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.progress", currencyName, peer, curNumber, lastNumber, pct));
         }
 
+    }
+
+    protected boolean isBlockIndexed(String currencyName, int number, String hash) {
+        // Check if previous block exists
+        BlockchainBlock block = getBlockByIdStr(currencyName, String.valueOf(number));
+        boolean blockExists = block != null;
+        if (!blockExists) {
+            return blockExists;
+        }
+        return block.getHash() != null && block.getHash().equals(hash);
+    }
+
+    protected boolean detectAndResolveFork(Peer peer, final String currencyName, final String hash, final int number){
+        int forkResyncWindow = pluginSettings.getNodeForkResyncWindow();
+        String forkOriginHash = hash;
+        int forkOriginNumber = number;
+        boolean sameBlockIndexed = isBlockIndexed(currencyName, forkOriginNumber, forkOriginHash);
+        while (!sameBlockIndexed && forkOriginNumber > 0) {
+
+            if (!sameBlockIndexed && logger.isInfoEnabled()) {
+                logger.info(I18n.t("duniter4j.blockIndexerService.detectFork.invalidBlock", currencyName, peer, forkOriginNumber, forkOriginHash));
+            }
+            forkOriginNumber -= forkResyncWindow;
+            if (forkOriginNumber < 0) {
+                forkOriginNumber = 0;
+            }
+
+            // Get remote block (with auto-retry)
+            try {
+                final int currentNumberFinal = forkOriginNumber;
+                String testBlock = executeWithRetry(() ->
+                    blockchainRemoteService.getBlockAsJson(peer, currentNumberFinal));
+                forkOriginHash = blockHashParser.getValueAsString(testBlock);
+
+                // Check is exists on ES index
+                sameBlockIndexed = isBlockIndexed(currencyName, forkOriginNumber, forkOriginHash);
+            } catch (TechnicalException e) {
+                logger.warn(I18n.t("duniter4j.blockIndexerService.detectFork.remoteBlockNotFound", currencyName, peer, forkOriginNumber, e.getMessage()));
+                sameBlockIndexed = false; // continue (go back again)
+            }
+        }
+
+        if (!sameBlockIndexed) {
+            return false; // sync could not be done (bad blockchain: no common blocks !)
+        }
+
+        if (forkOriginNumber < number) {
+            logger.info(I18n.t("duniter4j.blockIndexerService.detectFork.resync", currencyName, peer, forkOriginNumber));
+            // Remove some previous block
+            deleteBlocksFromNumber(currencyName, forkOriginNumber/*from*/, number+forkResyncWindow/*to*/);
+
+            // Re-indexing blocks
+            indexBlocksUsingBulk(peer, currencyName, forkOriginNumber/*from*/, number, nullProgressionModel);
+        }
+
+        return true; // sync OK
+    }
+
+    /**
+     * Delete blocks from a start number (using bulk)
+     * @param currencyName
+     * @param fromNumber
+     */
+    protected void deleteBlocksFromNumber(String currencyName, int fromNumber, int toNumber) {
+
+        int bulkSize = pluginSettings.getIndexBulkSize();
+
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
+        for (int i=fromNumber; i<=toNumber; i++) {
+
+            bulkRequest.add(
+                client.prepareDelete(currencyName, BLOCK_TYPE, String.valueOf(i))
+            );
+
+            // Flush the bulk if not empty
+            if ((fromNumber - i % bulkSize) == 0) {
+                flushDeleteBulk(bulkRequest);
+                bulkRequest = client.prepareBulk();
+            }
+        }
+
+        // last flush
+        flushDeleteBulk(bulkRequest);
+    }
+
+    protected void flushDeleteBulk(BulkRequestBuilder bulkRequest) {
+        if (bulkRequest.numberOfActions() > 0) {
+            BulkResponse bulkResponse = bulkRequest.get();
+            // If failures, continue but save missing blocks
+            if (bulkResponse.hasFailures()) {
+                // process failures by iterating through each bulk response item
+                for (BulkItemResponse itemResponse : bulkResponse) {
+                    boolean skip = !itemResponse.isFailed();
+                    if (!skip) {
+                        int itemNumber = Integer.parseInt(itemResponse.getId());
+                        logger.debug(String.format("Error while deleting block #%s: %s. Skipping this deletion.", itemNumber, itemResponse.getFailureMessage()));
+                    }
+                }
+            }
+        }
     }
 }

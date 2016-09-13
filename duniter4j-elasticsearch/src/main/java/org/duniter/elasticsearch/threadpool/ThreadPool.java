@@ -22,23 +22,28 @@ package org.duniter.elasticsearch.threadpool;
  * #L%
  */
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequestBuilder;
+import org.elasticsearch.action.admin.cluster.stats.ClusterStatsResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsAbortPolicy;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.transport.TransportService;
+import org.nuiton.i18n.I18n;
 
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Manage thread pool, to execute tasks asynchronously.
@@ -48,6 +53,7 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
 
     private ScheduledThreadPoolExecutor scheduler = null;
     private Injector injector;
+    private ESLogger logger = Loggers.getLogger("threadpool");
 
     private final List<Runnable> afterStartedCommands;
 
@@ -94,16 +100,30 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
     /**
      * Schedules an action when node is started (all services and modules ready)
      *
-     * @param command the action to take
+     * @param job the action to execute when node started
      * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
      */
-    public void scheduleOnStarted(Runnable command) {
-        /*if (lifecycle.state() == Lifecycle.State.INITIALIZED ) {
-            afterStartedCommands.add(command);
-        }
-        else {*/
-            scheduleAfterServiceState(TransportService.class, Lifecycle.State.STARTED, command);
-       // }
+    public void scheduleOnStarted(Runnable job) {
+        Preconditions.checkNotNull(job);
+        scheduleAfterServiceState(TransportService.class, Lifecycle.State.STARTED, job);
+    }
+
+    /**
+     * Schedules an action when cluster is ready
+     *
+     * @param job the action to execute
+     * @param expectedStatus expected health status, to run the job
+     * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
+     */
+    public void scheduleOnClusterHealthStatus(Runnable job, ClusterHealthStatus... expectedStatus) {
+        Preconditions.checkNotNull(job);
+
+        scheduleOnStarted(() -> {
+            if (waitClusterHealthStatus(expectedStatus)) {
+                // continue
+                job.run();
+            }
+        });
     }
 
     /**
@@ -131,7 +151,13 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
 
     /* -- protected methods  -- */
 
-    protected <T extends LifecycleComponent<T>> ScheduledFuture<?> scheduleAfterServiceState(Class<T> waitingServiceClass, final Lifecycle.State waitingState, final Runnable job) {
+    protected <T extends LifecycleComponent<T>> ScheduledFuture<?> scheduleAfterServiceState(Class<T> waitingServiceClass,
+                                                                                             final Lifecycle.State waitingState,
+                                                                                             final Runnable job) {
+        Preconditions.checkNotNull(waitingServiceClass);
+        Preconditions.checkNotNull(waitingState);
+        Preconditions.checkNotNull(job);
+
         final T service = injector.getInstance(waitingServiceClass);
         return schedule(() -> {
             while(service.lifecycleState() != waitingState) {
@@ -147,93 +173,38 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
         }, TimeValue.timeValueSeconds(10));
     }
 
+    public boolean waitClusterHealthStatus(ClusterHealthStatus... expectedStatus) {
+        Preconditions.checkNotNull(expectedStatus);
+        Preconditions.checkArgument(expectedStatus.length > 0);
 
-    /*public void resetAllData() {
-        //resetAllCurrencies();
-        //resetDataBlocks();
-        //resetMarketRecords();
-        //resetRegistry();
-    }
-
-    public void resetAllCurrencies() {
-        currencyRegistryService.deleteAllCurrencies();
-    }
-
-    public void resetDataBlocks() {
-        BlockchainRemoteService blockchainService = serviceLocator.getBlockchainRemoteService();
-        Peer peer = checkConfigAndGetPeer(pluginSettings);
-
-        try {
-            // Get the blockchain name from node
-            BlockchainParameters parameter = blockchainService.getParameters(peer);
-            if (parameter == null) {
-                logger.error(String.format("Could not connect to node [%s:%s]",
-                        pluginSettings.getNodeBmaHost(), pluginSettings.getNodeBmaPort()));
-                return;
+        Client client = injector.getInstance(Client.class);
+        ClusterStatsRequestBuilder statsRequest = client.admin().cluster().prepareClusterStats();
+        ClusterStatsResponse stats = null;
+        boolean canContinue = false;
+        boolean firstTry = true;
+        while (!canContinue) {
+            try {
+                if (stats != null) Thread.sleep(100); // wait 100 ms
+                stats = statsRequest.execute().get();
+                for (ClusterHealthStatus status: expectedStatus) {
+                    if (stats.getStatus() == status) {
+                        if (!firstTry && logger.isDebugEnabled()) {
+                            logger.debug(I18n.t("duniter4j.threadPool.clusterHealthStatus.changed", status.name()));
+                        }
+                        canContinue = true;
+                        break;
+                    }
+                }
+                firstTry = false;
+            } catch (ExecutionException e) {
+                // Continue
+            } catch (InterruptedException e) {
+                return false; // stop
             }
-            String currencyName = parameter.getCurrency();
-
-            logger.info(String.format("Reset data for index [%s]", currencyName));
-
-            // Delete then create index on blockchain
-            boolean indexExists = blockBlockchainService.existsIndex(currencyName);
-            if (indexExists) {
-                blockBlockchainService.deleteIndex(currencyName);
-                blockBlockchainService.createIndex(currencyName);
-            }
-
-
-            logger.info(String.format("Successfully reset data for index [%s]", currencyName));
-        } catch(Exception e) {
-            logger.error("Error during reset data: " + e.getMessage(), e);
         }
+
+        return canContinue;
     }
-
-    public void resetMarketRecords() {
-        try {
-            // Delete then create index on records
-            boolean indexExists = recordMarketService.existsIndex();
-            if (indexExists) {
-                recordMarketService.deleteIndex();
-            }
-            logger.info(String.format("Successfully reset market records"));
-
-            categoryMarketService.createIndex();
-            categoryMarketService.initCategories();
-            logger.info(String.format("Successfully re-initialized market categories data"));
-
-        } catch(Exception e) {
-            logger.error("Error during reset market records: " + e.getMessage(), e);
-        }
-    }
-
-    public void resetRegistry() {
-        try {
-            // Delete then create index on records
-            if (recordRegistryService.existsIndex()) {
-                recordRegistryService.deleteIndex();
-            }
-            recordRegistryService.createIndex();
-            logger.info(String.format("Successfully reset registry records"));
-
-
-            if (categoryRegistryService.existsIndex()) {
-                categoryRegistryService.deleteIndex();
-            }
-            categoryRegistryService.createIndex();
-            categoryRegistryService.initCategories();
-            logger.info(String.format("Successfully re-initialized registry categories"));
-
-            if (citiesRegistryService.existsIndex()) {
-                citiesRegistryService.deleteIndex();
-            }
-            citiesRegistryService.initCities();
-            logger.info(String.format("Successfully re-initialized registry cities"));
-
-        } catch(Exception e) {
-            logger.error("Error during reset registry records: " + e.getMessage(), e);
-        }
-    }*/
 
     /* -- internal methods -- */
 

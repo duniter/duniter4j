@@ -1,8 +1,8 @@
-package org.duniter.elasticsearch.exception;
+package org.duniter.core.client.service.exception;
 
 /*
  * #%L
- * Duniter4j :: ElasticSearch Plugin
+ * UCoin Java :: Core Client API
  * %%
  * Copyright (C) 2014 - 2016 EIS
  * %%
@@ -22,26 +22,28 @@ package org.duniter.elasticsearch.exception;
  * #L%
  */
 
-import org.elasticsearch.rest.RestStatus;
+import org.duniter.core.exception.BusinessException;
 
 /**
- * Created by blavenie on 01/03/16.
+ * Created by eis on 11/02/15.
  */
-public class InvalidFormatException extends DuniterElasticsearchException {
-    public InvalidFormatException(Throwable cause) {
+public class BlockNotFoundException extends BusinessException {
+
+    private static final long serialVersionUID = -5260280401104018980L;
+
+    public BlockNotFoundException() {
+        super();
+    }
+
+    public BlockNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public BlockNotFoundException(String message) {
+        super(message);
+    }
+
+    public BlockNotFoundException(Throwable cause) {
         super(cause);
-    }
-
-    public InvalidFormatException(String msg, Object... args) {
-        super(msg, args);
-    }
-
-    public InvalidFormatException(String msg, Throwable cause, Object... args) {
-        super(msg, args, cause);
-    }
-
-    @Override
-    public RestStatus status() {
-        return RestStatus.BAD_REQUEST;
     }
 }

@@ -51,7 +51,7 @@ public class IndexerCliAction {
                         @Override
                         public void handleMessage(String message) {
                             String currencyName = GsonUtils.getValueFromJSONAsString(message, "blockchain");
-                            *///blockIndexerService.indexBlockAsJson(peer, message, true /*refresh*/, true /*wait*/);
+                            *///blockIndexerService.indexLastBlockFromJson(peer, message, true /*refresh*/, true /*wait*/);
                             //blockIndexerService.indexCurrentBlockAsJson(currencyName, message, true /*wait*/);
                /*         }
                     });

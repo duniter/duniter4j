@@ -32,10 +32,7 @@ import org.duniter.core.client.model.local.Identity;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.client.service.ServiceLocator;
-import org.duniter.core.client.service.exception.HttpBadRequestException;
-import org.duniter.core.client.service.exception.PubkeyAlreadyUsedException;
-import org.duniter.core.client.service.exception.UidAlreadyUsedException;
-import org.duniter.core.client.service.exception.UidMatchAnotherPubkeyException;
+import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.ObjectUtils;
@@ -143,35 +140,51 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public BlockchainBlock getBlock(long currencyId, long number) {
-        // get blockchain parameter
+    public BlockchainBlock getBlock(long currencyId, long number) throws BlockNotFoundException  {
         String path = String.format(URL_BLOCK, number);
-        BlockchainBlock result = executeRequest(currencyId, path, BlockchainBlock.class);
-        return result;
+        try {
+            return executeRequest(currencyId, path, BlockchainBlock.class);
+        }
+        catch(HttpNotFoundException e) {
+            throw new BlockNotFoundException(String.format("Block #%s not found", number));
+        }
     }
 
     @Override
-    public Long getBlockDividend(long currencyId, long number) {
-        // get blockchain parameter
+    public Long getBlockDividend(long currencyId, long number) throws BlockNotFoundException {
         String path = String.format(URL_BLOCK, number);
-        String json = executeRequest(currencyId, path, String.class);
-        return getDividendFromBlockJson(json);
+        try {
+            String json = executeRequest(currencyId, path, String.class);
+            return getDividendFromBlockJson(json);
+        }
+        catch(HttpNotFoundException e) {
+            throw new BlockNotFoundException(String.format("Block #%s not found", number));
+        }
     }
 
 
     @Override
-    public BlockchainBlock getBlock(Peer peer, int number) {
-        // get blockchain parameter
+    public BlockchainBlock getBlock(Peer peer, int number) throws BlockNotFoundException {
+        // Get block from number
         String path = String.format(URL_BLOCK, number);
-        BlockchainBlock result = executeRequest(peer, path, BlockchainBlock.class);
-        return result;
+        try {
+            return executeRequest(peer, path, BlockchainBlock.class);
+        }
+        catch(HttpNotFoundException e) {
+            throw new BlockNotFoundException(String.format("Block #%s not found on peer [%s]", number, peer));
+        }
     }
 
     @Override
     public String getBlockAsJson(Peer peer, int number) {
         // get blockchain parameter
         String path = String.format(URL_BLOCK, number);
-        return executeRequest(peer, path, String.class);
+        try {
+            return executeRequest(peer, path, String.class);
+        }
+        catch(HttpNotFoundException e) {
+            throw new BlockNotFoundException(String.format("Block #%s not found on peer [%s]", number, peer));
+        }
     }
 
     @Override
@@ -278,6 +291,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
             throw new TechnicalException("Unable to get last UD from server");
         }
         return lastUD.longValue();
+
     }
 
     /**
@@ -424,8 +438,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
         // search blockchain membership
         try {
-            BlockchainMemberships result = executeRequest(currencyId, path, BlockchainMemberships.class);
-            return result;
+            return executeRequest(currencyId, path, BlockchainMemberships.class);
         } catch (HttpBadRequestException e) {
             log.debug("No member matching this pubkey or uid: " + uidOrPubkey);
             return null;

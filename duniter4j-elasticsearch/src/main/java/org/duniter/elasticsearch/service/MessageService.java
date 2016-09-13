@@ -59,7 +59,7 @@ public class MessageService extends AbstractService {
 
     @Inject
     public MessageService(Client client, PluginSettings settings, CryptoService cryptoService) {
-        super(client, settings, cryptoService);
+        super("gchange." + INDEX, client, settings, cryptoService);
     }
 
     /**

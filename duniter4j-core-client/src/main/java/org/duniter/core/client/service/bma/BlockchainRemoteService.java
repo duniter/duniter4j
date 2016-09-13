@@ -30,6 +30,7 @@ import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
+import org.duniter.core.client.service.exception.BlockNotFoundException;
 import org.duniter.core.client.service.exception.PubkeyAlreadyUsedException;
 import org.duniter.core.client.service.exception.UidAlreadyUsedException;
 import org.duniter.core.client.service.exception.UidMatchAnotherPubkeyException;
@@ -71,7 +72,7 @@ public interface BlockchainRemoteService extends Service {
      * @param number
      * @return
      */
-    BlockchainBlock getBlock(long currencyId, long number);
+    BlockchainBlock getBlock(long currencyId, long number) throws BlockNotFoundException;
 
     /**
      * Retrieve the dividend of a block, by id (from 0 to current).
@@ -81,7 +82,7 @@ public interface BlockchainRemoteService extends Service {
      * @param number
      * @return
      */
-    Long getBlockDividend(long currencyId, long number);
+    Long getBlockDividend(long currencyId, long number) throws BlockNotFoundException;
 
     /**
      * Retrieve a block, by id (from 0 to current)
@@ -90,7 +91,7 @@ public interface BlockchainRemoteService extends Service {
      * @param number the block number
      * @return
      */
-    BlockchainBlock getBlock(Peer peer, int number);
+    BlockchainBlock getBlock(Peer peer, int number) throws BlockNotFoundException;
 
     /**
      * Retrieve a block, by id (from 0 to current) as JSON string
@@ -99,7 +100,7 @@ public interface BlockchainRemoteService extends Service {
      * @param number the block number
      * @return
      */
-    String getBlockAsJson(Peer peer, int number);
+    String getBlockAsJson(Peer peer, int number) throws BlockNotFoundException;
 
     /**
      * Retrieve a block, by id (from 0 to current) as JSON string

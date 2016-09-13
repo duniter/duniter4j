@@ -25,18 +25,15 @@ package org.duniter.elasticsearch.service;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.dao.CurrencyDao;
 import org.duniter.core.client.dao.PeerDao;
-import org.duniter.core.client.dao.mem.MemoryCurrencyDaoImpl;
-import org.duniter.core.client.dao.mem.MemoryPeerDaoImpl;
 import org.duniter.core.client.service.DataContext;
 import org.duniter.core.client.service.HttpService;
-import org.duniter.core.client.service.HttpServiceImpl;
-import org.duniter.core.client.service.bma.*;
+import org.duniter.core.client.service.bma.BlockchainRemoteService;
+import org.duniter.core.client.service.bma.NetworkRemoteService;
+import org.duniter.core.client.service.bma.TransactionRemoteService;
+import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.client.service.local.CurrencyService;
-import org.duniter.core.client.service.local.CurrencyServiceImpl;
 import org.duniter.core.client.service.local.PeerService;
-import org.duniter.core.client.service.local.PeerServiceImpl;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.service.Ed25519CryptoServiceImpl;
 import org.duniter.elasticsearch.PluginSettings;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
@@ -66,6 +63,7 @@ public class ServiceModule extends AbstractModule implements Module {
         bindWithLocator(CurrencyDao.class);
         bindWithLocator(PeerDao.class);
         bindWithLocator(DataContext.class);
+
 /*
         bindWithLocator(BlockchainRemoteServiceImpl.class);
         bindWithLocator(NetworkRemoteServiceImpl.class);

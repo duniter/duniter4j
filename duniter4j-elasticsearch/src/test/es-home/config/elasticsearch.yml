@@ -15,13 +15,13 @@
 # Use a descriptive name for your cluster:
 #
 # cluster.name: my-application
-cluster.name: duniter4j-elasticsearch
+cluster.name: duniter4j-elasticsearch-TEST
 #
 # ------------------------------------ Node ------------------------------------
 #
 # Use a descriptive name for the node:
 #
-# node.name: node-1
+node.name: EIS-DEV
 #
 # Add custom attributes to the node:
 #
@@ -53,13 +53,13 @@ cluster.name: duniter4j-elasticsearch
 # Set the bind address to a specific IP (IPv4 or IPv6):
 #
 # network.host: 192.168.0.1
-#network.host: 192.168.0.28
+network.host: 192.168.0.28
 #
 # Set a custom port for HTTP:
 #
 # http.port: 9200
 
-#http.port: 9200
+http.port: 9203
 
 http.cors.allow-origin: "/.*/"
 http.cors.enabled: true
@@ -73,7 +73,7 @@ http.cors.enabled: true
 # Pass an initial list of hosts to perform discovery when new node is started:
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
-# discovery.zen.ping.unicast.hosts: ["host1", "host2"]
+discovery.zen.ping.unicast.hosts: ["192.168.0.5", "192.168.0.28"]
 #discovery.zen.ping.unicast.hosts: ["127.0.0.1", ""]
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of nodes / 2 + 1):
@@ -100,7 +100,7 @@ http.cors.enabled: true
 #
 # Require explicit names when deleting indices:
 #
-# action.destructive_requires_name: true
+action.destructive_requires_name: true
 
 security.manager.enabled: false
 
@@ -111,6 +111,8 @@ security.manager.enabled: false
 
 duniter.host: 192.168.0.5
 duniter.port: 9201
+#duniter.host: 192.168.0.28
+#duniter.port: 9202
 
 duniter.string.analyzer: french
 

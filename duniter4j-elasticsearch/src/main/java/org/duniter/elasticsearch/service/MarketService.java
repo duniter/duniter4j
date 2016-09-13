@@ -56,7 +56,7 @@ public class MarketService extends AbstractService {
 
     @Inject
     public MarketService(Client client, PluginSettings settings, CryptoService cryptoService, WotRemoteService wotRemoteService) {
-        super(client, settings, cryptoService);
+        super("gchange." + INDEX, client, settings, cryptoService);
         this.wotRemoteService = wotRemoteService;
     }
 

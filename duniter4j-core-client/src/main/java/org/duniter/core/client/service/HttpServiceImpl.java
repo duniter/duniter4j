@@ -29,6 +29,7 @@ import org.duniter.core.client.model.bma.Error;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.exception.HttpBadRequestException;
+import org.duniter.core.client.service.exception.HttpNotFoundException;
 import org.duniter.core.client.service.exception.JsonSyntaxException;
 import org.duniter.core.client.service.exception.PeerConnectionException;
 import org.duniter.core.exception.TechnicalException;
@@ -190,6 +191,8 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                 case HttpStatus.SC_UNAUTHORIZED:
                 case HttpStatus.SC_FORBIDDEN:
                     throw new TechnicalException(I18n.t("duniter4j.client.authentication"));
+                case HttpStatus.SC_NOT_FOUND:
+                    throw new HttpNotFoundException(I18n.t("duniter4j.client.notFound", request.toString()));
                 case HttpStatus.SC_BAD_REQUEST:
                     try {
                         Error error = (Error)parseResponse(response, Error.class);
@@ -199,7 +202,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                         throw new HttpBadRequestException(I18n.t("duniter4j.client.status", response.getStatusLine().toString()));
                     }
                 default:
-                    throw new TechnicalException(I18n.t("duniter4j.client.status", response.getStatusLine().toString()));
+                    throw new TechnicalException(I18n.t("duniter4j.client.status", request.toString(), response.getStatusLine().toString()));
             }
         }
         catch (ConnectException e) {

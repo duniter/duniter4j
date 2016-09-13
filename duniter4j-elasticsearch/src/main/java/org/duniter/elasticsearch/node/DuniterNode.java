@@ -30,9 +30,13 @@ import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.*;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.action.admin.indices.stats.ShardStats;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 
 /**
@@ -43,6 +47,7 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
     private final PluginSettings pluginSettings;
     private final ThreadPool threadPool;
     private final Injector injector;
+    private final static ESLogger logger = Loggers.getLogger("node");
 
     @Inject
     public DuniterNode(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
@@ -50,16 +55,18 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
         this.injector = injector;
-
     }
 
     @Override
     protected void doStart() {
-        threadPool.scheduleOnStarted(() -> {
+        threadPool.scheduleOnClusterHealthStatus(() -> {
             createIndices();
 
-            synchronize();
-        });
+            // Waiting cluster back to GREEN or YELLOW state, before synchronize
+            threadPool.scheduleOnClusterHealthStatus(() -> {
+                synchronize();
+            }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+        }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
     }
 
     @Override
@@ -106,7 +113,6 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
             if (logger.isInfoEnabled()) {
                 logger.info("Checking Duniter indices...");
             }
-
             injector.getInstance(RegistryService.class).createIndexIfNotExists();
             injector.getInstance(MarketService.class).createIndexIfNotExists();
             injector.getInstance(MessageService.class).createIndexIfNotExists();
@@ -129,7 +135,7 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
 
             // Index blocks (and listen if new block appear)
             injector.getInstance(BlockchainService.class)
-                    //.indexLastBlocks(peer)
+                    .indexLastBlocks(peer)
                     .listenAndIndexNewBlock(peer);
 
         }

@@ -87,7 +87,7 @@ public class RegistryService extends AbstractService {
                            WotRemoteService wotRemoteService,
                            CryptoService cryptoService,
                            BlockchainRemoteService blockchainRemoteService) {
-        super(client, settings, cryptoService);
+        super("gchange." + INDEX, client, settings, cryptoService);
         gson = GsonUtils.newBuilder().create();
         this.blockchainRemoteService = blockchainRemoteService;
     }

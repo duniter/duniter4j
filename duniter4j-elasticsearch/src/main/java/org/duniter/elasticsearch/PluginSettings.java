@@ -161,6 +161,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.bulk.size", 1000);
     }
 
+    public int getNodeForkResyncWindow() {
+        return settings.getAsInt("duniter.fork.resync.window", 100);
+    }
+
     public String getDefaultStringAnalyzer() {
         return settings.get("duniter.string.analyzer", "english");
     }
@@ -179,6 +183,14 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
 
     public boolean isDevMode() {
         return settings.getAsBoolean("duniter.dev.enable", false);
+    }
+
+    public int getNodeRetryCount() {
+        return settings.getAsInt("duniter.retry.count", 5);
+    }
+
+    public int getNodeRetryWaitDuration() {
+        return settings.getAsInt("duniter.retry.waitDuration", 5000);
     }
 
     public Peer checkAndGetPeer() {

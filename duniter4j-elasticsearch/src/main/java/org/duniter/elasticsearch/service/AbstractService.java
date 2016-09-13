@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonSyntaxException;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.elasticsearch.Record;
+import org.duniter.core.client.service.exception.HttpBadRequestException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
@@ -47,16 +48,15 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.nuiton.i18n.I18n;
 
 import java.io.*;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -73,21 +73,29 @@ public abstract class AbstractService implements Bean {
     protected final PluginSettings pluginSettings;
     protected final ObjectMapper objectMapper;
     protected final CryptoService cryptoService;
+    protected final int retryCount;
+    protected final int retryWaitDuration;
 
-    public AbstractService(Client client, PluginSettings pluginSettings, CryptoService cryptoService) {
-        this.logger = Loggers.getLogger(getClass());
+    public AbstractService(String loggerName, Client client, PluginSettings pluginSettings, CryptoService cryptoService) {
+        this.logger = Loggers.getLogger(loggerName);
         this.client = client;
         this.pluginSettings = pluginSettings;
         this.cryptoService = cryptoService;
         this.objectMapper = new ObjectMapper();
+        this.retryCount = pluginSettings.getNodeRetryCount();
+        this.retryWaitDuration = pluginSettings.getNodeRetryWaitDuration();
+    }
+
+    public AbstractService(String loggerName, Client client, PluginSettings pluginSettings) {
+        this(loggerName, client, pluginSettings, null);
     }
 
     public AbstractService(Client client, PluginSettings pluginSettings) {
-        this.logger = Loggers.getLogger(getClass());
-        this.client = client;
-        this.pluginSettings = pluginSettings;
-        this.cryptoService = null;
-        this.objectMapper = new ObjectMapper();
+        this(client, pluginSettings, null);
+    }
+
+    public AbstractService(Client client, PluginSettings pluginSettings, CryptoService cryptoService) {
+        this("duniter", client, pluginSettings, cryptoService);
     }
 
     /* -- protected methods  -- */
@@ -368,4 +376,37 @@ public abstract class AbstractService implements Bean {
             return line;
         }
     }
+
+    protected <T> T executeWithRetry(RetryFunction<T> retryFunction) throws TechnicalException{
+        int retry = 0;
+        while (retry < retryCount) {
+            try {
+                return retryFunction.execute();
+            } catch (TechnicalException e) {
+                retry++;
+
+                if (retry == retryCount) {
+                    throw e;
+                }
+
+                if (logger.isDebugEnabled()) {
+                    logger.debug(I18n.t("duniter4j.removeServiceUtils.waitThenRetry", e.getMessage(), retry, retryCount));
+                }
+
+                try {
+                    Thread.sleep(retryWaitDuration); // waiting
+                } catch (InterruptedException e2) {
+                    throw new TechnicalException(e2);
+                }
+            }
+        }
+
+        throw new TechnicalException("Error while trying to execute a function with retry");
+    }
+
+    public interface RetryFunction<T> {
+
+        T execute() throws TechnicalException;
+    }
+
 }

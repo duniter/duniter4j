@@ -55,7 +55,7 @@ public class UserService extends AbstractService {
     public UserService(Client client,
                        PluginSettings settings,
                        CryptoService cryptoService) {
-        super(client, settings,cryptoService);
+        super("gchange." + INDEX, client, settings,cryptoService);
     }
 
     /**
