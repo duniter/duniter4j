@@ -41,8 +41,8 @@ public class BlockchainBlock implements Serializable {
     private Integer nonce;
     private Integer number;
     private Integer powMin;
-	private Integer time;
-    private Integer medianTime;
+	private Long time;
+    private Long medianTime;
     private Integer membersCount;
     private BigInteger monetaryMass;
     private Integer unitBase;
@@ -95,16 +95,16 @@ public class BlockchainBlock implements Serializable {
 	public void setNumber(Integer number) {
 		this.number = number;
 	}
-    public Integer getTime() {
+    public Long getTime() {
         return time;
     }
-    public void setTime(Integer time) {
+    public void setTime(Long time) {
         this.time = time;
     }
-    public Integer getMedianTime() {
+    public Long getMedianTime() {
         return medianTime;
     }
-    public void setMedianTime(Integer medianTime) {
+    public void setMedianTime(Long medianTime) {
         this.medianTime = medianTime;
     }
     public Integer getMembersCount() {
