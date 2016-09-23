@@ -201,6 +201,7 @@ public class MarketService extends AbstractService {
 
         // Execute indexBlocksFromNode
         client.prepareUpdate(INDEX, RECORD_COMMENT_TYPE, id)
+                .setDoc(commentJson)
                 .execute().actionGet();
     }
 
