@@ -28,6 +28,7 @@ import org.duniter.elasticsearch.action.market.RestMarketCommentIndexAction;
 import org.duniter.elasticsearch.action.market.RestMarketCommentUpdateAction;
 import org.duniter.elasticsearch.action.market.RestMarketRecordIndexAction;
 import org.duniter.elasticsearch.action.market.RestMarketRecordUpdateAction;
+import org.duniter.elasticsearch.action.message.RestMessageIndexAction;
 import org.duniter.elasticsearch.action.registry.RestRegistryRecordIndexAction;
 import org.duniter.elasticsearch.action.registry.RestRegistryRecordUpdateAction;
 import org.duniter.elasticsearch.action.security.RestSecurityAuthAction;
@@ -65,6 +66,9 @@ public class RestModule extends AbstractModule implements Module {
 
         // History
         bind(RestHistoryDeleteIndexAction.class).asEagerSingleton();
+
+        // Message
+        bind(RestMessageIndexAction.class).asEagerSingleton();
 
         // Cesium
         bind(RestCesiumConfigAction.class).asEagerSingleton();

@@ -385,6 +385,11 @@ public class RegistryService extends AbstractService {
                     .field("analyzer", stringAnalyzer)
                     .endObject()
 
+                    // creationTime
+                    .startObject("creationTime")
+                    .field("type", "integer")
+                    .endObject()
+
                     // time
                     .startObject("time")
                     .field("type", "integer")

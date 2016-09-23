@@ -175,21 +175,24 @@ public abstract class AbstractService implements Bean {
     }
 
     protected void checkSameDocumentIssuer(String index, String type, String id, String expectedIssuer) throws ElasticsearchException {
+        checkSameDocumentField(index, type, id, Record.PROPERTY_ISSUER, expectedIssuer);
+    }
+
+    protected void checkSameDocumentField(String index, String type, String id, String fieldName, String expectedvalue) throws ElasticsearchException {
 
         GetResponse response = client.prepareGet(index, type, id)
-                .setFields(Record.PROPERTY_ISSUER)
+                .setFields(fieldName)
                 .execute().actionGet();
         boolean failed = !response.isExists();
         if (failed) {
             throw new NotFoundException(String.format("Document [%s/%s/%s] not exists.", index, type, id));
         } else {
-            String docIssuer = (String)response.getFields().get(Record.PROPERTY_ISSUER).getValue();
-            if (!Objects.equals(expectedIssuer, docIssuer)) {
-                throw new AccessDeniedException(String.format("Could not delete this document: not issuer."));
+            String docValue = (String)response.getFields().get(fieldName).getValue();
+            if (!Objects.equals(expectedvalue, docValue)) {
+                throw new AccessDeniedException(String.format("Could not delete this document: not same [%s].", fieldName));
             }
         }
     }
-
 
 
     protected String getIssuer(JsonNode actualObj) {

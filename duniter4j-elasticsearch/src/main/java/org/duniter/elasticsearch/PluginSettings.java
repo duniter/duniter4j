@@ -209,6 +209,22 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return peer;
     }
 
+    public String getKeyringSalt() {
+        return settings.get("duniter.keyring.salt");
+    }
+
+    public String getKeyringPassword() {
+        return settings.get("duniter.keyring.password");
+    }
+
+    public String getKeyringPublicKey() {
+        return settings.get("duniter.keyring.pub");
+    }
+
+    public String getKeyringSecretKey() {
+        return settings.get("duniter.keyring.sec");
+    }
+
     /* protected methods */
 
     protected void initI18n() throws IOException {

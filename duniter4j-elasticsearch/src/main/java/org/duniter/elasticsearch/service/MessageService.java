@@ -25,17 +25,10 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Sets;
-import com.google.gson.JsonSyntaxException;
-import org.duniter.core.client.model.elasticsearch.MessageRecord;
-import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.exception.InvalidFormatException;
-import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -44,7 +37,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -53,8 +45,6 @@ public class MessageService extends AbstractService {
 
     public static final String INDEX = "message";
     public static final String RECORD_TYPE = "record";
-
-    private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
 
 
     @Inject
@@ -118,7 +108,7 @@ public class MessageService extends AbstractService {
         String issuer = getIssuer(actualObj);
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a record from issuer [%s]", issuer.substring(0, 8)));
+            logger.debug(String.format("Indexing a message from issuer [%s]", issuer.substring(0, 8)));
         }
 
         IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
@@ -144,56 +134,27 @@ public class MessageService extends AbstractService {
                     .field("index", "not_analyzed")
                     .endObject()
 
+                    // recipient
+                    .startObject("recipient")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
                     // time
                     .startObject("time")
                     .field("type", "integer")
                     .endObject()
 
-                    // message
-                    .startObject("message")
+                    // nonce
+                    .startObject("nonce")
                     .field("type", "string")
-                    .field("analyzer", stringAnalyzer)
+                    .field("index", "not_analyzed")
                     .endObject()
 
-                    // pictures
-                    .startObject("pictures")
-                    .field("type", "nested")
-                    .field("dynamic", "false")
-                    .startObject("properties")
-                    .startObject("file") // file
-                    .field("type", "attachment")
-                    .startObject("fields")
-                    .startObject("content") // content
-                    .field("index", "no")
-                    .endObject()
-                    .startObject("title") // title
+                    // content
+                    .startObject("content")
                     .field("type", "string")
-                    .field("store", "yes")
-                    .field("analyzer", stringAnalyzer)
-                    .endObject()
-                    .startObject("author") // author
-                    .field("type", "string")
-                    .field("store", "no")
-                    .endObject()
-                    .startObject("content_type") // content_type
-                    .field("store", "yes")
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-
-                    // picturesCount
-                    .startObject("picturesCount")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // tags
-                    .startObject("tags")
-                    .field("type", "completion")
-                    .field("search_analyzer", "simple")
-                    .field("analyzer", "simple")
-                    .field("preserve_separators", "false")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     .endObject()

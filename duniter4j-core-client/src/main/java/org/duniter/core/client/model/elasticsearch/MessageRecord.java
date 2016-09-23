@@ -28,10 +28,12 @@ package org.duniter.core.client.model.elasticsearch;
 public class MessageRecord extends Record {
 
     public static final String PROPERTY_TIME="time";
-    public static final String PROPERTY_MESSAGE="message";
+    public static final String PROPERTY_CONTENT="content";
+    public static final String PROPERTY_RECIPIENT="recipient";
 
     private Integer time;
-    private String message;
+    private String content;
+    private String recipient;
 
     public Integer getTime() {
         return time;
@@ -41,11 +43,19 @@ public class MessageRecord extends Record {
         this.time = time;
     }
 
-    public String getMessage() {
-        return message;
+    public String getContent() {
+        return content;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getRecipient() {
+        return recipient;
+    }
+
+    public void setRecipient(String recipient) {
+        this.recipient = recipient;
     }
 }

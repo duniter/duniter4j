@@ -26,6 +26,7 @@ package org.duniter.elasticsearch.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.client.model.elasticsearch.DeleteRecord;
+import org.duniter.core.client.model.elasticsearch.MessageRecord;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
@@ -116,8 +117,14 @@ public class HistoryService extends AbstractService {
             throw new NotFoundException(String.format("Index [%s] not exists.", index));
         }
 
-        // Check document issuer
-        checkSameDocumentIssuer(index, type, id, issuer);
+        // Special case for message: check if issuer is recipient
+        if (MessageService.INDEX.equals(index)) {
+            checkSameDocumentField(index, type, id, MessageRecord.PROPERTY_RECIPIENT, issuer);
+        }
+        else {
+            // Check document issuer
+            checkSameDocumentIssuer(index, type, id, issuer);
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Deleting document [%s/%s/%s] - issuer [%s]", index, type, id, issuer.substring(0, 8)));
