@@ -15,7 +15,7 @@
 # Use a descriptive name for your cluster:
 #
 # cluster.name: my-application
-cluster.name: duniter4j-elasticsearch-TEST
+cluster.name: duniter4j-elasticsearch
 #
 # ------------------------------------ Node ------------------------------------
 #
@@ -120,8 +120,15 @@ duniter.string.analyzer: french
 
 # Should synchronize node blockchain ?
 duniter.blockchain.sync.enable: true
+#duniter.blockchain.sync.enable: false
 
 #duniter.dev.enable: true
+
+#duniter.keyring.salt:
+#duniter.keyring.password:
+#duniter.keyring.pub:
+#duniter.keyring.sec:
+
 
 #script.groovy.sandbox.enabled: true
 
