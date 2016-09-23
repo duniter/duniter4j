@@ -48,58 +48,100 @@ sudo apt-get install openjdk-8-jre
 
 ## Install from standalone bundle 
 
- - Installa Java (see on top) 
+ - Install Java (see on top) 
  
  - Download lastest release of file duniter4j-elasticsearch-X.Y-standalone.zip
  
- - Unzip, then start a elasticsearch node, just do :
+ - Unzip
  
 ```bash
 unzip duniter4j-elasticsearch-X.Y-standalone.zip
-cd duniter4j-elasticsearch-X.Y
-./duniter4j-elasticsearch.sh start index -h <node_host> -p <node_port>
+cd duniter4j-elasticsearch-X.Y/config
 ```
 
-Example on test_net test currency :
+ - Edit the configuration file `config/elasticsearch.yml`, in particular this properties:
 
 ```bash
-$ ./duniter4j-elasticsearch.sh start index -h  cgeek.fr -p 9330
-2016-01-07 23:34:34,771  INFO Starting duniter4j :: ElasticSearch Indexer with arguments [start, index, -h, metab.ucoin.io, -p, 9201]
-2016-01-07 23:34:34,856  INFO Application basedir: /home/user/.duniter4j-elasticsearch
-2016-01-07 23:34:34,861  INFO Starts i18n with locale [fr] at [/home/user/.duniter4j-elasticsearch/data/i18n]
-2016-01-07 23:34:35,683  INFO Starts ElasticSearch node with cluster name [duniter4j-elasticsearch] at [/home/user/.duniter4j-elasticsearch/data].
-*** duniter4j :: Elasticsearch successfully started *** >> To quit, press [Q] or enter
-2016-01-07 23:34:45,015  INFO Indexing last blocks of [test_net] from peer [cgeek.fr:9330]
-2016-01-07 23:35:01,597  INFO Indexing block #999 / 47144 (2%)...
-2016-01-07 23:35:15,554  INFO Indexing block #1998 / 47144 (4%)...
-2016-01-07 23:35:30,713  INFO Indexing block #2997 / 47144 (6%)...
-2016-01-07 23:35:45,747  INFO Indexing block #3996 / 47144 (8%)...
+# cluster.name: my-application
+cluster.name: duniter4j-elasticsearch
+
+# Use a descriptive name for the node:
+node.name: ES-NODE-1
+
+# Set the bind address to a specific IP (IPv4 or IPv6):
+network.host: 192.168.0.28
+
+# Set a custom port for HTTP:
+http.port: 9203
+
+# Duniter node to connect with
+duniter.host: cgeek.fr
+duniter.port: 9330
+
+# Should synchronize node blockchain ?
+duniter.blockchain.sync.enable: true
+
+
+```
+ 
+ - Launch the node
+ 
+```bash
+cd duniter4j-elasticsearch-X.Y/bin
+./elasticsearch
+```
+
+Output example (on [test_net](https://en.duniter.org/try/) currency):
+
+```bash
+$ ./elasticsearch
+[2016-09-24 00:16:45,803][INFO ][node                     ] [ES-NODE-1] version[2.3.3], pid[15365], build[218bdf1/2016-05-17T15:40:04Z]
+[2016-09-24 00:16:45,804][INFO ][node                     ] [ES-NODE-1] initializing ...
+[2016-09-24 00:16:46,257][INFO ][plugins                  ] [ES-NODE-1] modules [reindex, lang-expression, lang-groovy], plugins [mapper-attachments, duniter4j-elasticsearch], sites [duniter4j-elasticsearch]
+[2016-09-24 00:16:46,270][INFO ][env                      ] [ES-NODE-1] using [1] data paths, mounts [[/home (/dev/mapper/isw_defjaaicfj_Volume1p1)]], net usable_space [1tb], net total_space [1.7tb], spins? [possibly], types [ext4]
+[2016-09-24 00:16:46,270][INFO ][env                      ] [ES-NODE-1] heap size [989.8mb], compressed ordinary object pointers [true]
+[2016-09-24 00:16:47,757][INFO ][node                     ] [ES-NODE-1] initialized
+[2016-09-24 00:16:47,757][INFO ][node                     ] [ES-NODE-1] starting ...
+[2016-09-24 00:16:47,920][INFO ][transport                ] [ES-NODE-1] publish_address {192.168.0.5:9300}, bound_addresses {192.168.0.5:9300}
+[2016-09-24 00:16:47,924][INFO ][discovery                ] [ES-NODE-1] duniter4j-elasticsearch/jdzzh_jUTbuN26Enl-9whQ
+[2016-09-24 00:16:50,982][INFO ][cluster.service          ] [ES-NODE-1] detected_master {EIS-DEV}{FD0IzkxETM6tyOqzrKuVYw}{192.168.0.28}{192.168.0.28:9300}, added {{EIS-DEV}{FD0IzkxETM6tyOqzrKuVYw}{192.168.0.28}{192.168.0.28:9300},}, reason: zen-disco-receive(from master [{EIS-DEV}{FD0IzkxETM6tyOqzrKuVYw}{192.168.0.28}{192.168.0.28:9300}])
+[2016-09-24 00:16:53,570][INFO ][http                     ] [ES-NODE-1] publish_address {192.168.0.5:9203}, bound_addresses {192.168.0.5:9203}
+[2016-09-24 00:16:53,570][INFO ][node                     ] [ES-NODE-1] started
+[2016-09-24 00:16:57,850][INFO ][node                     ] Checking Duniter indices...
+[2016-09-24 00:16:57,859][INFO ][node                     ] Checking Duniter indices... [OK]
+[2016-09-24 00:17:08,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing last blocks...
+[2016-09-24 00:17:08,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #999 / 41282 (2%)...
+[2016-09-24 00:17:08,045][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #1998 / 41282 (4%)...
+[2016-09-24 00:17:09,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #2997 / 41282 (6%)...
+[2016-09-24 00:17:10,057][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #3996 / 41282 (8%)...
 ...
-2016-01-07 23:45:00,175  INFO All blocks indexed 
+[2016-09-24 00:17:11,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #41282 - hash [00000AAD73B0E76B870E6779CD7ACCCE175802D7867C13B5C8ED077F380548C5]
 ```
 
 Show help :
 
 ```bash
-$ ./duniter4j-elasticsearch.sh --help
+$ ./elasticseacrh --help
+NAME
 
-Usage: duniter4j-elaticsearch.<sh|bat> <commands> [options]
+    start - Start Elasticsearch
 
-Commands:
+(...)
 
- start                            Start elastic search node
- index                            Index blocks from BMA Node
- reset-data                       Reset indexed data for the uCoin node's currency
+OPTIONS
 
+    -h,--help                    Shows this message
 
-Options:
+    -p,--pidfile <pidfile>       Creates a pid file in the specified path on start
 
- --help                           Output usage information
- -h --host <user>                          uCoin node host (with Basic Merkled API)
- -p --port <pwd>                           uCoin node port (with Basic Merkled API)
+    -d,--daemonize               Starts Elasticsearch in the background
 
- -esh  --es-host <user>           ElasticSearch node host
- -esp  --es-port <pwd>            ElasticSearch node port
+    -Dproperty=value             Configures an Elasticsearch specific property, like -Dnetwork.host=127.0.0.1
+
+    --property=value             Configures an elasticsearch specific property, like --network.host 127.0.0.1
+    --property value
+
+    NOTE: The -d, -p, and -D arguments must appear before any --property arguments.
 
 ```
 
