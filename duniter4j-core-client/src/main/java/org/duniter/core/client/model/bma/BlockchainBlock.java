@@ -38,7 +38,7 @@ public class BlockchainBlock implements Serializable {
     private static final long serialVersionUID = -5598140972293452669L;
     
     private String version;
-    private Integer nonce;
+    private Long nonce;
     private Integer number;
     private Integer powMin;
 	private Long time;
@@ -74,10 +74,10 @@ public class BlockchainBlock implements Serializable {
     public void setVersion(String version) {
         this.version = version;
     }
-    public Integer getNonce() {
+    public Long getNonce() {
         return nonce;
     }
-    public void setNonce(Integer nonce) {
+    public void setNonce(Long nonce) {
         this.nonce = nonce;
     }
 
