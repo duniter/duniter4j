@@ -49,7 +49,7 @@ public class UserService extends AbstractService {
 
     public static final String INDEX = "user";
     public static final String PROFILE_TYPE = "profile";
-    private static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
+    public static final String SETTINGS_TYPE = "settings";
 
     @Inject
     public UserService(Client client,
@@ -88,6 +88,7 @@ public class UserService extends AbstractService {
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(PROFILE_TYPE, createProfileType());
+        createIndexRequestBuilder.addMapping(SETTINGS_TYPE, createSettingsType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -146,6 +147,51 @@ public class UserService extends AbstractService {
                 .execute().actionGet();
     }
 
+    /**
+     *
+     * Index an user settings
+     * @param settingsJson settings, as JSON string
+     * @return the settings id (=the issuer pubkey)
+     */
+    public String indexSettingsFromJson(String settingsJson) {
+
+        JsonNode actualObj = readAndVerifyIssuerSignature(settingsJson);
+        String issuer = getIssuer(actualObj);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Indexing a user settings from issuer [%s]", issuer.substring(0, 8)));
+        }
+
+        IndexResponse response = client.prepareIndex(INDEX, SETTINGS_TYPE)
+                .setSource(settingsJson)
+                .setId(issuer) // always use the issuer pubkey as id
+                .setRefresh(false)
+                .execute().actionGet();
+        return response.getId();
+    }
+
+    /**
+     * Update user settings
+     * @param settingsJson settings, as JSON string
+     */
+    public void updateSettingsFromJson(String settingsJson, String id) {
+
+        JsonNode actualObj = readAndVerifyIssuerSignature(settingsJson);
+        String issuer = getIssuer(actualObj);
+
+        if (!Objects.equals(issuer, id)) {
+            throw new AccessDeniedException(String.format("Could not update this document: not issuer."));
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Indexing a user settings from issuer [%s]", issuer.substring(0, 8)));
+        }
+
+        UpdateResponse response = client.prepareUpdate(INDEX, SETTINGS_TYPE, issuer)
+                .setDoc(settingsJson)
+                .execute().actionGet();
+    }
+
+
 
     /* -- Internal methods -- */
 
@@ -174,8 +220,8 @@ public class UserService extends AbstractService {
                     .field("type", "integer")
                     .endObject()
 
-                    // pubkey
-                    .startObject("pubkey")
+                    // issuer
+                    .startObject("issuer")
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
@@ -244,4 +290,42 @@ public class UserService extends AbstractService {
         }
     }
 
+    public XContentBuilder createSettingsType() {
+
+        try {
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(SETTINGS_TYPE)
+                    .startObject("properties")
+
+                    // time
+                    .startObject("time")
+                    .field("type", "integer")
+                    .endObject()
+
+                    // issuer
+                    .startObject("issuer")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // nonce
+                    .startObject("nonce")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // content
+                    .startObject("content")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    .endObject()
+                    .endObject().endObject();
+
+            return mapping;
+        }
+        catch(IOException ioe) {
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, SETTINGS_TYPE, ioe.getMessage()), ioe);
+        }
+    }
 }

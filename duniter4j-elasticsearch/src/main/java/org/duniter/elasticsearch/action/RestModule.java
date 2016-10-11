@@ -36,6 +36,8 @@ import org.duniter.elasticsearch.action.security.RestSecurityGetChallengeAction;
 import org.duniter.elasticsearch.action.site.RestCesiumConfigAction;
 import org.duniter.elasticsearch.action.user.RestUserProfileIndexAction;
 import org.duniter.elasticsearch.action.user.RestUserProfileUpdateAction;
+import org.duniter.elasticsearch.action.user.RestUserSettingsIndexAction;
+import org.duniter.elasticsearch.action.user.RestUserSettingsUpdateAction;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
@@ -59,6 +61,8 @@ public class RestModule extends AbstractModule implements Module {
         // User
         bind(RestUserProfileIndexAction.class).asEagerSingleton();
         bind(RestUserProfileUpdateAction.class).asEagerSingleton();
+        bind(RestUserSettingsIndexAction.class).asEagerSingleton();
+        bind(RestUserSettingsUpdateAction.class).asEagerSingleton();
 
         // Authentication
         bind(RestSecurityGetChallengeAction.class).asEagerSingleton();

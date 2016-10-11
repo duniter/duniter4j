@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.action.message;
+package org.duniter.elasticsearch.action.user;
 
 /*
  * #%L
@@ -23,19 +23,20 @@ package org.duniter.elasticsearch.action.message;
  */
 
 import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
-import org.duniter.elasticsearch.service.MessageService;
+import org.duniter.elasticsearch.service.UserService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestController;
 
-public class RestMessageIndexAction extends AbstractRestPostIndexAction {
+public class RestUserSettingsIndexAction extends AbstractRestPostIndexAction {
 
     @Inject
-    public RestMessageIndexAction(Settings settings, RestController controller, Client client, final MessageService service) {
+    public RestUserSettingsIndexAction(Settings settings, RestController controller, Client client, final UserService service) {
         super(settings, controller, client,
-                MessageService.INDEX,
-                MessageService.RECORD_TYPE,
-                json -> service.indexRecordFromJson(json));
+                UserService.INDEX,
+                UserService.SETTINGS_TYPE,
+                json -> service.indexSettingsFromJson(json));
     }
+
 }

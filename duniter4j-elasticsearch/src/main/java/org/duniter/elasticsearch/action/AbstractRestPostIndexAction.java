@@ -34,17 +34,17 @@ import org.elasticsearch.rest.*;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 import static org.elasticsearch.rest.RestStatus.OK;
 
-public abstract class AbstractRestPostAction extends BaseRestHandler {
+public abstract class AbstractRestPostIndexAction extends BaseRestHandler {
 
     private static ESLogger log = null;
 
     private final JsonIndexer indexer;
 
 
-    public AbstractRestPostAction(Settings settings, RestController controller, Client client,
-                                  String indexName,
-                                  String typeName,
-                                  JsonIndexer indexer) {
+    public AbstractRestPostIndexAction(Settings settings, RestController controller, Client client,
+                                       String indexName,
+                                       String typeName,
+                                       JsonIndexer indexer) {
         super(settings, controller, client);
         controller.registerHandler(POST,
                 String.format("/%s/%s", indexName, typeName),
@@ -57,9 +57,8 @@ public abstract class AbstractRestPostAction extends BaseRestHandler {
     protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
 
         try {
-            String recordId = indexer.handleJson(request.content().toUtf8());
-
-            restChannel.sendResponse(new BytesRestResponse(OK, recordId));
+            String id = indexer.handleJson(request.content().toUtf8());
+            restChannel.sendResponse(new BytesRestResponse(OK, id));
         }
         catch(DuniterElasticsearchException | BusinessException e) {
             log.error(e.getMessage(), e);

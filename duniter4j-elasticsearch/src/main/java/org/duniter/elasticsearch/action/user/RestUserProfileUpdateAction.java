@@ -22,48 +22,21 @@ package org.duniter.elasticsearch.action.user;
  * #L%
  */
 
-import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
-import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
+import org.duniter.elasticsearch.action.AbstractRestPostUpdateAction;
 import org.duniter.elasticsearch.service.UserService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.RestController;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.OK;
-
-public class RestUserProfileUpdateAction extends BaseRestHandler {
-
-    private static final ESLogger log = ESLoggerFactory.getLogger(RestUserProfileUpdateAction.class.getName());
-
-    private UserService service;
+public class RestUserProfileUpdateAction extends AbstractRestPostUpdateAction {
 
     @Inject
     public RestUserProfileUpdateAction(Settings settings, RestController controller, Client client, UserService service) {
-        super(settings, controller, client);
-        controller.registerHandler(POST, "/user/profile/{id}/_update", this);
-        this.service = service;
-    }
-
-    @Override
-    protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
-        String id = request.param("id");
-
-        try {
-            service.updateProfileFromJson(request.content().toUtf8(), id);
-            restChannel.sendResponse(new BytesRestResponse(OK, id));
-        }
-        catch(DuniterElasticsearchException | BusinessException e) {
-            log.error(e.getMessage(), e);
-            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
-        }
-        catch(Exception e) {
-            log.error(e.getMessage(), e);
-        }
+        super(settings, controller, client,
+                UserService.INDEX,
+                UserService.PROFILE_TYPE,
+                (json, id) -> service.updateProfileFromJson(json, id));
     }
 
 }

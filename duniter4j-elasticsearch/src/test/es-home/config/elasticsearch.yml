@@ -15,13 +15,13 @@
 # Use a descriptive name for your cluster:
 #
 # cluster.name: my-application
-cluster.name: duniter4j-elasticsearch
+cluster.name: duniter4j-elasticsearch-TEST
 #
 # ------------------------------------ Node ------------------------------------
 #
 # Use a descriptive name for the node:
 #
-node.name: EIS-DEV
+node.name: TEST
 #
 # Add custom attributes to the node:
 #
@@ -73,8 +73,8 @@ http.cors.enabled: true
 # Pass an initial list of hosts to perform discovery when new node is started:
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
-discovery.zen.ping.unicast.hosts: ["192.168.0.5", "192.168.0.28"]
-#discovery.zen.ping.unicast.hosts: ["127.0.0.1", ""]
+#discovery.zen.ping.unicast.hosts: ["192.168.0.5", "192.168.0.28"]
+discovery.zen.ping.unicast.hosts: ["127.0.0.1", ""]
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of nodes / 2 + 1):
 #

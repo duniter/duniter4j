@@ -22,50 +22,20 @@ package org.duniter.elasticsearch.action.user;
  * #L%
  */
 
-import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
-import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
-import org.duniter.elasticsearch.service.MarketService;
+import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
 import org.duniter.elasticsearch.service.UserService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.RestController;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
-import static org.elasticsearch.rest.RestStatus.OK;
-
-public class RestUserProfileIndexAction extends BaseRestHandler {
-
-    private static final ESLogger log = ESLoggerFactory.getLogger(RestUserProfileIndexAction.class.getName());
-
-    private UserService service;
+public class RestUserProfileIndexAction extends AbstractRestPostIndexAction {
 
     @Inject
     public RestUserProfileIndexAction(Settings settings, RestController controller, Client client, UserService service) {
-        super(settings, controller, client);
-        controller.registerHandler(POST, "/user/profile", this);
-        this.service = service;
+        super(settings, controller, client,
+                UserService.INDEX,
+                UserService.PROFILE_TYPE,
+                json -> service.indexProfileFromJson(json));
     }
-
-    @Override
-    protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
-
-        try {
-            String profileId = service.indexProfileFromJson(request.content().toUtf8());
-
-            restChannel.sendResponse(new BytesRestResponse(OK, profileId));
-        }
-        catch(DuniterElasticsearchException | BusinessException e) {
-            log.error(e.getMessage(), e);
-            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
-        }
-        catch(Exception e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
 }
