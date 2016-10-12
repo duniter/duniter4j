@@ -24,16 +24,13 @@ package org.duniter.elasticsearch.action;
 
 import org.duniter.elasticsearch.action.currency.RestCurrencyIndexAction;
 import org.duniter.elasticsearch.action.history.RestHistoryDeleteIndexAction;
-import org.duniter.elasticsearch.action.market.RestMarketCommentIndexAction;
-import org.duniter.elasticsearch.action.market.RestMarketCommentUpdateAction;
-import org.duniter.elasticsearch.action.market.RestMarketRecordIndexAction;
-import org.duniter.elasticsearch.action.market.RestMarketRecordUpdateAction;
+import org.duniter.elasticsearch.action.market.*;
 import org.duniter.elasticsearch.action.message.RestMessageIndexAction;
-import org.duniter.elasticsearch.action.registry.RestRegistryRecordIndexAction;
-import org.duniter.elasticsearch.action.registry.RestRegistryRecordUpdateAction;
+import org.duniter.elasticsearch.action.registry.*;
 import org.duniter.elasticsearch.action.security.RestSecurityAuthAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
+import org.duniter.elasticsearch.action.security.RestSecurityFilter;
 import org.duniter.elasticsearch.action.security.RestSecurityGetChallengeAction;
-import org.duniter.elasticsearch.action.site.RestCesiumConfigAction;
 import org.duniter.elasticsearch.action.user.RestUserProfileIndexAction;
 import org.duniter.elasticsearch.action.user.RestUserProfileUpdateAction;
 import org.duniter.elasticsearch.action.user.RestUserSettingsIndexAction;
@@ -53,10 +50,14 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestMarketRecordUpdateAction.class).asEagerSingleton();
         bind(RestMarketCommentIndexAction.class).asEagerSingleton();
         bind(RestMarketCommentUpdateAction.class).asEagerSingleton();
+        bind(RestMarketCategoryAction.class).asEagerSingleton();
 
         // Registry
         bind(RestRegistryRecordIndexAction.class).asEagerSingleton();
         bind(RestRegistryRecordUpdateAction.class).asEagerSingleton();
+        bind(RestRegistryCommentIndexAction.class).asEagerSingleton();
+        bind(RestregistryCommentUpdateAction.class).asEagerSingleton();
+        bind(RestRegistryCategoryAction.class).asEagerSingleton();
 
         // User
         bind(RestUserProfileIndexAction.class).asEagerSingleton();
@@ -64,18 +65,17 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestUserSettingsIndexAction.class).asEagerSingleton();
         bind(RestUserSettingsUpdateAction.class).asEagerSingleton();
 
-        // Authentication
+        // Authentication & Security
         bind(RestSecurityGetChallengeAction.class).asEagerSingleton();
         bind(RestSecurityAuthAction.class).asEagerSingleton();
+        bind(RestSecurityFilter.class).asEagerSingleton();
+        bind(RestSecurityController.class).asEagerSingleton();
 
         // History
         bind(RestHistoryDeleteIndexAction.class).asEagerSingleton();
 
         // Message
         bind(RestMessageIndexAction.class).asEagerSingleton();
-
-        // Cesium
-        bind(RestCesiumConfigAction.class).asEagerSingleton();
 
     }
 }

@@ -110,7 +110,7 @@ security.manager.enabled: false
 #duniter.port: 9330
 
 duniter.host: 192.168.0.5
-duniter.port: 9201
+duniter.port: 9602
 #duniter.host: 192.168.0.28
 #duniter.port: 9202
 

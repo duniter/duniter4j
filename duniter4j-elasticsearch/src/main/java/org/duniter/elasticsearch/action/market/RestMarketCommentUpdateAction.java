@@ -22,48 +22,22 @@ package org.duniter.elasticsearch.action.market;
  * #L%
  */
 
-import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
-import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
+import org.duniter.elasticsearch.action.AbstractRestPostUpdateAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.MarketService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.RestController;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.OK;
-
-public class RestMarketCommentUpdateAction extends BaseRestHandler {
-
-    private static final ESLogger log = ESLoggerFactory.getLogger(RestMarketCommentUpdateAction.class.getName());
-
-    private MarketService service;
+public class RestMarketCommentUpdateAction extends AbstractRestPostUpdateAction {
 
     @Inject
-    public RestMarketCommentUpdateAction(Settings settings, RestController controller, Client client, MarketService service) {
-        super(settings, controller, client);
-        controller.registerHandler(POST, "/market/comment/{id}/_update", this);
-        this.service = service;
-    }
-
-    @Override
-    protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
-
-        String id = request.param("id");
-        try {
-            service.updateCommentFromJson(request.content().toUtf8(), id);
-            restChannel.sendResponse(new BytesRestResponse(OK, id));
-        }
-        catch(DuniterElasticsearchException | BusinessException e) {
-            log.error(e.getMessage(), e);
-            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
-        }
-        catch(Exception e) {
-            log.error(e.getMessage(), e);
-        }
+    public RestMarketCommentUpdateAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
+                                         MarketService service) {
+        super(settings, controller, client, securityController,
+                MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE,
+                (json, id) -> service.updateCommentFromJson(json, id));
     }
 
 }

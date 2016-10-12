@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.action.user;
  */
 
 import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.UserService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -32,8 +33,10 @@ import org.elasticsearch.rest.RestController;
 public class RestUserProfileIndexAction extends AbstractRestPostIndexAction {
 
     @Inject
-    public RestUserProfileIndexAction(Settings settings, RestController controller, Client client, UserService service) {
-        super(settings, controller, client,
+    public RestUserProfileIndexAction(Settings settings, RestController controller, Client client,
+                                      RestSecurityController securityController,
+                                      UserService service) {
+        super(settings, controller, client, securityController,
                 UserService.INDEX,
                 UserService.PROFILE_TYPE,
                 json -> service.indexProfileFromJson(json));

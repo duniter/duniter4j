@@ -27,7 +27,6 @@
     <duniter4j-elasticsearch.config>${project.basedir}/src/test/resources/duniter4j-elasticsearch-test.properties</duniter4j-elasticsearch.config>
 
     <assembly.skip>false</assembly.skip>
-    <cesium.download.url>https://github.com/duniter/cesium/releases/download/v${cesium.version}/cesium-v${cesium.version}-web.zip</cesium.download.url>
   </properties>
 
   <dependencies>
@@ -191,42 +190,6 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <dependencies>
-          <dependency>
-            <groupId>ant-contrib</groupId>
-            <artifactId>ant-contrib</artifactId>
-            <version>1.0b3</version>
-            <exclusions>
-              <exclusion>
-                <groupId>ant</groupId>
-                <artifactId>ant</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <id>download-cesium</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-
-                <!-- download cesium -->
-                <get src="${cesium.download.url}" dest="${project.build.directory}/cesium-web-${cesium.version}.zip" verbose="false" usetimestamp="true" />
-                <unzip src="${project.build.directory}/cesium-web-${cesium.version}.zip" dest="${project.build.directory}/elasticsearch-${elasticsearch.version}/plugins/${project.artifactId}/_site" overwrite="true">
-                </unzip>
-              </target>
-              <skip>${assembly.skip}</skip>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>

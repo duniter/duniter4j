@@ -22,49 +22,22 @@ package org.duniter.elasticsearch.action.market;
  * #L%
  */
 
-import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
-import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
+import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.MarketService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.RestController;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
-import static org.elasticsearch.rest.RestStatus.OK;
-
-public class RestMarketRecordIndexAction extends BaseRestHandler {
-
-    private static final ESLogger log = ESLoggerFactory.getLogger(RestMarketRecordIndexAction.class.getName());
-
-    private MarketService service;
+public class RestMarketRecordIndexAction extends AbstractRestPostIndexAction {
 
     @Inject
-    public RestMarketRecordIndexAction(Settings settings, RestController controller, Client client, MarketService service) {
-        super(settings, controller, client);
-        controller.registerHandler(POST, "/market/record", this);
-        this.service = service;
-    }
-
-    @Override
-    protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
-
-        try {
-            String recordId = service.indexRecordFromJson(request.content().toUtf8());
-
-            restChannel.sendResponse(new BytesRestResponse(OK, recordId));
-        }
-        catch(DuniterElasticsearchException | BusinessException e) {
-            log.error(e.getMessage(), e);
-            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
-        }
-        catch(Exception e) {
-            log.error(e.getMessage(), e);
-        }
+    public RestMarketRecordIndexAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
+                                       MarketService service) {
+        super(settings, controller, client, securityController,
+                MarketService.INDEX, MarketService.RECORD_TYPE,
+                json -> service.indexRecordFromJson(json));
     }
 
 }

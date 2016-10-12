@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.action.market;
+package org.duniter.elasticsearch.action.registry;
 
 /*
  * #%L
@@ -24,19 +24,19 @@ package org.duniter.elasticsearch.action.market;
 
 import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
 import org.duniter.elasticsearch.action.security.RestSecurityController;
-import org.duniter.elasticsearch.service.MarketService;
+import org.duniter.elasticsearch.service.RegistryService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestController;
 
-public class RestMarketCommentIndexAction extends AbstractRestPostIndexAction {
+public class RestRegistryCommentIndexAction extends AbstractRestPostIndexAction {
 
     @Inject
-    public RestMarketCommentIndexAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
-                                        MarketService service) {
+    public RestRegistryCommentIndexAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
+                                          RegistryService service) {
         super(settings, controller, client, securityController,
-                MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE,
+                RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE,
                 json -> service.indexCommentFromJson(json));
     }
 

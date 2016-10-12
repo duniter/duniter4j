@@ -225,6 +225,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.get("duniter.keyring.sec");
     }
 
+    public boolean enableSecurity() {
+        return settings.getAsBoolean("duniter.security.enable", true);
+    }
+
     /* protected methods */
 
     protected void initI18n() throws IOException {

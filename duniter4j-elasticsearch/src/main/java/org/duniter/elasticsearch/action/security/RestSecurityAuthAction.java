@@ -47,12 +47,14 @@ public class RestSecurityAuthAction extends BaseRestHandler {
 
     @Inject
     public RestSecurityAuthAction(Settings settings, RestController controller, Client client,
+                                  RestSecurityController securityController,
                                   ChallengeMessageStore challengeMessageStore,
                                   SecurityTokenStore securityTokenStore) {
         super(settings, controller, client);
         this.challengeMessageStore = challengeMessageStore;
         this.securityTokenStore = securityTokenStore;
         controller.registerHandler(POST, "/auth", this);
+        securityController.allow(POST, "/auth");
     }
 
     @Override

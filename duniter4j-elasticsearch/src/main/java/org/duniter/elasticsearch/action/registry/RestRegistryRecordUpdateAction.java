@@ -22,48 +22,22 @@ package org.duniter.elasticsearch.action.registry;
  * #L%
  */
 
-import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
-import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
-import org.duniter.elasticsearch.service.MarketService;
+import org.duniter.elasticsearch.action.AbstractRestPostUpdateAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.RegistryService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.RestController;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.OK;
-
-public class RestRegistryRecordUpdateAction extends BaseRestHandler {
-
-    private static final ESLogger log = ESLoggerFactory.getLogger(RestRegistryRecordUpdateAction.class.getName());
-
-    private RegistryService service;
+public class RestRegistryRecordUpdateAction extends AbstractRestPostUpdateAction {
 
     @Inject
-    public RestRegistryRecordUpdateAction(Settings settings, RestController controller, Client client, RegistryService service) {
-        super(settings, controller, client);
-        controller.registerHandler(POST, "/registry/record/{id}/_update", this);
-        this.service = service;
-    }
-
-    @Override
-    protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
-        String id = request.param("id");
-        try {
-            service.updateRecordFromJson(request.content().toUtf8(), id);
-            restChannel.sendResponse(new BytesRestResponse(OK, id));
-        }
-        catch(DuniterElasticsearchException | BusinessException e) {
-            log.error(e.getMessage(), e);
-            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
-        }
-        catch(Exception e) {
-            log.error(e.getMessage(), e);
-        }
+    public RestRegistryRecordUpdateAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
+                                          RegistryService service) {
+        super(settings, controller, client, securityController,
+                RegistryService.INDEX, RegistryService.RECORD_TYPE,
+                (json, id) -> service.updateRecordFromJson(json, id));
     }
 
 }

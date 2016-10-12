@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.action.user;
  */
 
 import org.duniter.elasticsearch.action.AbstractRestPostUpdateAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.UserService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -32,8 +33,10 @@ import org.elasticsearch.rest.RestController;
 public class RestUserSettingsUpdateAction extends AbstractRestPostUpdateAction {
 
     @Inject
-    public RestUserSettingsUpdateAction(Settings settings, RestController controller, Client client, final UserService service) {
-        super(settings, controller, client,
+    public RestUserSettingsUpdateAction(Settings settings, RestController controller, Client client,
+                                        RestSecurityController securityController,
+                                        final UserService service) {
+        super(settings, controller, client,  securityController,
                 UserService.INDEX,
                 UserService.SETTINGS_TYPE,
                 (json, id) -> service.updateSettingsFromJson(json, id));

@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.action.message;
  */
 
 import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.MessageService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -32,8 +33,10 @@ import org.elasticsearch.rest.RestController;
 public class RestMessageIndexAction extends AbstractRestPostIndexAction {
 
     @Inject
-    public RestMessageIndexAction(Settings settings, RestController controller, Client client, final MessageService service) {
-        super(settings, controller, client,
+    public RestMessageIndexAction(Settings settings, RestController controller, Client client,
+                                  RestSecurityController securityController,
+                                  final MessageService service) {
+        super(settings, controller, client, securityController,
                 MessageService.INDEX,
                 MessageService.RECORD_TYPE,
                 json -> service.indexRecordFromJson(json));

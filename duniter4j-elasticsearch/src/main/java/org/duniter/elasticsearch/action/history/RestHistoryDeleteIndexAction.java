@@ -22,50 +22,26 @@ package org.duniter.elasticsearch.action.history;
  * #L%
  */
 
-import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
-import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
+import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.HistoryService;
-import org.duniter.elasticsearch.service.MarketService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.RestController;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
-import static org.elasticsearch.rest.RestStatus.OK;
-
-public class RestHistoryDeleteIndexAction extends BaseRestHandler {
+public class RestHistoryDeleteIndexAction extends AbstractRestPostIndexAction {
 
     private static final ESLogger log = ESLoggerFactory.getLogger(RestHistoryDeleteIndexAction.class.getName());
 
-    private HistoryService service;
-
     @Inject
-    public RestHistoryDeleteIndexAction(Settings settings, RestController controller, Client client, HistoryService service) {
-        super(settings, controller, client);
-        controller.registerHandler(POST, "/history/delete", this);
-        this.service = service;
+    public RestHistoryDeleteIndexAction(Settings settings, RestController controller, Client client,
+                                        RestSecurityController securityController, HistoryService service) {
+        super(settings, controller, client, securityController,
+                HistoryService.INDEX,
+                HistoryService.DELETE_TYPE,
+                json -> service.indexDeleteFromJson(json));
     }
-
-    @Override
-    protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
-
-        try {
-            String recordId = service.indexDeleteFromJson(request.content().toUtf8());
-
-            restChannel.sendResponse(new BytesRestResponse(OK, recordId));
-        }
-        catch(DuniterElasticsearchException | BusinessException e) {
-            log.error(e.getMessage(), e);
-            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
-        }
-        catch(Exception e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
 }

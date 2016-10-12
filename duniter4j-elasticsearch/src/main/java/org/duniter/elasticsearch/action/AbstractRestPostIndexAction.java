@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.action;
  */
 
 import org.duniter.core.exception.BusinessException;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
 import org.elasticsearch.client.Client;
@@ -31,6 +32,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.*;
 
+import static org.elasticsearch.rest.RestRequest.Method.GET;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 import static org.elasticsearch.rest.RestStatus.OK;
 
@@ -42,6 +44,7 @@ public abstract class AbstractRestPostIndexAction extends BaseRestHandler {
 
 
     public AbstractRestPostIndexAction(Settings settings, RestController controller, Client client,
+                                       RestSecurityController securityController,
                                        String indexName,
                                        String typeName,
                                        JsonIndexer indexer) {
@@ -49,6 +52,8 @@ public abstract class AbstractRestPostIndexAction extends BaseRestHandler {
         controller.registerHandler(POST,
                 String.format("/%s/%s", indexName, typeName),
                 this);
+        securityController.allowIndexType(POST, indexName, typeName);
+        securityController.allowIndexType(GET, indexName, typeName);
         log = ESLoggerFactory.getLogger(String.format("[%s]", indexName));
         this.indexer = indexer;
     }

@@ -22,49 +22,22 @@ package org.duniter.elasticsearch.action.registry;
  * #L%
  */
 
-import org.duniter.core.exception.BusinessException;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
-import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
+import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.RegistryService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.RestController;
 
-import static org.elasticsearch.rest.RestRequest.Method.POST;
-import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
-import static org.elasticsearch.rest.RestStatus.OK;
+public class RestRegistryRecordIndexAction extends AbstractRestPostIndexAction {
 
-public class RestRegistryRecordIndexAction extends BaseRestHandler {
-
-    private static final ESLogger log = ESLoggerFactory.getLogger(RestRegistryRecordIndexAction.class.getName());
-
-    private RegistryService service;
 
     @Inject
-    public RestRegistryRecordIndexAction(Settings settings, RestController controller, Client client, RegistryService service) {
-        super(settings, controller, client);
-        controller.registerHandler(POST, "/registry/record", this);
-        this.service = service;
+    public RestRegistryRecordIndexAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
+                                         RegistryService service) {
+        super(settings, controller, client, securityController,
+                RegistryService.INDEX, RegistryService.RECORD_TYPE,
+                json -> service.indexRecordFromJson(json));
     }
-
-    @Override
-    protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
-
-        try {
-            String recordId = service.indexRecordFromJson(request.content().toUtf8());
-
-            restChannel.sendResponse(new BytesRestResponse(OK, recordId));
-        }
-        catch(DuniterElasticsearchException | BusinessException e) {
-            log.error(e.getMessage(), e);
-            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
-        }
-        catch(Exception e) {
-            log.error(e.getMessage(), e);
-        }
-    }
-
 }

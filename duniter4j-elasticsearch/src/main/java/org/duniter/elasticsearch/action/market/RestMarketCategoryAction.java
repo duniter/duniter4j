@@ -22,22 +22,17 @@ package org.duniter.elasticsearch.action.market;
  * #L%
  */
 
-import org.duniter.elasticsearch.action.AbstractRestPostIndexAction;
 import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.MarketService;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestRequest;
 
-public class RestMarketCommentIndexAction extends AbstractRestPostIndexAction {
+public class RestMarketCategoryAction {
 
     @Inject
-    public RestMarketCommentIndexAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
-                                        MarketService service) {
-        super(settings, controller, client, securityController,
-                MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE,
-                json -> service.indexCommentFromJson(json));
+    public RestMarketCategoryAction(RestSecurityController securityController) {
+        // Add security rule for category
+        securityController.allowIndexType(RestRequest.Method.GET, MarketService.INDEX, MarketService.RECORD_CATEGORY_TYPE);
     }
 
 }

@@ -20,6 +20,8 @@ logger:
 
   org.duniter.elasticsearch: DEBUG
 
+  security: DEBUG
+
   org.nuiton.i18n: WARN
   org.nuiton.config: WARN
 

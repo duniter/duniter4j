@@ -24,7 +24,6 @@ package org.duniter.elasticsearch.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -55,7 +54,8 @@ public class MarketService extends AbstractService {
     private WotRemoteService wotRemoteService;
 
     @Inject
-    public MarketService(Client client, PluginSettings settings, CryptoService cryptoService, WotRemoteService wotRemoteService) {
+    public MarketService(Client client, PluginSettings settings,
+                         CryptoService cryptoService, WotRemoteService wotRemoteService) {
         super("gchange." + INDEX, client, settings, cryptoService);
         this.wotRemoteService = wotRemoteService;
     }
@@ -137,72 +137,20 @@ public class MarketService extends AbstractService {
         return response.getId();
     }
 
-    public String indexRecordFromJson(String recordJson) {
-
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = getIssuer(actualObj);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing market record from issuer [%s]", issuer.substring(0, 8)));
-        }
-
-        IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
-                .setSource(recordJson)
-                .setRefresh(false)
-                .execute().actionGet();
-
-        return response.getId();
+    public String indexRecordFromJson(String json) {
+        return checkIssuerAndIndexDocumentFromJson(INDEX, RECORD_TYPE, json);
     }
 
-    public void updateRecordFromJson(String recordJson, String id) {
-
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = getIssuer(actualObj);
-
-        // Check same document issuer
-        checkSameDocumentIssuer(INDEX, RECORD_TYPE, id, issuer);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Updating market record [%s] from issuer [%s]", id, issuer.substring(0, 8)));
-        }
-
-        client.prepareUpdate(INDEX, RECORD_TYPE, id)
-                .setDoc(recordJson)
-                .execute().actionGet();
+    public void updateRecordFromJson(String json, String id) {
+        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_TYPE, json, id);
     }
 
-    public String indexCommentFromJson(String commentJson) {
-
-        JsonNode actualObj = readAndVerifyIssuerSignature(commentJson);
-        String issuer = getIssuer(actualObj);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a comment from issuer [%s]", issuer.substring(0, 8)));
-        }
-
-        IndexResponse response = client.prepareIndex(INDEX, RECORD_COMMENT_TYPE)
-                .setSource(commentJson)
-                .setRefresh(false)
-                .execute().actionGet();
-        return response.getId();
+    public String indexCommentFromJson(String json) {
+        return checkIssuerAndIndexDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json);
     }
 
-    public void updateCommentFromJson(String commentJson, String id) {
-
-        JsonNode actualObj = readAndVerifyIssuerSignature(commentJson);
-        String issuer = getIssuer(actualObj);
-
-        // Check same document issuer
-        checkSameDocumentIssuer(INDEX, RECORD_COMMENT_TYPE, id, issuer);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Updating comment [%s] from issuer [%s]", id, issuer.substring(0, 8)));
-        }
-
-        // Execute indexBlocksFromNode
-        client.prepareUpdate(INDEX, RECORD_COMMENT_TYPE, id)
-                .setDoc(commentJson)
-                .execute().actionGet();
+    public void updateCommentFromJson(String json, String id) {
+        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json, id);
     }
 
     public MarketService fillRecordCategories() {

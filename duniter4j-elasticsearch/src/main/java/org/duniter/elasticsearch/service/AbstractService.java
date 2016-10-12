@@ -45,6 +45,7 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsReques
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -116,6 +117,40 @@ public abstract class AbstractService implements Bean {
 
         DeleteIndexRequestBuilder deleteIndexRequestBuilder = client.admin().indices().prepareDelete(indexName);
         deleteIndexRequestBuilder.execute().actionGet();
+    }
+
+    protected String checkIssuerAndIndexDocumentFromJson(String index, String type, String json) {
+
+        JsonNode actualObj = readAndVerifyIssuerSignature(json);
+        String issuer = getIssuer(actualObj);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Indexing a %s from issuer [%s]", type, issuer.substring(0, 8)));
+        }
+
+        IndexResponse response = client.prepareIndex(index, type)
+                .setSource(json)
+                .setRefresh(false)
+                .execute().actionGet();
+        return response.getId();
+    }
+
+    protected void checkIssuerAndUpdateDocumentFromJson(String index, String type, String json, String id) {
+
+        JsonNode actualObj = readAndVerifyIssuerSignature(json);
+        String issuer = getIssuer(actualObj);
+
+        // Check same document issuer
+        checkSameDocumentIssuer(index, type, id, issuer);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Updating %s [%s] from issuer [%s]", type, id, issuer.substring(0, 8)));
+        }
+
+        // Execute indexBlocksFromNode
+        client.prepareUpdate(index, type, id)
+                .setDoc(json)
+                .execute().actionGet();
     }
 
     protected XContentBuilder createDefaultAnalyzer() {

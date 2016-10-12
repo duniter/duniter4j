@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.action;
  */
 
 import org.duniter.core.exception.BusinessException;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.rest.XContentThrowableRestResponse;
 import org.elasticsearch.client.Client;
@@ -42,6 +43,7 @@ public abstract class AbstractRestPostUpdateAction extends BaseRestHandler {
 
 
     public AbstractRestPostUpdateAction(Settings settings, RestController controller, Client client,
+                                        RestSecurityController securityController,
                                         String indexName,
                                         String typeName,
                                         JsonUpdater updater) {
@@ -49,6 +51,7 @@ public abstract class AbstractRestPostUpdateAction extends BaseRestHandler {
         controller.registerHandler(POST,
                 String.format("/%s/%s/{id}/_update", indexName, typeName),
                 this);
+        securityController.allowIndexType(POST, indexName, typeName);
         log = ESLoggerFactory.getLogger(String.format("[%s]", indexName));
         this.updater = updater;
     }

@@ -88,7 +88,7 @@ public class RegistryService extends AbstractService {
                            CryptoService cryptoService,
                            BlockchainRemoteService blockchainRemoteService) {
         super("gchange." + INDEX, client, settings, cryptoService);
-        gson = GsonUtils.newBuilder().create();
+        this.gson = GsonUtils.newBuilder().create();
         this.blockchainRemoteService = blockchainRemoteService;
     }
 
@@ -159,42 +159,20 @@ public class RegistryService extends AbstractService {
         return !StringUtils.isEmpty(pubkey);
     }
 
-    /**
-     *
-     * @param recordJson
-     * @return the record id
-     */
-    public String indexRecordFromJson(String recordJson) {
-
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = getIssuer(actualObj);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a registry record from issuer [%s]", issuer.substring(0, 8)));
-        }
-
-        IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
-                .setSource(recordJson)
-                .setRefresh(false)
-                .execute().actionGet();
-        return response.getId();
+    public String indexRecordFromJson(String json) {
+        return checkIssuerAndIndexDocumentFromJson(INDEX, RECORD_TYPE, json);
     }
 
-    public void updateRecordFromJson(String recordJson, String id) {
+    public void updateRecordFromJson(String json, String id) {
+        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_TYPE, json, id);
+    }
 
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = getIssuer(actualObj);
+    public String indexCommentFromJson(String json) {
+        return checkIssuerAndIndexDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json);
+    }
 
-        // Check same document issuer
-        checkSameDocumentIssuer(INDEX, RECORD_TYPE, id, issuer);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Updating market record [%s] from issuer [%s]", id, issuer.substring(0, 8)));
-        }
-
-        client.prepareUpdate(INDEX, RECORD_TYPE, id)
-                .setDoc(recordJson)
-                .execute().actionGet();
+    public void updateCommentFromJson(String json, String id) {
+        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json, id);
     }
 
     public void insertRecordFromBulkFile(File bulkFile) {
