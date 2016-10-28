@@ -154,7 +154,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
             log.debug("Registering a new currency...");
         }
 
-        URIBuilder builder = getURIBuilder(URL_ADD_CURRENCY);
+        URIBuilder builder = getURIBuilder(config.getNodeElasticSearchUrl(), URL_ADD_CURRENCY);
         builder.addParameter("pubkey", pubkey);
         builder.addParameter("currency", jsonCurrency);
         builder.addParameter("sig", signature);
@@ -176,28 +176,5 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
 
     /* -- protected methods -- */
 
-    protected URIBuilder getURIBuilder(String... path)  {
-        String pathToAppend = Joiner.on('/').skipNulls().join(path);
 
-        int customQueryStartIndex = pathToAppend.indexOf('?');
-        String customQuery = null;
-        if (customQueryStartIndex != -1) {
-            customQuery = pathToAppend.substring(customQueryStartIndex+1);
-            pathToAppend = pathToAppend.substring(0, customQueryStartIndex);
-        }
-
-        try {
-            URI baseUri = config.getNodeElasticSearchUrl().toURI();
-            URIBuilder builder = new URIBuilder(baseUri);
-
-            builder.setPath(baseUri.getPath() + pathToAppend);
-            if (StringUtils.isNotBlank(customQuery)) {
-                builder.setCustomQuery(customQuery);
-            }
-            return builder;
-        }
-        catch(URISyntaxException e) {
-            throw new TechnicalException(e);
-        }
-    }
 }

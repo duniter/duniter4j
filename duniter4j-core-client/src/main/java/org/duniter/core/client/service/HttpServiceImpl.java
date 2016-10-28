@@ -22,7 +22,10 @@ package org.duniter.core.client.service;
  * #L%
  */
 
+import com.google.common.base.Joiner;
 import com.google.gson.Gson;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.mime.content.InputStreamBody;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.Error;
@@ -42,6 +45,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.duniter.core.util.StringUtils;
 import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +53,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -124,6 +130,10 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         return executeRequest(httpClient, request, resultClass);
     }
 
+    public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass)  {
+        return executeRequest(httpClient, request, resultClass, errorClass);
+    }
+
     public <T> T executeRequest(String absolutePath, Class<? extends T> resultClass)  {
         HttpGet httpGet = new HttpGet(getPath(absolutePath));
         return executeRequest(httpClient, httpGet, resultClass);
@@ -144,6 +154,24 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         return new StringBuilder().append(defaultPeer.getUrl()).append(absolutePath).toString();
     }
 
+    public URIBuilder getURIBuilder(URI baseUri, String... path)  {
+        String pathToAppend = Joiner.on('/').skipNulls().join(path);
+
+        int customQueryStartIndex = pathToAppend.indexOf('?');
+        String customQuery = null;
+        if (customQueryStartIndex != -1) {
+            customQuery = pathToAppend.substring(customQueryStartIndex+1);
+            pathToAppend = pathToAppend.substring(0, customQueryStartIndex);
+        }
+
+        URIBuilder builder = new URIBuilder(baseUri);
+
+        builder.setPath(baseUri.getPath() + pathToAppend);
+        if (StringUtils.isNotBlank(customQuery)) {
+            builder.setCustomQuery(customQuery);
+        }
+        return builder;
+    }
 
     /* -- Internal methods -- */
 
@@ -165,8 +193,12 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         return RequestConfig.custom().setSocketTimeout(baseTimeOut).setConnectTimeout(baseTimeOut).build();
     }
 
-    @SuppressWarnings("unchecked")
     protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass)  {
+        return executeRequest(httpClient, request, resultClass, Error.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass)  {
         T result = null;
 
         if (log.isDebugEnabled()) {
@@ -195,8 +227,13 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                     throw new HttpNotFoundException(I18n.t("duniter4j.client.notFound", request.toString()));
                 case HttpStatus.SC_BAD_REQUEST:
                     try {
-                        Error error = (Error)parseResponse(response, Error.class);
-                        throw new HttpBadRequestException(error);
+                        Object errorResponse = parseResponse(response, errorClass);
+                        if (errorResponse instanceof Error) {
+                            throw new HttpBadRequestException((Error)errorResponse);
+                        }
+                        else {
+                            throw new HttpBadRequestException(errorResponse.toString());
+                        }
                     }
                     catch(IOException e) {
                         throw new HttpBadRequestException(I18n.t("duniter4j.client.status", response.getStatusLine().toString()));
@@ -232,19 +269,24 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     protected Object parseResponse(HttpResponse response, Class<?> ResultClass) throws IOException {
         Object result = null;
 
-        boolean stringOutput = ResultClass != null && ResultClass.equals(String.class);
+        boolean isStreamContent = ResultClass == null || ResultClass.equals(InputStream.class);
+        boolean isStringContent = !isStreamContent && ResultClass != null && ResultClass.equals(String.class);
 
-        // If trace enable, log the response before parsing
-        Exception error = null;
-        if (stringOutput) {
-            InputStream content = null;
+        InputStream content = response.getEntity().getContent();
+
+        // If should return an inputstream
+        if (isStreamContent) {
+            result = content; // must be close by caller
+        }
+
+        // If should return String
+        else if (isStringContent) {
             try {
-                content = response.getEntity().getContent();
                 String stringContent = getContentAsString(content);
+                // Add a debug before returning the result
                 if (log.isDebugEnabled()) {
                     log.debug("Parsing response:\n" + stringContent);
                 }
-
                 return stringContent;
             }
             finally {
@@ -254,11 +296,9 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
             }
         }
 
-        // trace not enable
+        // deserialize using gson
         else {
-            InputStream content = null;
             try {
-                content = response.getEntity().getContent();
                 Reader reader = new InputStreamReader(content, StandardCharsets.UTF_8);
                 if (ResultClass != null) {
                     result = gson.fromJson(reader, ResultClass);

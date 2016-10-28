@@ -30,10 +30,12 @@ public class Record {
     public static final String PROPERTY_ISSUER="issuer";
     public static final String PROPERTY_HASH="hash";
     public static final String PROPERTY_SIGNATURE="signature";
+    public static final String PROPERTY_TIME="time";
 
     private String issuer;
     private String hash;
     private String signature;
+    private Integer time;
 
     public String getIssuer() {
         return issuer;
@@ -58,4 +60,14 @@ public class Record {
     public void setSignature(String signature) {
         this.signature = signature;
     }
+
+
+    public Integer getTime() {
+        return time;
+    }
+
+    public void setTime(Integer time) {
+        this.time = time;
+    }
+
 }

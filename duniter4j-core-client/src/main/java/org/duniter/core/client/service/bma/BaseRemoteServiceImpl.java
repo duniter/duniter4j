@@ -22,6 +22,7 @@ package org.duniter.core.client.service.bma;
  * #L%
  */
 
+import org.apache.http.client.utils.URIBuilder;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Peer;
@@ -29,8 +30,12 @@ import org.duniter.core.client.service.HttpService;
 import org.duniter.core.client.service.local.PeerService;
 import org.duniter.core.client.service.ServiceLocator;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.duniter.core.exception.TechnicalException;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 /**
  * Created by eis on 05/02/15.
@@ -72,5 +77,18 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
 
     public String getPath(Peer peer, String aPath) {
         return httpService.getPath(peer, aPath);
+    }
+
+    public URIBuilder getURIBuilder(URI baseUri, String... path) {
+        return httpService.getURIBuilder(baseUri, path);
+    }
+
+    public URIBuilder getURIBuilder(URL baseUrl, String... path) {
+        try {
+            return httpService.getURIBuilder(baseUrl.toURI(), path);
+        }
+        catch(URISyntaxException e) {
+            throw new TechnicalException(e);
+        }
     }
 }

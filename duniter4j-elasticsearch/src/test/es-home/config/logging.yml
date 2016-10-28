@@ -20,6 +20,9 @@ logger:
 
   org.duniter.elasticsearch: DEBUG
 
+  duniter : DEBUG
+  duniter.network.p2p: TRACE
+
   security: DEBUG
 
   org.nuiton.i18n: WARN

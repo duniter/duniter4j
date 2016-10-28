@@ -30,15 +30,15 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestController;
 
-public class RestMessageIndexAction extends AbstractRestPostIndexAction {
+public class RestMessageOutboxIndexAction extends AbstractRestPostIndexAction {
 
     @Inject
-    public RestMessageIndexAction(Settings settings, RestController controller, Client client,
-                                  RestSecurityController securityController,
-                                  final MessageService service) {
+    public RestMessageOutboxIndexAction(Settings settings, RestController controller, Client client,
+                                        RestSecurityController securityController,
+                                        final MessageService service) {
         super(settings, controller, client, securityController,
                 MessageService.INDEX,
-                MessageService.RECORD_TYPE,
+                MessageService.OUTBOX_TYPE,
                 json -> service.indexRecordFromJson(json));
     }
 }

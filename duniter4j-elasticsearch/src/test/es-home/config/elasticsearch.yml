@@ -119,8 +119,18 @@ duniter.string.analyzer: french
 #duniter.indices.reload: true
 
 # Should synchronize node blockchain ?
-duniter.blockchain.sync.enable: true
-#duniter.blockchain.sync.enable: false
+#duniter.blockchain.sync.enable: true
+duniter.blockchain.sync.enable: false
+
+#TODO : enable
+duniter.security.enable: false
+
+# Should synchronize data using P2P
+duniter.data.sync.enable: true
+#TODO duniter.network.timeout:
+
+# TODO : implement this option (check if same cluster)
+#duniter.data.sync.checkClusterName=false
 
 #duniter.dev.enable: true
 

@@ -41,15 +41,37 @@ sudo apt-get install openjdk-8-jre
  
 ### Install ElasticSearch plugins
  
+```bash
    /bin/plugin install mapper-attachments
    
    /bin/plugin install https://github.com/duniter/duniter4j/releases/download/0.2.0/duniter4j-elasticsearch-0.2.0.zip
+```
 
+### Install libsodium 
+
+[The Sodium crypto library (libsodium)](https://download.libsodium.org/doc/installation/) is a modern, easy-to-use software library for encryption, decryption, signatures, password hashing and more. 
+
+- Get libsodium
+```
+    wget -kL https://github.com/jedisct1/libsodium/releases/download/1.0.11/libsodium-1.0.11.tar.gz
+    tar -xvf libsodium-1.0.11.tar.gz
+```
+
+- Installation:
+```
+    cd libsodium-1.0.11
+    sudo apt-get install build-essential
+    sudo ./configure
+    sudo make && make check
+    sudo make install        
+```
 
 ## Install from standalone bundle 
 
  - Install Java (see on top) 
  
+ - Install Libsodium (see on top) 
+  
  - Download lastest release of file duniter4j-elasticsearch-X.Y-standalone.zip
  
  - Unzip

@@ -22,15 +22,11 @@ package org.duniter.elasticsearch.node;
  * #L%
  */
 
-import org.duniter.core.client.model.bma.BlockchainBlock;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.service.bma.BlockchainRemoteService;
-import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.*;
+import org.duniter.elasticsearch.service.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -138,6 +134,11 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
                     .indexLastBlocks(peer)
                     .listenAndIndexNewBlock(peer);
 
+        }
+
+        if (pluginSettings.enableNetworkSync()) {
+            // Synchronize
+            injector.getInstance(SynchroService.class).synchronize();
         }
     }
 }

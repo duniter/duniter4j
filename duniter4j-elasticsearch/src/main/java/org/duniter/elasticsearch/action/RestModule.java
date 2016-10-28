@@ -25,7 +25,8 @@ package org.duniter.elasticsearch.action;
 import org.duniter.elasticsearch.action.currency.RestCurrencyIndexAction;
 import org.duniter.elasticsearch.action.history.RestHistoryDeleteIndexAction;
 import org.duniter.elasticsearch.action.market.*;
-import org.duniter.elasticsearch.action.message.RestMessageIndexAction;
+import org.duniter.elasticsearch.action.message.RestMessageInboxIndexAction;
+import org.duniter.elasticsearch.action.message.RestMessageOutboxIndexAction;
 import org.duniter.elasticsearch.action.registry.*;
 import org.duniter.elasticsearch.action.security.RestSecurityAuthAction;
 import org.duniter.elasticsearch.action.security.RestSecurityController;
@@ -75,7 +76,7 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestHistoryDeleteIndexAction.class).asEagerSingleton();
 
         // Message
-        bind(RestMessageIndexAction.class).asEagerSingleton();
-
+        bind(RestMessageInboxIndexAction.class).asEagerSingleton();
+        bind(RestMessageOutboxIndexAction.class).asEagerSingleton();
     }
 }

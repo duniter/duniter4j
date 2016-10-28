@@ -22,10 +22,13 @@ package org.duniter.core.client.service;
  * #L%
  */
 
+import org.apache.http.client.utils.URIBuilder;
 import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.exception.PeerConnectionException;
 import org.apache.http.client.methods.HttpUriRequest;
+
+import java.net.URI;
 
 /**
  * Created by blavenie on 29/12/15.
@@ -38,6 +41,8 @@ public interface HttpService extends Service {
 
     <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass) ;
 
+    <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass);
+
     <T> T executeRequest(String absolutePath, Class<? extends T> resultClass) ;
 
     <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass);
@@ -45,4 +50,6 @@ public interface HttpService extends Service {
     String getPath(Peer peer, String absolutePath);
 
     String getPath(String absolutePath);
+
+    URIBuilder getURIBuilder(URI baseUri, String... path);
 }

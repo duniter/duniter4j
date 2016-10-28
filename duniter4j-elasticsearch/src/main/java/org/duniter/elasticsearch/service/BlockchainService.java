@@ -667,9 +667,9 @@ public class BlockchainService extends AbstractService {
 
     protected List<BlockchainBlock> toBlocks(SearchResponse response, boolean withHighlight) {
         // Read query result
-        SearchHit[] searchHits = response.getHits().getHits();
-        List<BlockchainBlock> result = Lists.newArrayListWithCapacity(searchHits.length);
-        for (SearchHit searchHit : searchHits) {
+        List<BlockchainBlock> result = Lists.newArrayList();
+        // TODO : test this lambda expression
+        response.getHits().forEach(searchHit -> {
             BlockchainBlock block;
             if (searchHit.source() != null) {
                 String jsonString = new String(searchHit.source());
@@ -697,7 +697,7 @@ public class BlockchainService extends AbstractService {
                     block.setHash(blockNameHighLight);
                 }
             }
-        }
+        });
 
         return result;
     }

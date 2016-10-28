@@ -45,6 +45,7 @@ public class MessageService extends AbstractService {
 
     public static final String INDEX = "message";
     public static final String RECORD_TYPE = "record";
+    public static final String OUTBOX_TYPE = "outbox";
 
 
     @Inject
@@ -97,6 +98,7 @@ public class MessageService extends AbstractService {
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
+        createIndexRequestBuilder.addMapping(OUTBOX_TYPE, createOutboxType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -119,11 +121,26 @@ public class MessageService extends AbstractService {
         return response.getId();
     }
 
+    public String indexOuboxFromJson(String recordJson) {
+
+        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
+        String issuer = getIssuer(actualObj);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Indexing a message from issuer [%s]", issuer.substring(0, 8)));
+        }
+
+        IndexResponse response = client.prepareIndex(INDEX, OUTBOX_TYPE)
+                .setSource(recordJson)
+                .setRefresh(false)
+                .execute().actionGet();
+
+        return response.getId();
+    }
+
     /* -- Internal methods -- */
 
     public XContentBuilder createRecordType() {
-        String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
-
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
                     .startObject("properties")
@@ -167,4 +184,7 @@ public class MessageService extends AbstractService {
         }
     }
 
+    public XContentBuilder createOutboxType() {
+        return createRecordType(); // same as outbox
+    }
 }

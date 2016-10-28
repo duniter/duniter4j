@@ -153,25 +153,6 @@ public abstract class AbstractService implements Bean {
                 .execute().actionGet();
     }
 
-    protected XContentBuilder createDefaultAnalyzer() {
-        try {
-            XContentBuilder analyzer = XContentFactory.jsonBuilder().startObject().startObject("analyzer")
-                    .startObject("custom_french_analyzer")
-                    .field("tokenizer", "letter")
-                    .field("filter", "asciifolding", "lowercase", "french_stem", "elision", "stop")
-                    .endObject()
-                    .startObject("tag_analyzer")
-                    .field("tokenizer", "keyword")
-                    .field("filter", "asciifolding", "lowercase")
-                    .endObject()
-                    .endObject().endObject();
-
-            return analyzer;
-        } catch(IOException e) {
-            throw new TechnicalException("Error while preparing default index analyzer: " + e.getMessage(), e);
-        }
-    }
-
     protected JsonNode readAndVerifyIssuerSignature(String recordJson) throws ElasticsearchException {
 
         try {
@@ -199,7 +180,7 @@ public abstract class AbstractService implements Bean {
                     .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
 
             if (!cryptoService.verify(recordNoSign, signature, issuer)) {
-                throw new InvalidSignatureException("Invalid signature for JSON string: " + recordNoSign);
+                throw new InvalidSignatureException("Invalid signature of JSON string");
             }
 
             // TODO: check issuer is in the WOT ?

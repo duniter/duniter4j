@@ -35,6 +35,7 @@ import org.duniter.core.client.service.local.CurrencyService;
 import org.duniter.core.client.service.local.PeerService;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.service.synchro.SynchroService;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
@@ -43,13 +44,18 @@ public class ServiceModule extends AbstractModule implements Module {
     @Override protected void configure() {
         bind(ServiceLocator.class).asEagerSingleton();
 
-        // ES service
+        // ES common service
         bind(PluginSettings.class).asEagerSingleton();
+
+        // ES indexation services
         bind(RegistryService.class).asEagerSingleton();
         bind(MarketService.class).asEagerSingleton();
         bind(BlockchainService.class).asEagerSingleton();
         bind(MessageService.class).asEagerSingleton();
         bind(HistoryService.class).asEagerSingleton();
+
+        // ES Synchro services
+        bind(SynchroService.class).asEagerSingleton();
 
         // Duniter Client API beans
         bindWithLocator(BlockchainRemoteService.class);
