@@ -46,16 +46,18 @@ public class WebsocketClientEndpoint implements Closeable {
     private Session userSession = null;
     private List<MessageHandler> messageHandlers = Lists.newArrayList();
     private final URI endpointURI;
+    private final boolean autoReconnect;
 
     public WebsocketClientEndpoint(URI endpointURI) {
-        this.endpointURI = endpointURI;
-        try {
-            WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            container.connectToServer(this, endpointURI);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        this(endpointURI, true);
     }
+
+    public WebsocketClientEndpoint(URI endpointURI, boolean autoReconnect) {
+        this.endpointURI = endpointURI;
+        this.autoReconnect = autoReconnect;
+        connect(true);
+    }
+
 
     @Override
     public void close() throws IOException {
@@ -91,6 +93,11 @@ public class WebsocketClientEndpoint implements Closeable {
             log.debug(String.format("Closing WebSocket... [%s]", endpointURI));
         }
         this.userSession = null;
+
+        // abnormal close : try to reconnect
+        if (reason.getCloseCode() == CloseReason.CloseCodes.CLOSED_ABNORMALLY)  {
+            connect(false);
+        }
     }
 
     /**
@@ -144,6 +151,7 @@ public class WebsocketClientEndpoint implements Closeable {
     public boolean isClosed() {
         return (userSession == null);
     }
+
     /**
      * Message handler.
      *
@@ -152,5 +160,28 @@ public class WebsocketClientEndpoint implements Closeable {
     public static interface MessageHandler {
 
         public void handleMessage(String message);
+    }
+
+    /* -- Internal method */
+
+    private void connect(boolean throwErrorIfFailed) {
+        while(isClosed()) {
+            try {
+                WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+                container.connectToServer(this, endpointURI);
+                return; // stop
+            } catch (Exception e) {
+                if (throwErrorIfFailed) throw new RuntimeException(e);
+                log.warn(String.format("[%s] Unable to connect. Retrying in 10s...", endpointURI.toString()));
+            }
+
+            // wait 20s, then try again
+            try {
+                Thread.sleep(10 * 1000);
+            }
+            catch(Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

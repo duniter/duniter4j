@@ -143,6 +143,6 @@ public class ModelUtils {
         if (pubkey == null || pubkey.length() < 6) {
             return pubkey;
         }
-        return pubkey.substring(0, 6);
+        return pubkey.substring(0, 8);
     }
 }

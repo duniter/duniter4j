@@ -24,7 +24,6 @@ package org.duniter.elasticsearch.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -36,12 +35,13 @@ import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
-import org.duniter.core.client.service.bma.WotRemoteService;
+import org.duniter.core.client.service.exception.HttpConnectException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
@@ -84,7 +84,6 @@ public class RegistryService extends AbstractService {
     @Inject
     public RegistryService(Client client,
                            PluginSettings settings,
-                           WotRemoteService wotRemoteService,
                            CryptoService cryptoService,
                            BlockchainRemoteService blockchainRemoteService) {
         super("gchange." + INDEX, client, settings, cryptoService);
@@ -189,6 +188,32 @@ public class RegistryService extends AbstractService {
      * Retrieve the blockchain data, from peer
      *
      * @param peer
+     * @param autoReconnect
+     * @return the created blockchain
+     */
+    public Currency indexCurrencyFromPeer(Peer peer, boolean autoReconnect) {
+        if (!autoReconnect) return indexCurrencyFromPeer(peer);
+
+        while(true) {
+            try {
+                return indexCurrencyFromPeer(peer);
+            } catch (HttpConnectException e) {
+                // log then retry
+                logger.warn(String.format("[%s] Unable to connect. Retrying in 10s...", peer.toString()));
+            }
+
+            try {
+                Thread.sleep(10 * 1000); // wait 20s
+            } catch(Exception e) {
+                throw new TechnicalException(e);
+            }
+        }
+    }
+
+    /**
+     * Retrieve the blockchain data, from peer
+     *
+     * @param peer
      * @return the created blockchain
      */
     public Currency indexCurrencyFromPeer(Peer peer) {
@@ -196,6 +221,7 @@ public class RegistryService extends AbstractService {
         BlockchainBlock firstBlock = blockchainRemoteService.getBlock(peer, 0);
         BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);
         long lastUD = blockchainRemoteService.getLastUD(peer);
+
 
         Currency result = new Currency();
         result.setCurrencyName(parameters.getCurrency());

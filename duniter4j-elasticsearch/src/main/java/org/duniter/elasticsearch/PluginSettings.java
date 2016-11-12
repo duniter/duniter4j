@@ -229,8 +229,16 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.security.enable", true);
     }
 
-    public boolean enableNetworkSync()  {
+    public boolean enableDataSync()  {
         return settings.getAsBoolean("duniter.data.sync.enable", false);
+    }
+
+    public String getDataSyncHost()  {
+        return settings.get("duniter.data.sync.host", "data.duniter.fr");
+    }
+
+    public int getDataSyncPort()  {
+        return settings.getAsInt("duniter.data.sync.port", 80);
     }
 
     /* protected methods */

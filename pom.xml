@@ -362,6 +362,22 @@
         <artifactId>tyrus-container-grizzly-client</artifactId>
         <version>${tyrus.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.glassfish.tyrus</groupId>
+        <artifactId>tyrus-server</artifactId>
+        <version>${tyrus.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.tyrus</groupId>
+        <artifactId>tyrus-container-grizzly-server</artifactId>
+        <version>${tyrus.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.github.spullara.mustache.java</groupId>
+        <artifactId>mustache.java</artifactId>
+        <version>0.9.4</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 

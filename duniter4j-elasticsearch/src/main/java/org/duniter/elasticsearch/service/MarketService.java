@@ -249,11 +249,13 @@ public class MarketService extends AbstractService {
                     // price Unit
                     .startObject("unit")
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // currency
                     .startObject("currency")
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // issuer

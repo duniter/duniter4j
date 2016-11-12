@@ -141,8 +141,16 @@ public class MessageService extends AbstractService {
     /* -- Internal methods -- */
 
     public XContentBuilder createRecordType() {
+        return createMapping(RECORD_TYPE);
+    }
+
+    public XContentBuilder createOutboxType() {
+        return createMapping(OUTBOX_TYPE);
+    }
+
+    public XContentBuilder createMapping(String typeName) {
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(typeName)
                     .startObject("properties")
 
                     // issuer
@@ -182,9 +190,5 @@ public class MessageService extends AbstractService {
         catch(IOException ioe) {
             throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
         }
-    }
-
-    public XContentBuilder createOutboxType() {
-        return createRecordType(); // same as outbox
     }
 }

@@ -101,27 +101,40 @@ http.cors.enabled: true
 
 security.manager.enabled: false
 
-
-#duniter.disable: true
-#duniter.host: cgeek.fr
-#duniter.port: 9330
-
-duniter.host: 192.168.0.5
-duniter.port: 9201
-
+#
+# ---------------------------------- Duniter4j ---------------------------------
+#
+# Disbale duniter4j plugin
+#
+# duniter.enabled: false
+#
+# Reset and reload all Duniter4j data at startup - DO SET to true in production
+#
+# duniter.indices.reload: true
+#
+# Default string analyzer
+#
 duniter.string.analyzer: french
-
-#duniter.indices.reload: true
-
-# Should synchronize node blockchain ?
+#
+# Enabling node blockchain synchronization
+#
 duniter.blockchain.sync.enable: true
-
-#duniter.dev.enable: true
-
-#script.groovy.sandbox.enabled: true
-
+#
+# Duniter node to synchronize
+#
+duniter.host: cgeek.fr
+duniter.port: 9330
+#
+# ---------------------------------- Duniter4j security -------------------------
+#
+# Enable security, to disable HTTP access to the default ES admin API
+#
+duniter.security.enable: true
+#
 # Security token prefix (default: 'duniter-')
-#duniter.auth.token.prefix: duniter-
-
+#
+# duniter.auth.token.prefix: duniter-
+#
 # Token validity duration, in seconds (default: 600)
-duniter.auth.tokenValidityDuration: 3600  # = 1hour
+#
+# duniter.auth.tokenValidityDuration: 3600  # = 1hour

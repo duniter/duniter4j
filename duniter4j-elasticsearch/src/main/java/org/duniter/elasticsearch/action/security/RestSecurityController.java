@@ -29,20 +29,21 @@ public class RestSecurityController extends AbstractLifecycleComponent<RestSecur
     }
 
     public RestSecurityController allowIndexType(RestRequest.Method method, String index, String type) {
-        return allow(method, String.format("/%s/%s", index, type));
+        return allow(method, String.format("/%s/%s(/.*)?", index, type));
     }
 
-    public RestSecurityController allow(RestRequest.Method method, String path) {
+    public RestSecurityController allow(RestRequest.Method method, String regexPath) {
         Set<String> allowRules = allowRulesByMethod.get(method);
         if (allowRules == null) {
             allowRules = new TreeSet<>();
             allowRulesByMethod.put(method, allowRules);
         }
-        allowRules.add(path);
+        allowRules.add(regexPath);
         return this;
     }
 
     public boolean isAllow(RestRequest request) {
+        if (!this.enable) return true;
         RestRequest.Method method = request.method();
         if (log.isTraceEnabled()) {
             log.trace(String.format("Checking rules for %s request [%s]...", method, request.path()));
@@ -52,7 +53,7 @@ public class RestSecurityController extends AbstractLifecycleComponent<RestSecur
         String path = request.path();
         if (allowRules != null) {
             for (String allowRule : allowRules) {
-                if (path.startsWith(allowRule)) {
+                if (path.matches(allowRule)) {
                     if (log.isTraceEnabled()) {
                         log.trace(String.format("Find matching rule [%s] for %s request [%s]: allow", allowRule, method, path));
                     }

@@ -22,8 +22,10 @@ package org.duniter.elasticsearch.node;
  * #L%
  */
 
+import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.*;
 import org.duniter.elasticsearch.service.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -34,6 +36,7 @@ import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.rest.RestRequest;
 
 /**
  * Created by blavenie on 17/06/16.
@@ -127,16 +130,20 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
             Peer peer = pluginSettings.checkAndGetPeer();
 
             // Index (or refresh) node's currency
-            injector.getInstance(RegistryService.class).indexCurrencyFromPeer(peer);
+            Currency currency = injector.getInstance(RegistryService.class).indexCurrencyFromPeer(peer, true);
 
             // Index blocks (and listen if new block appear)
             injector.getInstance(BlockchainService.class)
                     .indexLastBlocks(peer)
                     .listenAndIndexNewBlock(peer);
 
+            // Add access to currency index
+            injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
+                    currency.getCurrencyName(),
+                    BlockchainService.BLOCK_TYPE);
         }
 
-        if (pluginSettings.enableNetworkSync()) {
+        if (pluginSettings.enableDataSync()) {
             // Synchronize
             injector.getInstance(SynchroService.class).synchronize();
         }

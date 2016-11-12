@@ -51,25 +51,22 @@ public class SynchroService extends AbstractService {
     public void synchronize() {
         logger.info("Synchronizing data...");
 
-        // TODO : get peers from currency ?
-        // check ESA (ES API) in peer document, and select only this peer
-
-        //Peer peer = new Peer("data.duniter.fr", 80);
-        Peer peer = new Peer("data.le-sou.org", 80);
-        //Peer peer = new Peer("192.168.0.28", 9203);
+        // TODO : get peers from currency - use peering BMA API, and select peers with ESA (ES API)
+        Peer peer = new Peer(pluginSettings.getDataSyncHost(), pluginSettings.getDataSyncPort());
 
         synchronize(peer);
     }
 
     public void synchronize(Peer peer) {
 
-        long sinceTime = 0; // ToDO: get time from somewhere ?
+        long sinceTime = 0; // ToDO: get last sync time from somewhere ? (e.g. a specific index)
 
         logger.info(String.format("[%s] Synchronizing data since %s...", peer.toString(), sinceTime));
 
         importMarketChanges(peer, sinceTime);
         importRegistryChanges(peer, sinceTime);
         importUserChanges(peer, sinceTime);
+        importMessageChanges(peer, sinceTime);
 
         logger.info(String.format("[%s] Synchronizing data since %s [OK]", peer.toString(), sinceTime));
     }
@@ -87,6 +84,10 @@ public class SynchroService extends AbstractService {
     public void importUserChanges(Peer peer, long sinceTime) {
         importChanges(peer, UserService.INDEX, UserService.PROFILE_TYPE,  sinceTime);
         importChanges(peer, UserService.INDEX, UserService.SETTINGS_TYPE,  sinceTime);
+    }
+
+    public void importMessageChanges(Peer peer, long sinceTime) {
+        importChanges(peer, MessageService.INDEX, MessageService.RECORD_TYPE,  sinceTime);
     }
 
     public void importChanges(Peer peer, String index, String type, long sinceTime) {
@@ -115,7 +116,7 @@ public class SynchroService extends AbstractService {
                             // currency
                             /*.startObject("filter")
                                 .startObject("term")
-                                    .field("currency", "sou") // todo
+                                    .field("currency", "sou") // todo, filter on configured currency only
                                 .endObject()
                             .endObject()*/
                         .endObject()

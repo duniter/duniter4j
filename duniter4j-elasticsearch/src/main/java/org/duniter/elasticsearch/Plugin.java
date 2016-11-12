@@ -33,6 +33,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.Settings;
 
 import java.util.Collection;
 
@@ -40,12 +41,10 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
 
     private ESLogger log = ESLoggerFactory.getLogger(Plugin.class.getName());
 
-    private org.elasticsearch.common.settings.Settings settings;
-    private boolean disable;
+    private boolean enable;
 
-    @Inject public Plugin(org.elasticsearch.common.settings.Settings settings) {
-        this.settings = settings;
-        this.disable = settings.getAsBoolean("duniter.disable", false);
+    @Inject public Plugin(Settings settings) {
+        this.enable = settings.getAsBoolean("duniter.enabled", true);
     }
 
     @Override
@@ -61,20 +60,23 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
     @Override
     public Collection<Module> nodeModules() {
         Collection<Module> modules = Lists.newArrayList();
-        if (disable) {
+        if (!enable) {
             log.warn(description() + " has been disabled.");
             return modules;
         }
         modules.add(new SecurityModule());
         modules.add(new RestModule());
         modules.add(new ServiceModule());
+        // TODO : must be tested inside full release assembly
+        //modules.add(new ChangesModule());
+
         return modules;
     }
 
     @Override
     public Collection<Class<? extends LifecycleComponent>> nodeServices() {
         Collection<Class<? extends LifecycleComponent>> components = Lists.newArrayList();
-        if (disable) {
+        if (!enable) {
             return components;
         }
         components.add(PluginSettings.class);

@@ -74,7 +74,7 @@ http.cors.enabled: true
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
 #discovery.zen.ping.unicast.hosts: ["192.168.0.5", "192.168.0.28"]
-discovery.zen.ping.unicast.hosts: ["127.0.0.1", ""]
+discovery.zen.ping.unicast.hosts: ["127.0.0.1"]
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of nodes / 2 + 1):
 #
@@ -105,14 +105,16 @@ action.destructive_requires_name: true
 security.manager.enabled: false
 
 
-#duniter.disable: true
+#duniter.enabled: true
 #duniter.host: cgeek.fr
 #duniter.port: 9330
 
-duniter.host: 192.168.0.5
-duniter.port: 9602
+duniter.host: 192.168.0.28
+duniter.port: 9604
 #duniter.host: 192.168.0.28
 #duniter.port: 9202
+
+changes.listenSource: currency,*/block,*/record
 
 duniter.string.analyzer: french
 
@@ -120,13 +122,14 @@ duniter.string.analyzer: french
 
 # Should synchronize node blockchain ?
 #duniter.blockchain.sync.enable: true
-duniter.blockchain.sync.enable: false
+duniter.blockchain.sync.enable: true
 
-#TODO : enable
-duniter.security.enable: false
+duniter.security.enable: true
 
 # Should synchronize data using P2P
-duniter.data.sync.enable: true
+duniter.data.sync.enable: false
+duniter.data.sync.host: data.le-sou.org
+duniter.data.sync.port: 80
 #TODO duniter.network.timeout:
 
 # TODO : implement this option (check if same cluster)

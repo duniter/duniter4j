@@ -25,16 +25,14 @@ package org.duniter.core.client.service;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.Error;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.service.exception.HttpBadRequestException;
-import org.duniter.core.client.service.exception.HttpNotFoundException;
-import org.duniter.core.client.service.exception.JsonSyntaxException;
-import org.duniter.core.client.service.exception.PeerConnectionException;
+import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -243,7 +241,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
             }
         }
         catch (ConnectException e) {
-            throw new TechnicalException(I18n.t("duniter4j.client.core.connect", request.toString()), e);
+            throw new HttpConnectException(I18n.t("duniter4j.client.core.connect", request.toString()), e);
         }
         catch (SocketTimeoutException e) {
             throw new TechnicalException(I18n.t("duniter4j.client.core.timeout"), e);

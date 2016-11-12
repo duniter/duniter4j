@@ -272,26 +272,35 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     public long getLastUD(Peer peer) {
         // get block number with UD
         String blocksWithUdResponse = executeRequest(peer, URL_BLOCK_WITH_UD, String.class);
-        Integer blockNumber = getLastBlockNumberFromJson(blocksWithUdResponse);
+
+        int[] blocksWithUD = getBlockNumbersFromJson(blocksWithUdResponse);
 
         // If no result (this could happen when no UD has been send
-        if (blockNumber == null) {
-            // get the first UD from currency parameter
-            BlockchainParameters parameter = getParameters(peer);
-            return parameter.getUd0();
+        if (blocksWithUD != null && blocksWithUD.length > 0) {
+
+            int index = blocksWithUD.length - 1;
+            while (index >= 0) {
+
+                try {
+                    // Get the UD from the last block with UD
+                    String path = String.format(URL_BLOCK, blocksWithUD[index]);
+                    String json = executeRequest(peer, path, String.class);
+                    Long lastUD = getDividendFromBlockJson(json);
+
+                    // Check not null (should never append)
+                    if (lastUD == null) {
+                        throw new TechnicalException("Unable to get last UD from server");
+                    }
+                    return lastUD.longValue();
+                } catch (HttpNotFoundException e) {
+                    index--; // Can occur something (observed in Duniter 0.50.0)
+                }
+            }
         }
 
-        // Get the UD from the last block with UD
-        String path = String.format(URL_BLOCK, blockNumber);
-        String json = executeRequest(peer, path, String.class);
-        Long lastUD = getDividendFromBlockJson(json);
-
-        // Check not null (should never append)
-        if (lastUD == null) {
-            throw new TechnicalException("Unable to get last UD from server");
-        }
-        return lastUD.longValue();
-
+        // get the first UD from currency parameter
+        BlockchainParameters parameter = getParameters(peer);
+        return parameter.getUd0();
     }
 
     /**
@@ -557,7 +566,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
             // Get the websocket, or open new one if not exists
             WebsocketClientEndpoint wsClientEndPoint = blockWsEndPoints.get(wsBlockURI);
             if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
-                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI);
+                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI,  true/*autoReconnect*/);
                 blockWsEndPoints.put(wsBlockURI, wsClientEndPoint);
             }
 
@@ -728,16 +737,31 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     private Integer getLastBlockNumberFromJson(final String json) {
+        int[] numbers = getBlockNumbersFromJson(json);
+        if (numbers == null || numbers.length == 0) {
+            return null;
+        }
+        return numbers[numbers.length-1];
+    }
 
-        int startIndex = json.lastIndexOf(',');
+    private int[] getBlockNumbersFromJson(final String json) {
+
+        String arrayPrefix = "\"blocks\": [";
+        int startIndex = json.indexOf(arrayPrefix);
         int endIndex = json.lastIndexOf(']');
         if (startIndex == -1 || endIndex == -1) {
             return null;
         }
 
-        String blockNumberStr = json.substring(startIndex+1,endIndex).trim();
+        String[] blockNumbers = json.substring(startIndex+arrayPrefix.length()+1,endIndex).trim().split(",");
+
         try {
-            return Integer.parseInt(blockNumberStr);
+            int[] result = new int[blockNumbers.length];
+            int index = 0;
+            for (String blockNumber: blockNumbers) {
+                result[index++] = Integer.parseInt(blockNumber.trim());
+            }
+            return result;
         } catch(NumberFormatException e) {
             if (log.isDebugEnabled()) {
                 log.debug("Could not parse JSON (block numbers)");
