@@ -132,15 +132,15 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
             // Index (or refresh) node's currency
             Currency currency = injector.getInstance(RegistryService.class).indexCurrencyFromPeer(peer, true);
 
-            // Index blocks (and listen if new block appear)
-            injector.getInstance(BlockchainService.class)
-                    .indexLastBlocks(peer)
-                    .listenAndIndexNewBlock(peer);
-
             // Add access to currency index
             injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
                     currency.getCurrencyName(),
                     BlockchainService.BLOCK_TYPE);
+
+            // Index blocks (and listen if new block appear)
+            injector.getInstance(BlockchainService.class)
+                    .indexLastBlocks(peer)
+                    .listenAndIndexNewBlock(peer);
         }
 
         if (pluginSettings.enableDataSync()) {
