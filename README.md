@@ -7,11 +7,11 @@ duniter4j is a Java Client API for [Duniter](http://duniter.org).
 
 duniter4j has four main components :
 
- - shared: common classes
+ - duniter4j-core-shared: common classes
  
- - core-client: a Client API to access to a Duniter network.
+ - duniter4j-core-client: a Client API to access to a Duniter network.
    
- - elasticsearch: a ES plugin, to store blockchain, registry, market and more.
+ - duniter4j-elasticsearch: a ES plugin, to store blockchain, registry, market and more.
     
 
 ## Install as ES plugin
@@ -40,11 +40,11 @@ sudo apt-get install openjdk-8-jre
  Download lastest release of ElasticSearch
  
 ### Install ElasticSearch plugins
- 
+
 ```bash
    /bin/plugin install mapper-attachments
    
-   /bin/plugin install https://github.com/duniter/duniter4j/releases/download/0.2.0/duniter4j-elasticsearch-0.2.0.zip
+   /bin/plugin install https://github.com/duniter/duniter4j/releases/download/0.3.4/duniter4j-elasticsearch-0.3.4.zip
 ```
 
 ### Install libsodium 
@@ -72,7 +72,7 @@ sudo apt-get install openjdk-8-jre
  
  - Install Libsodium (see on top) 
   
- - Download lastest release of file duniter4j-elasticsearch-X.Y-standalone.zip
+ - Download [lastest release](https://github.com/duniter/duniter4j/releases) of file duniter4j-elasticsearch-X.Y-standalone.zip
  
  - Unzip
  
@@ -140,32 +140,6 @@ $ ./elasticsearch
 [2016-09-24 00:17:11,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #41282 - hash [00000AAD73B0E76B870E6779CD7ACCCE175802D7867C13B5C8ED077F380548C5]
 ```
 
-Show help :
-
-```bash
-$ ./elasticseacrh --help
-NAME
-
-    start - Start Elasticsearch
-
-(...)
-
-OPTIONS
-
-    -h,--help                    Shows this message
-
-    -p,--pidfile <pidfile>       Creates a pid file in the specified path on start
-
-    -d,--daemonize               Starts Elasticsearch in the background
-
-    -Dproperty=value             Configures an Elasticsearch specific property, like -Dnetwork.host=127.0.0.1
-
-    --property=value             Configures an elasticsearch specific property, like --network.host 127.0.0.1
-    --property value
-
-    NOTE: The -d, -p, and -D arguments must appear before any --property arguments.
-
-```
 
 ## Use API (Developer)
 
@@ -199,20 +173,6 @@ curl -XGET 'http://localhost:9200/test_net/block/_search' -d '{
     },
     "_source": ["number", "dividend", "hash", "membersCount"]
  }'
-```
-        
- - Get blocks from 0 to 100 
-
-```bash
-curl -XGET 'http://localhost:9200/test_net/block/_search' -d '{
-    "query": {
-        "filtered" : {
-            "filter": {
-                "exists" : { "field" : "dividend" }
-            }
-        }
-    }
-}'
 ```
 
 

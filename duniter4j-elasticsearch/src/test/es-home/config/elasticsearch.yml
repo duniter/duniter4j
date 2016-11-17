@@ -21,7 +21,7 @@ cluster.name: duniter4j-elasticsearch-TEST
 #
 # Use a descriptive name for the node:
 #
-node.name: TEST
+# node.name: node-1
 #
 # Add custom attributes to the node:
 #
@@ -52,18 +52,18 @@ node.name: TEST
 #
 # Set the bind address to a specific IP (IPv4 or IPv6):
 #
-# network.host: 192.168.0.1
-network.host: 192.168.0.28
+# network.host: 192.168.233.1
 #
 # Set a custom port for HTTP:
 #
-# http.port: 9200
-
-http.port: 9203
+# http.port: 9200-9300
 
 http.cors.allow-origin: "/.*/"
 http.cors.enabled: true
 
+# Internal transport layer
+#
+# transport.tcp.port: 9210-9220
 #
 # For more information, see the documentation at:
 # <http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-network.html>
@@ -73,8 +73,8 @@ http.cors.enabled: true
 # Pass an initial list of hosts to perform discovery when new node is started:
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
-#discovery.zen.ping.unicast.hosts: ["192.168.0.5", "192.168.0.28"]
-discovery.zen.ping.unicast.hosts: ["127.0.0.1"]
+# discovery.zen.ping.unicast.hosts: ["host1", "host2"]
+#discovery.zen.ping.unicast.hosts: ["127.0.0.1", ""]
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of nodes / 2 + 1):
 #
@@ -100,53 +100,52 @@ discovery.zen.ping.unicast.hosts: ["127.0.0.1"]
 #
 # Require explicit names when deleting indices:
 #
-action.destructive_requires_name: true
+# action.destructive_requires_name: true
 
 security.manager.enabled: false
 
-
-#duniter.enabled: true
-#duniter.host: cgeek.fr
-#duniter.port: 9330
-
-duniter.host: 192.168.0.28
-duniter.port: 9604
-#duniter.host: 192.168.0.28
-#duniter.port: 9202
-
-changes.listenSource: currency,*/block,*/record
-
+#
+# ---------------------------------- Duniter4j ---------------------------------
+#
+# Disbale duniter4j plugin
+#
+# duniter.enabled: false
+#
+# Reset and reload all Duniter4j data at startup - DO SET to true in production
+#
+# duniter.indices.reload: true
+#
+# Default string analyzer
+#
 duniter.string.analyzer: french
-
-#duniter.indices.reload: true
-
-# Should synchronize node blockchain ?
-#duniter.blockchain.sync.enable: true
+#
+# Enabling node blockchain synchronization
+#
 duniter.blockchain.sync.enable: true
-
-duniter.security.enable: true
-
-# Should synchronize data using P2P
-duniter.data.sync.enable: false
-duniter.data.sync.host: data.le-sou.org
-duniter.data.sync.port: 80
-#TODO duniter.network.timeout:
-
-# TODO : implement this option (check if same cluster)
-#duniter.data.sync.checkClusterName=false
-
-#duniter.dev.enable: true
-
-#duniter.keyring.salt:
-#duniter.keyring.password:
-#duniter.keyring.pub:
-#duniter.keyring.sec:
-
-
-#script.groovy.sandbox.enabled: true
-
+#
+# Duniter node to synchronize
+#
+duniter.host: cgeek.fr
+duniter.port: 9330
+#
+# ---------------------------------- Duniter4j security -------------------------
+#
+# Enable security, to disable HTTP access to the default ES admin API
+#
+duniter.security.enable: false
+#
 # Security token prefix (default: 'duniter-')
-#duniter.auth.token.prefix: duniter-
-
+#
+# duniter.auth.token.prefix: duniter-
+#
 # Token validity duration, in seconds (default: 600)
-duniter.auth.tokenValidityDuration: 3600  # = 1hour
+#
+# duniter.auth.tokenValidityDuration: 3600  # = 1hour
+#
+# ---------------------------------- Duniter4j P2P sync -------------------------
+#
+# Should synchronize data using P2P
+#
+duniter.data.sync.enable: false
+#duniter.data.sync.host: data.duniter.fr
+#duniter.data.sync.port: 80

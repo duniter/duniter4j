@@ -1,26 +1,16 @@
 #!/bin/sh
 
-curl -XPOST "http://data.duniter.fr/market/record/_search?pretty&scroll=1m" -d'
+curl -XPOST "http://data.duniter.fr/market/comment/_search?pretty" -d'
 {
   "query": {
-        
         "bool":{
-            "should": {
-                "range":{
-                    "time":{
-                        "gte":0
-                    }
-                }
-            },
             "filter": [
                 {"term":{
-                        "currency":"sou"
+                        "record":"AVbieTIAup9uzWgKipsC"
                     }
-                }                
+                }
             ]
         }
-  },
-  "from":0,
-  "size":100
+  }
 }'
 
