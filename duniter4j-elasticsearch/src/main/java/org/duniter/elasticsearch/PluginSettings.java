@@ -241,6 +241,34 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.data.sync.port", 80);
     }
 
+    public String getMailSmtpHost()  {
+        return settings.get("duniter.mail.smtp.host", "localhost");
+    }
+
+    public int getMailSmtpPort()  {
+        return settings.getAsInt("duniter.mail.smtp.port", 25);
+    }
+
+    public String getMailSmtpUsername()  {
+        return settings.get("duniter.mail.smtp.username");
+    }
+
+    public String getMailSmtpPassword()  {
+        return settings.get("duniter.mail.smtp.password");
+    }
+
+    public String getMailAdmin()  {
+        return settings.get("duniter.mail.admin");
+    }
+
+    public String getMailFrom()  {
+        return settings.get("duniter.mail.from", "no-reply@duniter.fr");
+    }
+
+    public String getMailSubjectPrefix()  {
+        return settings.get("duniter.mail.subject.prefix", "[Duniter4j ES]");
+    }
+
     /* protected methods */
 
     protected void initI18n() throws IOException {

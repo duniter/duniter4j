@@ -30,6 +30,7 @@ import org.duniter.core.client.service.elasticsearch.CurrencyRegistryRemoteServi
 import org.duniter.core.client.service.local.CurrencyService;
 import org.duniter.core.client.service.local.PeerService;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.service.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,6 +138,10 @@ public class ServiceLocator implements Closeable {
 
     public CurrencyRegistryRemoteService getCurrencyRegistryRemoteService() {
         return getBean(CurrencyRegistryRemoteService.class);
+    }
+
+    public MailService getMaiLService() {
+        return getBean(MailService.class);
     }
 
     public <S extends Bean> S getBean(Class<S> clazz) {

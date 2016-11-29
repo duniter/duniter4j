@@ -29,6 +29,7 @@ import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.service.MailService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
@@ -54,7 +55,8 @@ public class UserService extends AbstractService {
     @Inject
     public UserService(Client client,
                        PluginSettings settings,
-                       CryptoService cryptoService) {
+                       CryptoService cryptoService,
+                       MailService mailService) {
         super("gchange." + INDEX, client, settings,cryptoService);
     }
 

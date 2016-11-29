@@ -121,7 +121,7 @@ duniter.string.analyzer: french
 #
 # Enabling node blockchain synchronization
 #
-duniter.blockchain.sync.enable: true
+duniter.blockchain.sync.enable: false
 #
 # Duniter node to synchronize
 #
@@ -130,6 +130,9 @@ duniter.port: 9330
 #
 # ---------------------------------- Duniter4j security -------------------------
 #
+duniter.keyring.salt: abc
+duniter.keyring.password: def
+
 # Enable security, to disable HTTP access to the default ES admin API
 #
 duniter.security.enable: false
@@ -149,3 +152,24 @@ duniter.security.enable: false
 duniter.data.sync.enable: false
 #duniter.data.sync.host: data.duniter.fr
 #duniter.data.sync.port: 80
+
+# ---------------------------------- Duniter4j SMTP server -------------------------
+#
+# SMTP server configuration (host and port)
+#
+#duniter.mail.smtp.host: localhost
+#duniter.mail.smtp.port: 25
+#
+# Mail 'from' address
+#
+#duniter.mail.from: no-reply@domain.com
+duniter.mail.from: root@EIS-DEV
+#
+# Mail: admin address
+#
+#duniter.mail.admin: user@domain.com
+duniter.mail.admin: blavenie@EIS-DEV
+#
+# Mail subject prefix
+#
+#duniter.mail.subject.prefix: [Duniter4j ES]

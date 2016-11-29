@@ -27,8 +27,12 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.action.security.RestSecurityController;
 import org.duniter.elasticsearch.service.*;
+import org.duniter.elasticsearch.service.event.Event;
+import org.duniter.elasticsearch.service.event.EventCodes;
+import org.duniter.elasticsearch.service.event.EventService;
 import org.duniter.elasticsearch.service.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -47,13 +51,17 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
     private final ThreadPool threadPool;
     private final Injector injector;
     private final static ESLogger logger = Loggers.getLogger("node");
+    private final Client client;
+    private final String clusterName;
 
     @Inject
-    public DuniterNode(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
+    public DuniterNode(Client client, Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
         super(settings);
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
         this.injector = injector;
+        this.client = client;
+        this.clusterName = settings.get("cluster.name");
     }
 
     @Override
@@ -66,6 +74,16 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
                 synchronize();
             }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
         }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+
+        // When started
+        threadPool.scheduleOnStarted(() -> {
+            // Notify admin
+            injector.getInstance(EventService.class)
+                    .notifyAdmin(new Event(
+                            Event.EventType.INFO,
+                            EventCodes.NODE_STARTED.name(),
+                            new String[]{clusterName}));
+        });
     }
 
     @Override
@@ -104,6 +122,11 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
                     .deleteIndex()
                     .createIndexIfNotExists();
 
+            injector.getInstance(EventService.class)
+                    .deleteIndex()
+                    .createIndexIfNotExists();
+
+
             if (logger.isInfoEnabled()) {
                 logger.info("Reloading all Duniter indices... [OK]");
             }
@@ -117,6 +140,7 @@ public class DuniterNode extends AbstractLifecycleComponent<DuniterNode> {
             injector.getInstance(MessageService.class).createIndexIfNotExists();
             injector.getInstance(UserService.class).createIndexIfNotExists();
             injector.getInstance(HistoryService.class).createIndexIfNotExists();
+            injector.getInstance(EventService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking Duniter indices... [OK]");

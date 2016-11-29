@@ -40,6 +40,8 @@ import org.duniter.core.client.service.local.PeerServiceImpl;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.Ed25519CryptoServiceImpl;
+import org.duniter.core.service.MailService;
+import org.duniter.core.service.MailServiceImpl;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Singleton;
@@ -90,6 +92,7 @@ public class ServiceLocator
                 .bind(WotRemoteService.class, WotRemoteServiceImpl.class)
                 .bind(TransactionRemoteService.class, TransactionRemoteServiceImpl.class)
                 .bind(CryptoService.class, Ed25519CryptoServiceImpl.class)
+                .bind(MailService.class, MailServiceImpl.class)
                 .bind(PeerService.class, PeerServiceImpl.class)
                 .bind(CurrencyService.class, CurrencyServiceImpl.class)
                 .bind(HttpService.class, HttpServiceImpl.class)
