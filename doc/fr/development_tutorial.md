@@ -7,16 +7,16 @@ A la fin de ce tutoriel, vous serez donc *capable de modifier le logiciel*.
 
 ## Rappel d'architecture
 
-Le projet Duniter4j est composé de 3 sous-modules :
+Le projet Duniter4j est composé de plusieurs sous-modules :
 
  - `duniter4j-core-shared`: Classes utilitaires Java. Réutilisable dans d'autres projets Java autour de Duniter.
  
  - `duniter4j-core-client`: Ensemble de services Java permettant d'accéder à un réseau Duniter (c'est à dire une API Java client Duniter) . Cette partie est **réutilisable dans d'autres applications Java**.
    
- - `duniter4j-elasticsearch`: Il s'agit d'un plugin ElasticSearch, qui implémente : 
-  * l'API ES (indexation de blockchain);
-  * l'API Cesium+ (gestion de profils, des messages privées);
-  * l'API GChange (annonces, annuaire des profesionnels). Note : cette partie sera pas la suite sortie dans un autre plugin/projet. 
+ - `duniter4j-es-*`: Les plugins ElasticSearch, qui implémentent : 
+  * `duniter4j-es-core`: Indexation de BlockChain  Duniter (ESA ou ES API);
+  * `duniter4j-es-user`: Indexation de données utilisateurs (profils, des messages privées, paramètres chiffrés) (ESUA ou ES USER API);
+  * `duniter4j-es-gchange`: Indexation d'annonces, registre des profesionnels (GChange API ). Note : cette partie sera pas la suite sortie dans un autre projet. 
 
 ## Niveau I : récupérer le code source
 
@@ -141,7 +141,7 @@ Ce troisième niveau permet de découvrir les quelques commandes que vous utilis
 
 ### Configurer le projet
 
-La configuration utilisée pour le développement est visible dans le fichier : `/duniter4j-elasticsearch/src/test/es-home/config/elasticsearch.yml`
+La configuration utilisée pour le développement est visible dans le fichier : `/duniter4j-es-assembly/src/test/es-home/config/elasticsearch.yml`
 
 #### Configuration du noeud Duniter
 
@@ -190,20 +190,22 @@ mvn install
 Si tout c'est bien passé, vous devriez obtenir quelque chose qui ressemble à cela : 
 ```bash
 (...)
-[INFO] Building zip: /home/user1/git/duniter/duniter4j/duniter4j-elasticsearch/target/duniter4j-elasticsearch-0.3.5-SNAPSHOT-standalone.zip
+[INFO] Building zip: /home/eis/git/duniter/duniter4j/duniter4j-es-assembly/target/duniter4j-es-0.3.5-SNAPSHOT-standalone.zip
 [INFO] 
-[INFO] --- maven-install-plugin:2.4:install (default-install) @ duniter4j-elasticsearch ---
-[INFO] Installing /home/user1/git/duniter/duniter4j/duniter4j-elasticsearch/target/duniter4j-elasticsearch-0.3.5-SNAPSHOT.jar to /home/user1/.m2/repository/org/duniter/duniter4j-elasticsearch/0.3.5-SNAPSHOT/duniter4j-elasticsearch-0.3.5-SNAPSHOT.jar
-[INFO] Installing /home/user1/git/duniter/duniter4j/duniter4j-elasticsearch/pom.xml to /home/eis/.m2/repository/org/duniter/duniter4j-elasticsearch/0.3.5-SNAPSHOT/duniter4j-elasticsearch-0.3.5-SNAPSHOT.pom
-[INFO] Installing /home/user1/git/duniter/duniter4j/duniter4j-elasticsearch/target/duniter4j-elasticsearch-0.3.5-SNAPSHOT.zip to /home/user1/.m2/repository/org/duniter/duniter4j-elasticsearch/0.3.5-SNAPSHOT/duniter4j-elasticsearch-0.3.5-SNAPSHOT.zip
-[INFO] Installing /home/user1/git/duniter/duniter4j/duniter4j-elasticsearch/target/duniter4j-elasticsearch-0.3.5-SNAPSHOT-standalone.zip to /home/user1/.m2/repository/org/duniter/duniter4j-elasticsearch/0.3.5-SNAPSHOT/duniter4j-elasticsearch-0.3.5-SNAPSHOT-standalone.zip
+[INFO] --- maven-install-plugin:2.4:install (default-install) @ duniter4j-es-assembly ---
+[INFO] Installing /home/eis/git/duniter/duniter4j/duniter4j-es-assembly/pom.xml to /home/eis/.m2/repository/org/duniter/duniter4j-es-assembly/0.3.5-SNAPSHOT/duniter4j-es-assembly-0.3.5-SNAPSHOT.pom
+[INFO] Installing /home/eis/git/duniter/duniter4j/duniter4j-es-assembly/target/duniter4j-es-0.3.5-SNAPSHOT-standalone.zip to /home/eis/.m2/repository/org/duniter/duniter4j-es-assembly/0.3.5-SNAPSHOT/duniter4j-es-assembly-0.3.5-SNAPSHOT-standalone.zip
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary:
 [INFO] 
-[INFO] Duniter4j : a Duniter Java Client API .............. SUCCESS [  0.611 s]
-[INFO] Duniter4j :: Core Shared ........................... SUCCESS [ 11.141 s]
-[INFO] Duniter4j :: Core Client API ....................... SUCCESS [ 13.635 s]
-[INFO] Duniter4j :: ElasticSearch Plugin .................. SUCCESS [ 23.081 s]
+[INFO] Duniter4j : a Duniter Java Client API ............. SUCCESS [0.476s]
+[INFO] Duniter4j :: Core Shared .......................... SUCCESS [4.152s]
+[INFO] Duniter4j :: Core Client API ...................... SUCCESS [5.633s]
+[INFO] Duniter4j :: ElasticSearch Core plugin ............ SUCCESS [8.954s]
+[INFO] Duniter4j :: ElasticSearch User plugin ............ SUCCESS [1.039s]
+[INFO] Duniter4j :: ElasticSearch GChange plugin ......... SUCCESS [0.804s]
+[INFO] Duniter4j :: ElasticSearch Assembly ............... SUCCESS [4.747s]
+
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
@@ -226,12 +228,12 @@ Cela permet une compilation plus rapide.
  
 ### Lancer un noeud ElasticSearch
 
-Il ne vous reste plus qu'à lancer un noeud local ElasticSearch, intégrant le plugin Duniter4j.
+Il ne vous reste plus qu'à lancer un noeud local ElasticSearch, intégrant les plugins Duniter4j.
 
 Lancez la commande suivante : 
 
 ```bash
-mvn install -Prun -pl duniter4j-elasticsearch
+mvn install -Prun -pl duniter4j-es-assembly
 ```
 
 Vous devriez avoir maintenant :
@@ -284,7 +286,7 @@ http.port: 9200   <-- Remplacez par un port libre de votre machine (plage 9200-9
 
 Ouvrir votre IDE, et ouvrir le projet Duniter4j.
 
-Dans le répertoire `duniter4j-elasticsearch/src/main/java`, cherchez et répérez dans le code : 
+Dans le répertoire `duniter4j-es-core/src/main/java`, cherchez et répérez dans le code : 
 
 - les controlleurs REST : package `org.duniter.elasticsearch.rest`
 - les services d'indexation : package `org.duniter.elasticsearch.service`.

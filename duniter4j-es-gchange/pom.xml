@@ -33,7 +33,6 @@
       <groupId>org.duniter</groupId>
       <artifactId>duniter4j-es-user</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
 
     <!-- Elastic Search -->
