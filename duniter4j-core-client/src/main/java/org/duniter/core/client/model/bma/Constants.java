@@ -28,6 +28,8 @@ package org.duniter.core.client.model.bma;
 public interface Constants {
 
     interface Regex {
-        String CURRENCY_NAME = "[a-zA-Z_-]";
+        String USER_ID = "[A-Za-z0-9_-]+";
+        String CURRENCY_NAME = "[A-Za-z0-9_-]";
+        String PUBKEY = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
     }
 }

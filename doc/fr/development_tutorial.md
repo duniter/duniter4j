@@ -286,7 +286,7 @@ Ouvrir votre IDE, et ouvrir le projet Duniter4j.
 
 Dans le répertoire `duniter4j-elasticsearch/src/main/java`, cherchez et répérez dans le code : 
 
-- les controlleurs REST : package `org.duniter.elasticsearch.action`
+- les controlleurs REST : package `org.duniter.elasticsearch.rest`
 - les services d'indexation : package `org.duniter.elasticsearch.service`.
   * Il existe un service d'indexation par type de stockage. Par exemple : `BlockchainService`, `UserService`, etc.
 
