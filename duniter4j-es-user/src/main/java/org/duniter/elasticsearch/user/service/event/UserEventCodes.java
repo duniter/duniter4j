@@ -28,7 +28,6 @@ package org.duniter.elasticsearch.user.service.event;
 public enum UserEventCodes {
 
     NODE_STARTED,
-    CREATE_DOC,
-    UPDATE_DOC,
-    COMMENT_DOC
+    CREATE_DOC
+
 }

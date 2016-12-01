@@ -38,6 +38,7 @@ import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
+import org.nuiton.i18n.I18n;
 
 /**
  * Created by blavenie on 17/06/16.
@@ -77,7 +78,8 @@ public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticse
                     .notifyAdmin(new UserEvent(
                             UserEvent.EventType.INFO,
                             UserEventCodes.NODE_STARTED.name(),
-                            new String[]{clusterName}));
+                            I18n.n("duniter.event.NODE_STARTED"),
+                            clusterName));
         });
     }
 

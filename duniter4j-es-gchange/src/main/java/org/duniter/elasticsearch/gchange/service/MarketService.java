@@ -25,19 +25,19 @@ package org.duniter.elasticsearch.gchange.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Joiner;
 import com.google.gson.JsonSyntaxException;
-import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.elasticsearch.RecordComment;
 import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.util.StringUtils;
-import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.gchange.PluginSettings;
+import org.duniter.elasticsearch.gchange.model.MarketRecord;
+import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.user.service.event.UserEvent;
-import org.duniter.elasticsearch.user.service.event.UserEventCodes;
+import org.duniter.elasticsearch.user.service.event.UserEventLink;
 import org.duniter.elasticsearch.user.service.event.UserEventService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -54,9 +54,10 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
+import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.util.Map;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -171,19 +172,32 @@ public class MarketService extends AbstractService {
     public String indexCommentFromJson(String json) {
         JsonNode actualObj = readAndVerifyIssuerSignature(json);
         String issuer = getMandatoryField(actualObj, RecordComment.PROPERTY_ISSUER).asText();
-        String recordId = getMandatoryField(actualObj, RecordComment.PROPERTY_RECORD).asText();
-        String recordIssuer = getRecordIssuerById(recordId);
 
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a %s from issuer [%s]", RECORD_COMMENT_TYPE, issuer.substring(0, 8)));
         }
         String commentId = indexDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json);
 
-        // Notify record issuer
-        if (!issuer.equals(recordIssuer)) {
-            userEventService.notifyUser(recordIssuer,
-                    new UserEvent(UserEvent.EventType.INFO, /*TODO*/ "NEW_COMMENT"));
+        // Notification
+        {
+            // Notify issuer of record (is not same as comment writer)
+            String recordId = getMandatoryField(actualObj, RecordComment.PROPERTY_RECORD).asText();
+            Map<String, Object> recordFields = getRecordFieldsById(recordId, MarketRecord.PROPERTY_TITLE, MarketRecord.PROPERTY_ISSUER);
+            String recordIssuer = recordFields.get(MarketRecord.PROPERTY_ISSUER).toString();
+            String recordTitle = recordFields.get(MarketRecord.PROPERTY_TITLE).toString();
+            if (!issuer.equals(recordIssuer)) {
+                userEventService.notifyUser(recordIssuer,
+                        new UserEvent(UserEvent.EventType.INFO,
+                                GchangeEventCodes.NEW_COMMENT.name(),
+                                new UserEventLink(INDEX, RECORD_TYPE, recordId),
+                                I18n.n("duniter.market.event.newComment"),
+                                issuer, recordTitle
+                        )
+                );
+            }
         }
+
+        return commentId;
     }
 
     public void updateCommentFromJson(String json, String id) {
@@ -410,44 +424,15 @@ public class MarketService extends AbstractService {
     }
 
     /**
-     * Retrieve a blockchain from its name
+     * Retrieve record field's values
      * @param recordId
+     * @param fieldNames
      * @return
      */
-    protected String getRecordIssuerById(String recordId) {
-        // Prepare request
-        SearchRequestBuilder searchRequest = client
-                .prepareSearch(INDEX)
-                .setTypes(RECORD_TYPE)
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+    protected Map<String, Object> getRecordFieldsById(String recordId, String... fieldNames) {
 
-        searchRequest.setQuery(QueryBuilders.matchQuery("_id", recordId));
-        searchRequest.addFields(Record.PROPERTY_ISSUER);
-
-        // Execute query
-        try {
-            SearchResponse response = searchRequest.execute().actionGet();
-
-            // Read query result
-            SearchHit[] searchHits = response.getHits().getHits();
-            for (SearchHit searchHit : searchHits) {
-                if (searchHit.source() != null) {
-                    JsonNode source = objectMapper.readTree(searchHit.source());
-                    return source.get(Record.PROPERTY_ISSUER).asText();
-                }
-                else {
-                    SearchHitField field = searchHit.getFields().get(Record.PROPERTY_ISSUER);
-                    return field.getValue().toString();
-                }
-            }
-        }
-        catch(SearchPhaseExecutionException | JsonSyntaxException | IOException | UnsupportedEncodingException e) {
-            // Failed or no item on index
-            if (logger.isDebugEnabled()) {
-                logger.error(String.format("Unable to retrieve issuer of record [%s]", recordId), e);
-            }
-        }
-
-        return null;
+        return getFieldsById(INDEX, RECORD_TYPE, recordId, fieldNames);
     }
+
+
 }

@@ -23,9 +23,8 @@ package org.duniter.elasticsearch.user;
  */
 
 import com.google.common.collect.Lists;
-import org.duniter.elasticsearch.PluginInit;
-import org.duniter.elasticsearch.user.service.ServiceModule;
 import org.duniter.elasticsearch.user.rest.RestModule;
+import org.duniter.elasticsearch.user.service.ServiceModule;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
@@ -47,7 +46,7 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
 
     @Override
     public String name() {
-        return "duniter.user";
+        return "duniter4j-es-user";
     }
 
     @Override

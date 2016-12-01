@@ -89,7 +89,7 @@ public class UserEventService extends AbstractService implements ChangeListener 
         if (!this.mailEnable && logger.isTraceEnabled()) {
             logger.trace("Mail disable");
         }
-        ChangeService.registerListener(this);
+        //ChangeService.registerListener(this);
     }
 
     /**
@@ -119,17 +119,6 @@ public class UserEventService extends AbstractService implements ChangeListener 
     }
 
     /**
-     * Notify a new document
-     */
-    public void notifyNewDocument(String index, String type, String id, String issuer) {
-
-        String docId = String.format("%s/%s/%s", index, type, id);
-        logger.info(String.format("Detected new document at: %s", docId));
-
-        notifyUser(issuer, new UserEvent(UserEvent.EventType.INFO, UserEventCodes.CREATE_DOC.name(), new String[]{docId}));
-    }
-
-    /**
      * Notify a user
      */
     public void notifyUser(String recipient, UserEvent event) {
@@ -142,7 +131,7 @@ public class UserEventService extends AbstractService implements ChangeListener 
     @Override
     public void onChanges(String json) {
         // TODO get doc issuer
-        String issuer = nodePubkey;
+       /* String issuer = nodePubkey;
 
         ChangeEvent event = ChangeUtils.fromJson(objectMapper, json);
 
@@ -153,7 +142,7 @@ public class UserEventService extends AbstractService implements ChangeListener 
 
         if (event.getOperation() == ChangeEvent.Operation.CREATE) {
             notifyNewDocument(event.getIndex(), event.getType(), event.getId(), issuer);
-        }
+        }*/
 
     }
 
@@ -291,15 +280,34 @@ public class UserEventService extends AbstractService implements ChangeListener 
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // params
-                    .startObject("params")
-                    .field("type", "string")
+                    // link
+                    .startObject("link")
+                        .field("type", "nested")
+                        .field("dynamic", "false")
+                        .startObject("properties")
+                            .startObject("index")
+                            .field("type", "string")
+                            .field("index", "not_analyzed")
+                            .endObject()
+                            .startObject("type")
+                                .field("type", "string")
+                                .field("index", "not_analyzed")
+                            .endObject()
+                            .startObject("id")
+                                .field("type", "string")
+                                .field("index", "not_analyzed")
+                            .endObject()
+                        .endObject()
                     .endObject()
 
                     // message
                     .startObject("message")
                     .field("type", "string")
-                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // params
+                    .startObject("params")
+                    .field("type", "string")
                     .endObject()
 
                     .endObject()

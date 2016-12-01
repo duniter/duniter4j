@@ -284,6 +284,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     /* protected methods */
 
     protected void initI18n() throws IOException {
+        if (I18n.getDefaultLocale() != null) return; // already init
 
         // --------------------------------------------------------------------//
         // init i18n
@@ -307,6 +308,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
             logger.info(String.format("Starts i18n with locale [%s] at [%s]",
                     i18nLocale, i18nDirectory));
         }
+
         I18n.init(new UserI18nInitializer(
                         i18nDirectory, new DefaultI18nInitializer(getI18nBundleName())),
                 i18nLocale);

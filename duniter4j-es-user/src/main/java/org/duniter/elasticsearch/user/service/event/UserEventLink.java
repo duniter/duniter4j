@@ -1,8 +1,8 @@
-package org.duniter.elasticsearch.action.market;
+package org.duniter.elasticsearch.user.service.event;
 
 /*
  * #%L
- * duniter4j-elasticsearch-plugin
+ * Duniter4j :: ElasticSearch Plugin
  * %%
  * Copyright (C) 2014 - 2016 EIS
  * %%
@@ -22,17 +22,36 @@ package org.duniter.elasticsearch.action.market;
  * #L%
  */
 
-import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.service.MarketService;
-import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.rest.RestRequest;
+import org.nuiton.i18n.I18n;
 
-public class RestMarketCategoryAction {
+import java.util.Locale;
 
-    @Inject
-    public RestMarketCategoryAction(RestSecurityController securityController) {
-        // Add security rule for category
-        securityController.allowIndexType(RestRequest.Method.GET, MarketService.INDEX, MarketService.RECORD_CATEGORY_TYPE);
+/**
+ * Created by blavenie on 29/11/16.
+ */
+public class UserEventLink {
+
+    private final String index;
+
+    private final String type;
+
+    private final String id;
+
+    public UserEventLink(String index, String type, String id) {
+        this.index = index;
+        this.type = type;
+        this.id = id;
     }
 
+    public String getIndex() {
+        return index;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getId() {
+        return id;
+    }
 }

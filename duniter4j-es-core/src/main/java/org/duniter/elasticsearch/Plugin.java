@@ -49,7 +49,7 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
 
     @Override
     public String name() {
-        return "duniter";
+        return "duniter4j-es-core";
     }
 
     @Override

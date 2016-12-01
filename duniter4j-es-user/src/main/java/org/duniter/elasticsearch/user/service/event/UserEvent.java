@@ -31,27 +31,32 @@ import java.util.Locale;
  */
 public class UserEvent {
 
-    private EventType type;
+    private final EventType type;
 
-    private String code;
+    private final String code;
 
-    private long time;
+    private final long time;
 
-    private String message;
+    private final String message;
 
+    private final String[] params;
 
-    private String[] params;
+    private final UserEventLink link;
 
     public UserEvent(EventType type, String code) {
-        this(type, code, null);
+        this(type, code, null, "duniter.event." + code, null);
     }
 
-    public UserEvent(EventType type, String code, String[] params) {
+    public UserEvent(EventType type, String code, String message, String... params) {
+        this(type, code, null, message, params);
+    }
+
+    public UserEvent(EventType type, String code, UserEventLink link, String message, String... params) {
         this.type = type;
         this.code = code;
         this.params = params;
-        // default
-        this.message = I18n.t("duniter4j.event." + code, params);
+        this.link = link;
+        this.message = message;
         this.time = Math.round(1d * System.currentTimeMillis() / 1000);
     }
 
@@ -59,16 +64,8 @@ public class UserEvent {
         return type;
     }
 
-    public void setType(EventType type) {
-        this.type = type;
-    }
-
     public String getCode() {
         return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
     }
 
     public String getMessage() {
@@ -76,19 +73,11 @@ public class UserEvent {
     }
 
     public String getLocalizedMessage(Locale locale) {
-        return I18n.l(locale, "duniter4j.event." + code, params);
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
+        return I18n.l(locale, message, params);
     }
 
     public String[] getParams() {
         return params;
-    }
-
-    public void setParams(String[] params) {
-        this.params = params;
     }
 
     public long getTime() {

@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonSyntaxException;
@@ -45,6 +46,10 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRespon
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -52,9 +57,13 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.nuiton.i18n.I18n;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -224,6 +233,54 @@ public abstract class AbstractService implements Bean {
             throw new InvalidFormatException(String.format("Invalid format. Expected field '%s'", fieldName));
         }
         return value;
+    }
+
+    /**
+     * Retrieve some field from a document id
+     * @param docId
+     * @return
+     */
+    protected Map<String, Object> getFieldsById(String index, String type, String docId, String... fieldNames) {
+        // Prepare request
+        SearchRequestBuilder searchRequest = client
+                .prepareSearch(index)
+                .setTypes(type)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+
+        searchRequest.setQuery(QueryBuilders.matchQuery("_id", docId));
+        searchRequest.addFields(fieldNames);
+
+        // Execute query
+        try {
+            SearchResponse response = searchRequest.execute().actionGet();
+
+            Map<String, Object> result = new HashMap<>();
+            // Read query result
+            SearchHit[] searchHits = response.getHits().getHits();
+            for (SearchHit searchHit : searchHits) {
+                if (searchHit.source() != null) {
+                    JsonNode source = objectMapper.readTree(searchHit.source());
+                    for(String fieldName: fieldNames) {
+                        result.put(fieldName, getMandatoryField(source, fieldName));
+                    }
+
+                }
+                else {
+                    for(String fieldName: fieldNames) {
+                        result.put(fieldName, searchHit.getFields().get(fieldName).getValue());
+                    }
+                }
+                break;
+            }
+            return result;
+        }
+        catch(SearchPhaseExecutionException | JsonSyntaxException | IOException e) {
+            // Failed or no item on index
+            throw new TechnicalException(String.format("[%s/%s] Unable to retrieve fields [%s] for document [%s]",
+                    index, type,
+                    Joiner.on(',').join(fieldNames).toString(),
+                    docId), e);
+        }
     }
 
     protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {
