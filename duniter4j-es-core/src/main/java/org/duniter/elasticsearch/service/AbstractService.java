@@ -128,14 +128,16 @@ public abstract class AbstractService implements Bean {
             logger.debug(String.format("Indexing a %s from issuer [%s]", type, issuer.substring(0, 8)));
         }
 
+        return indexDocumentFromJson(index, type, json);
+    }
+
+    protected String indexDocumentFromJson(String index, String type, String json) {
         IndexResponse response = client.prepareIndex(index, type)
                 .setSource(json)
                 .setRefresh(false)
                 .execute().actionGet();
-        String id = response.getId();
-        return id;
+        return response.getId();
     }
-
     protected void checkIssuerAndUpdateDocumentFromJson(String index, String type, String json, String id) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(json);
@@ -174,8 +176,8 @@ public abstract class AbstractService implements Bean {
                     || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
                 throw new InvalidFormatException(String.format("Invalid record JSON format. Required fields [%s,%s]", Record.PROPERTY_ISSUER, Record.PROPERTY_SIGNATURE));
             }
-            String issuer = actualObj.get(Record.PROPERTY_ISSUER).asText();
-            String signature = actualObj.get(Record.PROPERTY_SIGNATURE).asText();
+            String issuer = getMandatoryField(actualObj, Record.PROPERTY_ISSUER).asText();
+            String signature = getMandatoryField(actualObj, Record.PROPERTY_SIGNATURE).asText();
 
             String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
                     .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
@@ -214,6 +216,14 @@ public abstract class AbstractService implements Bean {
 
     protected String getIssuer(JsonNode actualObj) {
         return  actualObj.get(Record.PROPERTY_ISSUER).asText();
+    }
+
+    protected JsonNode getMandatoryField(JsonNode actualObj, String fieldName) {
+        JsonNode value = actualObj.get(fieldName);
+        if (value.isMissingNode()) {
+            throw new InvalidFormatException(String.format("Invalid format. Expected field '%s'", fieldName));
+        }
+        return value;
     }
 
     protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {

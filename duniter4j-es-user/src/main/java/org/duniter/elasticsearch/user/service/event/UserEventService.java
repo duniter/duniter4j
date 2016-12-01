@@ -75,6 +75,7 @@ public class UserEventService extends AbstractService implements ChangeListener 
     private final ThreadPool threadPool;
     public final KeyPair nodeKeyPair;
     public final String nodePubkey;
+    public final boolean mailEnable;
 
     @Inject
     public UserEventService(Client client, PluginSettings settings, CryptoService cryptoService, MailService mailService,
@@ -84,6 +85,10 @@ public class UserEventService extends AbstractService implements ChangeListener 
         this.threadPool = threadPool;
         this.nodeKeyPair = getNodeKeyPairOrNull(pluginSettings);
         this.nodePubkey = getNodePubKey(this.nodeKeyPair);
+        this.mailEnable = pluginSettings.getMailEnable();
+        if (!this.mailEnable && logger.isTraceEnabled()) {
+            logger.trace("Mail disable");
+        }
         ChangeService.registerListener(this);
     }
 
@@ -321,6 +326,8 @@ public class UserEventService extends AbstractService implements ChangeListener 
      * Send email
      */
     private void sendEmail(String recipients, String subject, String textContent) {
+        if (!this.mailEnable) return;
+
         String smtpHost =  pluginSettings.getMailSmtpHost();
         int smtpPort =  pluginSettings.getMailSmtpPort();
         String smtpUsername =  pluginSettings.getMailSmtpUsername();
@@ -331,12 +338,7 @@ public class UserEventService extends AbstractService implements ChangeListener 
             mailService.sendTextEmail(smtpHost, smtpPort, smtpUsername, smtpPassword, from, recipients, subject, textContent);
         }
         catch(TechnicalException e) {
-            if (logger.isDebugEnabled()) {
-                logger.error(String.format("Error while trying to send email: %s", e.getMessage()), e);
-            }
-            else {
-                logger.error(String.format("Error while trying to send email: %s", e.getMessage()));
-            }
+            logger.error(String.format("Could not send email: %s", e.getMessage())/*, e*/);
         }
     }
 

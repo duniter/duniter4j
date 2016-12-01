@@ -52,7 +52,7 @@ cluster.name: duniter4j-elasticsearch-TEST
 #
 # Set the bind address to a specific IP (IPv4 or IPv6):
 #
-# network.host: 192.168.233.1
+#network.host: 192.168.233.118
 #
 # Set a custom port for HTTP:
 #
@@ -157,6 +157,7 @@ duniter.data.sync.enable: false
 #
 # SMTP server configuration (host and port)
 #
+duniter.mail.enable: false
 #duniter.mail.smtp.host: localhost
 #duniter.mail.smtp.port: 25
 #
@@ -174,5 +175,5 @@ duniter.mail.admin: blavenie@EIS-DEV
 #
 #duniter.mail.subject.prefix: [Duniter4j ES]
 
-duniter.changes.listenSource: */block
+duniter.changes.listenSource: '*/block'
 duniter.ws.port: 9400

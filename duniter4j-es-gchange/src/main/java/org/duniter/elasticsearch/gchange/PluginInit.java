@@ -47,8 +47,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     private final ThreadPool threadPool;
     private final Injector injector;
     private final static ESLogger logger = Loggers.getLogger("gchange");
-    private final Client client;
-    private final String clusterName;
 
     @Inject
     public PluginInit(Client client, Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
@@ -56,8 +54,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
         this.injector = injector;
-        this.client = client;
-        this.clusterName = settings.get("cluster.name");
     }
 
     @Override
@@ -70,16 +66,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                 synchronize();
             }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
         }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
-
-        // When started
-        threadPool.scheduleOnStarted(() -> {
-            // Notify admin
-            injector.getInstance(UserEventService.class)
-                    .notifyAdmin(new UserEvent(
-                            UserEvent.EventType.INFO,
-                            UserEventCodes.NODE_STARTED.name(),
-                            new String[]{clusterName}));
-        });
     }
 
     @Override

@@ -241,6 +241,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.data.sync.port", 80);
     }
 
+    public boolean getMailEnable() {
+        return settings.getAsBoolean("duniter.mail.enable", Boolean.TRUE);
+    }
+
     public String getMailSmtpHost()  {
         return settings.get("duniter.mail.smtp.host", "localhost");
     }
@@ -269,12 +273,12 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.get("duniter.mail.subject.prefix", "[Duniter4j ES]");
     }
 
-    public int getWebSocketPort()  {
-        return settings.getAsInt("duniter.ws.port", 9200);
-    }
-
     public String getWebSocketHost()  {
         return settings.get("network.host", "locahost");
+    }
+
+    public int getWebSocketPort()  {
+        return settings.getAsInt("duniter.ws.port", 9200);
     }
 
     /* protected methods */

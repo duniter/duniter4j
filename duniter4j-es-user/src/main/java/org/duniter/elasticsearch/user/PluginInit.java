@@ -28,6 +28,8 @@ import org.duniter.elasticsearch.user.service.HistoryService;
 import org.duniter.elasticsearch.user.service.MessageService;
 import org.duniter.elasticsearch.user.service.SynchroService;
 import org.duniter.elasticsearch.user.service.UserService;
+import org.duniter.elasticsearch.user.service.event.UserEvent;
+import org.duniter.elasticsearch.user.service.event.UserEventCodes;
 import org.duniter.elasticsearch.user.service.event.UserEventService;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
@@ -46,6 +48,7 @@ public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticse
     private final ThreadPool threadPool;
     private final Injector injector;
     private final static ESLogger logger = Loggers.getLogger("node");
+    private final String clusterName;
 
     @Inject
     public PluginInit(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
@@ -53,6 +56,7 @@ public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticse
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
         this.injector = injector;
+        this.clusterName = settings.get("cluster.name");
     }
 
     @Override
@@ -66,6 +70,15 @@ public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticse
             }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
         }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
 
+        // When started
+        threadPool.scheduleOnStarted(() -> {
+            // Notify admin
+            injector.getInstance(UserEventService.class)
+                    .notifyAdmin(new UserEvent(
+                            UserEvent.EventType.INFO,
+                            UserEventCodes.NODE_STARTED.name(),
+                            new String[]{clusterName}));
+        });
     }
 
     @Override
