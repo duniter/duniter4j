@@ -31,6 +31,8 @@ import org.duniter.elasticsearch.user.service.UserService;
 import org.duniter.elasticsearch.user.service.event.UserEvent;
 import org.duniter.elasticsearch.user.service.event.UserEventCodes;
 import org.duniter.elasticsearch.user.service.event.UserEventService;
+import org.duniter.elasticsearch.user.websocket.WebsocketUserEventEndPoint;
+import org.duniter.elasticsearch.websocket.WebSocketServer;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -110,9 +112,6 @@ public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticse
             injector.getInstance(UserService.class)
                     .deleteIndex()
                     .createIndexIfNotExists();
-            injector.getInstance(UserEventService.class)
-                    .deleteIndex()
-                    .createIndexIfNotExists();
 
 
             if (logger.isInfoEnabled()) {
@@ -126,7 +125,6 @@ public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticse
             injector.getInstance(HistoryService.class).createIndexIfNotExists();
             injector.getInstance(UserService.class).createIndexIfNotExists();
             injector.getInstance(MessageService.class).createIndexIfNotExists();
-            injector.getInstance(UserEventService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking Duniter indices... [OK]");

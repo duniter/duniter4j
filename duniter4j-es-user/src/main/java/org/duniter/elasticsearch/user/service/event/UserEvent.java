@@ -84,6 +84,10 @@ public class UserEvent {
         return time;
     }
 
+    public UserEventLink getLink() {
+        return link;
+    }
+
     public enum EventType {
         INFO,
         WARN,

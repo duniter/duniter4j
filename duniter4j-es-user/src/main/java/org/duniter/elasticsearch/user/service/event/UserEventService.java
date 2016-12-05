@@ -57,7 +57,7 @@ import java.util.Map;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class UserEventService extends AbstractService implements ChangeListener {
+public class UserEventService extends AbstractService {
 
     public static final String INDEX = "user";
     public static final String EVENT_TYPE = "event";
@@ -89,7 +89,6 @@ public class UserEventService extends AbstractService implements ChangeListener 
         if (!this.mailEnable && logger.isTraceEnabled()) {
             logger.trace("Mail disable");
         }
-        //ChangeService.registerListener(this);
     }
 
     /**
@@ -128,87 +127,16 @@ public class UserEventService extends AbstractService implements ChangeListener 
         }, TimeValue.timeValueMillis(100));
     }
 
-    @Override
-    public void onChanges(String json) {
-        // TODO get doc issuer
-       /* String issuer = nodePubkey;
-
-        ChangeEvent event = ChangeUtils.fromJson(objectMapper, json);
-
-        // Skip event itself (avoid recursive call)
-        if (event.getIndex().equals(INDEX) && event.getType().equals(EVENT_TYPE)) {
-            return;
-        }
-
-        if (event.getOperation() == ChangeEvent.Operation.CREATE) {
-            notifyNewDocument(event.getIndex(), event.getType(), event.getId(), issuer);
-        }*/
-
-    }
-
-    @Override
-    public String getId() {
-        return "UserEventService";
-    }
-
-    /**
-     * Delete blockchain index, and all data
-     */
-    public UserEventService deleteIndex() {
-        deleteIndexIfExists(INDEX);
-        return this;
-    }
-
-    public boolean existsIndex() {
-        return super.existsIndex(INDEX);
-    }
-
-    /**
-     * Create index need for blockchain registry, if need
-     */
-    public UserEventService createIndexIfNotExists() {
-        try {
-            if (!existsIndex(INDEX)) {
-                createIndex();
-            }
-        }
-        catch(JsonProcessingException e) {
-            throw new TechnicalException(String.format("Error while creating index [%s]", INDEX));
-        }
-
-        return this;
-    }
-
-    /**
-     * Create index need for category registry
-     * @throws JsonProcessingException
-     */
-    public UserEventService createIndex() throws JsonProcessingException {
-        logger.info(String.format("Creating index [%s/%s]", INDEX, EVENT_TYPE));
-
-        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
-        Settings indexSettings = Settings.settingsBuilder()
-                .put("number_of_shards", 2)
-                .put("number_of_replicas", 1)
-                //.put("analyzer", createDefaultAnalyzer())
-                .build();
-        createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(EVENT_TYPE, createEventType());
-        createIndexRequestBuilder.execute().actionGet();
-
-        return this;
-    }
-
     public String indexEvent(String recipient, Locale locale, UserEvent event) {
         // Generate json
         String eventJson;
         if (StringUtils.isNotBlank(nodePubkey)) {
-            eventJson = toJson(nodePubkey, recipient, locale, event, null);
+            eventJson = UserEventUtils.toJson(nodePubkey, recipient, locale, event, null);
             String signature = cryptoService.sign(eventJson, nodeKeyPair.getSecKey());
-            eventJson = toJson(nodePubkey, recipient, locale, event, signature);
+            eventJson = UserEventUtils.toJson(nodePubkey, recipient, locale, event, signature);
         } else {
             // Node has not keyring : TODO no issuer ?
-            eventJson = toJson(recipient, recipient, locale, event, null);
+            eventJson = UserEventUtils.toJson(recipient, recipient, locale, event, null);
         }
 
         if (logger.isDebugEnabled()) {
@@ -246,7 +174,7 @@ public class UserEventService extends AbstractService implements ChangeListener 
 
     /* -- Internal methods -- */
 
-    public XContentBuilder createEventType() {
+    public static XContentBuilder createEventType() {
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(EVENT_TYPE)
                     .startObject("properties")
@@ -350,29 +278,7 @@ public class UserEventService extends AbstractService implements ChangeListener 
         }
     }
 
-    private String toJson(String issuer, String recipient, Locale locale, UserEvent event, String signature) {
-        try {
-            XContentBuilder eventObject = XContentFactory.jsonBuilder().startObject()
-                    .field("type", event.getType().name())
-                    .field("issuer", issuer) // TODO isuer = node pubkey
-                    .field("recipient", recipient)
-                    .field("time", event.getTime())
-                    .field("code", event.getCode())
-                    .field("message", event.getLocalizedMessage(locale));
-            if (CollectionUtils.isNotEmpty(event.getParams())) {
-                eventObject.array("params", event.getParams());
-            }
-            if (StringUtils.isNotBlank(signature)) {
-                eventObject.field("signature", signature);
-            }
-            eventObject.endObject();
-            return eventObject.string();
-        }
-        catch(IOException e) {
-            throw new TechnicalException(e);
-        }
 
-    }
 
     private KeyPair getNodeKeyPairOrNull(PluginSettings pluginSettings) {
 
@@ -402,6 +308,7 @@ public class UserEventService extends AbstractService implements ChangeListener 
         indexEvent(recipient, locale, event);
 
         // Send email to user
+        // TODO : group email by day ?
         if (StringUtils.isNotBlank(email)) {
             String subjectPrefix = pluginSettings.getMailSubjectPrefix();
             sendEmail(email,
@@ -410,7 +317,9 @@ public class UserEventService extends AbstractService implements ChangeListener 
         }
 
         for (UserEventListener listener: LISTENERS.values()) {
-            listener.onEvent(event);
+            if (recipient.equals(listener.getPubkey())) {
+                listener.onEvent(event);
+            }
         }
     }
 }

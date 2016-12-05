@@ -54,7 +54,7 @@ import java.io.IOException;
 public class ServiceLocator
         extends org.duniter.core.client.service.ServiceLocator
         {
-    private static final ESLogger logger = ESLoggerFactory.getLogger(ServiceLocator.class.getName());
+    private static final ESLogger logger = ESLoggerFactory.getLogger("duniter.service");
 
     private static BeanFactory beanFactory = null;
 

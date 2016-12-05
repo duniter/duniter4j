@@ -27,7 +27,7 @@ import org.duniter.elasticsearch.rest.RestModule;
 import org.duniter.elasticsearch.security.SecurityModule;
 import org.duniter.elasticsearch.service.ServiceModule;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.duniter.elasticsearch.websocket.WebsocketModule;
+import org.duniter.elasticsearch.websocket.WebSocketModule;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
@@ -66,7 +66,7 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
         }
         modules.add(new SecurityModule());
 
-        modules.add(new WebsocketModule());
+        modules.add(new WebSocketModule());
         modules.add(new RestModule());
 
         modules.add(new ServiceModule());

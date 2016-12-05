@@ -90,7 +90,7 @@
                         <configuration>
                             <attach>true</attach>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <finalName>${bundlePrefix}</finalName>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
                             <descriptors>
                                 <descriptor>
                                     ${basedir}/src/main/assembly/plugin.xml

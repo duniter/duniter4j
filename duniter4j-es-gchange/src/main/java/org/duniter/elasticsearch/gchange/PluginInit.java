@@ -49,7 +49,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     private final static ESLogger logger = Loggers.getLogger("gchange");
 
     @Inject
-    public PluginInit(Client client, Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
+    public PluginInit(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
         super(settings);
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;

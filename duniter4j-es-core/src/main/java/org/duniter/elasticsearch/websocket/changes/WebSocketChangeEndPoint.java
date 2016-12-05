@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.user.websocket;
+package org.duniter.elasticsearch.websocket.changes;
 
 /*
  * #%L
@@ -38,76 +38,45 @@ package org.duniter.elasticsearch.user.websocket;
     limitations under the License.
 */
 
-import org.duniter.core.client.model.bma.Constants;
-import org.duniter.core.util.StringUtils;
-import org.duniter.elasticsearch.user.service.event.UserEvent;
-import org.duniter.elasticsearch.user.service.event.UserEventListener;
-import org.duniter.elasticsearch.user.service.event.UserEventService;
-import org.duniter.elasticsearch.user.service.event.UserEventUtils;
+import org.duniter.elasticsearch.service.changes.ChangeListener;
+import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.websocket.WebSocketServer;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.nuiton.i18n.I18n;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
-import java.io.IOException;
-import java.util.Locale;
-import java.util.regex.Pattern;
 
-@ServerEndpoint(value = "/event/user/{pubkey}/{locale}")
-public class WebsocketUserEventEndPoint implements UserEventListener {
+@ServerEndpoint(value = "/_changes")
+public class WebSocketChangeEndPoint implements ChangeListener{
 
     public static class Init {
 
         @Inject
         public Init(WebSocketServer webSocketServer) {
-            webSocketServer.addEndPoint(WebsocketUserEventEndPoint.class);
+            webSocketServer.addEndPoint(WebSocketChangeEndPoint.class);
         }
     }
 
-    private static final String PATH_PARAM_PUBKEY = "pubkey";
-    private static final String PATH_PARAM_LOCALE = "locale";
-    private final static Pattern PUBKEY_PATTERN = Pattern.compile(Constants.Regex.PUBKEY);
-
-    private final ESLogger log = Loggers.getLogger("duniter.ws.user.event");
+    private final ESLogger log = Loggers.getLogger("duniter.ws.changes");
     private Session session;
-    private String pubkey;
-    private Locale locale;
 
     @OnOpen
     public void onOpen(Session session) {
+        log.debug("Connected ... " + session.getId());
         this.session = session;
-        this.pubkey = session.getPathParameters() != null ? session.getPathParameters().get(PATH_PARAM_PUBKEY) : null;
-        this.locale = new Locale(session.getPathParameters() != null ? session.getPathParameters().get(PATH_PARAM_LOCALE) : "fr");
-
-        if (StringUtils.isBlank(pubkey) || !PUBKEY_PATTERN.matcher(pubkey).matches()) {
-            try {
-                this.session.close(new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT, "Invalid pubkey"));
-            } catch (IOException e) {
-                // silent
-            }
-            return;
-        }
-
-        log.debug(I18n.t("duniter4j.ws.user.open", pubkey, session.getId(), locale.toString()));
-        UserEventService.registerListener(this);
+        ChangeService.registerListener(this);
     }
 
     @Override
-    public void onEvent(UserEvent event) {
-        session.getAsyncRemote().sendText(UserEventUtils.toJson(locale, event));
+    public void onChanges(String message) {
+        session.getAsyncRemote().sendText(message);
     }
 
     @Override
     public String getId() {
         return session == null ? null : session.getId();
-    }
-
-    @Override
-    public String getPubkey() {
-        return pubkey;
     }
 
     @OnMessage
@@ -118,7 +87,7 @@ public class WebsocketUserEventEndPoint implements UserEventListener {
     @OnClose
     public void onClose(CloseReason reason) {
         log.debug("Closing websocket: "+reason);
-        UserEventService.unregisterListener(this);
+        ChangeService.unregisterListener(this);
         this.session = null;
     }
 
@@ -126,5 +95,6 @@ public class WebsocketUserEventEndPoint implements UserEventListener {
     public void onError(Throwable t) {
         log.error("Error on websocket "+(session == null ? null : session.getId()), t);
     }
+
 
 }

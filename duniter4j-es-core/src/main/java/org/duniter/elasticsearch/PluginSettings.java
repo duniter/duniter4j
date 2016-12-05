@@ -281,10 +281,14 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.ws.port", 9200);
     }
 
+    public boolean getWebSocketEnable()  {
+        return settings.getAsBoolean("duniter.ws.enable", Boolean.TRUE);
+    }
+
     /* protected methods */
 
     protected void initI18n() throws IOException {
-        if (I18n.getDefaultLocale() != null) return; // already init
+        //if (I18n.getDefaultLocale() != null) return; // already init
 
         // --------------------------------------------------------------------//
         // init i18n

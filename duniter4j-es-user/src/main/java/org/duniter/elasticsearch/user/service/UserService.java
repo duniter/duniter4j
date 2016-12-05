@@ -25,12 +25,14 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.duniter.core.client.model.elasticsearch.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.MailService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.user.service.event.UserEventService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -91,6 +93,7 @@ public class UserService extends AbstractService {
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(PROFILE_TYPE, createProfileType());
         createIndexRequestBuilder.addMapping(SETTINGS_TYPE, createSettingsType());
+        createIndexRequestBuilder.addMapping(UserEventService.EVENT_TYPE, UserEventService.createEventType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -194,6 +197,12 @@ public class UserService extends AbstractService {
     }
 
 
+    public String getProfileTitle(String issuer) {
+
+        Object title = getFieldById(INDEX, PROFILE_TYPE, issuer, UserProfile.PROPERTY_TITLE);
+        if (title == null) return null;
+        return title.toString();
+    }
 
     /* -- Internal methods -- */
 

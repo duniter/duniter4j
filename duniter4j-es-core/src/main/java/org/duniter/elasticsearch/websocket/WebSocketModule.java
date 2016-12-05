@@ -38,53 +38,13 @@ package org.duniter.elasticsearch.websocket;
     limitations under the License.
 */
 
-import org.duniter.elasticsearch.service.changes.ChangeListener;
-import org.duniter.elasticsearch.service.changes.ChangeService;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.duniter.elasticsearch.websocket.changes.WebSocketChangeEndPoint;
+import org.elasticsearch.common.inject.AbstractModule;
 
-import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
-
-@ServerEndpoint(value = "/_changes")
-public class WebsocketChangeEndPoint implements ChangeListener{
-
-    private final ESLogger log = Loggers.getLogger(WebsocketChangeEndPoint.class);
-    private Session session;
-
-    @OnOpen
-    public void onOpen(Session session) {
-        log.info("Connected ... " + session.getId());
-        this.session = session;
-        ChangeService.registerListener(this);
-    }
-
+public class WebSocketModule extends AbstractModule {
     @Override
-    public void onChanges(String message) {
-        session.getAsyncRemote().sendText(message);
+    protected void configure() {
+        bind(WebSocketServer.class).asEagerSingleton();
+        bind(WebSocketChangeEndPoint.Init.class).asEagerSingleton();
     }
-
-    @Override
-    public String getId() {
-        return session == null ? null : session.getId();
-    }
-
-    @OnMessage
-    public void onMessage(String message) {
-        log.info("Received message: "+message);
-    }
-
-    @OnClose
-    public void onClose(CloseReason reason) {
-        log.info("Closing websocket: "+reason);
-        ChangeService.unregisterListener(this);
-        this.session = null;
-    }
-
-    @OnError
-    public void onError(Throwable t) {
-        log.error("Error on websocket "+(session == null ? null : session.getId()), t);
-    }
-
-
 }

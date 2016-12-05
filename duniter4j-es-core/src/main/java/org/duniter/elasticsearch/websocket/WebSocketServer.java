@@ -38,7 +38,10 @@ package org.duniter.elasticsearch.websocket;
     limitations under the License.
 */
 
+import org.duniter.core.exception.TechnicalException;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.duniter.elasticsearch.websocket.changes.WebSocketChangeEndPoint;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -47,20 +50,45 @@ import org.glassfish.tyrus.server.Server;
 import javax.websocket.DeploymentException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.List;
 
-public class WebsocketServer {
+public class WebSocketServer {
 
-    private final ESLogger log = Loggers.getLogger(WebsocketServer.class);
+    private final ESLogger log = Loggers.getLogger("duniter.ws");
+    private List<Class<?>> endPoints = new ArrayList<>();
 
     @Inject
-    public WebsocketServer(final PluginSettings pluginSettings) {
-        final String host = pluginSettings.getWebSocketHost();
-        final int port = pluginSettings.getWebSocketPort();
+    public WebSocketServer(final PluginSettings pluginSettings, ThreadPool threadPool) {
+        // If WS enable
+        if (pluginSettings.getWebSocketEnable()) {
+            // When node started
+            threadPool.scheduleOnStarted(() -> {
+                // start WS server
+                startServer(pluginSettings.getWebSocketHost(),
+                        pluginSettings.getWebSocketPort(),
+                        getEndPoints());
+            });
+        }
+    }
 
-        final Server server = new Server(host, port, "/ws", null, WebsocketChangeEndPoint.class) ;
+
+    public void addEndPoint(Class<?> endPoint) {
+        endPoints.add(endPoint);
+    }
+
+    /* -- private medthod -- */
+
+    private Class[] getEndPoints() {
+        return endPoints.toArray(new Class<?>[endPoints.size()]);
+    }
+
+    private void startServer(String host, int port, Class<?>[] endPoints) {
+
+        final Server server = new Server(host, port, "/ws", null, endPoints) ;
 
         try {
-            log.info("Starting websocket server");
+            log.info("Starting Websocket server...");
             AccessController.doPrivileged(new PrivilegedAction() {
                 @Override
                 public Object run() {
@@ -70,16 +98,16 @@ public class WebsocketServer {
                         // This is a workaround for that
                         Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
                         server.start();
+                        log.info("Websocket server started");
                         return null;
                     } catch (DeploymentException e) {
                         throw new RuntimeException("Failed to start server", e);
                     }
                 }
             });
-            log.info("Websocket server started");
         } catch (Exception e) {
-            log.error("Failed to start Websocket server",e);
-            throw new RuntimeException(e);
+            log.error("Failed to start Websocket server", e);
+            throw new TechnicalException(e);
         }
     }
 

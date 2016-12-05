@@ -25,12 +25,20 @@ package org.duniter.elasticsearch.gchange.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
+import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
+import org.duniter.core.client.model.elasticsearch.RecordComment;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.elasticsearch.exception.DocumentNotFoundException;
 import org.duniter.elasticsearch.gchange.PluginSettings;
+import org.duniter.elasticsearch.gchange.model.MarketRecord;
+import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.user.service.event.UserEvent;
+import org.duniter.elasticsearch.user.service.event.UserEventLink;
+import org.duniter.elasticsearch.user.service.event.UserEventService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -38,8 +46,10 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -54,15 +64,18 @@ public class RegistryService extends AbstractService {
 
     private final Gson gson;
     private BlockchainRemoteService blockchainRemoteService;
+    private UserEventService userEventService;
 
     @Inject
     public RegistryService(Client client,
                            PluginSettings settings,
                            CryptoService cryptoService,
-                           BlockchainRemoteService blockchainRemoteService) {
+                           BlockchainRemoteService blockchainRemoteService,
+                            UserEventService userEventService) {
         super("gchange." + INDEX, client, settings, cryptoService);
         this.gson = GsonUtils.newBuilder().create();
         this.blockchainRemoteService = blockchainRemoteService;
+        this.userEventService = userEventService;
     }
 
     /**
@@ -136,6 +149,7 @@ public class RegistryService extends AbstractService {
 
     public String indexCommentFromJson(String json) {
         return checkIssuerAndIndexDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json);
+
     }
 
     public void updateCommentFromJson(String json, String id) {

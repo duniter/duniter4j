@@ -29,6 +29,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonSyntaxException;
+import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
@@ -147,7 +148,7 @@ public abstract class AbstractService implements Bean {
                 .execute().actionGet();
         return response.getId();
     }
-    protected void checkIssuerAndUpdateDocumentFromJson(String index, String type, String json, String id) {
+    protected void checkIssuerAndUpdateDocumentFromJson(String index, String type, String id, String json) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(json);
         String issuer = getIssuer(actualObj);
@@ -159,6 +160,10 @@ public abstract class AbstractService implements Bean {
             logger.debug(String.format("Updating %s [%s] from issuer [%s]", type, id, issuer.substring(0, 8)));
         }
 
+        updateDocumentFromJson(index, type, id, json);
+    }
+
+    protected void updateDocumentFromJson(String index, String type, String id, String json) {
         // Execute indexBlocksFromNode
         client.prepareUpdate(index, type, id)
                 .setDoc(json)
@@ -281,6 +286,20 @@ public abstract class AbstractService implements Bean {
                     Joiner.on(',').join(fieldNames).toString(),
                     docId), e);
         }
+    }
+
+    /**
+     * Retrieve a field from a document id
+     * @param docId
+     * @return
+     */
+    protected Object getFieldById(String index, String type, String docId, String fieldName) {
+
+        Map<String, Object> result = getFieldsById(index, type, docId, fieldName);
+        if (MapUtils.isEmpty(result)) {
+            return null;
+        }
+        return result.get(fieldName);
     }
 
     protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {
