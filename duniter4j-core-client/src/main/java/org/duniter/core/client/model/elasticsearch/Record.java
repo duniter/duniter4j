@@ -37,6 +37,16 @@ public class Record {
     private String signature;
     private Integer time;
 
+    public Record() {
+    }
+
+    public Record(Record another) {
+        this.issuer = another.getIssuer();
+        this.hash = another.getHash();
+        this.signature = another.getSignature();
+        this.time = another.getTime();
+    }
+
     public String getIssuer() {
         return issuer;
     }

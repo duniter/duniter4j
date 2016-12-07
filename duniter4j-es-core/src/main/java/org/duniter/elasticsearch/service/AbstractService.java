@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.service;
  */
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
@@ -34,6 +35,7 @@ import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
@@ -60,6 +62,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
 import org.nuiton.i18n.I18n;
 
 import java.io.*;
@@ -104,6 +107,7 @@ public abstract class AbstractService implements Bean {
         this.pluginSettings = pluginSettings;
         this.cryptoService = cryptoService;
         this.objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         this.retryCount = pluginSettings.getNodeRetryCount();
         this.retryWaitDuration = pluginSettings.getNodeRetryWaitDuration();
     }
@@ -263,23 +267,15 @@ public abstract class AbstractService implements Bean {
             // Read query result
             SearchHit[] searchHits = response.getHits().getHits();
             for (SearchHit searchHit : searchHits) {
-                if (searchHit.source() != null) {
-                    JsonNode source = objectMapper.readTree(searchHit.source());
-                    for(String fieldName: fieldNames) {
-                        result.put(fieldName, getMandatoryField(source, fieldName));
-                    }
-
-                }
-                else {
-                    for(String fieldName: fieldNames) {
-                        result.put(fieldName, searchHit.getFields().get(fieldName).getValue());
-                    }
+                Map<String, SearchHitField> hitFields = searchHit.getFields();
+                for(String fieldName: hitFields.keySet()) {
+                    result.put(fieldName, hitFields.get(fieldName).getValue());
                 }
                 break;
             }
             return result;
         }
-        catch(SearchPhaseExecutionException | JsonSyntaxException | IOException e) {
+        catch(SearchPhaseExecutionException | JsonSyntaxException e) {
             // Failed or no item on index
             throw new TechnicalException(String.format("[%s/%s] Unable to retrieve fields [%s] for document [%s]",
                     index, type,
@@ -300,6 +296,49 @@ public abstract class AbstractService implements Bean {
             return null;
         }
         return result.get(fieldName);
+    }
+
+    /**
+     * Retrieve a document by id
+     * @param docId
+     * @return
+     */
+    public <T extends Object> T getSourceById(String index, String type, String docId, Class<T> classOfT, String... fieldNames) {
+
+        // Prepare request
+        SearchRequestBuilder searchRequest = client
+                .prepareSearch(index)
+                .setTypes(type)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+
+        searchRequest.setQuery(QueryBuilders.matchQuery("_id", docId));
+        if (CollectionUtils.isNotEmpty(fieldNames)) {
+            searchRequest.setFetchSource(fieldNames, null);
+        }
+        else {
+            searchRequest.setFetchSource(true); // full source
+        }
+
+        // Execute query
+        try {
+            SearchResponse response = searchRequest.execute().actionGet();
+
+            // Read query result
+            SearchHit[] searchHits = response.getHits().getHits();
+            for (SearchHit searchHit : searchHits) {
+                if (searchHit.source() != null) {
+                    return objectMapper.readValue(searchHit.source(), classOfT);
+                }
+                break;
+            }
+            return null;
+        }
+        catch(SearchPhaseExecutionException | JsonSyntaxException | IOException e) {
+            // Failed to get source
+            throw new TechnicalException(String.format("[%s/%s] Error while getting [%s]",
+                    index, type,
+                    docId), e);
+        }
     }
 
     protected void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {

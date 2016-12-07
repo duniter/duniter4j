@@ -22,7 +22,6 @@ package org.duniter.elasticsearch.user.service;
  * #L%
  */
 
-import org.duniter.elasticsearch.user.service.event.UserEventService;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 

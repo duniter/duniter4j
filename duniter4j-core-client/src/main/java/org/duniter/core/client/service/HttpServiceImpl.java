@@ -25,8 +25,6 @@ package org.duniter.core.client.service;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.conn.HttpHostConnectException;
-import org.apache.http.entity.mime.content.InputStreamBody;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.Error;
@@ -52,7 +50,6 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
 /**

@@ -24,15 +24,13 @@ package org.duniter.elasticsearch.user;
 
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.HistoryService;
 import org.duniter.elasticsearch.user.service.MessageService;
 import org.duniter.elasticsearch.user.service.SynchroService;
 import org.duniter.elasticsearch.user.service.UserService;
-import org.duniter.elasticsearch.user.service.event.UserEvent;
-import org.duniter.elasticsearch.user.service.event.UserEventCodes;
-import org.duniter.elasticsearch.user.service.event.UserEventService;
-import org.duniter.elasticsearch.user.websocket.WebsocketUserEventEndPoint;
-import org.duniter.elasticsearch.websocket.WebSocketServer;
+import org.duniter.elasticsearch.user.model.UserEventCodes;
+import org.duniter.elasticsearch.user.service.UserEventService;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;

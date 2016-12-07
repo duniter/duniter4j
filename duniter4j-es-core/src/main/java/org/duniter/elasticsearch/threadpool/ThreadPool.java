@@ -127,6 +127,16 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
     }
 
     /**
+     * Schedules an rest that runs on the scheduler thread, when possible (0 delay).
+     *
+     * @param command the rest to take
+     * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
+     */
+    public ScheduledFuture<?> schedule(Runnable command) {
+        return scheduler.schedule(new LoggingRunnable(command), 0, TimeUnit.MILLISECONDS);
+    }
+
+    /**
      * Schedules an rest that runs on the scheduler thread, after a delay.
      *
      * @param command the rest to take

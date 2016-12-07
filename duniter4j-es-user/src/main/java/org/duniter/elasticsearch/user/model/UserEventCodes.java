@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.user.service.event;
+package org.duniter.elasticsearch.user.model;
 
 /*
  * #%L
@@ -22,36 +22,12 @@ package org.duniter.elasticsearch.user.service.event;
  * #L%
  */
 
-import org.nuiton.i18n.I18n;
-
-import java.util.Locale;
-
 /**
  * Created by blavenie on 29/11/16.
  */
-public class UserEventLink {
+public enum UserEventCodes {
 
-    private final String index;
+    NODE_STARTED,
+    CREATE_DOC
 
-    private final String type;
-
-    private final String id;
-
-    public UserEventLink(String index, String type, String id) {
-        this.index = index;
-        this.type = type;
-        this.id = id;
-    }
-
-    public String getIndex() {
-        return index;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getId() {
-        return id;
-    }
 }

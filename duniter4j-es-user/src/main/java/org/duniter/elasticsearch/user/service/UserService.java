@@ -32,7 +32,6 @@ import org.duniter.core.service.MailService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.AbstractService;
-import org.duniter.elasticsearch.user.service.event.UserEventService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateResponse;

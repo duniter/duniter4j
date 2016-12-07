@@ -1,4 +1,4 @@
-package org.duniter.core.client.model.elasticsearch;
+package org.duniter.elasticsearch.user.model;
 
 /*
  * #%L
@@ -21,6 +21,8 @@ package org.duniter.core.client.model.elasticsearch;
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
+
+import org.duniter.core.client.model.elasticsearch.Record;
 
 /**
  * Created by blavenie on 01/03/16.

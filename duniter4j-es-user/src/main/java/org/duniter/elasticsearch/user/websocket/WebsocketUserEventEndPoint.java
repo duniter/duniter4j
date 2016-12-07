@@ -40,10 +40,8 @@ package org.duniter.elasticsearch.user.websocket;
 
 import org.duniter.core.client.model.bma.Constants;
 import org.duniter.core.util.StringUtils;
-import org.duniter.elasticsearch.user.service.event.UserEvent;
-import org.duniter.elasticsearch.user.service.event.UserEventListener;
-import org.duniter.elasticsearch.user.service.event.UserEventService;
-import org.duniter.elasticsearch.user.service.event.UserEventUtils;
+import org.duniter.elasticsearch.user.model.UserEvent;
+import org.duniter.elasticsearch.user.service.UserEventService;
 import org.duniter.elasticsearch.websocket.WebSocketServer;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -57,7 +55,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 @ServerEndpoint(value = "/event/user/{pubkey}/{locale}")
-public class WebsocketUserEventEndPoint implements UserEventListener {
+public class WebsocketUserEventEndPoint implements UserEventService.UserEventListener {
 
     public static class Init {
 
@@ -97,7 +95,7 @@ public class WebsocketUserEventEndPoint implements UserEventListener {
 
     @Override
     public void onEvent(UserEvent event) {
-        session.getAsyncRemote().sendText(UserEventUtils.toJson(locale, event));
+        session.getAsyncRemote().sendText(event.toJson(locale));
     }
 
     @Override

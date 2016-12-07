@@ -35,10 +35,9 @@ import org.duniter.elasticsearch.gchange.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.MarketRecord;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.UserService;
-import org.duniter.elasticsearch.user.service.event.UserEvent;
-import org.duniter.elasticsearch.user.service.event.UserEventLink;
-import org.duniter.elasticsearch.user.service.event.UserEventService;
+import org.duniter.elasticsearch.user.service.UserEventService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -432,15 +431,15 @@ public class MarketService extends AbstractService {
 
         String recordTitle = recordFields.get(MarketRecord.PROPERTY_TITLE).toString();
         if (!issuer.equals(recordIssuer)) {
-            userEventService.notifyUser(recordIssuer,
-                    new UserEvent(UserEvent.EventType.INFO,
-                            GchangeEventCodes.NEW_COMMENT.name(),
-                            new UserEventLink(INDEX, RECORD_TYPE, recordId),
-                            I18n.n(isNewComment ? "duniter.market.event.newComment": "duniter.market.event.updateComment"),
+            userEventService.notifyUser(
+                    UserEvent.newBuilder(UserEvent.EventType.INFO, GchangeEventCodes.NEW_COMMENT.name())
+                    .setMessage(
+                            isNewComment ? I18n.n("duniter.market.event.newComment") : I18n.n("duniter.market.event.updateComment"),
                             issuerTitle != null ? issuerTitle : issuer.substring(0, 8),
-                            recordTitle
-                    )
-            );
+                            recordTitle)
+                    .setRecipient(recordIssuer)
+                    .setLink(INDEX, RECORD_TYPE, recordId)
+                    .build());
         }
     }
 
