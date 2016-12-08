@@ -38,13 +38,12 @@ package org.duniter.elasticsearch.websocket;
     limitations under the License.
 */
 
-import org.duniter.elasticsearch.websocket.changes.WebSocketChangeEndPoint;
 import org.elasticsearch.common.inject.AbstractModule;
 
 public class WebSocketModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(WebSocketServer.class).asEagerSingleton();
-        bind(WebSocketChangeEndPoint.Init.class).asEagerSingleton();
+        bind(WebSocketChangesEndPoint.Init.class).asEagerSingleton();
     }
 }

@@ -23,7 +23,9 @@ package org.duniter.core.client.service.bma;
  */
 
 
+import com.google.common.base.Joiner;
 import org.duniter.core.client.model.TxOutput;
+import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.Protocol;
 import org.duniter.core.client.model.bma.TxHistory;
 import org.duniter.core.client.model.bma.TxSource;
@@ -76,13 +78,16 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 	public String transfer(Wallet wallet, String destPubKey, long amount,
 						   String comment) throws InsufficientCreditException {
-		
+
+		// Get current block
+		BlockchainBlock currentBlock = executeRequest(wallet.getCurrencyId(), BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class);
+
 		// http post /tx/process
 		HttpPost httpPost = new HttpPost(
 				getPath(wallet.getCurrencyId(), URL_TX_PROCESS));
 
 		// compute transaction
-		String transaction = getSignedTransaction(wallet, destPubKey, 0, amount,
+		String transaction = getSignedTransaction(wallet, currentBlock, destPubKey, 0, amount,
                 comment);
 
 		if (log.isDebugEnabled()) {
@@ -212,6 +217,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 	/* -- internal methods -- */
 
 	public String getSignedTransaction(Wallet wallet,
+									   BlockchainBlock block,
 									   String destPubKey,
 									   int locktime,
 									   long amount,
@@ -229,16 +235,18 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		TxSource.Source[] sources = sourceResults.getSources();
 		if (CollectionUtils.isEmpty(sources)) {
 			throw new InsufficientCreditException(
-					"Insufficient credit : no credit found.");
+					"Insufficient credit: no credit found.");
 		}
 
-		List<TxSource.Source> txInputs = new ArrayList<TxSource.Source>();
-		List<TxOutput> txOutputs = new ArrayList<TxOutput>();
-		computeTransactionInputsAndOuputs(wallet.getPubKeyHash(), destPubKey,
+		List<TxSource.Source> txInputs = new ArrayList<>();
+		List<TxOutput> txOutputs = new ArrayList<>();
+		computeTransactionInputsAndOuputs(block.getUnitbase(),
+				wallet.getPubKeyHash(), destPubKey,
 				sources, amount, txInputs, txOutputs);
 
 		String transaction = getTransaction(wallet.getCurrency(),
-				wallet.getPubKeyHash(), destPubKey, locktime, txInputs, txOutputs,
+				block.getNumber(), block.getHash(),
+				wallet.getPubKeyHash(), locktime, txInputs, txOutputs,
 				comment);
 
 		String signature = cryptoService.sign(transaction, wallet.getSecKey());
@@ -248,16 +256,18 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 	}
 
 	public String getTransaction(String currency,
+								 long blockNumber,
+								 String blockHash,
 								 String srcPubKey,
-								 String destPubKey,
 								 int locktime,
 								 List<TxSource.Source> inputs, List<TxOutput> outputs,
 			String comments) {
 
 		StringBuilder sb = new StringBuilder();
-		sb.append("Version: ").append(Protocol.VERSION).append("\n")
+		sb.append("Version: ").append(Protocol.TX_VERSION).append("\n")
 				.append("Type: ").append(Protocol.TYPE_TRANSACTION).append("\n")
 				.append("Currency: ").append(currency).append('\n')
+				.append("Blockstamp: ").append(blockNumber).append('-').append(blockHash).append("\n")
 				.append("Locktime: ").append(locktime).append('\n')
 				.append("Issuers:\n")
 				// add issuer pubkey
@@ -265,12 +275,18 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 		// Inputs coins
 		sb.append("Inputs:\n");
+		Joiner joiner = Joiner.on(':');
 		for (TxSource.Source input : inputs) {
-			// if D : D:PUBLIC_KEY:BLOCK_ID
-			// if T : T:T_HASH:T_INDEX
-			sb.append(input.getType()).append(':')
-					.append(input.getIdentifier()).append(':')
-					.append(input.getNoffset()).append('\n');
+			// if D : AMOUNT:BASE:D:PUBLIC_KEY:BLOCK_ID
+			// if T : AMOUNT:BASE:T:T_HASH:T_INDEX
+			joiner.appendTo(sb, new String[]{
+					String.valueOf(input.getAmount()),
+					String.valueOf(input.getBase()),
+					input.getType(),
+					input.getIdentifier(),
+					input.getNoffset()
+			});
+			sb.append('\n');
 		}
 
 		// Unlocks
@@ -296,15 +312,15 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		return sb.toString();
 	}
 
-	public String getCompactTransaction(String currency, String srcPubKey,
-			String destPubKey, List<TxSource.Source> inputs, List<TxOutput> outputs,
+	public String getCompactTransaction(String srcPubKey,
+			List<TxSource.Source> inputs, List<TxOutput> outputs,
 			String comments) {
 
 		boolean hasComment = comments != null && comments.length() > 0;
 		StringBuilder sb = new StringBuilder();
 		sb.append("TX:")
 				// VERSION
-				.append(Protocol.VERSION).append(':')
+				.append(Protocol.TX_VERSION).append(':')
 				// NB_ISSUERS
 				.append("1:")
 				// NB_INPUTS
@@ -339,42 +355,144 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		return sb.toString();
 	}
 
-	public void computeTransactionInputsAndOuputs(String srcPubKey,
+	public void computeTransactionInputsAndOuputs(int currentUnitBase,
+												  String srcPubKey,
 			String destPubKey, TxSource.Source[] sources, long amount,
-			List<TxSource.Source> inputs, List<TxOutput> outputs) throws InsufficientCreditException{
+			List<TxSource.Source> resultInputs, List<TxOutput> resultOutputs) throws InsufficientCreditException{
+
+		TxInputs inputs = new TxInputs();
+		inputs.amount = 0;
+		inputs.minBase = currentUnitBase;
+		inputs.maxBase = currentUnitBase + 1;
+
+		// Get inputs, starting to use current base sources
+		int amountBase = 0;
+		while (inputs.amount < amount && amountBase <= currentUnitBase) {
+			inputs = getInputs(sources, amount, currentUnitBase, currentUnitBase);
+
+			if (inputs.amount < amount) {
+				// try to reduce amount (replace last digits to zero)
+				amountBase++;
+				if (amountBase <= currentUnitBase) {
+					amount = truncBase(amount, amountBase);
+				}
+			}
+		}
+
+		if (inputs.amount < amount) {
+			throw new InsufficientCreditException("Insufficient credit");
+		}
+
+		// Avoid to get outputs on lower base
+		if (amountBase < inputs.minBase && !isBase(amount, inputs.minBase)) {
+			amount = truncBase(amount, inputs.minBase);
+			log.debug("TX Amount has been truncate to " + amount);
+		}
+		else if (amountBase > 0) {
+			log.debug("TX Amount has been truncate to " + amount);
+		}
+		resultInputs.addAll(inputs.sources);
 
 		long rest = amount;
-		long restForHimSelf = 0;
-
-		for (TxSource.Source source : sources) {
-			long srcAmount = source.getAmount();
-			inputs.add(source);
-			if (srcAmount >= rest) {
-				restForHimSelf = srcAmount - rest;
-				rest = 0;
-				break;
+		int outputBase = inputs.maxBase;
+		long outputAmount;
+		while(rest > 0) {
+			outputAmount = truncBase(rest, outputBase);
+			rest -= outputAmount;
+			if (outputAmount > 0) {
+				outputAmount = inversePowBase(outputAmount, outputBase);
+				TxOutput output = new TxOutput();
+				output.setAmount(outputAmount);
+				output.setBase(outputBase);
+				output.setPubKey(destPubKey);
+				resultOutputs.add(output);
 			}
-			rest -= srcAmount;
+			outputBase--;
+		}
+		rest = inputs.amount - amount;
+		outputBase = inputs.maxBase;
+		while(rest > 0) {
+			outputAmount = truncBase(rest, outputBase);
+			rest -= outputAmount;
+			if (outputAmount > 0) {
+				outputAmount = inversePowBase(outputAmount, outputBase);
+				TxOutput output = new TxOutput();
+				output.setAmount(outputAmount);
+				output.setBase(outputBase);
+				output.setPubKey(srcPubKey);
+				resultOutputs.add(output);
+			}
+			outputBase--;
+		}
+	}
+
+	private long truncBase(long amount, int base) {
+		long pow = (long)Math.pow(10, base);
+		if (amount < pow) return pow;
+		return (long)(Math.floor(amount / pow ) * pow);
+	}
+
+	private long powBase(long amount, int base) {
+		if (base <= 0) return amount;
+		return (long) (amount * Math.pow(10, base));
+	}
+
+	private long inversePowBase(long amount, int base) {
+		if (base <= 0) return amount;
+		return (long) (amount / Math.pow(10, base));
+	}
+
+	private boolean isBase(long amount, int base) {
+		if (base <= 0) return true;
+		if (amount < Math.pow(10, base)) return false;
+		String rest = "00000000" + amount;
+		long lastDigits = Integer.parseInt(rest.substring(rest.length()-base));
+		return lastDigits == 0; // no rest
+	}
+
+	private TxInputs getInputs(TxSource.Source[] availableSources, long amount, int outputBase, int filterBase) {
+		if (filterBase < 0) {
+			filterBase = outputBase;
+		}
+		long sourcesAmount = 0;
+		TxInputs result = new TxInputs();
+		result.minBase = filterBase;
+		result.maxBase = filterBase;
+		for (TxSource.Source source: availableSources) {
+			if (source.getBase() == filterBase){
+				sourcesAmount += powBase(source.getAmount(), source.getBase());
+				result.sources.add(source);
+				// Stop if enough sources
+				if (sourcesAmount >= amount) {
+					break;
+				}
+			}
 		}
 
-		if (rest > 0) {
-			throw new InsufficientCreditException(String.format(
-					"Insufficient credit. Need %s more units.", rest));
+		// IF not enough sources, get add inputs from lower base (recursively)
+		if (sourcesAmount < amount && filterBase > 0) {
+			filterBase -= 1;
+			long missingAmount = amount - sourcesAmount;
+			TxInputs lowerInputs = getInputs(availableSources, missingAmount, outputBase, filterBase);
+
+			// Add lower base inputs to result
+			if (lowerInputs.amount > 0) {
+				result.minBase = lowerInputs.minBase;
+				sourcesAmount += lowerInputs.amount;
+				result.sources.addAll(lowerInputs.sources);
+			}
 		}
 
-		// outputs
-		{
-			TxOutput output = new TxOutput();
-			output.setPubKey(destPubKey);
-			output.setAmount(amount);
-			outputs.add(output);
-		}
-		if (restForHimSelf > 0) {
-			TxOutput output = new TxOutput();
-			output.setPubKey(srcPubKey);
-			output.setAmount(restForHimSelf);
-			outputs.add(output);
-		}
+		result.amount = sourcesAmount;
+
+		return result;
+	}
+
+	private class TxInputs {
+		long amount;
+		int minBase;
+		int maxBase;
+		List<TxSource.Source> sources = new ArrayList<>();
 	}
 
 }

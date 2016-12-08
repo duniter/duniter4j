@@ -87,6 +87,25 @@ public class BlockchainRemoteServiceTest {
     }
 
     @Test
+    public void getBlockWithTx() throws Exception {
+
+        long[] blocks = service.getBlocksWithTx(createTestPeer());
+        if (blocks == null) return;
+
+        // Check first block with TX
+        BlockchainBlock result = service.getBlock(createTestPeer(), blocks[0]);
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getTransactions());
+        Assert.assertTrue(result.getTransactions().length > 0);
+
+        // Check last block with TX
+        result = service.getBlock(createTestPeer(), blocks[blocks.length-1]);
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getTransactions());
+        Assert.assertTrue(result.getTransactions().length > 0);
+    }
+
+    @Test
     public void getBlocksAsJson() throws Exception {
 
         String[] result= service.getBlocksAsJson(createTestPeer(), 10, 0);
@@ -115,13 +134,10 @@ public class BlockchainRemoteServiceTest {
 
         isWebSocketNewBlockReceived = false;
 
-        service.addNewBlockListener(createTestPeer(), new WebsocketClientEndpoint.MessageHandler() {
-            @Override
-            public void handleMessage(String message) {
-                BlockchainBlock block = GsonUtils.newBuilder().create().fromJson(message, BlockchainBlock.class);
-                log.debug("Received block #" + block.getNumber());
-                isWebSocketNewBlockReceived = true;
-            }
+        service.addNewBlockListener(createTestPeer(), (message) -> {
+            BlockchainBlock block = GsonUtils.newBuilder().create().fromJson(message, BlockchainBlock.class);
+            log.debug("Received block #" + block.getNumber());
+            isWebSocketNewBlockReceived = true;
         });
 
         int count = 0;

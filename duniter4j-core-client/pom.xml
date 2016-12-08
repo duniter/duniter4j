@@ -39,49 +39,53 @@
       <scope>runtime</scope>
     </dependency>
 
-      <dependency>
-          <groupId>org.glassfish.tyrus</groupId>
-          <artifactId>tyrus-client</artifactId>
-          <version>1.12</version>
-      </dependency>
+    <dependency>
+        <groupId>org.glassfish.tyrus</groupId>
+        <artifactId>tyrus-client</artifactId>
+        <version>1.12</version>
+    </dependency>
 
-      <dependency>
-          <groupId>org.glassfish.tyrus</groupId>
-          <artifactId>tyrus-container-grizzly-client</artifactId>
-          <version>1.12</version>
-      </dependency>
+    <dependency>
+        <groupId>org.glassfish.tyrus</groupId>
+        <artifactId>tyrus-container-grizzly-client</artifactId>
+        <version>1.12</version>
+    </dependency>
 
-      <dependency>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-lang3</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-collections4</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpmime</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.nuiton</groupId>
-          <artifactId>nuiton-config</artifactId>
-      </dependency>
-      <dependency>
-          <groupId>org.nuiton.i18n</groupId>
-          <artifactId>nuiton-i18n</artifactId>
-      </dependency>
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-collections4</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpmime</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.nuiton</groupId>
+        <artifactId>nuiton-config</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.nuiton.i18n</groupId>
+        <artifactId>nuiton-i18n</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
 
     <!-- Unit test -->

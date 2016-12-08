@@ -23,12 +23,15 @@ package org.duniter.core.client.model.bma;
  */
 
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 import java.io.Serializable;
 
 public class WotLookup {
 
-    public boolean partial;
-    public Result[] results;
+    private boolean partial;
+    private Result[] results;
 
     public boolean isPartial() {
         return partial;
@@ -63,9 +66,9 @@ public class WotLookup {
 
         private static final long serialVersionUID = -39452685440482106L;
 
-        public String pubkey;
-        public Uid[] uids;
-        public SignedSignature[] signed;
+        private String pubkey;
+        private Uid[] uids;
+        private SignedSignature[] signed;
 
         public String getPubkey() {
             return pubkey;
@@ -92,14 +95,19 @@ public class WotLookup {
         }
     }
 
-    public class Uid {
+    public static class Uid {
 
-        public String uid;
-        public Meta meta;
-        public String self;
-        public Boolean revoked;
-        public String revocation_sig;
-        public OtherSignature[] others;
+        private String uid;
+        private Meta meta;
+        private String self;
+        private Boolean revoked;
+        private Long revokedOn;
+        private String revocationSig;
+        private OtherSignature[] others;
+
+        public Uid(){
+
+        }
 
         public String getUid() {
             return uid;
@@ -141,19 +149,32 @@ public class WotLookup {
             this.revoked = revoked;
         }
 
+        @JsonGetter("revocation_sig")
         public String getRevocationSig() {
-            return revocation_sig;
+            return revocationSig;
         }
 
+        @JsonSetter("revocation_sig")
         public void setRevocationSig(String revocationSig) {
-            this.revocation_sig = revocationSig;
+            this.revocationSig = revocationSig;
+        }
+
+        @JsonGetter("revoked_on")
+        public Long getRevokedOn() {
+            return revokedOn;
+        }
+
+        @JsonSetter("revoked_on")
+        public void setRevokedOn(Long revokedOn) {
+            this.revokedOn = revokedOn;
         }
     }
 
 
-    public class Meta implements Serializable {
-        public String timestamp;
-        public Long block_number;
+    public static class Meta implements Serializable {
+        private String timestamp;
+        private String blockHash;
+        private Long blockNumber;
 
         public String getTimestamp() {
             return timestamp;
@@ -162,16 +183,36 @@ public class WotLookup {
         public void setTimestamp(String timestamp) {
             this.timestamp = timestamp;
         }
+
+        @JsonGetter("block_hash")
+        public String getBlockHash() {
+            return blockHash;
+        }
+
+        @JsonSetter("block_hash")
+        public void setBlockHash(String blockHash) {
+            this.blockHash = blockHash;
+        }
+        @JsonGetter("block_number")
+        public Long getBlockNumber() {
+            return blockNumber;
+        }
+
+        @JsonSetter("block_number")
+        public void setBlockNumberH(Long blockNumber) {
+            this.blockNumber = blockNumber;
+        }
+
     }
 
-    public class OtherSignature {
+    public static class OtherSignature {
 
-        public String pubkey;
-        public Meta meta;
-        public String signature;
-        public String[] uids;
-        public boolean isMember;
-        public boolean wasMember;
+        private String pubkey;
+        private Meta meta;
+        private String signature;
+        private String[] uids;
+        private boolean isMember;
+        private boolean wasMember;
 
         public String getPubkey() {
             return pubkey;
@@ -205,15 +246,18 @@ public class WotLookup {
             this.uids = uids;
         }
 
+        @JsonGetter("isMember")
         public boolean isMember() {
             return isMember;
         }
 
+        @JsonSetter("isMember")
         public void setMember(boolean member) {
             isMember = member;
         }
 
-        public boolean isWasMember() {
+        @JsonGetter("wasMember")
+        public boolean wasMember() {
             return wasMember;
         }
 
@@ -222,14 +266,15 @@ public class WotLookup {
         }
     }
 
-    public class SignedSignature {
+    public static class SignedSignature {
 
-        public String uid;
-        public String pubkey;
-        public Meta meta;
-        public String signature;
-        public boolean isMember;
-        public boolean wasMember;
+        private String uid;
+        private String pubkey;
+        private Meta meta;
+        private CertTime cerTime;
+        private String signature;
+        private boolean isMember;
+        private boolean wasMember;
 
         public String getUid() {
             return uid;
@@ -263,21 +308,55 @@ public class WotLookup {
             this.signature = signature;
         }
 
+        @JsonGetter("isMember")
         public boolean isMember() {
             return isMember;
         }
 
-        public void setMember(boolean member) {
-            isMember = member;
+        public void setIsMember(boolean isMember) {
+            this.isMember = isMember;
         }
 
-        public boolean isWasMember() {
+        @JsonGetter("wasMember")
+        public boolean wasMember() {
             return wasMember;
         }
 
         public void setWasMember(boolean wasMember) {
             this.wasMember = wasMember;
         }
+
+        @JsonGetter("cert_time")
+        public CertTime getCerTime() {
+            return cerTime;
+        }
+
+        @JsonSetter("cert_time")
+        public void setCerTime(CertTime cerTime) {
+            this.cerTime = cerTime;
+        }
     }
 
+    public static class CertTime implements Serializable {
+        private Long block;
+        private String blockHash;
+
+        public Long getBlock() {
+            return block;
+        }
+
+        public void setBlock(Long block) {
+            this.block = block;
+        }
+
+        @JsonGetter("block_hash")
+        public String getBlockHash() {
+            return blockHash;
+        }
+
+        @JsonSetter("block_hash")
+        public void setBlockHash(String blockHash) {
+            this.blockHash = blockHash;
+        }
+    }
 }

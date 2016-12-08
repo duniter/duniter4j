@@ -23,6 +23,8 @@ package org.duniter.core.client.model.bma;
  */
 
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -33,6 +35,9 @@ public class TxSource {
 	private String pubkey;
 	    
     private Source[] sources;
+
+	public TxSource() {
+	}
 
 	public String getCurrency() {
 		return currency;
@@ -58,7 +63,7 @@ public class TxSource {
 		this.sources = sources;
 	}
 
-	public class Source implements Serializable, Cloneable {
+	public static class Source implements Serializable, Cloneable {
 
 		private static final long serialVersionUID = 8084087351543574142L;
 
@@ -68,6 +73,8 @@ public class TxSource {
 		private long amount;
 		private int base;
 
+		public Source() {
+		}
 
 		@Override
 		public Object clone() throws CloneNotSupportedException {

@@ -23,10 +23,7 @@ package org.duniter.core.client.service.bma;
  */
 
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.model.bma.BlockchainBlock;
-import org.duniter.core.client.model.bma.BlockchainMemberships;
-import org.duniter.core.client.model.bma.BlockchainParameters;
-import org.duniter.core.client.model.bma.Protocol;
+import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.bma.gson.JsonArrayParser;
 import org.duniter.core.client.model.local.Identity;
 import org.duniter.core.client.model.local.Peer;
@@ -66,9 +63,12 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     public static final String URL_BLOCK = URL_BASE + "/block/%s";
 
+
     public static final String URL_BLOCKS_FROM = URL_BASE + "/blocks/%s/%s";
 
     public static final String URL_BLOCK_CURRENT = URL_BASE + "/current";
+
+    public static final String URL_BLOCK_WITH_TX = URL_BASE + "/with/tx";
 
     public static final String URL_BLOCK_WITH_UD = URL_BASE + "/with/ud";
 
@@ -164,7 +164,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
 
     @Override
-    public BlockchainBlock getBlock(Peer peer, int number) throws BlockNotFoundException {
+    public BlockchainBlock getBlock(Peer peer, long number) throws BlockNotFoundException {
         // Get block from number
         String path = String.format(URL_BLOCK, number);
         try {
@@ -176,7 +176,19 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public String getBlockAsJson(Peer peer, int number) {
+    public long[] getBlocksWithTx(Peer peer) {
+        try {
+            Blocks blocks = executeRequest(peer, URL_BLOCK_WITH_TX, Blocks.class);
+            return (blocks == null || blocks.getResult() == null) ? new long[0] : blocks.getResult().getBlocks();
+        }
+        catch(HttpNotFoundException e) {
+            throw new TechnicalException(String.format("Error while getting blocks with TX on peer [%s]", peer));
+        }
+    }
+
+
+    @Override
+    public String getBlockAsJson(Peer peer, long number) {
         // get blockchain parameter
         String path = String.format(URL_BLOCK, number);
         try {

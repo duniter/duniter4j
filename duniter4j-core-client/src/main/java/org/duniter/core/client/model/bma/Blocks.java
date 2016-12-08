@@ -2,9 +2,9 @@ package org.duniter.core.client.model.bma;
 
 /*
  * #%L
- * Duniter4j :: Core Client API
+ * UCoin Java Client :: Core API
  * %%
- * Copyright (C) 2014 - 2016 EIS
+ * Copyright (C) 2014 - 2015 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,18 +22,33 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
-/**
- * Created by blavenie on 31/03/16.
- */
-public interface Protocol {
 
-    String VERSION = "2";
+import java.io.Serializable;
 
-    String TX_VERSION = "3";
+public class Blocks {
 
-    String TYPE_IDENTITY = "Identity";
+    private Result result;
 
-    String TYPE_MEMBERSHIP = "Membership";
+    public Result getResult() {
+        return result;
+    }
 
-    String TYPE_TRANSACTION = "Transaction";
+    public void setResult(Result result) {
+        this.result = result;
+    }
+
+    public static class Result implements Serializable {
+
+        private static final long serialVersionUID = -39452685440482106L;
+
+        private long[] blocks;
+
+        public long[] getBlocks() {
+            return blocks;
+        }
+
+        public void setBlocks(long[] blocks) {
+            this.blocks = blocks;
+        }
+    }
 }

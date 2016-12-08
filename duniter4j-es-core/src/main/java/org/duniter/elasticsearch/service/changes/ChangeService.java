@@ -38,13 +38,11 @@ package org.duniter.elasticsearch.service.changes;
     limitations under the License.
 */
 
+import org.duniter.core.util.CollectionUtils;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.indexing.IndexingOperationListener;
 import org.elasticsearch.index.shard.IndexShard;
@@ -52,13 +50,15 @@ import org.elasticsearch.indices.IndicesLifecycle;
 import org.elasticsearch.indices.IndicesService;
 import org.joda.time.DateTime;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ChangeService {
+
+    public interface ChangeListener {
+        String getId();
+        void onChange(ChangeEvent change);
+        Collection<ChangeSource> getChangeSources();
+    }
 
     private static final String SETTING_PRIMARY_SHARD_ONLY = "duniter.changes.primaryShardOnly";
     private static final String SETTING_LISTEN_SOURCE = "duniter.changes.listenSource";
@@ -67,14 +67,13 @@ public class ChangeService {
 
     private static final Map<String, ChangeListener> LISTENERS = new HashMap<>();
 
+    private static Map<String, ChangeSource> LISTENERS_SOURCES = new HashMap<>();
+    private static Map<String, Integer> LISTENERS_SOURCES_USAGE_COUNT = new HashMap<>();
+
     @Inject
     public ChangeService(final Settings settings, IndicesService indicesService) {
         final boolean allShards = !settings.getAsBoolean(SETTING_PRIMARY_SHARD_ONLY, Boolean.FALSE);
-        final String[] sourcesStr = settings.getAsArray(SETTING_LISTEN_SOURCE, new String[]{"*"});
-        final Set<ChangeSource> sources = new HashSet<>();
-        for(String sourceStr : sourcesStr) {
-            sources.add(new ChangeSource(sourceStr));
-        }
+
 
         indicesService.indicesLifecycle().addListener(new IndicesLifecycle.Listener() {
             @Override
@@ -85,6 +84,10 @@ public class ChangeService {
                     indexShard.indexingService().addListener(new IndexingOperationListener() {
                         @Override
                         public void postCreate(Engine.Create create) {
+                            if (!hasListener(indexName, create.type(), create.id())) {
+                                return;
+                            }
+
                             ChangeEvent change=new ChangeEvent(
                                     indexName,
                                     create.type(),
@@ -100,6 +103,10 @@ public class ChangeService {
 
                         @Override
                         public void postDelete(Engine.Delete delete) {
+                            if (!hasListener(indexName, delete.type(), delete.id())) {
+                                return;
+                            }
+
                             ChangeEvent change=new ChangeEvent(
                                     indexName,
                                     delete.type(),
@@ -115,6 +122,9 @@ public class ChangeService {
 
                         @Override
                         public void postIndex(Engine.Index index) {
+                            if (!hasListener(indexName, index.type(), index.id())) {
+                                return;
+                            }
 
                             ChangeEvent change=new ChangeEvent(
                                     indexName,
@@ -129,25 +139,24 @@ public class ChangeService {
                             addChange(change);
                         }
 
-                        private boolean filter(String index, String type, String id, ChangeSource source) {
-                            if (source.getIndices() != null && !source.getIndices().contains(index)) {
-                                return false;
+                        private boolean hasListener(String index, String type, String id) {
+                            if (LISTENERS_SOURCES.isEmpty()) return false;
+
+                            for (ChangeSource source : LISTENERS_SOURCES.values()) {
+                                if (source.apply(index, type, id)) {
+                                    return true;
+                                }
                             }
 
-                            if (source.getTypes() != null && !source.getTypes().contains(type)) {
-                                return false;
-                            }
-
-                            if (source.getIds() != null && !source.getIds().contains(id)) {
-                                return false;
-                            }
-
-                            return true;
+                            return false;
                         }
 
-                        private boolean filter(String index, ChangeEvent change) {
+                        private boolean apply(ChangeListener listener, ChangeEvent change) {
+                            Collection<ChangeSource> sources = listener.getChangeSources();
+                            if (CollectionUtils.isEmpty(sources)) return true;
+
                             for (ChangeSource source : sources) {
-                                if (filter(index, change.getType(), change.getId(), source)) {
+                                if (source.apply(change.getIndex(), change.getType(), change.getId())) {
                                     return true;
                                 }
                             }
@@ -156,40 +165,14 @@ public class ChangeService {
                         }
 
                         private void addChange(ChangeEvent change) {
-
-                            if (!filter(indexName, change)) {
-                                return;
-                            }
-
-
-                            String message;
-                            try {
-                                XContentBuilder builder = new XContentBuilder(JsonXContent.jsonXContent, new BytesStreamOutput());
-                                builder.startObject()
-                                        .field("_index", indexName)
-                                        .field("_type", change.getType())
-                                        .field("_id", change.getId())
-                                        .field("_timestamp", change.getTimestamp())
-                                        .field("_version", change.getVersion())
-                                        .field("_operation", change.getOperation().toString());
-                                if (change.getSource() != null) {
-                                    builder.rawField("_source", change.getSource());
-                                }
-                                builder.endObject();
-
-                                message = builder.string();
-                            } catch (IOException e) {
-                                log.error("Failed to write JSON", e);
-                                return;
-                            }
-
                             for (ChangeListener listener : LISTENERS.values()) {
-                                try {
-                                    listener.onChanges(message);
-                                } catch (Exception e) {
-                                    log.error("Failed to send message", e);
+                                if (apply(listener, change)) {
+                                    try {
+                                        listener.onChange(change);
+                                    } catch (Exception e) {
+                                        log.error("Failed to send message", e);
+                                    }
                                 }
-
                             }
 
                         }
@@ -202,10 +185,41 @@ public class ChangeService {
 
     public static void registerListener(ChangeListener listener) {
         LISTENERS.put(listener.getId(), listener);
+
+        // Update sources
+        if (CollectionUtils.isNotEmpty(listener.getChangeSources())) {
+            for (ChangeSource source: listener.getChangeSources()) {
+                String sourceKey = source.toString();
+                if (!LISTENERS_SOURCES.containsKey(sourceKey)) {
+                    LISTENERS_SOURCES.put(sourceKey, source);
+                    LISTENERS_SOURCES_USAGE_COUNT.put(sourceKey, 1);
+                }
+                else {
+                    LISTENERS_SOURCES_USAGE_COUNT.put(sourceKey, LISTENERS_SOURCES_USAGE_COUNT.get(sourceKey)+1);
+                }
+            }
+        }
     }
 
     public static void unregisterListener(ChangeListener listener) {
         LISTENERS.remove(listener.getId());
+
+        // Update sources
+        if (CollectionUtils.isNotEmpty(listener.getChangeSources())) {
+            for (ChangeSource source: listener.getChangeSources()) {
+                String sourceKey = source.toString();
+                if (LISTENERS_SOURCES.containsKey(sourceKey)) {
+                    int usageCount = LISTENERS_SOURCES_USAGE_COUNT.get(sourceKey) - 1;
+                    if (usageCount > 0) {
+                        LISTENERS_SOURCES_USAGE_COUNT.put(sourceKey, usageCount);
+                    }
+                    else {
+                        LISTENERS_SOURCES.remove(sourceKey);
+                        LISTENERS_SOURCES_USAGE_COUNT.remove(sourceKey);
+                    }
+                }
+            }
+        }
     }
 
 

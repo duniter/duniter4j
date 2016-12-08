@@ -96,8 +96,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         // get currency
         String jsonResponse;
         try {
-            String path = getPath(peer, URL_STATUS);
-            jsonResponse = executeRequest(peer, path, String.class);
+            jsonResponse = executeRequest(peer, URL_STATUS, String.class);
             int statusCode = GsonUtils.getValueFromJSONAsInt(jsonResponse, "status");
             return statusCode == HttpStatus.SC_OK;
         }

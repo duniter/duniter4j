@@ -28,6 +28,15 @@ package org.duniter.elasticsearch.user.model;
 public enum UserEventCodes {
 
     NODE_STARTED,
-    CREATE_DOC
+    CREATE_DOC,
+
+    // Membership state
+    MEMBER_JOIN,
+    MEMBER_LEAVE,
+    MEMBER_ACTIVE,
+
+    // TX
+    TX_SENT,
+    TX_RECEIVED
 
 }

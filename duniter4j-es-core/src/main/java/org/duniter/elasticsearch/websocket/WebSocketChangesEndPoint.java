@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.websocket.changes;
+package org.duniter.elasticsearch.websocket;
 
 /*
  * #%L
@@ -38,24 +38,36 @@ package org.duniter.elasticsearch.websocket.changes;
     limitations under the License.
 */
 
-import org.duniter.elasticsearch.service.changes.ChangeListener;
+import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
-import org.duniter.elasticsearch.websocket.WebSocketServer;
+import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @ServerEndpoint(value = "/_changes")
-public class WebSocketChangeEndPoint implements ChangeListener{
+public class WebSocketChangesEndPoint implements ChangeService.ChangeListener{
+
+    public static Collection<ChangeSource> SOURCES = null;
 
     public static class Init {
 
         @Inject
-        public Init(WebSocketServer webSocketServer) {
-            webSocketServer.addEndPoint(WebSocketChangeEndPoint.class);
+        public Init(WebSocketServer webSocketServer, PluginSettings pluginSettings) {
+            webSocketServer.addEndPoint(WebSocketChangesEndPoint.class);
+            final String[] sourcesStr = pluginSettings.getWebSocketChangesListenSource();
+            List<ChangeSource> sources = new ArrayList<>();
+            for(String sourceStr : sourcesStr) {
+                sources.add(new ChangeSource(sourceStr));
+            }
+            SOURCES = sources;
         }
     }
 
@@ -70,13 +82,18 @@ public class WebSocketChangeEndPoint implements ChangeListener{
     }
 
     @Override
-    public void onChanges(String message) {
-        session.getAsyncRemote().sendText(message);
+    public void onChange(ChangeEvent changeEvent) {
+        session.getAsyncRemote().sendText(changeEvent.toJson());
     }
 
     @Override
     public String getId() {
         return session == null ? null : session.getId();
+    }
+
+    @Override
+    public Collection<ChangeSource> getChangeSources() {
+        return SOURCES;
     }
 
     @OnMessage

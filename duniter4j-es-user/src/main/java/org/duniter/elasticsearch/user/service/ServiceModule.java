@@ -28,10 +28,13 @@ import org.elasticsearch.common.inject.Module;
 public class ServiceModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
-        bind(MessageService.class).asEagerSingleton();
         bind(HistoryService.class).asEagerSingleton();
+
+        bind(MessageService.class).asEagerSingleton();
         bind(UserService.class).asEagerSingleton();
         bind(UserEventService.class).asEagerSingleton();
+        bind(BlockchainUserEventService.class).asEagerSingleton();
+
         bind(SynchroService.class).asEagerSingleton();
     }
 

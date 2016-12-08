@@ -91,7 +91,15 @@ public interface BlockchainRemoteService extends Service {
      * @param number the block number
      * @return
      */
-    BlockchainBlock getBlock(Peer peer, int number) throws BlockNotFoundException;
+    BlockchainBlock getBlock(Peer peer, long number) throws BlockNotFoundException;
+
+    /**
+     * Get block with TX
+     *
+     * @param peer   the peer to use for request
+     * @return
+     */
+    long[] getBlocksWithTx(Peer peer);
 
     /**
      * Retrieve a block, by id (from 0 to current) as JSON string
@@ -100,7 +108,7 @@ public interface BlockchainRemoteService extends Service {
      * @param number the block number
      * @return
      */
-    String getBlockAsJson(Peer peer, int number) throws BlockNotFoundException;
+    String getBlockAsJson(Peer peer, long number) throws BlockNotFoundException;
 
     /**
      * Retrieve a block, by id (from 0 to current) as JSON string

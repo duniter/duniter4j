@@ -23,6 +23,8 @@ package org.duniter.core.client.model.bma;
  */
 
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import org.duniter.core.client.model.local.Identity;
 
 import java.io.Serializable;
@@ -40,6 +42,10 @@ public class WotCertification implements Serializable{
     private String pubkey;
 
     private String uid;
+
+    private String sigDate;
+
+    private boolean isMember;
 
     private Certification[] certifications;
 
@@ -67,23 +73,46 @@ public class WotCertification implements Serializable{
         this.uid = uid;
     }
 
-    public class Certification extends Identity {
+    @JsonGetter("is_member")
+    public boolean isMember() {
+        return isMember;
+    }
+
+    public void setIsMember(boolean isMember) {
+        this.isMember = isMember;
+    }
+
+    public String getSigDate() {
+        return sigDate;
+    }
+
+    public void setSigDate(String sigDate) {
+        this.sigDate = sigDate;
+    }
+
+    public static class Certification extends Identity {
 
         private static final long serialVersionUID = 2204517069552693026L;
 
-        public CertTime cert_time;
+        private CertTime certTime;
+
+        private String sigDate;
 
         /**
          * Indicate whether the certification is written in the blockchain or not.
          */
         private Written written;
 
-        public CertTime getCert_time() {
-            return cert_time;
+        private boolean wasMember;
+
+        @JsonGetter("cert_time")
+        public CertTime getCertTime() {
+            return certTime;
         }
 
-        public void setCert_time(CertTime cert_time) {
-            this.cert_time = cert_time;
+        @JsonSetter("cert_time")
+        public void setCertTime(CertTime certTime) {
+            this.certTime = certTime;
         }
 
         /**
@@ -97,9 +126,25 @@ public class WotCertification implements Serializable{
             this.written = written;
         }
 
+        public String getSigDate() {
+            return sigDate;
+        }
+
+        public void setSigDate(String sigDate) {
+            this.sigDate = sigDate;
+        }
+
+        @JsonGetter("wasMember")
+        public boolean wasMember() {
+            return wasMember;
+        }
+
+        public void setWasMember(boolean wasMember) {
+            this.wasMember = wasMember;
+        }
     }
 
-    public class CertTime implements Serializable {
+    public static class CertTime implements Serializable {
 
         private static final long serialVersionUID = -358639516878884523L;
 
@@ -125,7 +170,7 @@ public class WotCertification implements Serializable{
 
     }
 
-    public class Written implements Serializable{
+    public static class Written implements Serializable{
 
         private long number = -1;
 

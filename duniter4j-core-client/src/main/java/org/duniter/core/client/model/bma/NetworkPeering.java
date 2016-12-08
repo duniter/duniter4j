@@ -22,6 +22,8 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 
 /**
@@ -32,7 +34,9 @@ public class NetworkPeering implements Serializable {
     private String currency;
     private String block;
     private String signature;
-    // not need : private String raw
+
+    private String raw;
+
     private String pubkey;
 
     public Endpoint[] endpoints;
@@ -77,6 +81,23 @@ public class NetworkPeering implements Serializable {
         this.pubkey = pubkey;
     }
 
+    @JsonIgnore
+    public String getRaw() {
+        return raw;
+    }
+
+    public void setRaw(String raw) {
+        this.raw = raw;
+    }
+
+    public Endpoint[] getEndpoints() {
+        return endpoints;
+    }
+
+    public void setEndpoints(Endpoint[] endpoints) {
+        this.endpoints = endpoints;
+    }
+
     public String toString() {
         String s = "version=" + version + "\n" +
                 "currency=" + currency + "\n" +
@@ -96,6 +117,46 @@ public class NetworkPeering implements Serializable {
         public String ipv4;
         public String ipv6;
         public Integer port;
+
+        public EndpointProtocol getProtocol() {
+            return protocol;
+        }
+
+        public void setProtocol(EndpointProtocol protocol) {
+            this.protocol = protocol;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getIpv4() {
+            return ipv4;
+        }
+
+        public void setIpv4(String ipv4) {
+            this.ipv4 = ipv4;
+        }
+
+        public String getIpv6() {
+            return ipv6;
+        }
+
+        public void setIpv6(String ipv6) {
+            this.ipv6 = ipv6;
+        }
+
+        public Integer getPort() {
+            return port;
+        }
+
+        public void setPort(Integer port) {
+            this.port = port;
+        }
 
         @Override
         public String toString() {

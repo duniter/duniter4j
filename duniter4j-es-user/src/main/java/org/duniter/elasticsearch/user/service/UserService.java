@@ -50,15 +50,13 @@ public class UserService extends AbstractService {
 
     public static final String INDEX = "user";
     public static final String PROFILE_TYPE = "profile";
-    public static final String EVENT_TYPE = "profile";
     public static final String SETTINGS_TYPE = "settings";
 
     @Inject
     public UserService(Client client,
                        PluginSettings settings,
-                       CryptoService cryptoService,
-                       MailService mailService) {
-        super("gchange." + INDEX, client, settings,cryptoService);
+                       CryptoService cryptoService) {
+        super("duniter." + INDEX, client, settings,cryptoService);
     }
 
     /**

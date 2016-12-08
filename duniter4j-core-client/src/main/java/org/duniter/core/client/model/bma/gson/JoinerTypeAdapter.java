@@ -48,8 +48,8 @@ public class JoinerTypeAdapter implements JsonDeserializer<BlockchainBlock.Joine
         
         result.setPublicKey(identityParts[i++]);
         result.setSignature(identityParts[i++]);
-        result.setMBlockUid(identityParts[i++]);
-        result.setIBlockUid(identityParts[i++]);
+        result.setMembershipBlockUid(identityParts[i++]);
+        result.setIdtyBlockUid(identityParts[i++]);
         result.setUserId(identityParts[i++]);
 
         return result;
@@ -60,8 +60,8 @@ public class JoinerTypeAdapter implements JsonDeserializer<BlockchainBlock.Joine
         String result = new StringBuilder()
                 .append(member.getPublicKey()).append(":")
                 .append(member.getSignature()).append(":")
-                .append(member.getMBlockUid()).append(":")
-                .append(member.getIBlockUid()).append(":")
+                .append(member.getMembershipBlockUid()).append(":")
+                .append(member.getIdtyBlockUid()).append(":")
                 .append(member.getUserId()).toString();
 
         return context.serialize(result.toString(), String.class);

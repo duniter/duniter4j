@@ -438,7 +438,7 @@ public class MarketService extends AbstractService {
                             issuerTitle != null ? issuerTitle : issuer.substring(0, 8),
                             recordTitle)
                     .setRecipient(recordIssuer)
-                    .setLink(INDEX, RECORD_TYPE, recordId)
+                    .setReference(INDEX, RECORD_TYPE, recordId)
                     .build());
         }
     }

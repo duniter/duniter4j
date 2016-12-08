@@ -22,6 +22,10 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 import java.io.Serializable;
 
 /**
@@ -46,7 +50,95 @@ public class NetworkPeers implements Serializable {
         public String block;
         public String signature;
         public String pubkey;
+        public Long firstDown;
+        public Long lastTry;
+        public String raw;
         public NetworkPeering.Endpoint[] endpoints;
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public String getCurrency() {
+            return currency;
+        }
+
+        public void setCurrency(String currency) {
+            this.currency = currency;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public String getBlock() {
+            return block;
+        }
+
+        public void setBlock(String block) {
+            this.block = block;
+        }
+
+        public String getSignature() {
+            return signature;
+        }
+
+        public void setSignature(String signature) {
+            this.signature = signature;
+        }
+
+        public String getPubkey() {
+            return pubkey;
+        }
+
+        public void setPubkey(String pubkey) {
+            this.pubkey = pubkey;
+        }
+
+        @JsonGetter("first_down")
+        public Long getFirstDown() {
+            return firstDown;
+        }
+
+        @JsonSetter("first_down")
+        public void setFirstDown(Long firstDown) {
+            this.firstDown = firstDown;
+        }
+
+        @JsonGetter("last_try")
+        public Long getLastTry() {
+            return lastTry;
+        }
+
+        @JsonSetter("last_try")
+        public void setLastTry(Long lastTry) {
+            this.lastTry = lastTry;
+        }
+
+        public NetworkPeering.Endpoint[] getEndpoints() {
+            return endpoints;
+        }
+
+        public void setEndpoints(NetworkPeering.Endpoint[] endpoints) {
+            this.endpoints = endpoints;
+        }
+
+        @JsonIgnore
+        public String getRaw() {
+            return raw;
+        }
+
+        public void setRaw(String raw) {
+            this.raw = raw;
+        }
 
         @Override
         public String toString() {

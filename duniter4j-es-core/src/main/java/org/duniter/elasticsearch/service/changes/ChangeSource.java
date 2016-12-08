@@ -38,7 +38,10 @@ package org.duniter.elasticsearch.service.changes;
     limitations under the License.
 */
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import org.duniter.core.util.StringUtils;
 
 import java.util.Set;
 
@@ -65,6 +68,17 @@ public class ChangeSource {
         }
     }
 
+    public ChangeSource(String index, String type) {
+        this(index, type, null);
+    }
+
+    public ChangeSource(String index, String type, String id) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(index));
+        indices = index.equals("*") ? null : ImmutableSet.of(index);
+        types = StringUtils.isBlank(type) || type.equals("*") ? null : ImmutableSet.of(type);
+        ids = StringUtils.isBlank(id) || id.equals("*") ? null : ImmutableSet.of(id);
+    }
+
     public Set<String> getIds() {
         return ids;
     }
@@ -75,6 +89,53 @@ public class ChangeSource {
 
     public Set<String> getTypes() {
         return types;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        // Add indices
+        Joiner joiner = Joiner.on(',');
+        if (indices == null) {
+            sb.append('*');
+        }
+        else {
+            joiner.appendTo(sb, indices);
+        }
+
+        // Add types
+        if (types == null) {
+            if (ids != null) {
+                sb.append("/*");
+            }
+        }
+        else {
+            sb.append('/');
+            joiner.appendTo(sb, types);
+        }
+
+        // Add ids
+        if (ids != null) {
+            sb.append('/');
+            joiner.appendTo(sb, ids);
+        }
+        return sb.toString();
+    }
+
+    public boolean apply(String index, String type, String id) {
+        if (indices != null && !indices.contains(index)) {
+            return false;
+        }
+
+        if (types != null && !types.contains(type)) {
+            return false;
+        }
+
+        if (ids != null && !ids.contains(id)) {
+            return false;
+        }
+
+        return true;
     }
 
 }

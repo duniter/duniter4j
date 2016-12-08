@@ -87,7 +87,7 @@ public class UserEventService extends AbstractService {
     public UserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
                             MailService mailService,
                             ThreadPool threadPool) {
-        super("duniter.event." + INDEX, client, settings, cryptoService);
+        super("duniter.user.event", client, settings, cryptoService);
         this.mailService = mailService;
         this.threadPool = threadPool;
         this.nodeKeyPair = getNodeKeyPairOrNull(pluginSettings);
@@ -102,44 +102,20 @@ public class UserEventService extends AbstractService {
      * Notify cluster admin
      */
     public void notifyAdmin(UserEvent event) {
-
-        UserProfile adminProfile;
-        if (StringUtils.isNotBlank(nodePubkey)) {
-            adminProfile = getUserProfile(nodePubkey, UserProfile.PROPERTY_EMAIL, UserProfile.PROPERTY_LOCALE);
-        }
-        else {
-            adminProfile = new UserProfile();
-        }
-
-        // Add new event to index
-        Locale locale = StringUtils.isNotBlank(adminProfile.getLocale()) ?
-                new Locale(adminProfile.getLocale()) :
-                I18n.getDefaultLocale();
-        if (StringUtils.isNotBlank(nodePubkey)) {
-            event.setRecipient(nodePubkey);
-            indexEvent(locale, event);
-        }
-
-        // Send email to admin
-        String adminEmail = StringUtils.isNotBlank(adminProfile.getEmail()) ?
-                adminProfile.getEmail() :
-                pluginSettings.getMailAdmin();
-        if (StringUtils.isNotBlank(adminEmail)) {
-            String subjectPrefix = pluginSettings.getMailSubjectPrefix();
-            sendEmail(adminEmail,
-                    I18n.l(locale, "duniter4j.event.subject."+event.getType().name(), subjectPrefix),
-                    event.getLocalizedMessage(locale));
-        }
+        // async
+        //threadPool.schedule(() -> {
+            doNotifyAdmin(event);
+        //});
     }
 
     /**
      * Notify a user
      */
     public void notifyUser(UserEvent event) {
-        // Notify user
+        // async
         threadPool.schedule(() -> {
             doNotifyUser(event);
-        }, TimeValue.timeValueMillis(100));
+        }, TimeValue.timeValueMillis(500));
     }
 
     public String indexEvent(Locale locale, UserEvent event) {
@@ -235,8 +211,8 @@ public class UserEventService extends AbstractService {
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // link
-                    .startObject("link")
+                    // reference
+                    .startObject("reference")
                         .field("type", "nested")
                         .field("dynamic", "false")
                         .startObject("properties")
@@ -252,6 +228,10 @@ public class UserEventService extends AbstractService {
                                 .field("type", "string")
                                 .field("index", "not_analyzed")
                             .endObject()
+                            .startObject("hash")
+                                .field("type", "string")
+                                .field("index", "not_analyzed")
+                            .endObject()
                         .endObject()
                     .endObject()
 
@@ -263,6 +243,18 @@ public class UserEventService extends AbstractService {
                     // params
                     .startObject("params")
                     .field("type", "string")
+                    .endObject()
+
+                    // hash
+                    .startObject("hash")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // signature
+                    .startObject("signature")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     .endObject()
@@ -310,6 +302,40 @@ public class UserEventService extends AbstractService {
     private String getNodePubKey(KeyPair nodeKeyPair) {
         if (nodeKeyPair == null) return null;
         return CryptoUtils.encodeBase58(nodeKeyPair.getPubKey());
+    }
+
+    /**
+     * Notify cluster admin
+     */
+    public void doNotifyAdmin(UserEvent event) {
+
+        UserProfile adminProfile;
+        if (StringUtils.isNotBlank(nodePubkey)) {
+            adminProfile = getUserProfile(nodePubkey, UserProfile.PROPERTY_EMAIL, UserProfile.PROPERTY_LOCALE);
+        }
+        else {
+            adminProfile = new UserProfile();
+        }
+
+        // Add new event to index
+        Locale locale = StringUtils.isNotBlank(adminProfile.getLocale()) ?
+                new Locale(adminProfile.getLocale()) :
+                I18n.getDefaultLocale();
+        if (StringUtils.isNotBlank(nodePubkey)) {
+            event.setRecipient(nodePubkey);
+            indexEvent(locale, event);
+        }
+
+        // Send email to admin
+        String adminEmail = StringUtils.isNotBlank(adminProfile.getEmail()) ?
+                adminProfile.getEmail() :
+                pluginSettings.getMailAdmin();
+        if (StringUtils.isNotBlank(adminEmail)) {
+            String subjectPrefix = pluginSettings.getMailSubjectPrefix();
+            sendEmail(adminEmail,
+                    I18n.l(locale, "duniter4j.event.subject."+event.getType().name(), subjectPrefix),
+                    event.getLocalizedMessage(locale));
+        }
     }
 
     /**

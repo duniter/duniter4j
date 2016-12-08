@@ -41,7 +41,6 @@ package org.duniter.elasticsearch.websocket;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.duniter.elasticsearch.websocket.changes.WebSocketChangeEndPoint;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;

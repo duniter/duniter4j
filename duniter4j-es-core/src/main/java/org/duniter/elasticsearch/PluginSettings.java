@@ -285,6 +285,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.ws.enable", Boolean.TRUE);
     }
 
+    public String[] getWebSocketChangesListenSource()  {
+        return settings.getAsArray("duniter.ws.changes.listenSource", new String[]{"*"});
+    }
+
     /* protected methods */
 
     protected void initI18n() throws IOException {

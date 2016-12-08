@@ -23,7 +23,9 @@ package org.duniter.elasticsearch.user.model;
  */
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.nuiton.i18n.I18n;
@@ -57,7 +59,7 @@ public class UserEvent extends Record {
     public static final String PROPERTY_CODE="code";
     public static final String PROPERTY_MESSAGE="message";
     public static final String PROPERTY_PARAMS="params";
-    public static final String PROPERTY_LINK="link";
+    public static final String PROPERTY_LINK="reference";
     public static final String PROPERTY_RECIPIENT="recipient";
 
 
@@ -71,7 +73,7 @@ public class UserEvent extends Record {
 
     private String[] params;
 
-    private UserEventLink link;
+    private Reference reference;
 
     public UserEvent() {
         super();
@@ -91,7 +93,7 @@ public class UserEvent extends Record {
         this.type = another.getType();
         this.code = another.getCode();
         this.params = another.getParams();
-        this.link = (another.getLink() != null) ? new UserEventLink(another.getLink()) : null;
+        this.reference = (another.getReference() != null) ? new Reference(another.getReference()) : null;
         this.message = another.getMessage();
         this.recipient = another.getRecipient();
     }
@@ -112,8 +114,8 @@ public class UserEvent extends Record {
         return params;
     }
 
-    public UserEventLink getLink() {
-        return link;
+    public Reference getReference() {
+        return reference;
     }
 
     public String getLocalizedMessage(Locale locale) {
@@ -136,8 +138,8 @@ public class UserEvent extends Record {
         this.params = params;
     }
 
-    public void setLink(UserEventLink link) {
-        this.link = link;
+    public void setReference(Reference reference) {
+        this.reference = reference;
     }
 
     public String getRecipient() {
@@ -152,6 +154,7 @@ public class UserEvent extends Record {
     public String toJson() {
         try {
             ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             return mapper.writeValueAsString(this);
         } catch(Exception e) {
             throw new TechnicalException(e);
@@ -163,6 +166,10 @@ public class UserEvent extends Record {
         UserEvent copy = new UserEvent(this);
         copy.setMessage(getLocalizedMessage(locale));
         return copy.toJson();
+    }
+
+    private static long getDefaultTime() {
+        return Math.round(1d * System.currentTimeMillis() / 1000);
     }
 
     public static class Builder {
@@ -193,13 +200,24 @@ public class UserEvent extends Record {
             return this;
         }
 
-        public Builder setLink(String index, String type, String id) {
-            result.setLink(new UserEventLink(index, type, id));
+        public Builder setReference(String index, String type, String id) {
+            result.setReference(new Reference(index, type, id));
             return this;
         }
 
-        public Builder setLink(String index, String type, String id, String anchor) {
-            result.setLink(new UserEventLink(index, type, id, anchor));
+        public Builder setReferenceHash(String hash) {
+            Preconditions.checkNotNull(result.getReference(), "No reference set. Please call setReference() first");
+            result.getReference().setHash(hash);
+            return this;
+        }
+
+        public Builder setReference(String index, String type, String id, String anchor) {
+            result.setReference(new Reference(index, type, id, anchor));
+            return this;
+        }
+
+        public Builder setTime(long time) {
+            result.setTime(time);
             return this;
         }
 
@@ -211,7 +229,68 @@ public class UserEvent extends Record {
         }
     }
 
-    private static int getDefaultTime() {
-        return Math.round(1f * System.currentTimeMillis() / 1000);
+
+
+    public static class Reference {
+
+        private String index;
+
+        private String type;
+
+        private String id;
+
+        private String anchor;
+
+        private String hash;
+
+        public Reference() {
+        }
+
+        public Reference(String index, String type, String id) {
+            this(index, type, id, null);
+        }
+
+        public Reference(String index, String type, String id, String anchor) {
+            this.index = index;
+            this.type = type;
+            this.id = id;
+            this.anchor = anchor;
+        }
+
+        public Reference(Reference another) {
+            this.index = another.getIndex();
+            this.type = another.getType();
+            this.id = another.getId();
+            this.hash = another.getHash();
+            this.anchor = another.getAnchor();
+        }
+
+        public String getIndex() {
+            return index;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getAnchor() {
+            return anchor;
+        }
+
+        public void setAnchor(String anchor) {
+            this.anchor = anchor;
+        }
+
+        public String getHash() {
+            return hash;
+        }
+
+        public void setHash(String hash) {
+            this.hash = hash;
+        }
     }
 }

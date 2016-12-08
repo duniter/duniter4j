@@ -97,7 +97,7 @@ public class WotRemoteServiceTest {
 		for (WotCertification.Certification cert : result.getCertifications()) {
 			Assert.assertNotNull(cert.getUid());
 
-			WotCertification.CertTime certTime = cert.getCert_time();
+			WotCertification.CertTime certTime = cert.getCertTime();
 			Assert.assertNotNull(certTime);
 			Assert.assertTrue(certTime.getBlock() >= 0);
 			Assert.assertNotNull(certTime.getMedianTime() >= 0);
@@ -124,7 +124,7 @@ public class WotRemoteServiceTest {
 		for (WotCertification.Certification cert : result.getCertifications()) {
 			Assert.assertNotNull(cert.getUid());
 
-			WotCertification.CertTime certTime = cert.getCert_time();
+			WotCertification.CertTime certTime = cert.getCertTime();
 			Assert.assertNotNull(certTime);
 			Assert.assertTrue(certTime.getBlock() >= 0);
 			Assert.assertNotNull(certTime.getMedianTime() >= 0);

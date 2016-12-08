@@ -24,6 +24,12 @@ package org.duniter.core.client.model.bma;
 
 
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 
@@ -45,14 +51,17 @@ public class BlockchainBlock implements Serializable {
     private Long medianTime;
     private Integer membersCount;
     private BigInteger monetaryMass;
-    private Integer unitBase;
+    private Integer unitbase;
+    private Integer issuersCount;
+    private Integer issuersFrame;
+    private Integer issuersFrameVar;
     private String currency;
     private String issuer;
     private String hash;
     private String parameters;
     private String previousHash;
     private String previousIssuer;
-    private String inner_hash;
+    private String innerHash;
     private BigInteger dividend;
     private Identity[] identities;
     private Joiner[] joiners;
@@ -66,7 +75,7 @@ public class BlockchainBlock implements Serializable {
 
 
 //  raw": "Version: 1\nType: Block\nCurrency: zeta_brouzouf\nNonce: 8233\nNumber: 1\nDate: 1416589860\nConfirmedDate: 1416589860\nIssuer: HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk\nPreviousHash: 00006CD96A01378465318E48310118AC6B2F3625\nPreviousIssuer: HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk\nMembersCount: 4\nIdentities:\nJoiners:\nActives:\nLeavers:\nExcluded:\nCertifications:\nTransactions:\n"
-    //private String raw;
+    private String raw;
 
     public String getVersion() {
         return version;
@@ -183,20 +192,22 @@ public class BlockchainBlock implements Serializable {
         this.joiners = joiners;
     }
 
-    public Integer getUnitBase() {
-        return unitBase;
+    public Integer getUnitbase() {
+        return unitbase;
     }
 
-    public void setUnitBase(Integer unitBase) {
-        this.unitBase = unitBase;
+    public void setUnitbase(Integer unitbase) {
+        this.unitbase = unitbase;
     }
 
+    @JsonGetter("inner_hash")
     public String getInnerHash() {
-        return inner_hash;
+        return innerHash;
     }
 
+    @JsonSetter("inner_hash")
     public void setInnerHash(String inner_hash) {
-        this.inner_hash = inner_hash;
+        this.innerHash = inner_hash;
     }
 
     public Joiner[] getLeavers() {
@@ -247,10 +258,42 @@ public class BlockchainBlock implements Serializable {
         this.transactions = transactions;
     }
 
+    public Integer getIssuersCount() {
+        return issuersCount;
+    }
+
+    public void setIssuersCount(Integer issuersCount) {
+        this.issuersCount = issuersCount;
+    }
+
+    public Integer getIssuersFrame() {
+        return issuersFrame;
+    }
+
+    public void setIssuersFrame(Integer issuersFrame) {
+        this.issuersFrame = issuersFrame;
+    }
+
+    public Integer getIssuersFrameVar() {
+        return issuersFrameVar;
+    }
+
+    public void setIssuersFrameVar(Integer issuersFrameVar) {
+        this.issuersFrameVar = issuersFrameVar;
+    }
+
+    public String getRaw() {
+        return raw;
+    }
+
+    public void setRaw(String raw) {
+        this.raw = raw;
+    }
+
     public String toString() {
         String s = "version=" + version;
         s += "\nnonce=" + nonce;
-        s += "\ninner_hash=" + inner_hash;
+        s += "\ninnerHash=" + innerHash;
         s += "\nnumber=" + number;
         s += "\npowMin" + powMin;
         s += "\ntime=" + time;
@@ -312,6 +355,7 @@ public class BlockchainBlock implements Serializable {
         return s;
     }
 
+    @JsonDeserialize
     public static class Identity implements Serializable {
 
         private static final long serialVersionUID = 8080689271400316984L;
@@ -379,9 +423,9 @@ public class BlockchainBlock implements Serializable {
 
         private String userId;
 
-        private String mBlockUid;
+        private String membershipBlockUid;
 
-        private String iBlockUid;
+        private String idtyBlockUid;
 
         public String getPublicKey() {
             return publicKey;
@@ -407,20 +451,20 @@ public class BlockchainBlock implements Serializable {
             this.userId = uid;
         }
 
-        public String getMBlockUid() {
-            return mBlockUid;
+        public String getMembershipBlockUid() {
+            return membershipBlockUid;
         }
 
-        public void setMBlockUid(String mBlockUid) {
-            this.mBlockUid = mBlockUid;
+        public void setMembershipBlockUid(String membershipBlockUid) {
+            this.membershipBlockUid = membershipBlockUid;
         }
 
-        public String getIBlockUid() {
-            return iBlockUid;
+        public String getIdtyBlockUid() {
+            return idtyBlockUid;
         }
 
-        public void setIBlockUid(String iBlockUid) {
-            this.iBlockUid = iBlockUid;
+        public void setIdtyBlockUid(String idtyBlockUid) {
+            this.idtyBlockUid = idtyBlockUid;
         }
 
         @Override
@@ -429,8 +473,8 @@ public class BlockchainBlock implements Serializable {
             StringBuilder sb = new StringBuilder()
                     .append(":").append(publicKey)
                     .append(":").append(signature)
-                    .append(":").append(mBlockUid)
-                    .append(":").append(iBlockUid)
+                    .append(":").append(membershipBlockUid)
+                    .append(":").append(idtyBlockUid)
                     .append(":").append(userId);
 
             return sb.toString();
@@ -468,7 +512,9 @@ public class BlockchainBlock implements Serializable {
         }
     }
 
-    public class Transaction implements Serializable {
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Transaction implements Serializable {
         private static final long serialVersionUID = 1L;
 
         private String[] signatures;
@@ -484,6 +530,18 @@ public class BlockchainBlock implements Serializable {
         private String[] unlocks;
 
         private String[] outputs;
+
+        private long time;
+
+        private long locktime;
+
+        private String blockstamp;
+
+        private long blockstampTime;
+
+        private String comment;
+
+        private long blockNumber;
 
         public String[] getSignatures() {
             return signatures;
@@ -539,6 +597,56 @@ public class BlockchainBlock implements Serializable {
 
         public void setOutputs(String[] outputs) {
             this.outputs = outputs;
+        }
+
+        public long getTime() {
+            return time;
+        }
+
+        public void setTime(long time) {
+            this.time = time;
+        }
+
+        public long getBlockstampTime() {
+            return blockstampTime;
+        }
+
+        public void setBlockstampTime(long blockstampTime) {
+            this.blockstampTime = blockstampTime;
+        }
+
+        public long getLocktime() {
+            return locktime;
+        }
+
+        public void setLocktime(long locktime) {
+            this.locktime = locktime;
+        }
+
+        public String getBlockstamp() {
+            return blockstamp;
+        }
+
+        public void setBlockstamp(String blockstamp) {
+            this.blockstamp = blockstamp;
+        }
+
+        public String getComment() {
+            return comment;
+        }
+
+        public void setComment(String comment) {
+            this.comment = comment;
+        }
+
+        @JsonGetter("block_number")
+        public long getBlockNumber() {
+            return blockNumber;
+        }
+
+        @JsonSetter("block_number")
+        public void setBlockNumber(long blockNumber) {
+            this.blockNumber = blockNumber;
         }
 
         @Override

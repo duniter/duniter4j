@@ -167,7 +167,7 @@ public class CurrencyService extends AbstractService {
      */
     public Currency indexCurrencyFromPeer(Peer peer) {
         BlockchainParameters parameters = blockchainRemoteService.getParameters(peer);
-        BlockchainBlock firstBlock = blockchainRemoteService.getBlock(peer, 0);
+        BlockchainBlock firstBlock = blockchainRemoteService.getBlock(peer, 0l);
         BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);
         long lastUD = blockchainRemoteService.getLastUD(peer);
 

@@ -22,16 +22,8 @@ package org.duniter.core.client.service;
  * #L%
  */
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import com.google.gson.Gson;
-import org.apache.http.client.utils.URIBuilder;
-import org.duniter.core.beans.InitializingBean;
-import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.model.bma.Error;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
-import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.service.exception.*;
-import org.duniter.core.exception.TechnicalException;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -39,8 +31,19 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.duniter.core.beans.InitializingBean;
+import org.duniter.core.client.config.Configuration;
+import org.duniter.core.client.model.bma.Error;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
+import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.service.exception.HttpBadRequestException;
+import org.duniter.core.client.service.exception.HttpConnectException;
+import org.duniter.core.client.service.exception.HttpNotFoundException;
+import org.duniter.core.client.service.exception.PeerConnectionException;
+import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.StringUtils;
 import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
@@ -62,7 +65,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     public static final String URL_PEER_ALIVE = "/blockchain/parameters";
 
     protected Integer baseTimeOut;
-    protected Gson gson;
+    protected ObjectMapper objectMapper;
     protected HttpClient httpClient;
     protected Peer defaultPeer;
     private boolean debug;
@@ -75,7 +78,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     @Override
     public void afterPropertiesSet() throws Exception {
         Configuration config = Configuration.instance();
-        this.gson = GsonUtils.newBuilder().create();
+        this.objectMapper = JacksonUtils.newObjectMapper();
         this.baseTimeOut = config.getNetworkTimeout();
         this.httpClient = createHttpClient();
     }
@@ -294,22 +297,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         // deserialize using gson
         else {
             try {
-                Reader reader = new InputStreamReader(content, StandardCharsets.UTF_8);
-                if (ResultClass != null) {
-                    result = gson.fromJson(reader, ResultClass);
-                }
-                else {
-                    result = null;
-                }
-            }
-            catch (com.google.gson.JsonSyntaxException e) {
-                if (content != null) {
-                    log.warn("Error while parsing JSON response: " + getContentAsString(content), e);
-                }
-                else {
-                    log.warn("Error while parsing JSON response", e);
-                }
-                throw new JsonSyntaxException(I18n.t("duniter4j.client.core.invalidResponse"), e);
+                result = objectMapper.readValue(content, ResultClass);
             }
             catch (Exception e) {
                 throw new TechnicalException(I18n.t("duniter4j.client.core.invalidResponse"), e);

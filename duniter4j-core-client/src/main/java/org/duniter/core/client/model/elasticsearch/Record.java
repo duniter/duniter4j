@@ -35,7 +35,7 @@ public class Record {
     private String issuer;
     private String hash;
     private String signature;
-    private Integer time;
+    private Long time;
 
     public Record() {
     }
@@ -72,11 +72,11 @@ public class Record {
     }
 
 
-    public Integer getTime() {
+    public Long getTime() {
         return time;
     }
 
-    public void setTime(Integer time) {
+    public void setTime(Long time) {
         this.time = time;
     }
 

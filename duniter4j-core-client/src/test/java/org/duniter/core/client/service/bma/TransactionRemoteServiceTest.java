@@ -49,8 +49,6 @@ public class TransactionRemoteServiceTest {
 	}
 
 	@Test
-	@Ignore
-	//FIXME : get Wrong unit base for outputs - see implementation on Cesium
 	public void transfer() throws Exception {
 
 		service.transfer(

@@ -422,8 +422,8 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
         target.setUid(source.getUid());
         target.setSelf(source.getSelf());
-        String timestamp = source.getMeta() != null ? source.getMeta().timestamp : null;
-        //FIXME target.setTimestamp(timestamp);
+        String timestamp = source.getMeta() != null ? source.getMeta().getTimestamp() : null;
+        target.setTimestamp(timestamp);
     }
 
     public String getSignedIdentity(String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid) {
@@ -552,8 +552,8 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         // Read certified-by
         if (CollectionUtils.isNotEmpty(lookupResults.getResults())) {
             for (WotLookup.Result lookupResult: lookupResults.getResults()) {
-                if (lookupResult.signed != null) {
-                    for(WotLookup.SignedSignature lookupSignature : lookupResult.signed) {
+                if (lookupResult.getSigned() != null) {
+                    for(WotLookup.SignedSignature lookupSignature : lookupResult.getSigned()) {
                         Certification certifiedBy = toCertifiedByCerticication(lookupSignature);
 
                         // Set the currency Id
@@ -778,25 +778,25 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
         Certification target = new Certification();
         // uid
-        target.setUid(source.uid);
+        target.setUid(source.getUid());
 
         // certifieb by
         target.setCertifiedBy(true);
 
-        if (source.meta != null) {
+        if (source.getMeta() != null) {
 
             // timestamp
-            String timestamp = source.meta != null ? source.meta.timestamp : null;
+            String timestamp = source.getMeta() != null ? source.getMeta().getTimestamp() : null;
             if (timestamp != null) {
                 //FIXME target.setTimestamp(timestamp.longValue());
             }
         }
 
         // Pubkey
-        target.setPubkey(source.pubkey);
+        target.setPubkey(source.getPubkey());
 
         // Is member
-        target.setMember(source.isMember);
+        target.setMember(source.isMember());
 
         // add to result list
         return target;

@@ -39,7 +39,7 @@ public class RevokedTypeAdapter implements JsonDeserializer<BlockchainBlock.Revo
         }
         
         String[] identityParts = identityStr.split(":");
-        if (identityParts.length != 4) {
+        if (identityParts.length != 2) {
             throw new JsonParseException(String.format("Bad format for BlockchainBlock.Revoked. Should have 4 parts, but found %s.", identityParts.length));
         }
 
