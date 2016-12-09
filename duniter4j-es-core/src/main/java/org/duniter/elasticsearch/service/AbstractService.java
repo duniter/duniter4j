@@ -46,7 +46,10 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -299,6 +302,20 @@ public abstract class AbstractService implements Bean {
     }
 
     /**
+     * Retrieve a document by id (safe mode)
+     * @param docId
+     * @return
+     */
+    public <T extends Object> T getSourceByIdOrNull(String index, String type, String docId, Class<T> classOfT, String... fieldNames) {
+        try {
+            return getSourceById(index, type, docId, classOfT, fieldNames);
+        }
+        catch(TechnicalException e) {
+            return null; // not found
+        }
+    }
+
+    /**
      * Retrieve a document by id
      * @param docId
      * @return
@@ -308,10 +325,9 @@ public abstract class AbstractService implements Bean {
         // Prepare request
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(index)
-                .setTypes(type)
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+                .setSearchType(SearchType.QUERY_AND_FETCH);
 
-        searchRequest.setQuery(QueryBuilders.matchQuery("_id", docId));
+        searchRequest.setQuery(QueryBuilders.idsQuery(type).ids(docId));
         if (CollectionUtils.isNotEmpty(fieldNames)) {
             searchRequest.setFetchSource(fieldNames, null);
         }
@@ -323,8 +339,11 @@ public abstract class AbstractService implements Bean {
         try {
             SearchResponse response = searchRequest.execute().actionGet();
 
+            if (response.getHits().getTotalHits() == 0) return null;
+
             // Read query result
             SearchHit[] searchHits = response.getHits().getHits();
+
             for (SearchHit searchHit : searchHits) {
                 if (searchHit.source() != null) {
                     return objectMapper.readValue(searchHit.source(), classOfT);
@@ -491,6 +510,22 @@ public abstract class AbstractService implements Bean {
         }
         catch(IOException ioe) {
             throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", index, type, ioe.getMessage()), ioe);
+        }
+    }
+
+    protected void flushDeleteBulk(final String index, final String type, BulkRequestBuilder bulkRequest) {
+        if (bulkRequest.numberOfActions() > 0) {
+            BulkResponse bulkResponse = bulkRequest.get();
+            // If failures, continue but save missing blocks
+            if (bulkResponse.hasFailures()) {
+                // process failures by iterating through each bulk response item
+                for (BulkItemResponse itemResponse : bulkResponse) {
+                    boolean skip = !itemResponse.isFailed();
+                    if (!skip) {
+                        logger.debug(String.format("[%s/%s] Error while deleting doc [%s]: %s. Skipping this deletion.", index, type, itemResponse.getId(), itemResponse.getFailureMessage()));
+                    }
+                }
+            }
         }
     }
 

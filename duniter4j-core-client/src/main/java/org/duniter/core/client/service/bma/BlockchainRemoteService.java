@@ -222,9 +222,8 @@ public interface BlockchainRemoteService extends Service {
      */
     Map<Integer, Long> getUDs(long currencyId, long startOffset);
 
-    void addNewBlockListener(long currencyId, WebsocketClientEndpoint.MessageHandler messageHandler);
+    WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener);
 
-    void addNewBlockListener(Peer peer, WebsocketClientEndpoint.MessageHandler messageHandler);
-
+    WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener);
 
 }

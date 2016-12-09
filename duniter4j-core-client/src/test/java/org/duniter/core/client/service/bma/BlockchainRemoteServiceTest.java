@@ -36,7 +36,6 @@ import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.exception.HttpBadRequestException;
 import org.duniter.core.util.crypto.CryptoUtils;
-import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +133,7 @@ public class BlockchainRemoteServiceTest {
 
         isWebSocketNewBlockReceived = false;
 
-        service.addNewBlockListener(createTestPeer(), (message) -> {
+        service.addBlockListener(createTestPeer(), (message) -> {
             BlockchainBlock block = GsonUtils.newBuilder().create().fromJson(message, BlockchainBlock.class);
             log.debug("Received block #" + block.getNumber());
             isWebSocketNewBlockReceived = true;

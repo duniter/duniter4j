@@ -44,6 +44,7 @@ import org.duniter.core.model.ProgressionModelImpl;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -89,11 +90,13 @@ public class BlockchainService extends AbstractService {
     private BlockchainRemoteService blockchainRemoteService;
     private CurrencyService currencyService;
     private ThreadPool threadPool;
+    private List<WebsocketClientEndpoint.ConnectionListener> connectionListeners = new ArrayList<>();
+    private final WebsocketClientEndpoint.ConnectionListener dispatchConnectionListener;
 
-    private JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
-    private JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("currency");
-    private JsonAttributeParser blockHashParser = new JsonAttributeParser("hash");
-    private JsonAttributeParser blockPreviousHashParser = new JsonAttributeParser("previousHash");
+    private final JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
+    private final JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("currency");
+    private final JsonAttributeParser blockHashParser = new JsonAttributeParser("hash");
+    private final JsonAttributeParser blockPreviousHashParser = new JsonAttributeParser("previousHash");
 
     private Gson gson;
 
@@ -106,6 +109,20 @@ public class BlockchainService extends AbstractService {
         threadPool.scheduleOnStarted(() -> {
             blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
         });
+        dispatchConnectionListener = new WebsocketClientEndpoint.ConnectionListener() {
+            @Override
+            public void onSuccess() {
+                synchronized (connectionListeners) {
+                    connectionListeners.stream().forEach(connectionListener -> connectionListener.onSuccess());
+                }
+            }
+            @Override
+            public void onError(Exception e, long lastTimeUp) {
+                synchronized (connectionListeners) {
+                    connectionListeners.stream().forEach(connectionListener -> connectionListener.onError(e, lastTimeUp));
+                }
+            }
+        };
     }
 
     @Inject
@@ -113,10 +130,16 @@ public class BlockchainService extends AbstractService {
         this.currencyService = currencyService;
     }
 
-    public BlockchainService listenAndIndexNewBlock(Peer peer){
-        blockchainRemoteService.addNewBlockListener(peer, message -> {
-            indexLastBlockFromJson(peer, message);
-        });
+
+    public void registerConnectionListener(WebsocketClientEndpoint.ConnectionListener listener) {
+        synchronized (connectionListeners) {
+            connectionListeners.add(listener);
+        }
+    }
+
+    public BlockchainService listenAndIndexNewBlock(final Peer peer){
+        WebsocketClientEndpoint wsEndPoint = blockchainRemoteService.addBlockListener(peer, message -> indexLastBlockFromJson(peer, message));
+        wsEndPoint.registerListener(dispatchConnectionListener);
         return this;
     }
 
@@ -1036,42 +1059,27 @@ public class BlockchainService extends AbstractService {
      * @param currencyName
      * @param fromNumber
      */
-    protected void deleteBlocksFromNumber(String currencyName, int fromNumber, int toNumber) {
+    protected void deleteBlocksFromNumber(final String currencyName, final int fromNumber, final int toNumber) {
 
         int bulkSize = pluginSettings.getIndexBulkSize();
 
         BulkRequestBuilder bulkRequest = client.prepareBulk();
-        for (int i=fromNumber; i<=toNumber; i++) {
+        for (int number=fromNumber; number<=toNumber; number++) {
 
             bulkRequest.add(
-                client.prepareDelete(currencyName, BLOCK_TYPE, String.valueOf(i))
+                client.prepareDelete(currencyName, BLOCK_TYPE, String.valueOf(number))
             );
 
             // Flush the bulk if not empty
-            if ((fromNumber - i % bulkSize) == 0) {
-                flushDeleteBulk(bulkRequest);
+            if ((fromNumber - number % bulkSize) == 0) {
+                flushDeleteBulk(currencyName, BLOCK_TYPE, bulkRequest);
                 bulkRequest = client.prepareBulk();
             }
         }
 
         // last flush
-        flushDeleteBulk(bulkRequest);
+        flushDeleteBulk(currencyName, BLOCK_TYPE, bulkRequest);
     }
 
-    protected void flushDeleteBulk(BulkRequestBuilder bulkRequest) {
-        if (bulkRequest.numberOfActions() > 0) {
-            BulkResponse bulkResponse = bulkRequest.get();
-            // If failures, continue but save missing blocks
-            if (bulkResponse.hasFailures()) {
-                // process failures by iterating through each bulk response item
-                for (BulkItemResponse itemResponse : bulkResponse) {
-                    boolean skip = !itemResponse.isFailed();
-                    if (!skip) {
-                        int itemNumber = Integer.parseInt(itemResponse.getId());
-                        logger.debug(String.format("Error while deleting block #%s: %s. Skipping this deletion.", itemNumber, itemResponse.getFailureMessage()));
-                    }
-                }
-            }
-        }
-    }
+
 }

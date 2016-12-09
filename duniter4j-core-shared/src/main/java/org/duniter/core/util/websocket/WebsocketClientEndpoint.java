@@ -23,6 +23,7 @@ package org.duniter.core.util.websocket;
  */
 
 import com.google.common.collect.Lists;
+import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,9 +45,11 @@ public class WebsocketClientEndpoint implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(WebsocketClientEndpoint.class);
 
     private Session userSession = null;
-    private List<MessageHandler> messageHandlers = Lists.newArrayList();
+    private List<MessageListener> messageListeners = Lists.newArrayList();
+    private List<ConnectionListener> connectionListeners = Lists.newArrayList();
     private final URI endpointURI;
     private final boolean autoReconnect;
+    private long lastTimeUp = -1;
 
     public WebsocketClientEndpoint(URI endpointURI) {
         this(endpointURI, true);
@@ -55,7 +58,7 @@ public class WebsocketClientEndpoint implements Closeable {
     public WebsocketClientEndpoint(URI endpointURI, boolean autoReconnect) {
         this.endpointURI = endpointURI;
         this.autoReconnect = autoReconnect;
-        connect(true);
+        connect();
     }
 
 
@@ -95,8 +98,8 @@ public class WebsocketClientEndpoint implements Closeable {
         this.userSession = null;
 
         // abnormal close : try to reconnect
-        if (reason.getCloseCode() == CloseReason.CloseCodes.CLOSED_ABNORMALLY)  {
-            connect(false);
+        if (reason.getCloseCode() == CloseReason.CloseCodes.CLOSED_ABNORMALLY && autoReconnect)  {
+            connect();
         }
     }
 
@@ -106,32 +109,41 @@ public class WebsocketClientEndpoint implements Closeable {
      * @param message The text message
      */
     @OnMessage
-    public void onMessage(String message) {
-        synchronized (messageHandlers) {
-            if (CollectionUtils.isNotEmpty(messageHandlers)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[%s] Received message: " + message);
-                }
-
-                for (MessageHandler messageHandler : messageHandlers) {
-                    try {
-                        messageHandler.handleMessage(message);
-                    } catch (Exception e) {
-                        log.error(String.format("[%s] Error during message handling: %s", endpointURI, e.getMessage()), e);
-                    }
-                }
+    public void onMessage(final String message) {
+        if (CollectionUtils.isNotEmpty(messageListeners)) {
+            if (log.isDebugEnabled()) {
+                log.debug("[%s] Received message: " + message);
             }
+
+            messageListeners.stream().forEach(messageListener -> {
+                try {
+                    messageListener.onMessage(message);
+                } catch (Exception e) {
+                    log.error(String.format("[%s] Error during message handling: %s", endpointURI, e.getMessage()), e);
+                }
+            });
         }
     }
 
     /**
-     * register message handler
+     * register message listener
      *
-     * @param msgHandler
+     * @param listener
      */
-    public void addMessageHandler(MessageHandler msgHandler) {
-        synchronized (messageHandlers) {
-            this.messageHandlers.add(msgHandler);
+    public void registerListener(MessageListener listener) {
+        synchronized (messageListeners) {
+            this.messageListeners.add(listener);
+        }
+    }
+
+    /**
+     * register connection listener
+     *
+     * @param listener
+     */
+    public void registerListener(ConnectionListener listener) {
+        synchronized (connectionListeners) {
+            this.connectionListeners.add(listener);
         }
     }
 
@@ -153,35 +165,70 @@ public class WebsocketClientEndpoint implements Closeable {
     }
 
     /**
-     * Message handler.
-     *
-     * @author Jiji_Sasidharan
+     * Message listener.
      */
-    public static interface MessageHandler {
+    public interface MessageListener {
 
-        public void handleMessage(String message);
+        void onMessage(String message);
+    }
+
+    /**
+     * Connection listener.
+     */
+    public interface ConnectionListener {
+
+        void onSuccess();
+
+        void onError(Exception e, long lastTimeUp);
     }
 
     /* -- Internal method */
 
-    private void connect(boolean throwErrorIfFailed) {
+    private void connect() {
         while(isClosed()) {
             try {
                 WebSocketContainer container = ContainerProvider.getWebSocketContainer();
                 container.connectToServer(this, endpointURI);
-                return; // stop
+                lastTimeUp = System.currentTimeMillis() / 1000;
+                notifyConnectionSuccess();
+                return; // stop while
             } catch (Exception e) {
-                if (throwErrorIfFailed) throw new RuntimeException(e);
+                notifyConnectionError(e);
+                if (!this.autoReconnect) throw new TechnicalException(e);
                 log.warn(String.format("[%s] Unable to connect. Retrying in 10s...", endpointURI.toString()));
             }
 
-            // wait 20s, then try again
+            // wait 10s, then try again
             try {
                 Thread.sleep(10 * 1000);
             }
             catch(Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private void notifyConnectionSuccess() {
+        synchronized (connectionListeners) {
+            connectionListeners.stream().forEach(connectionListener -> {
+                try {
+                    connectionListener.onSuccess();
+                } catch (Exception e) {
+                    log.error(String.format("[%s] Error during ConnectionListener.onSuccess(): %s", endpointURI, e.getMessage()), e);
+                }
+            });
+        }
+    }
+
+    private void notifyConnectionError(final Exception error) {
+        synchronized (connectionListeners) {
+            connectionListeners.stream().forEach(connectionListener -> {
+                try {
+                    connectionListener.onError(error, lastTimeUp);
+                } catch (Exception e) {
+                    log.error(String.format("[%s] Error during ConnectionListener.onError(): %s", endpointURI, e.getMessage()), e);
+                }
+            });
         }
     }
 }

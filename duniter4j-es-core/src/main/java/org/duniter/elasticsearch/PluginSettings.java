@@ -145,6 +145,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
 
     }
 
+    public String getClusterName() {
+        return settings.get("cluster.name", "?");
+    }
+
     public String getNodeBmaHost() {
         return settings.get("duniter.host", "cgeek.fr");
     }

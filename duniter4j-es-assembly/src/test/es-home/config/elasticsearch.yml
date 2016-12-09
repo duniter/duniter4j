@@ -121,12 +121,16 @@ duniter.string.analyzer: french
 #
 # Enabling node blockchain synchronization
 #
-duniter.blockchain.sync.enable: false
+duniter.blockchain.sync.enable: true
 #
 # Duniter node to synchronize
 #
-duniter.host: cgeek.fr
-duniter.port: 9330
+#duniter.host: cgeek.fr
+#duniter.port: 9330
+#duniter.host: test-net.duniter.fr
+#duniter.port: 9201
+duniter.host: 192.168.0.28
+duniter.port: 21378
 #
 # ---------------------------------- Duniter4j security -------------------------
 #
@@ -157,7 +161,7 @@ duniter.data.sync.enable: false
 #
 # SMTP server configuration (host and port)
 #
-duniter.mail.enable: false
+#duniter.mail.enable: false
 #duniter.mail.smtp.host: localhost
 #duniter.mail.smtp.port: 25
 #

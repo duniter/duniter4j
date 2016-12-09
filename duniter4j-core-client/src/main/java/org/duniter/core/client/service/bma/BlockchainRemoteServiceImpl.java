@@ -22,6 +22,7 @@ package org.duniter.core.client.service.bma;
  * #L%
  */
 
+import com.google.common.base.Preconditions;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.bma.gson.JsonArrayParser;
@@ -560,35 +561,23 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public void addNewBlockListener(long currencyId, WebsocketClientEndpoint.MessageHandler messageHandler) {
+    public WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener) {
         Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
-        addNewBlockListener(peer, messageHandler);
+        return addBlockListener(peer, listener);
     }
 
     @Override
-    public void addNewBlockListener(Peer peer, WebsocketClientEndpoint.MessageHandler messageHandler) {
+    public WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener) {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(listener);
 
-        try {
-            URI wsBlockURI = new URI(String.format("ws://%s:%s/ws/block",
-                    peer.getHost(),
-                    peer.getPort()));
+        // Get the websocket endpoint
+        WebsocketClientEndpoint wsClientEndPoint = getWebsocketClientEndpoint(peer, "/ws/block");
 
-            log.info(String.format("Starting to listen block from [%s]...", wsBlockURI.toString()));
+        // add listener
+        wsClientEndPoint.registerListener(listener);
 
-            // Get the websocket, or open new one if not exists
-            WebsocketClientEndpoint wsClientEndPoint = blockWsEndPoints.get(wsBlockURI);
-            if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
-                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI,  true/*autoReconnect*/);
-                blockWsEndPoints.put(wsBlockURI, wsClientEndPoint);
-            }
-
-            // add listener
-            wsClientEndPoint.addMessageHandler(messageHandler);
-
-        } catch (URISyntaxException | ServiceConfigurationError ex) {
-            throw new TechnicalException("could not create URI need for web socket on block: " + ex.getMessage());
-        }
-
+        return wsClientEndPoint;
     }
 
     /* -- Internal methods -- */
@@ -804,4 +793,27 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         return Long.parseLong(dividendStr);
     }
 
+    public WebsocketClientEndpoint getWebsocketClientEndpoint(Peer peer, String path) {
+
+        try {
+            URI wsBlockURI = new URI(String.format("ws://%s:%s%s",
+                    peer.getHost(),
+                    peer.getPort(),
+                    path));
+
+            // Get the websocket, or open new one if not exists
+            WebsocketClientEndpoint wsClientEndPoint = blockWsEndPoints.get(wsBlockURI);
+            if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
+                log.info(String.format("Starting to listen block from [%s]...", wsBlockURI.toString()));
+                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI);
+                blockWsEndPoints.put(wsBlockURI, wsClientEndPoint);
+            }
+
+            return wsClientEndPoint;
+
+        } catch (URISyntaxException | ServiceConfigurationError ex) {
+            throw new TechnicalException("could not create URI need for web socket on block: " + ex.getMessage());
+        }
+
+    }
 }

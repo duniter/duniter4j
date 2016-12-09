@@ -54,6 +54,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
@@ -366,10 +367,10 @@ public class CurrencyService extends AbstractService {
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(INDEX)
                 .setTypes(CURRENCY_TYPE)
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+                .setSearchType(SearchType.QUERY_AND_FETCH);
 
         // If more than a word, search on terms match
-        searchRequest.setQuery(QueryBuilders.matchQuery("_id", currencyId));
+        searchRequest.setQuery(new IdsQueryBuilder().addIds(currencyId));
 
         // Execute query
         try {

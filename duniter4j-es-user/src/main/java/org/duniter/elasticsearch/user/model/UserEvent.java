@@ -59,7 +59,7 @@ public class UserEvent extends Record {
     public static final String PROPERTY_CODE="code";
     public static final String PROPERTY_MESSAGE="message";
     public static final String PROPERTY_PARAMS="params";
-    public static final String PROPERTY_LINK="reference";
+    public static final String PROPERTY_REFERENCE="reference";
     public static final String PROPERTY_RECIPIENT="recipient";
 
 
@@ -232,6 +232,12 @@ public class UserEvent extends Record {
 
 
     public static class Reference {
+
+        public static final String PROPERTY_INDEX="index";
+        public static final String PROPERTY_TYPE="type";
+        public static final String PROPERTY_ID="id";
+        public static final String PROPERTY_ANCHOR="anchor";
+        public static final String PROPERTY_HASH="hash";
 
         private String index;
 

@@ -22,13 +22,12 @@ package org.duniter.core.client.model;
  * #L%
  */
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import com.google.common.base.Preconditions;
 import org.duniter.core.client.model.local.Certification;
 import org.duniter.core.client.model.local.Movement;
+import org.duniter.core.util.CollectionUtils;
 
 /**
  * Helper class on model entities
@@ -144,5 +143,18 @@ public class ModelUtils {
             return pubkey;
         }
         return pubkey.substring(0, 8);
+    }
+
+    public static String joinPubkeys(Collection<String> pubkeys, boolean minify, String separator) {
+        Preconditions.checkArgument(CollectionUtils.isNotEmpty(pubkeys));
+        Preconditions.checkNotNull(separator);
+
+        StringBuilder sb = new StringBuilder();
+        for (String pubkey : pubkeys) {
+            sb.append(separator)
+                    .append(minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
+        }
+
+        return sb.toString().substring(separator.length());
     }
 }

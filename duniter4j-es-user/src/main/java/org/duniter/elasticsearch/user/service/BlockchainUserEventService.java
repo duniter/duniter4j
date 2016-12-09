@@ -24,14 +24,15 @@ package org.duniter.elasticsearch.user.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.BlockchainService;
@@ -45,15 +46,14 @@ import org.elasticsearch.common.inject.Inject;
 import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
 public class BlockchainUserEventService extends AbstractService implements ChangeService.ChangeListener {
+
+    public static final String DEFAULT_PUBKEYS_SEPARATOR = ", ";
 
     public final UserEventService userEventService;
 
@@ -61,16 +61,23 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     public final List<ChangeSource> changeListenSources;
 
-    public final Joiner simpleJoiner = Joiner.on(',');
+    public final boolean enable;
 
     @Inject
     public BlockchainUserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
+                                      BlockchainService blockchainService,
                                       UserEventService userEventService) {
         super("duniter.user.event.blockchain", client, settings, cryptoService);
         this.userEventService = userEventService;
         this.objectMapper = JacksonUtils.newObjectMapper();
         this.changeListenSources = ImmutableList.of(new ChangeSource("*", BlockchainService.BLOCK_TYPE));
         ChangeService.registerListener(this);
+
+        this.enable = pluginSettings.enableBlockchainSync();
+
+        if (this.enable) {
+            blockchainService.registerConnectionListener(createConnectionListeners());
+        }
     }
 
     @Override
@@ -80,19 +87,23 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     @Override
     public void onChange(ChangeEvent change) {
-        if (change.getSource() == null) return;
+
 
         try {
-            BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
+
 
             switch (change.getOperation()) {
                 case INDEX:
-                    processBlockIndex(block);
+                    if (change.getSource() != null) {
+                        BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
+                        processBlockIndex(block);
+                    }
                     break;
 
                 // on DELETE : remove user event on block (using link
                 case DELETE:
-                    processBlockDelete(block);
+                    processBlockDelete(change);
+
                     break;
             }
 
@@ -110,6 +121,48 @@ public class BlockchainUserEventService extends AbstractService implements Chang
     }
 
     /* -- internal method -- */
+
+    /**
+     * Create a listener that notify admin when the Duniter node connection is lost or retrieve
+     */
+    private WebsocketClientEndpoint.ConnectionListener createConnectionListeners() {
+        return new WebsocketClientEndpoint.ConnectionListener() {
+            private boolean errorNotified = false;
+
+            @Override
+            public void onSuccess() {
+                // Send notify on reconnection
+                if (errorNotified) {
+                    errorNotified = false;
+                    userEventService.notifyAdmin(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.NODE_BMA_UP.name())
+                            .setMessage(I18n.n("duniter.event.NODE_BMA_UP"),
+                                    pluginSettings.getNodeBmaHost(),
+                                    String.valueOf(pluginSettings.getNodeBmaPort()),
+                                    pluginSettings.getClusterName())
+                            .build());
+                }
+            }
+
+            @Override
+            public void onError(Exception e, long lastTimeUp) {
+                if (errorNotified) return; // already notify
+
+                // Wait 1 min, then notify admin (once)
+                long now = System.currentTimeMillis() / 1000;
+                boolean wait = now - lastTimeUp < 60;
+                if (!wait) {
+                    errorNotified = true;
+                    userEventService.notifyAdmin(UserEvent.newBuilder(UserEvent.EventType.ERROR, UserEventCodes.NODE_BMA_DOWN.name())
+                            .setMessage(I18n.n("duniter.event.NODE_BMA_DOWN"),
+                                    pluginSettings.getNodeBmaHost(),
+                                    String.valueOf(pluginSettings.getNodeBmaPort()),
+                                    pluginSettings.getClusterName(),
+                                    String.valueOf(lastTimeUp))
+                            .build());
+                }
+            }
+        };
+    }
 
     private void processBlockIndex(BlockchainBlock block) {
         // Joiners
@@ -147,28 +200,29 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
         // Received
         // TODO get profile name
-        String sendersStr = simpleJoiner.join(senders);
+        String sendersString = ModelUtils.joinPubkeys(senders, true, DEFAULT_PUBKEYS_SEPARATOR);
         Set<String> receivers = new HashSet<>();
         for (String output : tx.getOutputs()) {
             String[] parts = output.split(":");
             if (parts.length >= 3 && parts[2].startsWith("SIG(")) {
                 String receiver = parts[2].substring(4, parts[2].length() - 1);
                 if (!senders.contains(receiver) && !receivers.contains(receiver)) {
-                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.tx.received"), sendersStr);
+                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.tx.received"), sendersString);
                     receivers.add(receiver);
                 }
             }
         }
 
-
         // Sent
-        // TODO get profile name
-        String receiverStr = simpleJoiner.join(receivers);
-        for (String sender:senders) {
-            notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverStr);
+        if (CollectionUtils.isNotEmpty(receivers)) {
+            // TODO get profile name
+            String receiverStr = ModelUtils.joinPubkeys(receivers, true, DEFAULT_PUBKEYS_SEPARATOR);
+            for (String sender : senders) {
+                notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverStr);
+            }
         }
 
-        // TODO : index this TX in a special index ?
+        // TODO : indexer la TX dans un index/type spécifique ?
     }
 
     private void notifyUserEvent(BlockchainBlock block, String pubkey, UserEventCodes code, String message, String... params) {
@@ -179,12 +233,17 @@ public class BlockchainUserEventService extends AbstractService implements Chang
                 .setReference(block.getCurrency(), BlockchainService.BLOCK_TYPE, String.valueOf(block.getNumber()))
                 .setReferenceHash(block.getHash())
                 .build();
+
         userEventService.notifyUser(event);
     }
 
-    private void processBlockDelete(BlockchainBlock block) {
+    private void processBlockDelete(ChangeEvent change) {
+        if (change.getId() == null) return;
+
+        // Delete events that reference this block
+        userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
 
 
-        //userEventService.deleteUserEventByReference()
     }
+
 }

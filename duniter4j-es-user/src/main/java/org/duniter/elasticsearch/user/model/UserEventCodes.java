@@ -28,7 +28,8 @@ package org.duniter.elasticsearch.user.model;
 public enum UserEventCodes {
 
     NODE_STARTED,
-    CREATE_DOC,
+    NODE_BMA_UP,
+    NODE_BMA_DOWN,
 
     // Membership state
     MEMBER_JOIN,
