@@ -60,7 +60,9 @@ public class RestSecurityController extends AbstractLifecycleComponent<RestSecur
             allowRules = new TreeSet<>();
             allowRulesByMethod.put(method, allowRules);
         }
-        allowRules.add(regexPath);
+        if (!allowRules.contains(regexPath)) {
+            allowRules.add(regexPath);
+        }
         return this;
     }
 

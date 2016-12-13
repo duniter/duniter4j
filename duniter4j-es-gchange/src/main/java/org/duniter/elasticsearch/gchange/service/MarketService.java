@@ -65,18 +65,18 @@ public class MarketService extends AbstractService {
 
     private WotRemoteService wotRemoteService;
     private UserEventService userEventService;
-    private UserService userService;
+    private CommentService commentService;
 
     @Inject
     public MarketService(Client client, PluginSettings settings,
                          CryptoService cryptoService,
+                         CommentService commentService,
                          WotRemoteService wotRemoteService,
-                         UserService userService,
                          UserEventService userEventService) {
         super("gchange." + INDEX, client, settings, cryptoService);
+        this.commentService = commentService;
         this.wotRemoteService = wotRemoteService;
         this.userEventService = userEventService;
-        this.userService = userService;
     }
 
     /**
@@ -87,7 +87,6 @@ public class MarketService extends AbstractService {
         deleteIndexIfExists(INDEX);
         return this;
     }
-
 
     public boolean existsIndex() {
         return super.existsIndex(INDEX);
@@ -128,7 +127,7 @@ public class MarketService extends AbstractService {
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(RECORD_CATEGORY_TYPE, createRecordCategoryType());
         createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
-        createIndexRequestBuilder.addMapping(RECORD_COMMENT_TYPE, createRecordCommentType(INDEX, RECORD_COMMENT_TYPE));
+        createIndexRequestBuilder.addMapping(RECORD_COMMENT_TYPE, commentService.createRecordCommentType(INDEX, RECORD_COMMENT_TYPE));
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -165,33 +164,11 @@ public class MarketService extends AbstractService {
     }
 
     public String indexCommentFromJson(String json) {
-        JsonNode commentObj = readAndVerifyIssuerSignature(json);
-        String issuer = getMandatoryField(commentObj, RecordComment.PROPERTY_ISSUER).asText();
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a %s from issuer [%s]", RECORD_COMMENT_TYPE, issuer.substring(0, 8)));
-        }
-        String commentId = indexDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json);
-
-        // Notify record issuer
-        notifyRecordIssuerForComment(commentObj, true);
-
-        return commentId;
+        return commentService.indexCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, json);
     }
 
     public void updateCommentFromJson(String json, String id) {
-        JsonNode commentObj = readAndVerifyIssuerSignature(json);
-
-        if (logger.isDebugEnabled()) {
-            String issuer = getMandatoryField(commentObj, RecordComment.PROPERTY_ISSUER).asText();
-            logger.debug(String.format("Indexing a %s from issuer [%s]", RECORD_COMMENT_TYPE, issuer.substring(0, 8)));
-        }
-
-        updateDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, id, json);
-
-        // Notify record issuer
-        notifyRecordIssuerForComment(commentObj, false);
-
+        commentService.updateCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, json, id);
     }
 
     public MarketService fillRecordCategories() {
@@ -410,36 +387,6 @@ public class MarketService extends AbstractService {
         }
         catch(IOException ioe) {
             throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
-        }
-    }
-
-    // Notification
-    private void notifyRecordIssuerForComment(JsonNode actualObj, boolean isNewComment) {
-        String issuer = getMandatoryField(actualObj, RecordComment.PROPERTY_ISSUER).asText();
-
-        // Notify issuer of record (is not same as comment writer)
-        String recordId = getMandatoryField(actualObj, RecordComment.PROPERTY_RECORD).asText();
-        Map<String, Object> recordFields = getFieldsById(INDEX, RECORD_TYPE, recordId,
-                MarketRecord.PROPERTY_TITLE, MarketRecord.PROPERTY_ISSUER);
-        if (MapUtils.isEmpty(recordFields)) { // record not found
-            throw new DocumentNotFoundException(I18n.t("duniter.market.error.comment.recordNotFound", recordId));
-        }
-        String recordIssuer = recordFields.get(MarketRecord.PROPERTY_ISSUER).toString();
-
-        // Get user title
-        String issuerTitle = userService.getProfileTitle(issuer);
-
-        String recordTitle = recordFields.get(MarketRecord.PROPERTY_TITLE).toString();
-        if (!issuer.equals(recordIssuer)) {
-            userEventService.notifyUser(
-                    UserEvent.newBuilder(UserEvent.EventType.INFO, GchangeEventCodes.NEW_COMMENT.name())
-                    .setMessage(
-                            isNewComment ? I18n.n("duniter.market.event.newComment") : I18n.n("duniter.market.event.updateComment"),
-                            issuerTitle != null ? issuerTitle : issuer.substring(0, 8),
-                            recordTitle)
-                    .setRecipient(recordIssuer)
-                    .setReference(INDEX, RECORD_TYPE, recordId)
-                    .build());
         }
     }
 

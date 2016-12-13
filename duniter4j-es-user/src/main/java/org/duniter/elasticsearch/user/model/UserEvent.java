@@ -22,8 +22,10 @@ package org.duniter.elasticsearch.user.model;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import org.duniter.core.client.model.elasticsearch.Record;
@@ -62,6 +64,8 @@ public class UserEvent extends Record {
     public static final String PROPERTY_REFERENCE="reference";
     public static final String PROPERTY_RECIPIENT="recipient";
 
+    public static final String PROPERTY_READ_SIGNATURE="readSignature";
+
 
     private EventType type;
 
@@ -74,6 +78,8 @@ public class UserEvent extends Record {
     private String[] params;
 
     private Reference reference;
+
+    private String readSignature;
 
     public UserEvent() {
         super();
@@ -96,6 +102,7 @@ public class UserEvent extends Record {
         this.reference = (another.getReference() != null) ? new Reference(another.getReference()) : null;
         this.message = another.getMessage();
         this.recipient = another.getRecipient();
+        this.readSignature = another.getReadSignature();
     }
 
     public EventType getType() {
@@ -148,6 +155,16 @@ public class UserEvent extends Record {
 
     public void setRecipient(String recipient) {
         this.recipient = recipient;
+    }
+
+    @JsonGetter("read_signature")
+    public String getReadSignature() {
+        return readSignature;
+    }
+
+    @JsonSetter("read_signature")
+    public void setReadSignature(String readSignature) {
+        this.readSignature = readSignature;
     }
 
     @JsonIgnore
@@ -213,6 +230,12 @@ public class UserEvent extends Record {
 
         public Builder setReference(String index, String type, String id, String anchor) {
             result.setReference(new Reference(index, type, id, anchor));
+            return this;
+        }
+
+        public Builder setReferenceAnchor(String anchor) {
+            Preconditions.checkNotNull(result.getReference(), "No reference set. Please call setReference() first");
+            result.getReference().setAnchor(anchor);
             return this;
         }
 

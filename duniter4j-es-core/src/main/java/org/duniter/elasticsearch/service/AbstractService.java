@@ -69,10 +69,7 @@ import org.elasticsearch.search.SearchHitField;
 import org.nuiton.i18n.I18n;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -248,6 +245,20 @@ public abstract class AbstractService implements Bean {
     }
 
     /**
+     * Retrieve some field from a document id, and check if all field not null
+     * @param docId
+     * @return
+     */
+    protected Map<String, Object> getMandatoryFieldsById(String index, String type, String docId, String... fieldNames) {
+        Map<String, Object> fields = getFieldsById(index, type, docId, fieldNames);
+        if (MapUtils.isEmpty(fields)) throw new NotFoundException(String.format("Document [%s/%s/%s] not exists.", index, type, docId));
+        Arrays.stream(fieldNames).forEach((fieldName) -> {
+            if (!fields.containsKey(fieldName)) throw new NotFoundException(String.format("Document [%s/%s/%s] should have the madatory field [%s].", index, type, docId, fieldName));
+        });
+        return fields;
+    }
+
+    /**
      * Retrieve some field from a document id
      * @param docId
      * @return
@@ -259,7 +270,7 @@ public abstract class AbstractService implements Bean {
                 .setTypes(type)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
-        searchRequest.setQuery(QueryBuilders.matchQuery("_id", docId));
+        searchRequest.setQuery(QueryBuilders.idsQuery().ids(docId));
         searchRequest.addFields(fieldNames);
 
         // Execute query
@@ -280,10 +291,51 @@ public abstract class AbstractService implements Bean {
         }
         catch(SearchPhaseExecutionException | JsonSyntaxException e) {
             // Failed or no item on index
-            throw new TechnicalException(String.format("[%s/%s] Unable to retrieve fields [%s] for document [%s]",
+            throw new TechnicalException(String.format("[%s/%s] Unable to retrieve fields [%s] for id [%s]",
                     index, type,
                     Joiner.on(',').join(fieldNames).toString(),
                     docId), e);
+        }
+    }
+
+    /**
+     * Retrieve some field from a document id
+     * @param index
+     * @param type
+     * @param ids
+     * @param fieldName
+     * @return
+     */
+    protected Map<String, Object> getFieldByIds(String index, String type, Set<String> ids, String fieldName) {
+        // Prepare request
+        SearchRequestBuilder searchRequest = client
+                .prepareSearch(index)
+                .setTypes(type)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+
+        searchRequest.setQuery(QueryBuilders.idsQuery().ids(ids));
+        searchRequest.addFields(fieldName);
+
+        // Execute query
+        try {
+            SearchResponse response = searchRequest.execute().actionGet();
+
+            Map<String, Object> result = new HashMap<>();
+            // Read query result
+            SearchHit[] searchHits = response.getHits().getHits();
+            for (SearchHit searchHit : searchHits) {
+                Map<String, SearchHitField> hitFields = searchHit.getFields();
+                if (hitFields.get(fieldName) != null) {
+                    result.put(searchHit.getId(), hitFields.get(fieldName).getValue());
+                }
+            }
+            return result;
+        }
+        catch(SearchPhaseExecutionException | JsonSyntaxException e) {
+            // Failed or no item on index
+            throw new TechnicalException(String.format("[%s/%s] Unable to retrieve field [%s] for ids [%s]",
+                    index, type, fieldName,
+                    Joiner.on(',').join(ids).toString()), e);
         }
     }
 
@@ -464,52 +516,6 @@ public abstract class AbstractService implements Bean {
             client.bulk(bulkRequest).actionGet();
         } catch(Exception e) {
             throw new TechnicalException(String.format("[%s] Error while inserting rows into %s", indexName, indexType), e);
-        }
-    }
-
-    protected XContentBuilder createRecordCommentType(String index, String type) {
-        String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
-
-        try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(type)
-                    .startObject("properties")
-
-                    // issuer
-                    .startObject("issuer")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // time
-                    .startObject("time")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // message
-                    .startObject("message")
-                    .field("type", "string")
-                    .field("analyzer", stringAnalyzer)
-                    .endObject()
-
-                    // record
-                    .startObject("record")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // reply to
-                    .startObject("reply_to")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    .endObject()
-                    .endObject().endObject();
-
-            return mapping;
-        }
-        catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", index, type, ioe.getMessage()), ioe);
         }
     }
 

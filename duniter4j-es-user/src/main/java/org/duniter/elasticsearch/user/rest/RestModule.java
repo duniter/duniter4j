@@ -24,11 +24,9 @@ package org.duniter.elasticsearch.user.rest;
 
 import org.duniter.elasticsearch.user.rest.history.RestHistoryDeleteIndexAction;
 import org.duniter.elasticsearch.user.rest.message.RestMessageInboxIndexAction;
+import org.duniter.elasticsearch.user.rest.message.RestMessageMarkAsReadAction;
 import org.duniter.elasticsearch.user.rest.message.RestMessageOutboxIndexAction;
-import org.duniter.elasticsearch.user.rest.user.RestUserProfileIndexAction;
-import org.duniter.elasticsearch.user.rest.user.RestUserProfileUpdateAction;
-import org.duniter.elasticsearch.user.rest.user.RestUserSettingsIndexAction;
-import org.duniter.elasticsearch.user.rest.user.RestUserSettingsUpdateAction;
+import org.duniter.elasticsearch.user.rest.user.*;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
@@ -41,6 +39,7 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestUserProfileUpdateAction.class).asEagerSingleton();
         bind(RestUserSettingsIndexAction.class).asEagerSingleton();
         bind(RestUserSettingsUpdateAction.class).asEagerSingleton();
+        bind(RestUserEventMarkAsReadAction.class).asEagerSingleton();
 
         // History
         bind(RestHistoryDeleteIndexAction.class).asEagerSingleton();
@@ -48,5 +47,6 @@ public class RestModule extends AbstractModule implements Module {
         // Message
         bind(RestMessageInboxIndexAction.class).asEagerSingleton();
         bind(RestMessageOutboxIndexAction.class).asEagerSingleton();
+        bind(RestMessageMarkAsReadAction.class).asEagerSingleton();
     }
 }

@@ -24,8 +24,10 @@ package org.duniter.elasticsearch.user.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
@@ -55,6 +57,8 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     public static final String DEFAULT_PUBKEYS_SEPARATOR = ", ";
 
+    public final UserService userService;
+
     public final UserEventService userEventService;
 
     public final ObjectMapper objectMapper;
@@ -66,8 +70,10 @@ public class BlockchainUserEventService extends AbstractService implements Chang
     @Inject
     public BlockchainUserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
                                       BlockchainService blockchainService,
+                                      UserService userService,
                                       UserEventService userEventService) {
         super("duniter.user.event.blockchain", client, settings, cryptoService);
+        this.userService = userService;
         this.userEventService = userEventService;
         this.objectMapper = JacksonUtils.newObjectMapper();
         this.changeListenSources = ImmutableList.of(new ChangeSource("*", BlockchainService.BLOCK_TYPE));
@@ -197,10 +203,8 @@ public class BlockchainUserEventService extends AbstractService implements Chang
     private void processTx(BlockchainBlock block, BlockchainBlock.Transaction tx) {
         Set<String> senders = ImmutableSet.copyOf(tx.getIssuers());
 
-
         // Received
-        // TODO get profile name
-        String sendersString = ModelUtils.joinPubkeys(senders, true, DEFAULT_PUBKEYS_SEPARATOR);
+        String sendersString = joinPubkeys(senders, true);
         Set<String> receivers = new HashSet<>();
         for (String output : tx.getOutputs()) {
             String[] parts = output.split(":");
@@ -215,8 +219,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
         // Sent
         if (CollectionUtils.isNotEmpty(receivers)) {
-            // TODO get profile name
-            String receiverStr = ModelUtils.joinPubkeys(receivers, true, DEFAULT_PUBKEYS_SEPARATOR);
+            String receiverStr = joinPubkeys(receivers, true);
             for (String sender : senders) {
                 notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverStr);
             }
@@ -242,8 +245,27 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
         // Delete events that reference this block
         userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
-
-
     }
 
+    private String joinPubkeys(Set<String> pubkeys, boolean minify) {
+        Preconditions.checkNotNull(pubkeys);
+        Preconditions.checkArgument(pubkeys.size()>0);
+        if (pubkeys.size() == 1) {
+            String pubkey = pubkeys.iterator().next();
+            String title = userService.getProfileTitle(pubkey);
+            return title != null ? title :
+                    (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
+        }
+
+        Map<String, String> profileTitles = userService.getProfileTitles(pubkeys);
+        StringBuilder sb = new StringBuilder();
+        pubkeys.stream().forEach((pubkey)-> {
+            String title = profileTitles != null ? profileTitles.get(pubkey) : null;
+            sb.append(DEFAULT_PUBKEYS_SEPARATOR);
+            sb.append(title != null ? title :
+                    (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey));
+        });
+
+        return sb.substring(DEFAULT_PUBKEYS_SEPARATOR.length());
+    }
 }

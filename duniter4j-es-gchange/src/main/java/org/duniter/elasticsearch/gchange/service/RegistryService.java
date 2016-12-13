@@ -24,8 +24,6 @@ package org.duniter.elasticsearch.gchange.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.gson.Gson;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -53,19 +51,17 @@ public class RegistryService extends AbstractService {
     public static final String RECORD_COMMENT_TYPE = "comment";
     private static final String CATEGORIES_BULK_CLASSPATH_FILE = "registry-categories-bulk-insert.json";
 
-    private final Gson gson;
-    private BlockchainRemoteService blockchainRemoteService;
+    private CommentService commentService;
     private UserEventService userEventService;
 
     @Inject
     public RegistryService(Client client,
                            PluginSettings settings,
                            CryptoService cryptoService,
-                           BlockchainRemoteService blockchainRemoteService,
+                           CommentService commentService,
                             UserEventService userEventService) {
         super("gchange." + INDEX, client, settings, cryptoService);
-        this.gson = GsonUtils.newBuilder().create();
-        this.blockchainRemoteService = blockchainRemoteService;
+        this.commentService = commentService;
         this.userEventService = userEventService;
     }
 
@@ -102,7 +98,7 @@ public class RegistryService extends AbstractService {
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(RECORD_CATEGORY_TYPE, createRecordCategoryType());
         createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
-        createIndexRequestBuilder.addMapping(RECORD_COMMENT_TYPE, createRecordCommentType(INDEX, RECORD_COMMENT_TYPE));
+        createIndexRequestBuilder.addMapping(RECORD_COMMENT_TYPE, commentService.createRecordCommentType(INDEX, RECORD_COMMENT_TYPE));
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -139,12 +135,11 @@ public class RegistryService extends AbstractService {
     }
 
     public String indexCommentFromJson(String json) {
-        return checkIssuerAndIndexDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json);
-
+        return commentService.indexCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, json);
     }
 
     public void updateCommentFromJson(String json, String id) {
-        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_COMMENT_TYPE, json, id);
+        commentService.updateCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, json, id);
     }
 
     /* -- Internal methods -- */

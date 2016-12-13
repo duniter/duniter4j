@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonSyntaxException;
+import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.MailService;
@@ -35,6 +36,9 @@ import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.core.util.crypto.KeyPair;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.exception.InvalidFormatException;
+import org.duniter.elasticsearch.exception.InvalidSignatureException;
+import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -47,6 +51,7 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.unit.TimeValue;
@@ -201,6 +206,23 @@ public class UserEventService extends AbstractService {
         });
     }
 
+    public void markEventAsRead(String signature, String id) {
+
+        Map<String, Object> fields = getMandatoryFieldsById(INDEX, EVENT_TYPE, id, UserEvent.PROPERTY_HASH, UserEvent.PROPERTY_RECIPIENT);
+        String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
+        String hash = fields.get(UserEvent.PROPERTY_HASH).toString();
+
+        // Check signature
+        boolean valid = cryptoService.verify(hash, signature, recipient);
+        if (!valid) {
+            throw new InvalidSignatureException("Invalid signature: only the recipient can mark an event as read.");
+        }
+
+        UpdateRequestBuilder request = client.prepareUpdate(INDEX, EVENT_TYPE, id)
+                .setDoc("read_signature", signature);
+        request.execute();
+    }
+
     /* -- Internal methods -- */
 
     public static XContentBuilder createEventType() {
@@ -283,6 +305,12 @@ public class UserEventService extends AbstractService {
 
                     // signature
                     .startObject("signature")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // read_signature
+                    .startObject("read_signature")
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()

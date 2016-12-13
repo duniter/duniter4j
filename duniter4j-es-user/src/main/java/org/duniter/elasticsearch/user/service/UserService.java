@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.elasticsearch.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -41,7 +42,10 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -199,6 +203,15 @@ public class UserService extends AbstractService {
         Object title = getFieldById(INDEX, PROFILE_TYPE, issuer, UserProfile.PROPERTY_TITLE);
         if (title == null) return null;
         return title.toString();
+    }
+
+    public Map<String, String> getProfileTitles(Set<String> issuers) {
+
+        Map<String, Object> titles = getFieldByIds(INDEX, PROFILE_TYPE, issuers, UserProfile.PROPERTY_TITLE);
+        if (MapUtils.isEmpty(titles)) return null;
+        Map<String, String> result = new HashMap<>();
+        titles.entrySet().stream().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
+        return result;
     }
 
     /* -- Internal methods -- */

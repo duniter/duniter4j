@@ -25,12 +25,17 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.user.model.Message;
+import org.duniter.elasticsearch.user.model.UserEvent;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -38,6 +43,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -138,6 +144,22 @@ public class MessageService extends AbstractService {
         return response.getId();
     }
 
+    public void markMessageAsRead(String signature, String id) {
+        Map<String, Object> fields = getMandatoryFieldsById(INDEX, RECORD_TYPE, id, Message.PROPERTY_HASH, Message.PROPERTY_RECIPIENT);
+        String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
+        String hash = fields.get(UserEvent.PROPERTY_HASH).toString();
+
+        // Check signature
+        boolean valid = cryptoService.verify(hash, signature, recipient);
+        if (!valid) {
+            throw new InvalidSignatureException("Invalid signature: only the recipient can mark an message as read.");
+        }
+
+        UpdateRequestBuilder request = client.prepareUpdate(INDEX, RECORD_TYPE, id)
+                .setDoc("read_signature", signature);
+        request.execute();
+    }
+
     /* -- Internal methods -- */
 
     public XContentBuilder createRecordType() {
@@ -178,6 +200,12 @@ public class MessageService extends AbstractService {
 
                     // content
                     .startObject("content")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // read_signature
+                    .startObject("read_signature")
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
