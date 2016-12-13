@@ -21,6 +21,7 @@ logger:
   org.duniter.elasticsearch: DEBUG
 
   duniter : DEBUG
+  duniter.security : ERROR
   duniter.user.event : INFO
   duniter.network.p2p: TRACE
 

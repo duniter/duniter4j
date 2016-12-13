@@ -40,6 +40,7 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestUserSettingsIndexAction.class).asEagerSingleton();
         bind(RestUserSettingsUpdateAction.class).asEagerSingleton();
         bind(RestUserEventMarkAsReadAction.class).asEagerSingleton();
+        bind(RestUserEventSearchAction.class).asEagerSingleton();
 
         // History
         bind(RestHistoryDeleteIndexAction.class).asEagerSingleton();

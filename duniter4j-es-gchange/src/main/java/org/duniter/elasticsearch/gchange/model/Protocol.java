@@ -1,4 +1,4 @@
-package org.duniter.core.client.model.bma;
+package org.duniter.elasticsearch.gchange.model;
 
 /*
  * #%L
@@ -27,15 +27,7 @@ package org.duniter.core.client.model.bma;
  */
 public interface Protocol {
 
-    String VERSION = "2";
+    String VERSION = "1";
 
-    String TX_VERSION = "3";
-
-    String TYPE_IDENTITY = "Identity";
-
-    String TYPE_MEMBERSHIP = "Membership";
-
-    String TYPE_TRANSACTION = "Transaction";
-
-    String BMA_API = "BASIC_MERKLED_API";
+    String GCHANGE_API = "GCHANGE_API";
 }

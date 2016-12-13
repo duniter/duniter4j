@@ -58,18 +58,6 @@ public class PluginSettings extends org.duniter.elasticsearch.PluginSettings {
         return settings.get("duniter.keyring.sec");
     }
 
-    public boolean enableDataSync()  {
-        return settings.getAsBoolean("duniter.user.sync.enable", false);
-    }
-
-    public String getDataSyncHost()  {
-        return settings.get("duniter.user.sync.host", "data.duniter.fr");
-    }
-
-    public int getDataSyncPort()  {
-        return settings.getAsInt("duniter.user.sync.port", 80);
-    }
-
     public String getMailSmtpHost()  {
         return settings.get("duniter.mail.smtp.host", "localhost");
     }

@@ -204,14 +204,15 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         Set<String> senders = ImmutableSet.copyOf(tx.getIssuers());
 
         // Received
-        String sendersString = joinPubkeys(senders, true);
+        String senderNames = getNamesFromPubkeys(senders, true);
+        String sendersPubkeys = joinPubkeys(senders, false);
         Set<String> receivers = new HashSet<>();
         for (String output : tx.getOutputs()) {
             String[] parts = output.split(":");
             if (parts.length >= 3 && parts[2].startsWith("SIG(")) {
                 String receiver = parts[2].substring(4, parts[2].length() - 1);
                 if (!senders.contains(receiver) && !receivers.contains(receiver)) {
-                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.tx.received"), sendersString);
+                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.tx.received"), senderNames, sendersPubkeys);
                     receivers.add(receiver);
                 }
             }
@@ -219,9 +220,10 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
         // Sent
         if (CollectionUtils.isNotEmpty(receivers)) {
-            String receiverStr = joinPubkeys(receivers, true);
+            String receiverNames = getNamesFromPubkeys(receivers, true);
+            String receiverPubkeys = joinPubkeys(receivers, false);
             for (String sender : senders) {
-                notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverStr);
+                notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverNames, receiverPubkeys);
             }
         }
 
@@ -247,7 +249,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
     }
 
-    private String joinPubkeys(Set<String> pubkeys, boolean minify) {
+    private String getNamesFromPubkeys(Set<String> pubkeys, boolean minify) {
         Preconditions.checkNotNull(pubkeys);
         Preconditions.checkArgument(pubkeys.size()>0);
         if (pubkeys.size() == 1) {
@@ -264,6 +266,23 @@ public class BlockchainUserEventService extends AbstractService implements Chang
             sb.append(DEFAULT_PUBKEYS_SEPARATOR);
             sb.append(title != null ? title :
                     (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey));
+        });
+
+        return sb.substring(DEFAULT_PUBKEYS_SEPARATOR.length());
+    }
+
+    private String joinPubkeys(Set<String> pubkeys, boolean minify) {
+        Preconditions.checkNotNull(pubkeys);
+        Preconditions.checkArgument(pubkeys.size()>0);
+        if (pubkeys.size() == 1) {
+            String pubkey = pubkeys.iterator().next();
+            return (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        pubkeys.stream().forEach((pubkey)-> {
+            sb.append(DEFAULT_PUBKEYS_SEPARATOR);
+            sb.append(minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
         });
 
         return sb.substring(DEFAULT_PUBKEYS_SEPARATOR.length());

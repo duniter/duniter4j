@@ -32,9 +32,10 @@ import static org.elasticsearch.rest.RestStatus.FORBIDDEN;
 
 public class RestSecurityFilter extends RestFilter {
 
-    private static final ESLogger log = ESLoggerFactory.getLogger("security");
+    private static final ESLogger log = ESLoggerFactory.getLogger("duniter.security");
 
     private RestSecurityController securityController;
+    private final boolean debug;
 
     @Inject
     public RestSecurityFilter(PluginSettings pluginSettings, RestController controller, RestSecurityController securityController) {
@@ -44,13 +45,14 @@ public class RestSecurityFilter extends RestFilter {
             controller.registerFilter(this);
         }
         this.securityController = securityController;
+        this.debug = log.isDebugEnabled();
     }
 
     @Override
     public void process(RestRequest request, RestChannel channel, RestFilterChain filterChain) throws Exception {
 
         if (securityController.isAllow(request)) {
-            if (log.isDebugEnabled()) {
+            if (debug) {
                 log.debug(String.format("Allow %s request [%s]", request.method().name(), request.path()));
             }
             filterChain.continueProcessing(request, channel);

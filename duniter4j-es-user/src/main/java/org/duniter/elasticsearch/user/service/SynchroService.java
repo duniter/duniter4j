@@ -22,6 +22,7 @@ package org.duniter.elasticsearch.user.service;
  * #L%
  */
 
+import org.duniter.core.client.model.elasticsearch.Protocol;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
@@ -45,7 +46,7 @@ public class SynchroService extends AbstractSynchroService {
     public void synchronize() {
         logger.info("Synchronizing user data...");
 
-        Peer peer = getPeerFromAPI("ES API");
+        Peer peer = getPeerFromAPI(Protocol.ES_API);
         synchronize(peer);
     }
 
@@ -71,5 +72,6 @@ public class SynchroService extends AbstractSynchroService {
 
     protected void importMessageChanges(Peer peer, long sinceTime) {
         importChanges(peer, MessageService.INDEX, MessageService.RECORD_TYPE,  sinceTime);
+        importChanges(peer, MessageService.INDEX, MessageService.OUTBOX_TYPE,  sinceTime);
     }
 }

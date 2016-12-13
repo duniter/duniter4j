@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.gchange.service;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.gchange.PluginSettings;
+import org.duniter.elasticsearch.gchange.model.Protocol;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -44,7 +45,7 @@ public class SynchroService extends AbstractSynchroService {
 
     public void synchronize() {
         logger.info("Synchronizing data...");
-        Peer peer = getPeerFromAPI("GCHANGE API");
+        Peer peer = getPeerFromAPI(Protocol.GCHANGE_API);
         synchronize(peer);
     }
 

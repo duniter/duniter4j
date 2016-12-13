@@ -37,7 +37,7 @@ import java.util.*;
  */
 public class RestSecurityController extends AbstractLifecycleComponent<RestSecurityController> {
 
-    private static final ESLogger log = ESLoggerFactory.getLogger("security");
+    private static final ESLogger log = ESLoggerFactory.getLogger("duniter.security");
 
     private boolean enable;
 
