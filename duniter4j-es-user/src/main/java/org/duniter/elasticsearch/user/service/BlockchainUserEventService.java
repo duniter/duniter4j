@@ -212,7 +212,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
             if (parts.length >= 3 && parts[2].startsWith("SIG(")) {
                 String receiver = parts[2].substring(4, parts[2].length() - 1);
                 if (!senders.contains(receiver) && !receivers.contains(receiver)) {
-                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.tx.received"), senderNames, sendersPubkeys);
+                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.tx.received"), sendersPubkeys, senderNames);
                     receivers.add(receiver);
                 }
             }
@@ -223,7 +223,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
             String receiverNames = getNamesFromPubkeys(receivers, true);
             String receiverPubkeys = joinPubkeys(receivers, false);
             for (String sender : senders) {
-                notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverNames, receiverPubkeys);
+                notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverPubkeys, receiverNames);
             }
         }
 

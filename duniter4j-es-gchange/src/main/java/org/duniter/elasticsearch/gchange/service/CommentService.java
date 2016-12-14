@@ -169,8 +169,10 @@ public class CommentService extends AbstractService {
                     UserEvent.newBuilder(UserEvent.EventType.INFO, GchangeEventCodes.NEW_COMMENT.name())
                     .setMessage(
                             isNewComment ? I18n.n("duniter.market.event.newComment") : I18n.n("duniter.market.event.updateComment"),
+                            issuer,
                             issuerTitle != null ? issuerTitle : issuer.substring(0, 8),
-                            recordTitle)
+                            recordTitle
+                            )
                     .setRecipient(recordIssuer)
                     .setReference(index, recordType, recordId)
                     .setReferenceAnchor(commentId)
