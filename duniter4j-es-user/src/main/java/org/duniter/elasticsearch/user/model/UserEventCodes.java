@@ -38,6 +38,9 @@ public enum UserEventCodes {
 
     // TX
     TX_SENT,
-    TX_RECEIVED
+    TX_RECEIVED,
+
+    // Message
+    MESSAGE_RECEIVED
 
 }

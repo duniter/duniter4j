@@ -233,7 +233,7 @@ public abstract class AbstractService implements Bean {
 
 
     protected String getIssuer(JsonNode actualObj) {
-        return  actualObj.get(Record.PROPERTY_ISSUER).asText();
+        return  getMandatoryField(actualObj, Record.PROPERTY_ISSUER).asText();
     }
 
     protected JsonNode getMandatoryField(JsonNode actualObj, String fieldName) {

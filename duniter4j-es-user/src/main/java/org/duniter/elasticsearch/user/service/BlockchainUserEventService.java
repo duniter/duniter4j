@@ -204,8 +204,8 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         Set<String> senders = ImmutableSet.copyOf(tx.getIssuers());
 
         // Received
-        String senderNames = getNamesFromPubkeys(senders, true);
-        String sendersPubkeys = joinPubkeys(senders, false);
+        String senderNames = userService.joinNamesFromPubkeys(senders, DEFAULT_PUBKEYS_SEPARATOR, true);
+        String sendersPubkeys = ModelUtils.joinPubkeys(senders, DEFAULT_PUBKEYS_SEPARATOR, false);
         Set<String> receivers = new HashSet<>();
         for (String output : tx.getOutputs()) {
             String[] parts = output.split(":");
@@ -220,8 +220,8 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
         // Sent
         if (CollectionUtils.isNotEmpty(receivers)) {
-            String receiverNames = getNamesFromPubkeys(receivers, true);
-            String receiverPubkeys = joinPubkeys(receivers, false);
+            String receiverNames = userService.joinNamesFromPubkeys(receivers, DEFAULT_PUBKEYS_SEPARATOR, true);
+            String receiverPubkeys = ModelUtils.joinPubkeys(receivers, DEFAULT_PUBKEYS_SEPARATOR, false);
             for (String sender : senders) {
                 notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverPubkeys, receiverNames);
             }
@@ -249,42 +249,5 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
     }
 
-    private String getNamesFromPubkeys(Set<String> pubkeys, boolean minify) {
-        Preconditions.checkNotNull(pubkeys);
-        Preconditions.checkArgument(pubkeys.size()>0);
-        if (pubkeys.size() == 1) {
-            String pubkey = pubkeys.iterator().next();
-            String title = userService.getProfileTitle(pubkey);
-            return title != null ? title :
-                    (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
-        }
 
-        Map<String, String> profileTitles = userService.getProfileTitles(pubkeys);
-        StringBuilder sb = new StringBuilder();
-        pubkeys.stream().forEach((pubkey)-> {
-            String title = profileTitles != null ? profileTitles.get(pubkey) : null;
-            sb.append(DEFAULT_PUBKEYS_SEPARATOR);
-            sb.append(title != null ? title :
-                    (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey));
-        });
-
-        return sb.substring(DEFAULT_PUBKEYS_SEPARATOR.length());
-    }
-
-    private String joinPubkeys(Set<String> pubkeys, boolean minify) {
-        Preconditions.checkNotNull(pubkeys);
-        Preconditions.checkArgument(pubkeys.size()>0);
-        if (pubkeys.size() == 1) {
-            String pubkey = pubkeys.iterator().next();
-            return (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
-        }
-
-        StringBuilder sb = new StringBuilder();
-        pubkeys.stream().forEach((pubkey)-> {
-            sb.append(DEFAULT_PUBKEYS_SEPARATOR);
-            sb.append(minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
-        });
-
-        return sb.substring(DEFAULT_PUBKEYS_SEPARATOR.length());
-    }
 }

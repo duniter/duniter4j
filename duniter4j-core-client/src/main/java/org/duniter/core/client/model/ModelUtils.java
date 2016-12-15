@@ -145,16 +145,20 @@ public class ModelUtils {
         return pubkey.substring(0, 8);
     }
 
-    public static String joinPubkeys(Collection<String> pubkeys, boolean minify, String separator) {
-        Preconditions.checkArgument(CollectionUtils.isNotEmpty(pubkeys));
-        Preconditions.checkNotNull(separator);
-
-        StringBuilder sb = new StringBuilder();
-        for (String pubkey : pubkeys) {
-            sb.append(separator)
-                    .append(minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
+    public static String joinPubkeys(Set<String> pubkeys, String separator, boolean minify) {
+        Preconditions.checkNotNull(pubkeys);
+        Preconditions.checkArgument(pubkeys.size()>0);
+        if (pubkeys.size() == 1) {
+            String pubkey = pubkeys.iterator().next();
+            return (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
         }
 
-        return sb.toString().substring(separator.length());
+        StringBuilder sb = new StringBuilder();
+        pubkeys.stream().forEach((pubkey)-> {
+            sb.append(separator);
+            sb.append(minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
+        });
+
+        return sb.substring(separator.length());
     }
 }

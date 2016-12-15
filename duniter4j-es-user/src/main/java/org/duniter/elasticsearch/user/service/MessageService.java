@@ -25,14 +25,17 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.user.model.Message;
 import org.duniter.elasticsearch.user.model.UserEvent;
+import org.duniter.elasticsearch.user.model.UserEventCodes;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
@@ -41,6 +44,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
 import java.util.Map;
@@ -54,10 +58,13 @@ public class MessageService extends AbstractService {
     public static final String RECORD_TYPE = "record";
     public static final String OUTBOX_TYPE = "outbox";
 
+    private final UserEventService userEventService;
 
     @Inject
-    public MessageService(Client client, PluginSettings settings, CryptoService cryptoService, UserService userService) {
+    public MessageService(Client client, PluginSettings settings,
+                          CryptoService cryptoService, UserEventService userEventService) {
         super("duniter." + INDEX, client, settings, cryptoService);
+        this.userEventService = userEventService;
     }
 
     /**
@@ -114,6 +121,8 @@ public class MessageService extends AbstractService {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
         String issuer = getIssuer(actualObj);
+        String recipient = getMandatoryField(actualObj, Message.PROPERTY_RECIPIENT).asText();
+        Long time = getMandatoryField(actualObj, Message.PROPERTY_TIME).asLong();
 
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a message from issuer [%s]", issuer.substring(0, 8)));
@@ -124,7 +133,17 @@ public class MessageService extends AbstractService {
                 .setRefresh(false)
                 .execute().actionGet();
 
-        return response.getId();
+        String messageId = response.getId();
+
+        // Notify recipient
+        userEventService.notifyUser(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.MESSAGE_RECEIVED.name())
+                .setRecipient(recipient)
+                .setMessage(I18n.n("duniter.user.event.message.received"), issuer, ModelUtils.minifyPubkey(issuer))
+                .setTime(time)
+                .setReference(INDEX, RECORD_TYPE, messageId)
+                .build());
+
+        return messageId;
     }
 
     public String indexOuboxFromJson(String recordJson) {

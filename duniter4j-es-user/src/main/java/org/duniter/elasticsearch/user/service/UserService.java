@@ -25,7 +25,9 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Preconditions;
 import org.apache.commons.collections4.MapUtils;
+import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.elasticsearch.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -212,6 +214,29 @@ public class UserService extends AbstractService {
         Map<String, String> result = new HashMap<>();
         titles.entrySet().stream().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
         return result;
+    }
+
+    public String joinNamesFromPubkeys(Set<String> pubkeys, String separator, boolean minify) {
+        Preconditions.checkNotNull(pubkeys);
+        Preconditions.checkNotNull(separator);
+        Preconditions.checkArgument(pubkeys.size()>0);
+        if (pubkeys.size() == 1) {
+            String pubkey = pubkeys.iterator().next();
+            String title = getProfileTitle(pubkey);
+            return title != null ? title :
+                    (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
+        }
+
+        Map<String, String> profileTitles = getProfileTitles(pubkeys);
+        StringBuilder sb = new StringBuilder();
+        pubkeys.stream().forEach((pubkey)-> {
+            String title = profileTitles != null ? profileTitles.get(pubkey) : null;
+            sb.append(separator);
+            sb.append(title != null ? title :
+                    (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey));
+        });
+
+        return sb.substring(separator.length());
     }
 
     /* -- Internal methods -- */
