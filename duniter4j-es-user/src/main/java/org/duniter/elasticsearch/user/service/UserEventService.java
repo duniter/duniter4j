@@ -27,23 +27,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonSyntaxException;
-import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.MailService;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.core.util.crypto.KeyPair;
-import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
-import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
-import org.duniter.elasticsearch.user.model.UserEventCodes;
 import org.duniter.elasticsearch.user.model.UserProfile;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -57,7 +52,8 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.nuiton.i18n.I18n;
 
@@ -412,20 +408,25 @@ public class UserEventService extends AbstractService {
         indexEventAndNotifyListener(locale, event);
     }
 
-    private void indexEventAndNotifyListener(Locale locale, UserEvent event) {
+    private String indexEventAndNotifyListener(final Locale locale, final UserEvent event) {
         // Add new event to index
-        indexEvent(locale, event);
+        final String eventId = indexEvent(locale, event);
+
+        final UserEvent eventCopy = new UserEvent(event);
+        eventCopy.setId(eventId);
 
         // Notify listeners
         threadPool.schedule(() -> {
             synchronized (LISTENERS) {
                 LISTENERS.values().stream().forEach(listener -> {
                     if (event.getRecipient().equals(listener.getPubkey())) {
-                        listener.onEvent(event);
+                        listener.onEvent(eventCopy);
                     }
                 });
             }
         });
+
+        return eventId;
     }
 
     private void doDeleteEventsByReference(final UserEvent.Reference reference) {

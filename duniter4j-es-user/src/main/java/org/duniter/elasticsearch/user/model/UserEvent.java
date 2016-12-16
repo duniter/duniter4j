@@ -57,6 +57,7 @@ public class UserEvent extends Record {
         return new Builder(type, code, message, params);
     }
 
+    public static final String PROPERTY_ID="id";
     public static final String PROPERTY_TYPE="type";
     public static final String PROPERTY_CODE="code";
     public static final String PROPERTY_MESSAGE="message";
@@ -66,6 +67,8 @@ public class UserEvent extends Record {
 
     public static final String PROPERTY_READ_SIGNATURE="readSignature";
 
+
+    private String id;
 
     private EventType type;
 
@@ -165,6 +168,14 @@ public class UserEvent extends Record {
     @JsonSetter("read_signature")
     public void setReadSignature(String readSignature) {
         this.readSignature = readSignature;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     @JsonIgnore
