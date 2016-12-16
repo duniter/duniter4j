@@ -385,7 +385,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 		// Avoid to get outputs on lower base
 		if (amountBase < inputs.minBase && !isBase(amount, inputs.minBase)) {
-			amount = truncBase(amount, inputs.minBase);
+			amount = truncBaseOrMinBase(amount, inputs.minBase);
 			log.debug("TX Amount has been truncate to " + amount);
 		}
 		else if (amountBase > 0) {
@@ -428,9 +428,16 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 	private long truncBase(long amount, int base) {
 		long pow = (long)Math.pow(10, base);
+		if (amount < pow) return 0;
+		return (long)(Math.floor(amount / pow ) * pow);
+	}
+
+	private long truncBaseOrMinBase(long amount, int base) {
+		long pow = (long)Math.pow(10, base);
 		if (amount < pow) return pow;
 		return (long)(Math.floor(amount / pow ) * pow);
 	}
+
 
 	private long powBase(long amount, int base) {
 		if (base <= 0) return amount;
