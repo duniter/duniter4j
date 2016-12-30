@@ -28,10 +28,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
+import org.duniter.core.client.model.elasticsearch.Record;
+import org.duniter.core.client.model.elasticsearch.UserGroup;
 import org.duniter.core.client.model.elasticsearch.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.service.MailService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.AbstractService;
@@ -53,23 +54,22 @@ import java.util.Set;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class UserService extends AbstractService {
+public class GroupService extends AbstractService {
 
-    public static final String INDEX = "user";
-    public static final String PROFILE_TYPE = "profile";
-    public static final String SETTINGS_TYPE = "settings";
+    public static final String INDEX = "group";
+    public static final String RECORD_TYPE = "record";
 
     @Inject
-    public UserService(Client client,
-                       PluginSettings settings,
-                       CryptoService cryptoService) {
+    public GroupService(Client client,
+                        PluginSettings settings,
+                        CryptoService cryptoService) {
         super("duniter." + INDEX, client, settings,cryptoService);
     }
 
     /**
      * Create index need for blockchain registry, if need
      */
-    public UserService createIndexIfNotExists() {
+    public GroupService createIndexIfNotExists() {
         try {
             if (!existsIndex(INDEX)) {
                 createIndex();
@@ -85,7 +85,7 @@ public class UserService extends AbstractService {
      * Create index for registry
      * @throws JsonProcessingException
      */
-    public UserService createIndex() throws JsonProcessingException {
+    public GroupService createIndex() throws JsonProcessingException {
         logger.info(String.format("Creating index [%s]", INDEX));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
@@ -95,15 +95,13 @@ public class UserService extends AbstractService {
                 //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(PROFILE_TYPE, createProfileType());
-        createIndexRequestBuilder.addMapping(SETTINGS_TYPE, createSettingsType());
-        createIndexRequestBuilder.addMapping(UserEventService.EVENT_TYPE, UserEventService.createEventType());
+        createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
     }
 
-    public UserService deleteIndex() {
+    public GroupService deleteIndex() {
         deleteIndexIfExists(INDEX);
         return this;
     }
@@ -114,140 +112,78 @@ public class UserService extends AbstractService {
 
     /**
      *
-     * Index an user profile
+     * Index an record
      * @param profileJson
-     * @return the profile id
+     * @return the record id
      */
-    public String indexProfileFromJson(String profileJson) {
+    public String indexRecordProfileFromJson(String profileJson) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(profileJson);
-        String issuer = getIssuer(actualObj);
+        String name = getName(actualObj);
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a user profile from issuer [%s]", issuer.substring(0, 8)));
+            logger.debug(String.format("Indexing a user profile from issuer [%s]", name.substring(0, 8)));
         }
 
-        IndexResponse response = client.prepareIndex(INDEX, PROFILE_TYPE)
+        IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
                 .setSource(profileJson)
-                .setId(issuer) // always use the issuer pubkey as id
+                .setId(name) // always use the name as id
                 .setRefresh(false)
                 .execute().actionGet();
         return response.getId();
     }
 
     /**
-     * Update an user profile
-     * @param profileJson
+     * Update a record
+     * @param recordJson
      */
-    public ListenableActionFuture<UpdateResponse> updateProfileFromJson(String profileJson, String id) {
+    public ListenableActionFuture<UpdateResponse> updateRecordFromJson(String recordJson, String id) {
 
-        JsonNode actualObj = readAndVerifyIssuerSignature(profileJson);
-        String issuer = getIssuer(actualObj);
+        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
+        String name = getName(actualObj);
 
-        if (!Objects.equals(issuer, id)) {
+        if (!Objects.equals(name, id)) {
             throw new AccessDeniedException(String.format("Could not update this document: not issuer."));
         }
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Updating a user profile from issuer [%s]", issuer.substring(0, 8)));
+            logger.debug(String.format("Updating a group from name [%s]", name));
         }
 
-        return client.prepareUpdate(INDEX, PROFILE_TYPE, issuer)
-                .setDoc(profileJson)
-                .execute();
-    }
-
-    /**
-     *
-     * Index an user settings
-     * @param settingsJson settings, as JSON string
-     * @return the settings id (=the issuer pubkey)
-     */
-    public String indexSettingsFromJson(String settingsJson) {
-
-        JsonNode actualObj = readAndVerifyIssuerSignature(settingsJson);
-        String issuer = getIssuer(actualObj);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a user settings from issuer [%s]", issuer.substring(0, 8)));
-        }
-
-        IndexResponse response = client.prepareIndex(INDEX, SETTINGS_TYPE)
-                .setSource(settingsJson)
-                .setId(issuer) // always use the issuer pubkey as id
-                .setRefresh(false)
-                .execute().actionGet();
-        return response.getId();
-    }
-
-    /**
-     * Update user settings
-     * @param settingsJson settings, as JSON string
-     */
-    public ListenableActionFuture<UpdateResponse> updateSettingsFromJson(String id, String settingsJson) {
-
-        JsonNode actualObj = readAndVerifyIssuerSignature(settingsJson);
-        String issuer = getIssuer(actualObj);
-
-        if (!Objects.equals(issuer, id)) {
-            throw new AccessDeniedException(String.format("Could not update this document: not issuer."));
-        }
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a user settings from issuer [%s]", issuer.substring(0, 8)));
-        }
-
-        return client.prepareUpdate(INDEX, SETTINGS_TYPE, issuer)
-                .setDoc(settingsJson)
+        return client.prepareUpdate(INDEX, RECORD_TYPE, name)
+                .setDoc(recordJson)
                 .execute();
     }
 
 
-    public String getProfileTitle(String issuer) {
 
-        Object title = getFieldById(INDEX, PROFILE_TYPE, issuer, UserProfile.PROPERTY_TITLE);
+    protected String getName(JsonNode actualObj) {
+        return  getMandatoryField(actualObj, UserGroup.PROPERTY_NAME).asText();
+    }
+
+    public String getTitleByName(String name) {
+
+        Object title = getFieldById(INDEX, RECORD_TYPE, name, UserGroup.PROPERTY_NAME);
         if (title == null) return null;
         return title.toString();
     }
 
-    public Map<String, String> getProfileTitles(Set<String> issuers) {
+    public Map<String, String> getTitlesByNames(Set<String> names) {
 
-        Map<String, Object> titles = getFieldByIds(INDEX, PROFILE_TYPE, issuers, UserProfile.PROPERTY_TITLE);
+        Map<String, Object> titles = getFieldByIds(INDEX, RECORD_TYPE, names, UserGroup.PROPERTY_NAME);
         if (MapUtils.isEmpty(titles)) return null;
         Map<String, String> result = new HashMap<>();
         titles.entrySet().stream().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
         return result;
     }
 
-    public String joinNamesFromPubkeys(Set<String> pubkeys, String separator, boolean minify) {
-        Preconditions.checkNotNull(pubkeys);
-        Preconditions.checkNotNull(separator);
-        Preconditions.checkArgument(pubkeys.size()>0);
-        if (pubkeys.size() == 1) {
-            String pubkey = pubkeys.iterator().next();
-            String title = getProfileTitle(pubkey);
-            return title != null ? title :
-                    (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey);
-        }
-
-        Map<String, String> profileTitles = getProfileTitles(pubkeys);
-        StringBuilder sb = new StringBuilder();
-        pubkeys.stream().forEach((pubkey)-> {
-            String title = profileTitles != null ? profileTitles.get(pubkey) : null;
-            sb.append(separator);
-            sb.append(title != null ? title :
-                    (minify ? ModelUtils.minifyPubkey(pubkey) : pubkey));
-        });
-
-        return sb.substring(separator.length());
-    }
-
     /* -- Internal methods -- */
 
 
-    public XContentBuilder createProfileType() {
+    public XContentBuilder createRecordType() {
         String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
 
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(PROFILE_TYPE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
                     .startObject("properties")
 
                     // title
@@ -262,6 +198,11 @@ public class UserService extends AbstractService {
                     .field("analyzer", stringAnalyzer)
                     .endObject()
 
+                    // creationTime
+                    .startObject("creationTime")
+                    .field("type", "integer")
+                    .endObject()
+
                     // time
                     .startObject("time")
                     .field("type", "integer")
@@ -271,16 +212,6 @@ public class UserService extends AbstractService {
                     .startObject("issuer")
                     .field("type", "string")
                     .field("index", "not_analyzed")
-                    .endObject()
-
-                    // location
-                    .startObject("location")
-                    .field("type", "string")
-                    .endObject()
-
-                    // geoPoint
-                    .startObject("geoPoint")
-                    .field("type", "geo_point")
                     .endObject()
 
                     // avatar
@@ -333,46 +264,8 @@ public class UserService extends AbstractService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, PROFILE_TYPE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
         }
     }
 
-    public XContentBuilder createSettingsType() {
-
-        try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(SETTINGS_TYPE)
-                    .startObject("properties")
-
-                    // time
-                    .startObject("time")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // issuer
-                    .startObject("issuer")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // nonce
-                    .startObject("nonce")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // content
-                    .startObject("content")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    .endObject()
-                    .endObject().endObject();
-
-            return mapping;
-        }
-        catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, SETTINGS_TYPE, ioe.getMessage()), ioe);
-        }
-    }
 }

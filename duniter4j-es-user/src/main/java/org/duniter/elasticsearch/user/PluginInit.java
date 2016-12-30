@@ -25,12 +25,8 @@ package org.duniter.elasticsearch.user;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
-import org.duniter.elasticsearch.user.service.HistoryService;
-import org.duniter.elasticsearch.user.service.MessageService;
-import org.duniter.elasticsearch.user.service.SynchroService;
-import org.duniter.elasticsearch.user.service.UserService;
+import org.duniter.elasticsearch.user.service.*;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
-import org.duniter.elasticsearch.user.service.UserEventService;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -43,7 +39,7 @@ import org.nuiton.i18n.I18n;
 /**
  * Created by blavenie on 17/06/16.
  */
-public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticsearch.PluginInit> {
+public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
     private final PluginSettings pluginSettings;
     private final ThreadPool threadPool;
@@ -110,7 +106,9 @@ public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticse
             injector.getInstance(UserService.class)
                     .deleteIndex()
                     .createIndexIfNotExists();
-
+            injector.getInstance(GroupService.class)
+                    .deleteIndex()
+                    .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Reloading all Duniter indices... [OK]");
@@ -123,6 +121,7 @@ public class PluginInit extends AbstractLifecycleComponent<org.duniter.elasticse
             injector.getInstance(HistoryService.class).createIndexIfNotExists();
             injector.getInstance(UserService.class).createIndexIfNotExists();
             injector.getInstance(MessageService.class).createIndexIfNotExists();
+            injector.getInstance(GroupService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking Duniter indices... [OK]");

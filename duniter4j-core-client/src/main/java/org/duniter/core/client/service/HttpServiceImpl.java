@@ -24,6 +24,7 @@ package org.duniter.core.client.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -39,12 +40,11 @@ import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.Error;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.service.exception.HttpBadRequestException;
-import org.duniter.core.client.service.exception.HttpConnectException;
-import org.duniter.core.client.service.exception.HttpNotFoundException;
-import org.duniter.core.client.service.exception.PeerConnectionException;
+import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.cache.Cache;
+import org.duniter.core.util.cache.SimpleCache;
 import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,11 +64,13 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     public static final String URL_PEER_ALIVE = "/blockchain/parameters";
 
-    protected Integer baseTimeOut;
     protected ObjectMapper objectMapper;
-    protected HttpClient httpClient;
     protected Peer defaultPeer;
     private boolean debug;
+    protected Joiner pathJoiner = Joiner.on('/');
+    protected SimpleCache<Integer, RequestConfig> requestConfigCache;
+    protected SimpleCache<Integer, HttpClient> httpClientCache;
+
 
     public HttpServiceImpl() {
         super();
@@ -77,27 +79,51 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        Configuration config = Configuration.instance();
+
+        // Initialize caches
+        initCaches();
+
         this.objectMapper = JacksonUtils.newObjectMapper();
-        this.baseTimeOut = config.getNetworkTimeout();
-        this.httpClient = createHttpClient();
+    }
+
+    /**
+     * Initialize caches
+     */
+    protected void initCaches() {
+        Configuration config = Configuration.instance();
+        int cacheTimeInMillis = config.getNetworkCacheTimeInMillis();
+
+        requestConfigCache = new SimpleCache<Integer, RequestConfig>(cacheTimeInMillis) {
+            @Override
+            public RequestConfig load(Integer timeout) {
+                return createRequestConfig(timeout);
+            }
+        };
+
+        httpClientCache = new SimpleCache<Integer, HttpClient>(cacheTimeInMillis) {
+            @Override
+            public HttpClient load(Integer timeout) {
+                return createHttpClient(timeout);
+            }
+        };
+        httpClientCache.registerRemoveListener(item -> {
+            log.debug("Closing HttpClient...");
+            closeQuietly(item);
+        });
     }
 
     public void connect(Peer peer) throws PeerConnectionException {
         if (peer == null) {
             throw new IllegalArgumentException("argument 'peer' must not be null");
         }
-        if (httpClient == null) {
-            httpClient = createHttpClient();
-        }
         if (peer == defaultPeer) {
             return;
         }
 
         HttpGet httpGet = new HttpGet(getPath(peer, URL_PEER_ALIVE));
-        boolean isPeerAlive = false;
+        boolean isPeerAlive;
         try {
-            isPeerAlive = executeRequest(httpClient, httpGet);
+            isPeerAlive = executeRequest(httpClientCache.get(0/*=default timeout*/), httpGet);
         } catch(TechnicalException e) {
            this.defaultPeer = null;
            throw new PeerConnectionException(e);
@@ -115,45 +141,43 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     @Override
     public void close() throws IOException {
-        if (httpClient instanceof CloseableHttpClient) {
-            ((CloseableHttpClient)httpClient).close();
-        }
-        else if (httpClient instanceof Closeable) {
-            ((Closeable)httpClient).close();
-        }
-        httpClient = null;
+        httpClientCache.clear();
+        requestConfigCache.clear();
     }
 
     public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass)  {
-        return executeRequest(httpClient, request, resultClass);
+        return executeRequest(httpClientCache.get(0), request, resultClass);
     }
 
     public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass)  {
-        return executeRequest(httpClient, request, resultClass, errorClass);
+        return executeRequest(httpClientCache.get(0), request, resultClass, errorClass);
     }
 
     public <T> T executeRequest(String absolutePath, Class<? extends T> resultClass)  {
         HttpGet httpGet = new HttpGet(getPath(absolutePath));
-        return executeRequest(httpClient, httpGet, resultClass);
+        return executeRequest(httpClientCache.get(0), httpGet, resultClass);
     }
 
     public <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass)  {
         HttpGet httpGet = new HttpGet(getPath(peer, absolutePath));
-        return executeRequest(httpClient, httpGet, resultClass);
+        return executeRequest(httpClientCache.get(0), httpGet, resultClass);
     }
 
-    public String getPath(Peer peer, String absolutePath) {
-        return new StringBuilder().append(peer.getUrl()).append(absolutePath).toString();
+    public String getPath(Peer peer, String... absolutePath) {
+        return pathJoiner.join(peer.getUrl(),
+                pathJoiner.skipNulls().join(absolutePath));
     }
 
 
-    public String getPath(String absolutePath) {
+    public String getPath(String... absolutePath) {
         checkDefaultPeer();
-        return new StringBuilder().append(defaultPeer.getUrl()).append(absolutePath).toString();
+        String pathToAppend = pathJoiner.skipNulls().join(absolutePath);
+        String result = pathJoiner.join(defaultPeer.getUrl(), pathToAppend);
+        return result;
     }
 
     public URIBuilder getURIBuilder(URI baseUri, String... path)  {
-        String pathToAppend = Joiner.on('/').skipNulls().join(path);
+        String pathToAppend = pathJoiner.skipNulls().join(path);
 
         int customQueryStartIndex = pathToAppend.indexOf('?');
         String customQuery = null;
@@ -179,16 +203,20 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         }
     }
 
-    protected HttpClient createHttpClient() {
-        CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(getRequestConfig())
+    protected HttpClient createHttpClient(int timeout) {
+        CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(requestConfigCache.get(timeout))
                 // .setDefaultCredentialsProvider(getCredentialsProvider())
                 .build();
         return httpClient;
     }
 
-    protected RequestConfig getRequestConfig() {
+    protected RequestConfig createRequestConfig(int timeout) {
         // build request config for timeout
-        return RequestConfig.custom().setSocketTimeout(baseTimeOut).setConnectTimeout(baseTimeOut).build();
+        if (timeout <= 0) {
+            // Use config default timeout
+            timeout = Configuration.instance().getNetworkTimeout();
+        }
+        return RequestConfig.custom().setSocketTimeout(timeout).setConnectTimeout(timeout).build();
     }
 
     protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass)  {
@@ -220,7 +248,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                 }
                 case HttpStatus.SC_UNAUTHORIZED:
                 case HttpStatus.SC_FORBIDDEN:
-                    throw new TechnicalException(I18n.t("duniter4j.client.authentication"));
+                    throw new HttpUnauthorizeException(I18n.t("duniter4j.client.authentication"));
                 case HttpStatus.SC_NOT_FOUND:
                     throw new HttpNotFoundException(I18n.t("duniter4j.client.notFound", request.toString()));
                 case HttpStatus.SC_BAD_REQUEST:
@@ -354,6 +382,18 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         }
         catch (IOException e) {
             throw new TechnicalException(e.getMessage(), e);
+        }
+    }
+
+    public static void closeQuietly(HttpClient httpClient) {
+        try {
+            if (httpClient instanceof CloseableHttpClient) {
+                ((CloseableHttpClient) httpClient).close();
+            } else if (httpClient instanceof Closeable) {
+                ((Closeable) httpClient).close();
+            }
+        } catch(IOException e) {
+            // silent is gold
         }
     }
 }

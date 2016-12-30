@@ -23,10 +23,13 @@ package org.duniter.elasticsearch.rest.security;
  */
 
 import org.duniter.elasticsearch.PluginSettings;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.rest.*;
+
+import java.util.Map;
 
 import static org.elasticsearch.rest.RestStatus.FORBIDDEN;
 
@@ -51,10 +54,18 @@ public class RestSecurityFilter extends RestFilter {
     @Override
     public void process(RestRequest request, RestChannel channel, RestFilterChain filterChain) throws Exception {
 
+        if (request.path().contains("message/record")) {
+            log.debug("---------------- Redirection ?!");
+
+            filterChain.continueProcessing(new RedirectionRestRequest(request, "message/inbox"), channel);
+            return;
+        }
+
         if (securityController.isAllow(request)) {
             if (debug) {
                 log.debug(String.format("Allow %s request [%s]", request.method().name(), request.path()));
             }
+
             filterChain.continueProcessing(request, channel);
         }
 

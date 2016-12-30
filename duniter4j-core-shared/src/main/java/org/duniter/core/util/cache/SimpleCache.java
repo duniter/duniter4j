@@ -24,11 +24,16 @@ package org.duniter.core.util.cache;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by eis on 30/03/15.
  */
 public abstract class SimpleCache<K, V> implements Cache<K, V> {
+
+    public interface RemoveListener<V> {
+        void onRemove(V item);
+    }
 
     private static final long ETERNAL_TIME = -1l;
     private static final long ILLIMITED_ITEMS_COUNT = -1l;
@@ -38,6 +43,7 @@ public abstract class SimpleCache<K, V> implements Cache<K, V> {
     private final Map<K, Long> mCachedTimes;
     private final long mCacheTimeInMillis;
     private final long mCacheMaxItemCount;
+    private final List<RemoveListener<V>> mRemoveListeners;
 
     final Object      mutex;
 
@@ -50,11 +56,19 @@ public abstract class SimpleCache<K, V> implements Cache<K, V> {
     }
 
     public SimpleCache(long cacheTimeInMillis, long cacheMaxItemsCount) {
-        this.mCachedValues = Collections.synchronizedMap(new ConcurrentHashMap<K, V>());
-        this.mCachedTimes = new ConcurrentHashMap<K, Long>();
+        this.mCachedValues = Collections.synchronizedMap(new ConcurrentHashMap<>());
+        this.mCachedTimes = new ConcurrentHashMap<>();
         this.mCacheTimeInMillis = cacheTimeInMillis;
         this.mCacheMaxItemCount = cacheMaxItemsCount;
         this.mutex = mCachedValues;
+        this.mRemoveListeners = new CopyOnWriteArrayList<>();
+    }
+
+    public void registerRemoveListener(RemoveListener<V> listener) {
+        mRemoveListeners.add(listener);
+    }
+    public void unregisterRemoveListener(RemoveListener<V> listener) {
+        mRemoveListeners.remove(listener);
     }
 
     public V getIfPresent(K key) {
@@ -134,6 +148,9 @@ public abstract class SimpleCache<K, V> implements Cache<K, V> {
      */
     public void clear() {
         synchronized (mutex) {
+            if (hasRemoveListeners()) {
+                mCachedValues.values().forEach(v -> notifyRemoveListeners(v));
+            }
             mCachedValues.clear();
             mCachedTimes.clear();
         }
@@ -181,11 +198,27 @@ public abstract class SimpleCache<K, V> implements Cache<K, V> {
         }
 
         for (K key : keysToRemove) {
-            mCachedValues.remove(key);
+            V removedItem = mCachedValues.remove(key);
             mCachedTimes.remove(key);
+
+            // Notify listeners
+            notifyRemoveListeners(removedItem);
         }
     }
 
+    private boolean hasRemoveListeners() {
+        return mRemoveListeners.size() > 0;
+    }
+
+    private void notifyRemoveListeners(V removedItem) {
+        for(RemoveListener listener: mRemoveListeners) {
+            try {
+                listener.onRemove(removedItem);
+            } catch(Throwable t) {
+                // Silent
+            }
+        }
+    }
     /**
      * Reduce size of items: will first remove older items
      */

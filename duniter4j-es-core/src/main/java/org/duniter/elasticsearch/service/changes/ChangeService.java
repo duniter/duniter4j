@@ -38,6 +38,7 @@ package org.duniter.elasticsearch.service.changes;
     limitations under the License.
 */
 
+import com.google.common.base.Preconditions;
 import org.duniter.core.util.CollectionUtils;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -184,6 +185,13 @@ public class ChangeService {
     }
 
     public static void registerListener(ChangeListener listener) {
+        Preconditions.checkNotNull(listener);
+        Preconditions.checkNotNull(listener.getId());
+        if (LISTENERS.containsKey(listener.getId())) {
+            throw new IllegalArgumentException("Listener with id [%s] already registered. Id should be unique");
+        }
+
+        // Add to list
         LISTENERS.put(listener.getId(), listener);
 
         // Update sources
@@ -199,6 +207,15 @@ public class ChangeService {
                 }
             }
         }
+    }
+
+    /**
+     * Usefull when listener sources has changed
+     * @param listener
+     */
+    public static void refreshListener(ChangeListener listener) {
+        unregisterListener(listener);
+        registerListener(listener);
     }
 
     public static void unregisterListener(ChangeListener listener) {

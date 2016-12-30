@@ -24,23 +24,32 @@ package org.duniter.elasticsearch.gchange.service;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.elasticsearch.RecordComment;
-import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.exception.DocumentNotFoundException;
+import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.gchange.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.MarketRecord;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
+import org.duniter.elasticsearch.user.service.HistoryService;
 import org.duniter.elasticsearch.user.service.UserEventService;
 import org.duniter.elasticsearch.user.service.UserService;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
@@ -53,16 +62,22 @@ public class CommentService extends AbstractService {
 
     private UserEventService userEventService;
     private UserService userService;
+    private ThreadPool threadPool;
+    private HistoryService historyService;
 
     @Inject
     public CommentService(Client client,
                           PluginSettings pluginSettings,
                           CryptoService cryptoService,
                           UserService userService,
-                          UserEventService userEventService) {
+                          UserEventService userEventService,
+                          HistoryService historyService,
+                          ThreadPool threadPool) {
         super("gchange.comment", client, pluginSettings, cryptoService);
         this.userEventService = userEventService;
         this.userService = userService;
+        this.historyService = historyService;
+        this.threadPool = threadPool;
     }
 
 
@@ -70,30 +85,29 @@ public class CommentService extends AbstractService {
         JsonNode commentObj = readAndVerifyIssuerSignature(json);
         String issuer = getMandatoryField(commentObj, RecordComment.PROPERTY_ISSUER).asText();
 
+        // Check the record document exists
+        String recordId = getMandatoryField(commentObj, RecordComment.PROPERTY_RECORD).asText();
+        checkDocumentExistsOrDeleted(index, recordType, recordId);
+
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a %s from issuer [%s]", type, issuer.substring(0, 8)));
         }
-        String commentId = indexDocumentFromJson(index, type, json);
-
-        // Notify record issuer
-        notifyRecordIssuerForComment(index, recordType, commentObj, true, commentId);
-
-        return commentId;
+        return indexDocumentFromJson(index, type, json);
     }
 
-    public void updateCommentFromJson(final String index, final String recordType, final String type, final String json, final String id) {
+    public void updateCommentFromJson(final String index, final String recordType, final String type, final String id, final String json) {
         JsonNode commentObj = readAndVerifyIssuerSignature(json);
+
+        // Check the record document exists
+        String recordId = getMandatoryField(commentObj, RecordComment.PROPERTY_RECORD).asText();
+        checkDocumentExistsOrDeleted(index, recordType, recordId);
 
         if (logger.isDebugEnabled()) {
             String issuer = getMandatoryField(commentObj, RecordComment.PROPERTY_ISSUER).asText();
-            logger.debug(String.format("Indexing a %s from issuer [%s]", type, issuer.substring(0, 8)));
+            logger.debug(String.format("[%s] Indexing a %s from issuer [%s] on [%s]", index, type, issuer.substring(0, 8)));
         }
 
         updateDocumentFromJson(index, type, id, json);
-
-        // Notify record issuer
-        notifyRecordIssuerForComment(index, recordType, commentObj, false, id);
-
     }
 
     public XContentBuilder createRecordCommentType(String index, String type) {
@@ -132,6 +146,18 @@ public class CommentService extends AbstractService {
                     .field("index", "not_analyzed")
                     .endObject()
 
+                    // aggregations
+                    .startObject("aggregations")
+                        .field("type", "nested")
+                        .field("dynamic", "true")
+                        .startObject("properties")
+                            .startObject("reply_count")
+                            .field("type", "integer")
+                            .field("index", "not_analyzed")
+                            .endObject()
+                        .endObject()
+                    .endObject()
+
                     .endObject()
                     .endObject().endObject();
 
@@ -144,6 +170,20 @@ public class CommentService extends AbstractService {
 
 
     /* -- Internal methods -- */
+
+    // Check the record document exists (or has been deleted)
+    private void checkDocumentExistsOrDeleted(String index, String type, String id) {
+        boolean recordExists;
+        try {
+            recordExists = isDocumentExists(index, type, id);
+        } catch (NotFoundException e) {
+            // Check if exists in delete history
+            recordExists = historyService.existsInDeleteHistory(index, type, id);
+        }
+        if (!recordExists) {
+            throw new NotFoundException(String.format("Comment refers a non-existent document [%s/%s/%s].", index, type, id));
+        }
+    }
 
     /**
      * Notify user when new comment
@@ -180,4 +220,37 @@ public class CommentService extends AbstractService {
         }
     }
 
+    private void updateCommentAggregations(String index, String type, String id) {
+        long replyCount = countCommentReplies(index, type, id);
+        if (replyCount > 0) {
+            logger.warn("Comment [%s] has %s replies. Need to be updated", id, replyCount);
+           // TODO update aggregations
+        }
+    }
+
+    private long countCommentReplies(String index, String type, String id) {
+
+        // Prepare count request
+        SearchRequestBuilder searchRequest = client
+                .prepareSearch(index)
+                .setTypes(type)
+                .setFetchSource(false)
+                .setSearchType(SearchType.QUERY_AND_FETCH)
+                .setSize(0);
+
+        // Query = filter on reference
+        TermQueryBuilder query = QueryBuilders.termQuery(RecordComment.PROPERTY_REPLY_TO_JSON, id);
+        searchRequest.setQuery(query);
+
+        // Execute query
+        try {
+            SearchResponse response = searchRequest.execute().actionGet();
+            return response.getHits().getTotalHits();
+        }
+        catch(SearchPhaseExecutionException | JsonSyntaxException e) {
+            // Failed or no item on index
+            logger.error(String.format("Error while counting comment replies: %s", e.getMessage()), e);
+        }
+        return 1;
+    }
 }

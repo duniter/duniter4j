@@ -37,7 +37,7 @@ public class RestRegistryRecordUpdateAction extends AbstractRestPostUpdateAction
                                           RegistryService service) {
         super(settings, controller, client, securityController,
                 RegistryService.INDEX, RegistryService.RECORD_TYPE,
-                (json, id) -> service.updateRecordFromJson(json, id));
+                (id, json) -> service.updateRecordFromJson(id, json));
     }
 
 }

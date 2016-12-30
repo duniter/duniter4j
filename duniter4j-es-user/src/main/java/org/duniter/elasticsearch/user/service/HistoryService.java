@@ -25,20 +25,29 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.gson.JsonSyntaxException;
 import org.duniter.core.client.model.elasticsearch.DeleteRecord;
 import org.duniter.core.client.model.elasticsearch.MessageRecord;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.user.model.UserEvent;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.*;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 
 import java.io.IOException;
 
@@ -143,6 +152,26 @@ public class HistoryService extends AbstractService {
         return response.getId();
     }
 
+    public boolean existsInDeleteHistory(final String index, final String type, final String id) {
+        // Prepare search request
+        SearchRequestBuilder searchRequest = client
+                .prepareSearch(INDEX)
+                .setTypes(DELETE_TYPE)
+                .setFetchSource(false)
+                .setSearchType(SearchType.QUERY_AND_FETCH);
+
+        // Query = filter on index/type/id
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
+                .filter(QueryBuilders.termQuery(DeleteRecord.PROPERTY_INDEX, index))
+                .filter(QueryBuilders.termQuery(DeleteRecord.PROPERTY_TYPE, type))
+                .filter(QueryBuilders.termQuery(DeleteRecord.PROPERTY_ID, id));
+
+        searchRequest.setQuery(QueryBuilders.nestedQuery(UserEvent.PROPERTY_REFERENCE, QueryBuilders.constantScoreQuery(boolQuery)));
+
+        // Execute query
+        SearchResponse response = searchRequest.execute().actionGet();
+        return response.getHits().getTotalHits() > 0;
+    }
 
     /* -- Internal methods -- */
 

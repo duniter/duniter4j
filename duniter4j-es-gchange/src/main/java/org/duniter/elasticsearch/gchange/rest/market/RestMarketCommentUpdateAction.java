@@ -37,7 +37,7 @@ public class RestMarketCommentUpdateAction extends AbstractRestPostUpdateAction 
                                          MarketService service) {
         super(settings, controller, client, securityController,
                 MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE,
-                (json, id) -> service.updateCommentFromJson(json, id));
+                (id, json) -> service.updateCommentFromJson(id, json));
     }
 
 }

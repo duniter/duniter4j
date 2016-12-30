@@ -516,7 +516,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
                 }
             }
 
-            // Group certifications  by [uid, pubKey] and keep last timestamp
+            // group certifications  by [uid, pubKey] and keep last timestamp
             result = groupByUidAndPubKey(result, true);
 
         }
@@ -575,7 +575,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
             }
         }
 
-        // Group certifications  by [uid, pubKey] and keep last timestamp
+        // group certifications  by [uid, pubKey] and keep last timestamp
         result = groupByUidAndPubKey(result, true);
 
         return result;

@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.user.service;
+package org.duniter.elasticsearch.gchange.service;
 
 /*
  * #%L
@@ -23,19 +23,23 @@ package org.duniter.elasticsearch.user.service;
  */
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
+import org.duniter.core.client.model.elasticsearch.RecordComment;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.exception.DocumentNotFoundException;
+import org.duniter.elasticsearch.gchange.model.MarketRecord;
+import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
@@ -43,6 +47,8 @@ import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
+import org.duniter.elasticsearch.user.service.UserEventService;
+import org.duniter.elasticsearch.user.service.UserService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.nuiton.i18n.I18n;
@@ -53,9 +59,17 @@ import java.util.*;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class BlockchainUserEventService extends AbstractService implements ChangeService.ChangeListener {
+public class CommentUserEventService extends AbstractService implements ChangeService.ChangeListener {
 
-    public static final String DEFAULT_PUBKEYS_SEPARATOR = ", ";
+    static {
+        I18n.n("duniter.market.error.comment.recordNotFound");
+        I18n.n("duniter.market.event.newComment");
+        I18n.n("duniter.market.event.updateComment");
+
+        I18n.n("duniter.registry.error.comment.recordNotFound");
+        I18n.n("duniter.registry.event.newComment");
+        I18n.n("duniter.registry.event.updateComment");
+    }
 
     public final UserService userService;
 
@@ -68,15 +82,17 @@ public class BlockchainUserEventService extends AbstractService implements Chang
     public final boolean enable;
 
     @Inject
-    public BlockchainUserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
-                                      BlockchainService blockchainService,
-                                      UserService userService,
-                                      UserEventService userEventService) {
-        super("duniter.user.event.blockchain", client, settings, cryptoService);
+    public CommentUserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
+                                   BlockchainService blockchainService,
+                                   UserService userService,
+                                   UserEventService userEventService) {
+        super("duniter.user.event.comment", client, settings, cryptoService);
         this.userService = userService;
         this.userEventService = userEventService;
         this.objectMapper = JacksonUtils.newObjectMapper();
-        this.changeListenSources = ImmutableList.of(new ChangeSource("*", BlockchainService.BLOCK_TYPE));
+        this.changeListenSources = ImmutableList.of(
+                new ChangeSource(MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE),
+                new ChangeSource(RegistryService.INDEX, MarketService.RECORD_COMMENT_TYPE));
         ChangeService.registerListener(this);
 
         this.enable = pluginSettings.enableBlockchainSync();
@@ -88,7 +104,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     @Override
     public String getId() {
-        return "duniter.user.event.blockchain";
+        return "duniter.user.event.comment";
     }
 
     @Override
@@ -100,23 +116,28 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
             switch (change.getOperation()) {
                 case CREATE:
+                    if (change.getSource() != null) {
+                        RecordComment comment = objectMapper.readValue(change.getSource().streamInput(), RecordComment.class);
+                        processCommentIndex(change.getIndex(), MarketService.RECORD_TYPE, change.getId(), comment, true/*is new*/);
+                    }
+                    break;
                 case INDEX:
                     if (change.getSource() != null) {
-                        BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
-                        processBlockIndex(block);
+                        RecordComment comment = objectMapper.readValue(change.getSource().streamInput(), RecordComment.class);
+                        processCommentIndex(change.getIndex(), MarketService.RECORD_TYPE, change.getId(), comment, false/*is new*/);
                     }
                     break;
 
                 // on DELETE : remove user event on block (using link
                 case DELETE:
-                    processBlockDelete(change);
+                    processCommentDelete(change);
 
                     break;
             }
 
         }
         catch(IOException e) {
-            throw new TechnicalException(String.format("Unable to parse received block %s", change.getId()), e);
+            throw new TechnicalException(String.format("Unable to parse received comment %s", change.getId()), e);
         }
 
         //logger.info("receiveing block change: " + change.toJson());
@@ -171,79 +192,45 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         };
     }
 
-    private void processBlockIndex(BlockchainBlock block) {
-        // Joiners
-        if (CollectionUtils.isNotEmpty(block.getJoiners())) {
-            for (BlockchainBlock.Joiner joiner: block.getJoiners()) {
-                notifyUserEvent(block, joiner.getPublicKey(), UserEventCodes.MEMBER_JOIN, I18n.n("duniter.user.event.ms.join"), block.getCurrency());
-            }
+    private void processCommentIndex(String index, String recordType, String commentId, RecordComment comment, boolean isNewComment) {
+
+        String issuer = comment.getIssuer();
+        String recordId = comment.getRecord();
+
+        // Notify issuer of record (is not same as comment writer)
+        Map<String, Object> recordFields = getFieldsById(index, recordType, recordId,
+                MarketRecord.PROPERTY_TITLE, MarketRecord.PROPERTY_ISSUER);
+        if (MapUtils.isEmpty(recordFields)) { // record not found
+            logger.warn(I18n.t(String.format("duniter.%s.error.comment.recordNotFound", index.toLowerCase()), recordId));
+        }
+        String recordIssuer = recordFields.get(MarketRecord.PROPERTY_ISSUER).toString();
+
+        // Get user title
+        String issuerTitle = userService.getProfileTitle(issuer);
+
+        String recordTitle = recordFields.get(MarketRecord.PROPERTY_TITLE).toString();
+        if (!issuer.equals(recordIssuer)) {
+            userEventService.notifyUser(
+                    UserEvent.newBuilder(UserEvent.EventType.INFO, GchangeEventCodes.NEW_COMMENT.name())
+                            .setMessage(
+                                    isNewComment ?
+                                            String.format("duniter.%s.event.newComment", index.toLowerCase()) :
+                                            String.format("duniter.%s.event.updateComment", index.toLowerCase()),
+                                    issuer,
+                                    issuerTitle != null ? issuerTitle : ModelUtils.minifyPubkey(issuer),
+                                    recordTitle
+                            )
+                            .setRecipient(recordIssuer)
+                            .setReference(index, recordType, recordId)
+                            .setReferenceAnchor(commentId)
+                            .setTime(comment.getTime())
+                            .build());
         }
 
-        // Leavers
-        if (CollectionUtils.isNotEmpty(block.getLeavers())) {
-            for (BlockchainBlock.Joiner leaver: block.getJoiners()) {
-                notifyUserEvent(block, leaver.getPublicKey(), UserEventCodes.MEMBER_LEAVE, I18n.n("duniter.user.event.ms.leave"), block.getCurrency());
-            }
-        }
 
-        // Actives
-        if (CollectionUtils.isNotEmpty(block.getActives())) {
-            for (BlockchainBlock.Joiner active: block.getActives()) {
-                notifyUserEvent(block, active.getPublicKey(), UserEventCodes.MEMBER_ACTIVE, I18n.n("duniter.user.event.ms.active"), block.getCurrency());
-            }
-        }
-
-        // Tx
-        if (CollectionUtils.isNotEmpty(block.getTransactions())) {
-            for (BlockchainBlock.Transaction tx: block.getTransactions()) {
-                processTx(block, tx);
-            }
-        }
     }
 
-    private void processTx(BlockchainBlock block, BlockchainBlock.Transaction tx) {
-        Set<String> senders = ImmutableSet.copyOf(tx.getIssuers());
-
-        // Received
-        String senderNames = userService.joinNamesFromPubkeys(senders, DEFAULT_PUBKEYS_SEPARATOR, true);
-        String sendersPubkeys = ModelUtils.joinPubkeys(senders, DEFAULT_PUBKEYS_SEPARATOR, false);
-        Set<String> receivers = new HashSet<>();
-        for (String output : tx.getOutputs()) {
-            String[] parts = output.split(":");
-            if (parts.length >= 3 && parts[2].startsWith("SIG(")) {
-                String receiver = parts[2].substring(4, parts[2].length() - 1);
-                if (!senders.contains(receiver) && !receivers.contains(receiver)) {
-                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.tx.received"), sendersPubkeys, senderNames);
-                    receivers.add(receiver);
-                }
-            }
-        }
-
-        // Sent
-        if (CollectionUtils.isNotEmpty(receivers)) {
-            String receiverNames = userService.joinNamesFromPubkeys(receivers, DEFAULT_PUBKEYS_SEPARATOR, true);
-            String receiverPubkeys = ModelUtils.joinPubkeys(receivers, DEFAULT_PUBKEYS_SEPARATOR, false);
-            for (String sender : senders) {
-                notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverPubkeys, receiverNames);
-            }
-        }
-
-        // TODO : indexer la TX dans un index/type spécifique ?
-    }
-
-    private void notifyUserEvent(BlockchainBlock block, String pubkey, UserEventCodes code, String message, String... params) {
-        UserEvent event = UserEvent.newBuilder(UserEvent.EventType.INFO, code.name())
-                .setRecipient(pubkey)
-                .setMessage(message, params)
-                .setTime(block.getMedianTime())
-                .setReference(block.getCurrency(), BlockchainService.BLOCK_TYPE, String.valueOf(block.getNumber()))
-                .setReferenceHash(block.getHash())
-                .build();
-
-        userEventService.notifyUser(event);
-    }
-
-    private void processBlockDelete(ChangeEvent change) {
+    private void processCommentDelete(ChangeEvent change) {
         if (change.getId() == null) return;
 
         // Delete events that reference this block

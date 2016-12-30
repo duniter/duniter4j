@@ -1,8 +1,8 @@
-package org.duniter.elasticsearch.user.service;
+package org.duniter.core.client.service.exception;
 
 /*
  * #%L
- * duniter4j-elasticsearch-plugin
+ * UCoin Java :: Core Client API
  * %%
  * Copyright (C) 2014 - 2016 EIS
  * %%
@@ -22,26 +22,28 @@ package org.duniter.elasticsearch.user.service;
  * #L%
  */
 
-import org.elasticsearch.common.inject.AbstractModule;
-import org.elasticsearch.common.inject.Module;
+import org.duniter.core.exception.BusinessException;
 
-public class ServiceModule extends AbstractModule implements Module {
+/**
+ * Created by eis on 11/02/15.
+ */
+public class HttpUnauthorizeException extends BusinessException {
 
-    @Override protected void configure() {
-        bind(HistoryService.class).asEagerSingleton();
+    private static final long serialVersionUID = -5260280401144018980L;
 
-        bind(MessageService.class).asEagerSingleton();
-
-        bind(UserService.class).asEagerSingleton();
-        bind(GroupService.class).asEagerSingleton();
-
-        bind(UserEventService.class).asEagerSingleton();
-
-        bind(BlockchainUserEventService.class).asEagerSingleton();
-
-        bind(SynchroService.class).asEagerSingleton();
+    public HttpUnauthorizeException() {
+        super();
     }
 
-    /* protected methods */
+    public HttpUnauthorizeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
+    public HttpUnauthorizeException(String message) {
+        super(message);
+    }
+
+    public HttpUnauthorizeException(Throwable cause) {
+        super(cause);
+    }
 }

@@ -99,6 +99,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_HOST.getKey(), getNodeBmaHost());
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_PORT.getKey(), String.valueOf(getNodeBmaPort()));
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_PROTOCOL.getKey(), getNodeBmaPort() == 443 ? "https" : "http");
+        applicationConfig.setDefaultOption(ConfigurationOption.NETWORK_TIMEOUT.getKey(), String.valueOf(getNetworkTimeout()));
 
         try {
             applicationConfig.parse(new String[]{});
@@ -183,6 +184,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
 
     public File getTempDirectory() {
         return Configuration.instance().getTempDirectory();
+    }
+
+    public int getNetworkTimeout()  {
+        return settings.getAsInt("duniter.network.timeout", 100000 /*10s*/);
     }
 
     public boolean isDevMode() {

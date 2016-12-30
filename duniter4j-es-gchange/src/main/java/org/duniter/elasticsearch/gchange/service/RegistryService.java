@@ -130,16 +130,16 @@ public class RegistryService extends AbstractService {
         return checkIssuerAndIndexDocumentFromJson(INDEX, RECORD_TYPE, json);
     }
 
-    public void updateRecordFromJson(String json, String id) {
-        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_TYPE, json, id);
+    public void updateRecordFromJson(String id, String json) {
+        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_TYPE, id, json);
     }
 
     public String indexCommentFromJson(String json) {
         return commentService.indexCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, json);
     }
 
-    public void updateCommentFromJson(String json, String id) {
-        commentService.updateCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, json, id);
+    public void updateCommentFromJson(String id, String json) {
+        commentService.updateCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, id, json);
     }
 
     /* -- Internal methods -- */

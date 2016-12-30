@@ -22,10 +22,16 @@ package org.duniter.elasticsearch.user.rest;
  * #L%
  */
 
+import org.duniter.elasticsearch.user.rest.group.RestGroupIndexAction;
+import org.duniter.elasticsearch.user.rest.group.RestGroupUpdateAction;
 import org.duniter.elasticsearch.user.rest.history.RestHistoryDeleteIndexAction;
 import org.duniter.elasticsearch.user.rest.message.RestMessageInboxIndexAction;
-import org.duniter.elasticsearch.user.rest.message.RestMessageMarkAsReadAction;
+import org.duniter.elasticsearch.user.rest.message.RestMessageInboxMarkAsReadAction;
 import org.duniter.elasticsearch.user.rest.message.RestMessageOutboxIndexAction;
+import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordGetAction;
+import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordIndexAction;
+import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordMarkAsReadAction;
+import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordSearchAction;
 import org.duniter.elasticsearch.user.rest.user.*;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
@@ -42,12 +48,25 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestUserEventMarkAsReadAction.class).asEagerSingleton();
         bind(RestUserEventSearchAction.class).asEagerSingleton();
 
+        // Group
+        bind(RestGroupIndexAction.class).asEagerSingleton();
+        bind(RestGroupUpdateAction.class).asEagerSingleton();
+
         // History
         bind(RestHistoryDeleteIndexAction.class).asEagerSingleton();
 
         // Message
         bind(RestMessageInboxIndexAction.class).asEagerSingleton();
         bind(RestMessageOutboxIndexAction.class).asEagerSingleton();
-        bind(RestMessageMarkAsReadAction.class).asEagerSingleton();
+        bind(RestMessageInboxMarkAsReadAction.class).asEagerSingleton();
+
+        // Backward compatibility
+        {
+            // message/record
+            bind(RestMessageRecordIndexAction.class).asEagerSingleton();
+            bind(RestMessageRecordSearchAction.class).asEagerSingleton();
+            bind(RestMessageRecordGetAction.class).asEagerSingleton();
+            bind(RestMessageRecordMarkAsReadAction.class).asEagerSingleton();
+        }
     }
 }

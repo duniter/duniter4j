@@ -39,7 +39,7 @@ public class RestUserProfileUpdateAction extends AbstractRestPostUpdateAction {
         super(settings, controller, client, securityController,
                 UserService.INDEX,
                 UserService.PROFILE_TYPE,
-                (json, id) -> service.updateProfileFromJson(json, id));
+                (id, json) -> service.updateProfileFromJson(id, json));
     }
 
 }

@@ -58,15 +58,15 @@ public abstract class AbstractRestPostIndexAction extends BaseRestHandler {
     }
 
     @Override
-    protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
+    protected void handleRequest(final RestRequest request, RestChannel channel, Client client) throws Exception {
 
         try {
             String id = indexer.handleJson(request.content().toUtf8());
-            restChannel.sendResponse(new BytesRestResponse(OK, id));
+            channel.sendResponse(new BytesRestResponse(OK, id));
         }
         catch(DuniterElasticsearchException | BusinessException e) {
             log.error(e.getMessage(), e);
-            restChannel.sendResponse(new XContentThrowableRestResponse(request, e));
+            channel.sendResponse(new XContentThrowableRestResponse(request, e));
         }
         catch(Exception e) {
             log.error(e.getMessage(), e);

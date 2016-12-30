@@ -37,7 +37,7 @@ public class RestregistryCommentUpdateAction extends AbstractRestPostUpdateActio
                                            RegistryService service) {
         super(settings, controller, client, securityController,
                 RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE,
-                (json, id) -> service.updateCommentFromJson(json, id));
+                (id, json) -> service.updateCommentFromJson(id, json));
     }
 
 }

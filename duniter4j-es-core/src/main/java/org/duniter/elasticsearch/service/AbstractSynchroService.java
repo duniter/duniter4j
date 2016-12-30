@@ -24,17 +24,20 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.HttpService;
+import org.duniter.core.client.service.exception.HttpUnauthorizeException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
+import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -79,11 +82,62 @@ public abstract class AbstractSynchroService extends AbstractService {
         return peer;
     }
 
-    protected void importChanges(Peer peer, String index, String type, long sinceTime) {
-        importChanges(peer, index, type, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, sinceTime);
+    protected long importChangesRemap(SynchroResult result,
+                                      Peer peer,
+                                      String fromIndex, String fromType,
+                                      String toIndex, String toType,
+                                      long sinceTime) {
+        Preconditions.checkNotNull(result);
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(fromIndex);
+        Preconditions.checkNotNull(fromType);
+        Preconditions.checkNotNull(toIndex);
+        Preconditions.checkNotNull(toType);
+
+        return doImportChanges(result, peer, fromIndex, fromType, toIndex, toType, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, sinceTime);
     }
 
-    protected void importChanges(Peer peer, String index, String type, String issuerFieldName, String versionFieldName, long sinceTime) {
+    protected long importChanges(SynchroResult result, Peer peer, String index, String type, long sinceTime) {
+        Preconditions.checkNotNull(result);
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(index);
+        Preconditions.checkNotNull(type);
+
+        return doImportChanges(result, peer, index, type, index, type, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, sinceTime);
+    }
+
+    /* -- private methods -- */
+
+    private long doImportChanges(SynchroResult result,
+                                 Peer peer,
+                                 String fromIndex, String fromType,
+                                 String toIndex, String toType,
+                                 String issuerFieldName, String versionFieldName, long sinceTime) {
+
+
+        long offset = 0;
+        int size = pluginSettings.getIndexBulkSize() / 10;
+        boolean stop = false;
+        while(!stop) {
+            long currentRowCount = doImportChangesAtOffset(result, peer,
+                    fromIndex, fromType, toIndex, toType,
+                    issuerFieldName, versionFieldName, sinceTime,
+                    offset, size);
+            offset += currentRowCount;
+            stop = currentRowCount < size;
+        }
+
+        return offset; // = total rows
+    }
+
+    private long doImportChangesAtOffset(SynchroResult result, Peer peer,
+                                 String fromIndex, String fromType,
+                                 String toIndex, String toType,
+                                 String issuerFieldName, String versionFieldName,
+                                 long sinceTime,
+                                 long offset,
+                                 int size) {
+
 
         // Create the search query
         BytesStreamOutput bos;
@@ -102,17 +156,11 @@ public abstract class AbstractSynchroService extends AbstractService {
                     .endObject()
                     .endObject()
                     .endObject()
-                    // currency
-                            /*.startObject("filter")
-                                .startObject("term")
-                                    .field("currency", "sou") // todo, filter on configured currency only
-                                .endObject()
-                            .endObject()*/
                     .endObject()
                     // end: query
                     .endObject()
-                    .field("from", 0) // todo
-                    .field("size", 100) // todo
+                    .field("from", offset)
+                    .field("size", size)
                     .endObject();
             builder.flush();
 
@@ -121,14 +169,19 @@ public abstract class AbstractSynchroService extends AbstractService {
         }
 
         // Execute query
-        String path = "/" + Joiner.on('/').join(new String[]{index, type, "_search"});
-        HttpPost httpPost = new HttpPost(httpService.getPath(peer, "/" + path));
-        httpPost.setEntity(new ByteArrayEntity(bos.bytes().array()));
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s] [%s/%s] Sending POST request: %s", peer, index, type, new String(bos.bytes().array())));
+        InputStream response;
+        try {
+            HttpPost httpPost = new HttpPost(httpService.getPath(peer, fromIndex, fromType, "_search"));
+            httpPost.setEntity(new ByteArrayEntity(bos.bytes().array()));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("[%s] [%s/%s] Sending POST request: %s", peer, fromIndex, fromType, new String(bos.bytes().array())));
+            }
+            response = httpService.executeRequest(httpPost, InputStream.class, String.class);
         }
-        InputStream response = httpService.executeRequest(httpPost, InputStream.class, String.class);
-
+        catch(HttpUnauthorizeException e) {
+            logger.error(String.format("[%s] [%s/%s] Unable to access (%s). Skipping data import.", peer, fromIndex, fromType, e.getMessage()));
+            return 0;
+        }
 
         // Parse response
         try {
@@ -137,24 +190,26 @@ public abstract class AbstractSynchroService extends AbstractService {
             node = node.get("hits");
             int total = node == null ? 0 : node.get("total").asInt(0);
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("[%s] [%s/%s] total to update: %s", peer, index, type, total));
+                logger.debug(String.format("[%s] [%s/%s] total to update: %s", peer, toIndex, toType, total));
             }
 
             boolean debug = logger.isTraceEnabled();
 
-            if (total > 0) {
+            long counter = 0;
 
-                int batchSize = pluginSettings.getIndexBulkSize();
+            long insertHits = 0;
+            long updateHits = 0;
+
+            if (offset < total) {
 
                 BulkRequestBuilder bulkRequest = client.prepareBulk();
                 bulkRequest.setRefresh(true);
 
                 for (Iterator<JsonNode> hits = node.get("hits").iterator(); hits.hasNext();){
                     JsonNode hit = hits.next();
-                    String hitIndex = hit.get("_index").asText();
-                    String hitType = hit.get("_type").asText();
                     String id = hit.get("_id").asText();
                     JsonNode source = hit.get("_source");
+                    counter++;
 
                     try {
                         String issuer = source.get(issuerFieldName).asText();
@@ -166,7 +221,7 @@ public abstract class AbstractSynchroService extends AbstractService {
                             throw new InvalidFormatException(String.format("Invalid format: missing or null %s field.", versionFieldName));
                         }
 
-                        GetResponse existingDoc = client.prepareGet(index, type, id)
+                        GetResponse existingDoc = client.prepareGet(toIndex, toType, id)
                                 .setFields(versionFieldName, issuerFieldName)
                                 .execute().actionGet();
 
@@ -177,11 +232,12 @@ public abstract class AbstractSynchroService extends AbstractService {
                             String json = source.toString();
                             //readAndVerifyIssuerSignature(json, source);
                             if (debug) {
-                                logger.trace(String.format("[%s] [%s/%s] insert _id=%s\n%s", peer, hitIndex, hitType, id, json));
+                                logger.trace(String.format("[%s] [%s/%s] insert _id=%s\n%s", peer, toIndex, toType, id, json));
                             }
-                            bulkRequest.add(client.prepareIndex(hitIndex, hitType, id)
+                            bulkRequest.add(client.prepareIndex(toIndex, toType, id)
                                     .setSource(json.getBytes())
                             );
+                            insertHits++;
                         }
 
                         // Existing doc
@@ -201,21 +257,23 @@ public abstract class AbstractSynchroService extends AbstractService {
                                 String json = source.toString();
                                 //readAndVerifyIssuerSignature(json, source);
                                 if (debug) {
-                                    logger.trace(String.format("[%s] [%s/%s] update _id=%s\n%s", peer, hitIndex, hitType, id, json));
+                                    logger.trace(String.format("[%s] [%s/%s] update _id=%s\n%s", peer, toIndex, toType, id, json));
                                 }
-                                bulkRequest.add(client.prepareIndex(hitIndex, hitType, id)
+                                bulkRequest.add(client.prepareIndex(toIndex, toType, id)
                                         .setSource(json.getBytes()));
+
+                                updateHits++;
                             }
                         }
 
                     } catch (InvalidFormatException e) {
                         if (debug) {
-                            logger.debug(String.format("[%s] [%s/%s] %s. Skipping.", peer, index, type, e.getMessage()));
+                            logger.debug(String.format("[%s] [%s/%s] %s. Skipping.", peer, toIndex, toType, e.getMessage()));
                         }
                         // Skipping document (continue)
                     }
                     catch (Exception e) {
-                        logger.warn(String.format("[%s] [%s/%s] %s. Skipping.", peer, index, type, e.getMessage()), e);
+                        logger.warn(String.format("[%s] [%s/%s] %s. Skipping.", peer, toIndex, toType, e.getMessage()), e);
                         // Skipping document (continue)
                     }
                 }
@@ -234,7 +292,7 @@ public abstract class AbstractSynchroService extends AbstractService {
                                     || missingDocIds.contains(itemResponse.getId());
                             if (!skip) {
                                 if (debug) {
-                                    logger.debug(String.format("[%s] [%s/%s] could not process _id=%s: %s. Skipping.", peer, index, type, itemResponse.getId(), itemResponse.getFailureMessage()));
+                                    logger.debug(String.format("[%s] [%s/%s] could not process _id=%s: %s. Skipping.", peer, toIndex, toType, itemResponse.getId(), itemResponse.getFailureMessage()));
                                 }
                                 missingDocIds.add(itemResponse.getId());
                             }
@@ -242,6 +300,12 @@ public abstract class AbstractSynchroService extends AbstractService {
                     }
                 }
             }
+
+            // update result stats
+            result.addInserts(toIndex, toType, insertHits);
+            result.addUpdates(toIndex, toType, updateHits);
+
+            return counter;
 
         } catch(IOException e) {
             throw new TechnicalException("Unable to parse search response", e);

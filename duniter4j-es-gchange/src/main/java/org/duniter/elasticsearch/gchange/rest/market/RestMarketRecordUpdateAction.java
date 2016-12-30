@@ -37,7 +37,7 @@ public class RestMarketRecordUpdateAction extends AbstractRestPostUpdateAction {
                                         MarketService service) {
         super(settings, controller, client, securityController,
                 MarketService.INDEX, MarketService.RECORD_TYPE,
-                (json, id) -> service.updateRecordFromJson(json, id));
+                (id, json) -> service.updateRecordFromJson(id, json));
     }
 
 }

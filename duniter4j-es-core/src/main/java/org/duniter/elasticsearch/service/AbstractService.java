@@ -148,7 +148,7 @@ public abstract class AbstractService implements Bean {
     protected String indexDocumentFromJson(String index, String type, String json) {
         IndexResponse response = client.prepareIndex(index, type)
                 .setSource(json)
-                .setRefresh(false)
+                .setRefresh(true)
                 .execute().actionGet();
         return response.getId();
     }
@@ -170,6 +170,7 @@ public abstract class AbstractService implements Bean {
     protected void updateDocumentFromJson(String index, String type, String id, String json) {
         // Execute indexBlocksFromNode
         client.prepareUpdate(index, type, id)
+                .setRefresh(true)
                 .setDoc(json)
                 .execute().actionGet();
     }
@@ -228,6 +229,19 @@ public abstract class AbstractService implements Bean {
             if (!Objects.equals(expectedvalue, docValue)) {
                 throw new AccessDeniedException(String.format("Could not delete this document: not same [%s].", fieldName));
             }
+        }
+    }
+
+    protected boolean isDocumentExists(String index, String type, String id) throws ElasticsearchException {
+        GetResponse response = client.prepareGet(index, type, id)
+                .setFetchSource(false)
+                .execute().actionGet();
+        return response.isExists();
+    }
+
+    protected void checkDocumentExists(String index, String type, String id) throws ElasticsearchException {
+        if (!isDocumentExists(index, type, id)) {
+            throw new NotFoundException(String.format("Document [%s/%s/%s] not exists.", index, type, id));
         }
     }
 

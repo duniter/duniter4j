@@ -38,6 +38,8 @@ package org.duniter.elasticsearch.websocket;
     limitations under the License.
 */
 
+import com.google.common.collect.Maps;
+import org.apache.commons.collections4.MapUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
@@ -51,11 +53,15 @@ import javax.websocket.server.ServerEndpoint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @ServerEndpoint(value = "/_changes")
 public class WebSocketChangesEndPoint implements ChangeService.ChangeListener{
 
-    public static Collection<ChangeSource> SOURCES = null;
+    public static String PATH_PARAM_INDEX = "index";
+    public static String PATH_PARAM_TYPE = "type";
+
+    public static Collection<ChangeSource> DEFAULT_SOURCES = null;
 
     public static class Init {
 
@@ -67,17 +73,19 @@ public class WebSocketChangesEndPoint implements ChangeService.ChangeListener{
             for(String sourceStr : sourcesStr) {
                 sources.add(new ChangeSource(sourceStr));
             }
-            SOURCES = sources;
+            DEFAULT_SOURCES = sources;
         }
     }
 
     private final ESLogger log = Loggers.getLogger("duniter.ws.changes");
     private Session session;
+    private Map<String, ChangeSource> sources;
 
     @OnOpen
     public void onOpen(Session session) {
         log.debug("Connected ... " + session.getId());
         this.session = session;
+        this.sources = null;
         ChangeService.registerListener(this);
     }
 
@@ -93,12 +101,13 @@ public class WebSocketChangesEndPoint implements ChangeService.ChangeListener{
 
     @Override
     public Collection<ChangeSource> getChangeSources() {
-        return SOURCES;
+        if (MapUtils.isEmpty(sources)) return DEFAULT_SOURCES;
+        return sources.values();
     }
 
     @OnMessage
     public void onMessage(String message) {
-        log.debug("Received message: "+message);
+        addSourceFilter(message);
     }
 
     @OnClose
@@ -114,4 +123,24 @@ public class WebSocketChangesEndPoint implements ChangeService.ChangeListener{
     }
 
 
+    /* -- internal methods -- */
+
+    private void addSourceFilter(String filter) {
+
+        ChangeSource source = new ChangeSource(filter);
+        if (source.isEmpty()) {
+            log.debug("Rejecting changes filter (seems to be empty): " + filter);
+            return;
+        }
+
+        String sourceKey = source.toString();
+        if (sources == null || !sources.containsKey(sourceKey)) {
+            log.debug("Adding changes filter: " + filter);
+            if (sources == null) {
+                sources = Maps.newHashMap();
+            }
+            sources.put(sourceKey, source);
+            ChangeService.refreshListener(this);
+        }
+    }
 }

@@ -38,7 +38,6 @@ package org.duniter.elasticsearch.service.changes;
     limitations under the License.
 */
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonSyntaxException;

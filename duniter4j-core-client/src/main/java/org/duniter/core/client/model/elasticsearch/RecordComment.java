@@ -22,6 +22,9 @@ package org.duniter.core.client.model.elasticsearch;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 /**
  * Created by blavenie on 01/03/16.
  */
@@ -29,9 +32,13 @@ public class RecordComment extends Record {
 
     public static final String PROPERTY_MESSAGE="message";
     public static final String PROPERTY_RECORD="record";
+    public static final String PROPERTY_REPLY_TO="replyTo";
+
+    public static final String PROPERTY_REPLY_TO_JSON="reply_to";
 
     private String message;
     private String record;
+    private String replyTo;
 
     public String getMessage() {
         return message;
@@ -47,5 +54,15 @@ public class RecordComment extends Record {
 
     public void setRecord(String record) {
         this.record = record;
+    }
+
+    @JsonGetter(PROPERTY_REPLY_TO_JSON)
+    public String getReplyTo() {
+        return replyTo;
+    }
+
+    @JsonSetter(PROPERTY_REPLY_TO_JSON)
+    public void setReplyTo(String replyTo) {
+        this.replyTo = replyTo;
     }
 }

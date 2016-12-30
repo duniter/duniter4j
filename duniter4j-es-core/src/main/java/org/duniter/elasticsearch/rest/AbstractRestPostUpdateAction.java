@@ -23,6 +23,8 @@ package org.duniter.elasticsearch.rest;
  */
 
 import org.duniter.core.exception.BusinessException;
+import org.duniter.core.util.StringUtils;
+import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.elasticsearch.client.Client;
@@ -60,7 +62,10 @@ public abstract class AbstractRestPostUpdateAction extends BaseRestHandler {
         String id = request.param("id");
 
         try {
-            updater.handleJson(request.content().toUtf8(), id);
+            if (StringUtils.isBlank(id)) {
+                throw new AccessDeniedException("Bad request (missing id in path)");
+            }
+            updater.handleJson(id, request.content().toUtf8());
             restChannel.sendResponse(new BytesRestResponse(OK, id));
         }
         catch(DuniterElasticsearchException | BusinessException e) {
@@ -74,7 +79,7 @@ public abstract class AbstractRestPostUpdateAction extends BaseRestHandler {
 
 
     public interface JsonUpdater {
-        void handleJson(String json, String id) throws DuniterElasticsearchException, BusinessException;
+        void handleJson(String id, String json) throws DuniterElasticsearchException, BusinessException;
     }
 
 

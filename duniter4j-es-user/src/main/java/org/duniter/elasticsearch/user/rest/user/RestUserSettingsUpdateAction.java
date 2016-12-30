@@ -39,7 +39,7 @@ public class RestUserSettingsUpdateAction extends AbstractRestPostUpdateAction {
         super(settings, controller, client,  securityController,
                 UserService.INDEX,
                 UserService.SETTINGS_TYPE,
-                (json, id) -> service.updateSettingsFromJson(json, id));
+                (id, json) -> service.updateSettingsFromJson(id, json));
     }
 
 }

@@ -60,7 +60,7 @@ public abstract class AbstractRestPostMarkAsReadAction extends BaseRestHandler {
         String id = request.param("id");
 
         try {
-            updater.handleSignature(request.content().toUtf8(), id);
+            updater.handleSignature(id, request.content().toUtf8());
             restChannel.sendResponse(new BytesRestResponse(OK, id));
         }
         catch(DuniterElasticsearchException | BusinessException e) {
@@ -74,7 +74,7 @@ public abstract class AbstractRestPostMarkAsReadAction extends BaseRestHandler {
 
 
     public interface JsonReadUpdater {
-        void handleSignature(String signature, String id) throws DuniterElasticsearchException, BusinessException;
+        void handleSignature(String id, String signature) throws DuniterElasticsearchException, BusinessException;
     }
 
 

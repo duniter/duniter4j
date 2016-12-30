@@ -202,7 +202,7 @@ public class UserEventService extends AbstractService {
         });
     }
 
-    public void markEventAsRead(String signature, String id) {
+    public void markEventAsRead(String id, String signature) {
 
         Map<String, Object> fields = getMandatoryFieldsById(INDEX, EVENT_TYPE, id, UserEvent.PROPERTY_HASH, UserEvent.PROPERTY_RECIPIENT);
         String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();

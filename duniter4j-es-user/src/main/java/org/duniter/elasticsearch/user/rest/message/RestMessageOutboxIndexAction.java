@@ -32,6 +32,8 @@ import org.elasticsearch.rest.RestController;
 
 public class RestMessageOutboxIndexAction extends AbstractRestPostIndexAction {
 
+
+
     @Inject
     public RestMessageOutboxIndexAction(Settings settings, RestController controller, Client client,
                                         RestSecurityController securityController,
@@ -39,6 +41,6 @@ public class RestMessageOutboxIndexAction extends AbstractRestPostIndexAction {
         super(settings, controller, client, securityController,
                 MessageService.INDEX,
                 MessageService.OUTBOX_TYPE,
-                json -> service.indexRecordFromJson(json));
+                json -> service.indexOuboxFromJson(json));
     }
 }

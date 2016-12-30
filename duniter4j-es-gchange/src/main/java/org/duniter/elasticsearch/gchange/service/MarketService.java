@@ -35,6 +35,8 @@ import org.duniter.elasticsearch.gchange.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.MarketRecord;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.service.ServiceLocator;
+import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.UserService;
 import org.duniter.elasticsearch.user.service.UserEventService;
@@ -71,12 +73,16 @@ public class MarketService extends AbstractService {
     public MarketService(Client client, PluginSettings settings,
                          CryptoService cryptoService,
                          CommentService commentService,
-                         WotRemoteService wotRemoteService,
-                         UserEventService userEventService) {
+                         UserEventService userEventService,
+                         ThreadPool threadPool,
+                         final ServiceLocator serviceLocator
+                         ) {
         super("gchange." + INDEX, client, settings, cryptoService);
         this.commentService = commentService;
-        this.wotRemoteService = wotRemoteService;
         this.userEventService = userEventService;
+        threadPool.scheduleOnStarted(() -> {
+            wotRemoteService = serviceLocator.getWotRemoteService();
+        });
     }
 
     /**
@@ -149,7 +155,7 @@ public class MarketService extends AbstractService {
 
         // Execute indexBlocksFromNode
         IndexResponse response = indexRequest
-                .setRefresh(false)
+                .setRefresh(true)
                 .execute().actionGet();
 
         return response.getId();
@@ -159,16 +165,16 @@ public class MarketService extends AbstractService {
         return checkIssuerAndIndexDocumentFromJson(INDEX, RECORD_TYPE, json);
     }
 
-    public void updateRecordFromJson(String json, String id) {
-        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_TYPE, json, id);
+    public void updateRecordFromJson(String id, String json) {
+        checkIssuerAndUpdateDocumentFromJson(INDEX, RECORD_TYPE, id, json);
     }
 
     public String indexCommentFromJson(String json) {
         return commentService.indexCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, json);
     }
 
-    public void updateCommentFromJson(String json, String id) {
-        commentService.updateCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, json, id);
+    public void updateCommentFromJson(String id, String json) {
+        commentService.updateCommentFromJson(INDEX, RECORD_TYPE, RECORD_COMMENT_TYPE, id, json);
     }
 
     public MarketService fillRecordCategories() {

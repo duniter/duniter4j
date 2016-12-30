@@ -138,4 +138,7 @@ public class ChangeSource {
         return true;
     }
 
+    public boolean isEmpty() {
+        return indices == null && types == null && ids == null;
+    }
 }

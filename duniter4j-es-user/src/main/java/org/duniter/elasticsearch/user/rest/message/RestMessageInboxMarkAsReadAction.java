@@ -22,7 +22,7 @@ package org.duniter.elasticsearch.user.rest.message;
  * #L%
  */
 
-import org.duniter.elasticsearch.rest.AbstractRestPostIndexAction;
+import org.duniter.elasticsearch.rest.AbstractRestPostMarkAsReadAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.user.service.MessageService;
 import org.elasticsearch.client.Client;
@@ -30,15 +30,15 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestController;
 
-public class RestMessageInboxIndexAction extends AbstractRestPostIndexAction {
+public class RestMessageInboxMarkAsReadAction extends AbstractRestPostMarkAsReadAction {
 
     @Inject
-    public RestMessageInboxIndexAction(Settings settings, RestController controller, Client client,
-                                       RestSecurityController securityController,
-                                       final MessageService service) {
-        super(settings, controller, client, securityController,
-                MessageService.INDEX,
-                MessageService.INBOX_TYPE,
-                json -> service.indexInboxFromJson(json));
+    public RestMessageInboxMarkAsReadAction(Settings settings, RestController controller, Client client,
+                                            RestSecurityController securityController,
+                                            MessageService messageService) {
+        super(settings, controller, client, securityController, MessageService.INDEX, MessageService.INBOX_TYPE,
+                (id, signature) -> {
+                    messageService.markMessageAsRead(id, signature);
+                });
     }
 }

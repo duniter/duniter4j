@@ -26,6 +26,7 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.gchange.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.Protocol;
+import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -44,7 +45,7 @@ public class SynchroService extends AbstractSynchroService {
     }
 
     public void synchronize() {
-        logger.info("Synchronizing data...");
+        logger.info("Synchronizing Gchange data...");
         Peer peer = getPeerFromAPI(Protocol.GCHANGE_API);
         synchronize(peer);
     }
@@ -57,19 +58,23 @@ public class SynchroService extends AbstractSynchroService {
 
         logger.info(String.format("[%s] Synchronizing gchange data since %s...", peer.toString(), sinceTime));
 
-        importMarketChanges(peer, sinceTime);
-        importRegistryChanges(peer, sinceTime);
+        SynchroResult result = new SynchroResult();
+        long time = System.currentTimeMillis();
 
-        logger.info(String.format("[%s] Synchronizing gchange data since %s [OK]", peer.toString(), sinceTime));
+        importMarketChanges(result, peer, sinceTime);
+        importRegistryChanges(result, peer, sinceTime);
+
+        long duration = System.currentTimeMillis() - time;
+        logger.info(String.format("[%s] Synchronizing gchange data since %s [OK] %s (in %s ms)", peer.toString(), sinceTime, result.toString(), duration));
     }
 
-    protected void importMarketChanges(Peer peer, long sinceTime) {
-        importChanges(peer, MarketService.INDEX, MarketService.RECORD_TYPE,  sinceTime);
-        importChanges(peer, MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE,  sinceTime);
+    protected void importMarketChanges(SynchroResult result, Peer peer, long sinceTime) {
+        importChanges(result, peer, MarketService.INDEX, MarketService.RECORD_TYPE,  sinceTime);
+        importChanges(result, peer, MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE,  sinceTime);
     }
 
-    protected void importRegistryChanges(Peer peer, long sinceTime) {
-        importChanges(peer, RegistryService.INDEX, RegistryService.RECORD_TYPE,  sinceTime);
-        importChanges(peer, RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE,  sinceTime);
+    protected void importRegistryChanges(SynchroResult result, Peer peer, long sinceTime) {
+        importChanges(result, peer, RegistryService.INDEX, RegistryService.RECORD_TYPE,  sinceTime);
+        importChanges(result, peer, RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE,  sinceTime);
     }
 }

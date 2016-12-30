@@ -26,6 +26,7 @@ import org.duniter.core.client.model.elasticsearch.Protocol;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -59,19 +60,40 @@ public class SynchroService extends AbstractSynchroService {
 
         logger.info(String.format("[%s] Synchronizing user data since %s...", peer.toString(), sinceTime));
 
-        importUserChanges(peer, sinceTime);
-        importMessageChanges(peer, sinceTime);
+        SynchroResult result = new SynchroResult();
+        long time = System.currentTimeMillis();
 
-        logger.info(String.format("[%s] Synchronizing user data since %s [OK]", peer.toString(), sinceTime));
+        importHistoryChanges(result, peer, sinceTime);
+        importUserChanges(result, peer, sinceTime);
+        importMessageChanges(result, peer, sinceTime);
+        importGroupChanges(result, peer, sinceTime);
+
+        long duration = System.currentTimeMillis() - time;
+        logger.info(String.format("[%s] Synchronizing user data since %s [OK] %s (ins %s ms)", peer.toString(), sinceTime, result.toString(), duration));
     }
 
-    protected void importUserChanges(Peer peer, long sinceTime) {
-        importChanges(peer, UserService.INDEX, UserService.PROFILE_TYPE,  sinceTime);
-        importChanges(peer, UserService.INDEX, UserService.SETTINGS_TYPE,  sinceTime);
+    protected void importHistoryChanges(SynchroResult result, Peer peer, long sinceTime) {
+        importChanges(result, peer, HistoryService.INDEX, HistoryService.DELETE_TYPE,  sinceTime);
     }
 
-    protected void importMessageChanges(Peer peer, long sinceTime) {
-        importChanges(peer, MessageService.INDEX, MessageService.RECORD_TYPE,  sinceTime);
-        importChanges(peer, MessageService.INDEX, MessageService.OUTBOX_TYPE,  sinceTime);
+    protected void importUserChanges(SynchroResult result, Peer peer, long sinceTime) {
+        importChanges(result, peer, UserService.INDEX, UserService.PROFILE_TYPE,  sinceTime);
+        importChanges(result, peer, UserService.INDEX, UserService.SETTINGS_TYPE,  sinceTime);
     }
+
+    protected void importMessageChanges(SynchroResult result, Peer peer, long sinceTime) {
+        // For compat
+        // TODO: remove this later
+        importChangesRemap(result, peer, MessageService.INDEX, MessageService.RECORD_TYPE,
+                MessageService.INDEX, MessageService.INBOX_TYPE,
+                sinceTime);
+
+        importChanges(result, peer, MessageService.INDEX, MessageService.INBOX_TYPE,  sinceTime);
+        importChanges(result, peer, MessageService.INDEX, MessageService.OUTBOX_TYPE,  sinceTime);
+    }
+
+    protected void importGroupChanges(SynchroResult result, Peer peer, long sinceTime) {
+        importChanges(result, peer, GroupService.INDEX, GroupService.RECORD_TYPE,  sinceTime);
+    }
+
 }

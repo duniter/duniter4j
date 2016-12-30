@@ -37,8 +37,8 @@ public class RestUserEventMarkAsReadAction extends AbstractRestPostMarkAsReadAct
                                          RestSecurityController securityController,
                                          UserEventService userEventService) {
         super(settings, controller, client, securityController, UserEventService.INDEX, UserEventService.EVENT_TYPE,
-                (signature, id) -> {
-                    userEventService.markEventAsRead(signature, id);
+                (id, signature) -> {
+                    userEventService.markEventAsRead(id, signature);
                 });
     }
 }

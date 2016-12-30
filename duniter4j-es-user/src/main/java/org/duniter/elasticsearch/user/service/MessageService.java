@@ -26,13 +26,11 @@ package org.duniter.elasticsearch.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.client.model.ModelUtils;
-import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.service.AbstractService;
-import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.user.model.Message;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
@@ -55,8 +53,12 @@ import java.util.Map;
 public class MessageService extends AbstractService {
 
     public static final String INDEX = "message";
-    public static final String RECORD_TYPE = "record";
+    public static final String INBOX_TYPE = "inbox";
     public static final String OUTBOX_TYPE = "outbox";
+
+    @Deprecated
+    public static final String RECORD_TYPE = "record";
+
 
     private final UserEventService userEventService;
 
@@ -101,23 +103,22 @@ public class MessageService extends AbstractService {
      * @throws JsonProcessingException
      */
     public MessageService createIndex() throws JsonProcessingException {
-        logger.info(String.format("Creating index [%s/%s]", INDEX, RECORD_TYPE));
+        logger.info(String.format("Creating index [%s/%s]", INDEX, INBOX_TYPE));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
         Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", 2)
                 .put("number_of_replicas", 1)
-                //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
+        createIndexRequestBuilder.addMapping(INBOX_TYPE, createInboxType());
         createIndexRequestBuilder.addMapping(OUTBOX_TYPE, createOutboxType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
     }
 
-    public String indexRecordFromJson(String recordJson) {
+    public String indexInboxFromJson(String recordJson) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
         String issuer = getIssuer(actualObj);
@@ -128,7 +129,7 @@ public class MessageService extends AbstractService {
             logger.debug(String.format("Indexing a message from issuer [%s]", issuer.substring(0, 8)));
         }
 
-        IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
+        IndexResponse response = client.prepareIndex(INDEX, INBOX_TYPE)
                 .setSource(recordJson)
                 .setRefresh(false)
                 .execute().actionGet();
@@ -140,7 +141,7 @@ public class MessageService extends AbstractService {
                 .setRecipient(recipient)
                 .setMessage(I18n.n("duniter.user.event.message.received"), issuer, ModelUtils.minifyPubkey(issuer))
                 .setTime(time)
-                .setReference(INDEX, RECORD_TYPE, messageId)
+                .setReference(INDEX, INBOX_TYPE, messageId)
                 .build());
 
         return messageId;
@@ -163,8 +164,8 @@ public class MessageService extends AbstractService {
         return response.getId();
     }
 
-    public void markMessageAsRead(String signature, String id) {
-        Map<String, Object> fields = getMandatoryFieldsById(INDEX, RECORD_TYPE, id, Message.PROPERTY_HASH, Message.PROPERTY_RECIPIENT);
+    public void markMessageAsRead(String id, String signature) {
+        Map<String, Object> fields = getMandatoryFieldsById(INDEX, INBOX_TYPE, id, Message.PROPERTY_HASH, Message.PROPERTY_RECIPIENT);
         String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
         String hash = fields.get(UserEvent.PROPERTY_HASH).toString();
 
@@ -174,15 +175,15 @@ public class MessageService extends AbstractService {
             throw new InvalidSignatureException("Invalid signature: only the recipient can mark an message as read.");
         }
 
-        UpdateRequestBuilder request = client.prepareUpdate(INDEX, RECORD_TYPE, id)
+        UpdateRequestBuilder request = client.prepareUpdate(INDEX, INBOX_TYPE, id)
                 .setDoc("read_signature", signature);
         request.execute();
     }
 
     /* -- Internal methods -- */
 
-    public XContentBuilder createRecordType() {
-        return createMapping(RECORD_TYPE);
+    public XContentBuilder createInboxType() {
+        return createMapping(INBOX_TYPE);
     }
 
     public XContentBuilder createOutboxType() {
@@ -235,7 +236,7 @@ public class MessageService extends AbstractService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, INBOX_TYPE, ioe.getMessage()), ioe);
         }
     }
 }

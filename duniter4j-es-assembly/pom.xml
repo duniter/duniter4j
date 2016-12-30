@@ -209,13 +209,25 @@
                       <!-- reuse standalone files -->
                       <then>
                         <delete failonerror="false">
-                          <fileset dir="${run.es.home}/plugins/${project.groupId}" includes="duniter4j-*.jar" />
+                          <fileset dir="${run.es.home}/plugins" includes="**/duniter4j-*.jar" />
                         </delete>
-                        <copy todir="${run.es.home}/plugins/${project.groupId}" overwrite="true">
+                        <copy todir="${run.es.home}/plugins/duniter4j-es-core" overwrite="true">
+                          <fileset dir="../duniter4j-core-client/target" includes="duniter4j-*${project.version}.jar">
+                          </fileset>
+                          <fileset dir="../duniter4j-core-shared/target" includes="duniter4j-*${project.version}.jar">
+                          </fileset>
                           <fileset dir="../duniter4j-es-core/target" includes="duniter4j-*${project.version}.jar">
                           </fileset>
+                        </copy>
+                        <copy todir="${run.es.home}/plugins/duniter4j-es-core" overwrite="true">
+                          <fileset dir="../duniter4j-es-core/target" includes="duniter4j-*${project.version}.jar">
+                          </fileset>
+                        </copy>
+                        <copy todir="${run.es.home}/plugins/duniter4j-es-user" overwrite="true">
                           <fileset dir="../duniter4j-es-user/target" includes="duniter4j-*${project.version}.jar">
                           </fileset>
+                        </copy>
+                        <copy todir="${run.es.home}/plugins/duniter4j-es-gchange" overwrite="true">
                           <fileset dir="../duniter4j-es-gchange/target" includes="duniter4j-*${project.version}.jar">
                           </fileset>
                         </copy>
