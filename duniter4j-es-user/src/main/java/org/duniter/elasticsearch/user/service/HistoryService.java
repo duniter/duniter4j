@@ -128,7 +128,7 @@ public class HistoryService extends AbstractService {
         }
 
         // Special case for message: check if issuer is recipient
-        if (MessageService.INDEX.equals(index)) {
+        if (MessageService.INDEX.equals(index) && MessageService.INBOX_TYPE.equals(type)) {
             checkSameDocumentField(index, type, id, MessageRecord.PROPERTY_RECIPIENT, issuer);
         }
         else {
