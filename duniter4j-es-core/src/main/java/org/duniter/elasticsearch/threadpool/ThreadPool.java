@@ -39,6 +39,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsAbortPolicy;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.common.util.concurrent.LoggingRunnable;
 import org.elasticsearch.transport.TransportService;
 import org.nuiton.i18n.I18n;
 
@@ -52,20 +53,26 @@ import java.util.concurrent.*;
 public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
 
     private ScheduledThreadPoolExecutor scheduler = null;
-    private Injector injector;
-    private ESLogger logger = Loggers.getLogger("threadpool");
+    private final Injector injector;
+    private final ESLogger logger = Loggers.getLogger("threadpool");
+
+    private final org.elasticsearch.threadpool.ThreadPool delegate;
 
     private final List<Runnable> afterStartedCommands;
 
     @Inject
     public ThreadPool(Settings settings,
-                      Injector injector
+                      Injector injector,
+                      org.elasticsearch.threadpool.ThreadPool esThreadPool
                         ) {
         super(settings);
         this.injector = injector;
         this.afterStartedCommands = Lists.newArrayList();
 
-        this.scheduler = new ScheduledThreadPoolExecutor(1, EsExecutors.daemonThreadFactory(settings, "duniter4j-scheduler"), new EsAbortPolicy());
+        this.delegate = esThreadPool;
+
+        int availableProcessors = EsExecutors.boundedNumberOfProcessors(settings);
+        this.scheduler = new ScheduledThreadPoolExecutor(availableProcessors, EsExecutors.daemonThreadFactory(settings, "duniter-scheduler"), new EsAbortPolicy());
         this.scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         this.scheduler.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
         this.scheduler.setRemoveOnCancelPolicy(true);
@@ -78,9 +85,7 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
 
         if (!afterStartedCommands.isEmpty()) {
             scheduleOnStarted(() -> {
-                for (Runnable command: afterStartedCommands) {
-                    command.run();
-                }
+                afterStartedCommands.forEach(command -> command.run());
                 this.afterStartedCommands.clear();
             });
         }
@@ -88,14 +93,9 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
 
     public void doStop(){
         scheduler.shutdown();
-        // TODO : cancel all aiting jobs
     }
 
     public void doClose() {}
-
-    public ScheduledExecutorService scheduler() {
-        return this.scheduler;
-    }
 
     /**
      * Schedules an rest when node is started (all services and modules ready)
@@ -132,19 +132,36 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
      * @param command the rest to take
      * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
      */
-    public ScheduledFuture<?> schedule(Runnable command) {
-        return scheduler.schedule(new LoggingRunnable(command), 0, TimeUnit.MILLISECONDS);
+    public ScheduledActionFuture<?> schedule(Runnable command) {
+        return schedule(command, new TimeValue(0));
     }
 
     /**
      * Schedules an rest that runs on the scheduler thread, after a delay.
      *
      * @param command the rest to take
-     * @param interval the delay interval
+     * @param name @see {@link org.elasticsearch.threadpool.ThreadPool.Names}
+     * @param delay the delay interval
      * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
      */
-    public ScheduledFuture<?> schedule(Runnable command, TimeValue interval) {
-        return scheduler.schedule(new LoggingRunnable(command), interval.millis(), TimeUnit.MILLISECONDS);
+    public ScheduledActionFuture<?> schedule(Runnable command, String name, TimeValue delay) {
+        if (name == null) {
+            return new ScheduledActionFuture<>(scheduler.schedule(new LoggingRunnable(logger, command), delay.millis(), TimeUnit.MILLISECONDS));
+        }
+        return new ScheduledActionFuture<>(delegate.schedule(delay,
+                name,
+                command));
+    }
+
+    /**
+     * Schedules an rest that runs on the scheduler thread, after a delay.
+     *
+     * @param command the rest to take
+     * @param delay the delay interval
+     * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
+     */
+    public ScheduledActionFuture<?> schedule(Runnable command, TimeValue delay) {
+        return schedule(command, null, delay);
     }
 
     /**
@@ -154,14 +171,14 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
      * @param interval the delay interval
      * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
      */
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, TimeValue interval) {
-        return scheduler.scheduleWithFixedDelay(new LoggingRunnable(command), interval.millis(), interval.millis(), TimeUnit.MILLISECONDS);
+    public ScheduledActionFuture<?> scheduleWithFixedDelay(Runnable command, TimeValue interval) {
+        return new ScheduledActionFuture<>(delegate.scheduleWithFixedDelay(command, interval));
     }
 
 
     /* -- protected methods  -- */
 
-    protected <T extends LifecycleComponent<T>> ScheduledFuture<?> scheduleAfterServiceState(Class<T> waitingServiceClass,
+    protected <T extends LifecycleComponent<T>> ScheduledActionFuture<?> scheduleAfterServiceState(Class<T> waitingServiceClass,
                                                                                              final Lifecycle.State waitingState,
                                                                                              final Runnable job) {
         Preconditions.checkNotNull(waitingServiceClass);
@@ -216,39 +233,4 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
         return canContinue;
     }
 
-    /* -- internal methods -- */
-
-    class LoggingRunnable implements Runnable {
-
-        private final Runnable runnable;
-
-        LoggingRunnable(Runnable runnable) {
-            this.runnable = runnable;
-        }
-
-        @Override
-        public void run() {
-            try {
-                runnable.run();
-            } catch (Throwable t) {
-                logger.warn("failed to run {}", t, runnable.toString());
-                throw t;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return runnable.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return runnable.equals(obj);
-        }
-
-        @Override
-        public String toString() {
-            return "[threaded] " + runnable.toString();
-        }
-    }
 }

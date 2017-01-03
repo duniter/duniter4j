@@ -35,6 +35,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.Error;
@@ -150,7 +151,9 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     }
 
     public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass)  {
-        return executeRequest(httpClientCache.get(0), request, resultClass, errorClass);
+        //return executeRequest(httpClientCache.get(0), request, resultClass, errorClass);
+        return executeRequest( createHttpClient(0), request, resultClass, errorClass);
+
     }
 
     public <T> T executeRequest(String absolutePath, Class<? extends T> resultClass)  {
@@ -227,7 +230,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass)  {
         T result = null;
 
-        if (log.isDebugEnabled()) {
+        if (debug) {
             log.debug("Executing request : " + request.getRequestLine());
         }
 
@@ -235,15 +238,19 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         try {
             response = httpClient.execute(request);
 
-            if (log.isDebugEnabled()) {
+            if (debug) {
                 log.debug("Received response : " + response.getStatusLine());
             }
 
             switch (response.getStatusLine().getStatusCode()) {
                 case HttpStatus.SC_OK: {
-                    result = (T) parseResponse(response, resultClass);
-
-                    response.getEntity().consumeContent();
+                    if (resultClass == null || resultClass.equals(HttpResponse.class)) {
+                        result = (T)response;
+                    }
+                    else {
+                        result = (T) parseResponse(response, resultClass);
+                        EntityUtils.consume(response.getEntity());
+                    }
                     break;
                 }
                 case HttpStatus.SC_UNAUTHORIZED:

@@ -15,21 +15,21 @@ import java.io.IOException;
 public class RevokedDeserializer extends JsonDeserializer<BlockchainBlock.Revoked> {
     @Override
     public BlockchainBlock.Revoked deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-        String identityStr = jp.getText();
-        if (StringUtils.isBlank(identityStr)) {
+        String str = jp.getText();
+        if (StringUtils.isBlank(str)) {
             return null;
         }
 
-        String[] identityParts = identityStr.split(":");
-        if (identityParts.length != 2) {
-            throw new JsonParseException(String.format("Bad format for BlockchainBlock.Revoked. Should have 4 parts, but found %s.", identityParts.length));
+        String[] parts = str.split(":");
+        if (parts.length != 2) {
+            throw new JsonParseException(String.format("Bad format for BlockchainBlock.Revoked. Should have 2 parts, but found %s.", parts.length));
         }
 
         BlockchainBlock.Revoked result = new BlockchainBlock.Revoked();
         int i = 0;
 
-        result.setSignature(identityParts[i++]);
-        result.setUserId(identityParts[i++]);
+        result.setSignature(parts[i++]);
+        result.setUserId(parts[i++]);
 
         return result;
     }

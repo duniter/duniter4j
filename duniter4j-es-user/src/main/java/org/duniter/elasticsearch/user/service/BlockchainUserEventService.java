@@ -24,10 +24,8 @@ package org.duniter.elasticsearch.user.service;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
@@ -57,13 +55,14 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     public static final String DEFAULT_PUBKEYS_SEPARATOR = ", ";
 
+    private static final List<ChangeSource> CHANGE_LISTEN_SOURCES = ImmutableList.of(new ChangeSource("*", BlockchainService.BLOCK_TYPE));
+
     public final UserService userService;
 
     public final UserEventService userEventService;
 
     public final ObjectMapper objectMapper;
 
-    public final List<ChangeSource> changeListenSources;
 
     public final boolean enable;
 
@@ -76,7 +75,6 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         this.userService = userService;
         this.userEventService = userEventService;
         this.objectMapper = JacksonUtils.newObjectMapper();
-        this.changeListenSources = ImmutableList.of(new ChangeSource("*", BlockchainService.BLOCK_TYPE));
         ChangeService.registerListener(this);
 
         this.enable = pluginSettings.enableBlockchainSync();
@@ -94,16 +92,25 @@ public class BlockchainUserEventService extends AbstractService implements Chang
     @Override
     public void onChange(ChangeEvent change) {
 
+        // Skip _id=current
+        if(change.getId() == "current") return;
 
         try {
 
-
             switch (change.getOperation()) {
-                case CREATE:
+                // on create
+                case CREATE: // create
+                    if (change.getSource() != null) {
+                        BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
+                        processCreateBlock(block);
+                    }
+                    break;
+
+                // on update
                 case INDEX:
                     if (change.getSource() != null) {
                         BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
-                        processBlockIndex(block);
+                        processUpdateBlock(block);
                     }
                     break;
 
@@ -124,7 +131,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     @Override
     public Collection<ChangeSource> getChangeSources() {
-        return changeListenSources;
+        return CHANGE_LISTEN_SOURCES;
     }
 
     /* -- internal method -- */
@@ -171,7 +178,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         };
     }
 
-    private void processBlockIndex(BlockchainBlock block) {
+    private void processCreateBlock(BlockchainBlock block) {
         // Joiners
         if (CollectionUtils.isNotEmpty(block.getJoiners())) {
             for (BlockchainBlock.Joiner joiner: block.getJoiners()) {
@@ -199,6 +206,23 @@ public class BlockchainUserEventService extends AbstractService implements Chang
                 processTx(block, tx);
             }
         }
+
+        // Certifications
+        if (CollectionUtils.isNotEmpty(block.getCertifications())) {
+            for (BlockchainBlock.Certification cert: block.getCertifications()) {
+                processCertification(block, cert);
+            }
+        }
+    }
+
+    private void processUpdateBlock(BlockchainBlock block) {
+
+        // Delete events that reference this block
+        userEventService.deleteEventsByReference(new UserEvent.Reference(block.getCurrency(), BlockchainService.BLOCK_TYPE, String.valueOf(block.getNumber())))
+                    .actionGet();
+
+        processCreateBlock(block);
+
     }
 
     private void processTx(BlockchainBlock block, BlockchainBlock.Transaction tx) {
@@ -231,6 +255,25 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         // TODO : indexer la TX dans un index/type spécifique ?
     }
 
+    private void processCertification(BlockchainBlock block, BlockchainBlock.Certification certification) {
+        String sender = certification.getFromPubkey();
+        String receiver = certification.getToPubkey();
+
+        // Received
+        String senderName = userService.getProfileTitle(sender);
+        if (senderName == null) {
+            senderName = ModelUtils.minifyPubkey(sender);
+        }
+        notifyUserEvent(block, receiver, UserEventCodes.CERT_RECEIVED, I18n.n("duniter.user.event.cert.received"), sender, senderName);
+
+        // Sent
+        String receiverName = userService.getProfileTitle(receiver);
+        if (receiverName == null) {
+            receiverName = ModelUtils.minifyPubkey(receiver);
+        }
+        notifyUserEvent(block, sender, UserEventCodes.CERT_SENT, I18n.n("duniter.user.event.cert.sent"), receiver, receiverName);
+    }
+
     private void notifyUserEvent(BlockchainBlock block, String pubkey, UserEventCodes code, String message, String... params) {
         UserEvent event = UserEvent.newBuilder(UserEvent.EventType.INFO, code.name())
                 .setRecipient(pubkey)
@@ -249,6 +292,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         // Delete events that reference this block
         userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
     }
+
 
 
 }

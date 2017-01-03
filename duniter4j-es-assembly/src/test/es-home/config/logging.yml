@@ -19,11 +19,12 @@ logger:
   org.duniter: INFO
 
   org.duniter.elasticsearch: DEBUG
+  org.duniter.core.client.service: DEBUG
 
   duniter : DEBUG
   duniter.security : ERROR
   duniter.user.event : INFO
-  duniter.network.p2p: INFO
+  duniter.network.p2p: TRACE
 
   security: DEBUG
 

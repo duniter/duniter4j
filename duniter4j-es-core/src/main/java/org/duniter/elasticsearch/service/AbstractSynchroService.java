@@ -169,149 +169,147 @@ public abstract class AbstractSynchroService extends AbstractService {
         }
 
         // Execute query
-        InputStream response;
+        JsonNode node;
         try {
             HttpPost httpPost = new HttpPost(httpService.getPath(peer, fromIndex, fromType, "_search"));
             httpPost.setEntity(new ByteArrayEntity(bos.bytes().array()));
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("[%s] [%s/%s] Sending POST request: %s", peer, fromIndex, fromType, new String(bos.bytes().array())));
             }
-            response = httpService.executeRequest(httpPost, InputStream.class, String.class);
+            // Parse response
+            node = httpService.executeRequest(httpPost, JsonNode.class, String.class);
         }
         catch(HttpUnauthorizeException e) {
             logger.error(String.format("[%s] [%s/%s] Unable to access (%s). Skipping data import.", peer, fromIndex, fromType, e.getMessage()));
             return 0;
         }
+        catch(TechnicalException e) {
+            throw new TechnicalException("Unable to parse search response", e);
+        }
 
-        // Parse response
-        try {
-            JsonNode node = objectMapper.readTree(response);
+        node = node.get("hits");
+        int total = node == null ? 0 : node.get("total").asInt(0);
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("[%s] [%s/%s] total to update: %s", peer, toIndex, toType, total));
+        }
 
-            node = node.get("hits");
-            int total = node == null ? 0 : node.get("total").asInt(0);
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("[%s] [%s/%s] total to update: %s", peer, toIndex, toType, total));
-            }
+        boolean debug = logger.isTraceEnabled();
 
-            boolean debug = logger.isTraceEnabled();
+        long counter = 0;
 
-            long counter = 0;
+        long insertHits = 0;
+        long updateHits = 0;
 
-            long insertHits = 0;
-            long updateHits = 0;
+        if (offset < total) {
 
-            if (offset < total) {
+            BulkRequestBuilder bulkRequest = client.prepareBulk();
+            bulkRequest.setRefresh(true);
 
-                BulkRequestBuilder bulkRequest = client.prepareBulk();
-                bulkRequest.setRefresh(true);
+            for (Iterator<JsonNode> hits = node.get("hits").iterator(); hits.hasNext();){
+                JsonNode hit = hits.next();
+                String id = hit.get("_id").asText();
+                JsonNode source = hit.get("_source");
+                counter++;
 
-                for (Iterator<JsonNode> hits = node.get("hits").iterator(); hits.hasNext();){
-                    JsonNode hit = hits.next();
-                    String id = hit.get("_id").asText();
-                    JsonNode source = hit.get("_source");
-                    counter++;
+                try {
+                    String issuer = source.get(issuerFieldName).asText();
+                    if (StringUtils.isBlank(issuer)) {
+                        throw new InvalidFormatException(String.format("Invalid format: missing or null %s field.", issuerFieldName));
+                    }
+                    Long version = source.get(versionFieldName).asLong();
+                    if (version == null) {
+                        throw new InvalidFormatException(String.format("Invalid format: missing or null %s field.", versionFieldName));
+                    }
 
-                    try {
-                        String issuer = source.get(issuerFieldName).asText();
-                        if (StringUtils.isBlank(issuer)) {
-                            throw new InvalidFormatException(String.format("Invalid format: missing or null %s field.", issuerFieldName));
+                    GetResponse existingDoc = client.prepareGet(toIndex, toType, id)
+                            .setFields(versionFieldName, issuerFieldName)
+                            .execute().actionGet();
+
+                    boolean doInsert = !existingDoc.isExists();
+
+                    // Insert (new doc)
+                    if (doInsert) {
+                        String json = source.toString();
+                        //readAndVerifyIssuerSignature(json, source);
+                        if (debug) {
+                            logger.trace(String.format("[%s] [%s/%s] insert _id=%s\n%s", peer, toIndex, toType, id, json));
                         }
-                        Long version = source.get(versionFieldName).asLong();
-                        if (version == null) {
-                            throw new InvalidFormatException(String.format("Invalid format: missing or null %s field.", versionFieldName));
+                        bulkRequest.add(client.prepareIndex(toIndex, toType, id)
+                                .setSource(json.getBytes())
+                        );
+                        insertHits++;
+                    }
+
+                    // Existing doc
+                    else {
+
+                        // Check same issuer
+                        String existingIssuer = (String)existingDoc.getFields().get(issuerFieldName).getValue();
+                        if (!Objects.equals(issuer, existingIssuer)) {
+                            throw new InvalidFormatException(String.format("Invalid document: not same [%s].", issuerFieldName));
                         }
 
-                        GetResponse existingDoc = client.prepareGet(toIndex, toType, id)
-                                .setFields(versionFieldName, issuerFieldName)
-                                .execute().actionGet();
+                        // Check version
+                        Long existingVersion = ((Number)existingDoc.getFields().get(versionFieldName).getValue()).longValue();
+                        boolean doUpdate = (existingVersion == null || version > existingVersion.longValue());
 
-                        boolean doInsert = !existingDoc.isExists();
-
-                        // Insert (new doc)
-                        if (doInsert) {
+                        if (doUpdate) {
                             String json = source.toString();
                             //readAndVerifyIssuerSignature(json, source);
                             if (debug) {
-                                logger.trace(String.format("[%s] [%s/%s] insert _id=%s\n%s", peer, toIndex, toType, id, json));
+                                logger.trace(String.format("[%s] [%s/%s] update _id=%s\n%s", peer, toIndex, toType, id, json));
                             }
                             bulkRequest.add(client.prepareIndex(toIndex, toType, id)
-                                    .setSource(json.getBytes())
-                            );
-                            insertHits++;
+                                    .setSource(json.getBytes()));
+
+                            updateHits++;
                         }
-
-                        // Existing doc
-                        else {
-
-                            // Check same issuer
-                            String existingIssuer = (String)existingDoc.getFields().get(issuerFieldName).getValue();
-                            if (!Objects.equals(issuer, existingIssuer)) {
-                                throw new InvalidFormatException(String.format("Invalid document: not same [%s].", issuerFieldName));
-                            }
-
-                            // Check version
-                            Long existingVersion = ((Number)existingDoc.getFields().get(versionFieldName).getValue()).longValue();
-                            boolean doUpdate = (existingVersion == null || version > existingVersion.longValue());
-
-                            if (doUpdate) {
-                                String json = source.toString();
-                                //readAndVerifyIssuerSignature(json, source);
-                                if (debug) {
-                                    logger.trace(String.format("[%s] [%s/%s] update _id=%s\n%s", peer, toIndex, toType, id, json));
-                                }
-                                bulkRequest.add(client.prepareIndex(toIndex, toType, id)
-                                        .setSource(json.getBytes()));
-
-                                updateHits++;
-                            }
-                        }
-
-                    } catch (InvalidFormatException e) {
-                        if (debug) {
-                            logger.debug(String.format("[%s] [%s/%s] %s. Skipping.", peer, toIndex, toType, e.getMessage()));
-                        }
-                        // Skipping document (continue)
                     }
-                    catch (Exception e) {
-                        logger.warn(String.format("[%s] [%s/%s] %s. Skipping.", peer, toIndex, toType, e.getMessage()), e);
-                        // Skipping document (continue)
+
+                } catch (InvalidFormatException e) {
+                    if (debug) {
+                        logger.debug(String.format("[%s] [%s/%s] %s. Skipping.", peer, toIndex, toType, e.getMessage()));
                     }
+                    // Skipping document (continue)
                 }
+                catch (Exception e) {
+                    logger.warn(String.format("[%s] [%s/%s] %s. Skipping.", peer, toIndex, toType, e.getMessage()), e);
+                    // Skipping document (continue)
+                }
+            }
 
-                if (bulkRequest.numberOfActions() > 0) {
+            if (bulkRequest.numberOfActions() > 0) {
 
-                    // Flush the bulk if not empty
-                    BulkResponse bulkResponse = bulkRequest.get();
-                    Set<String> missingDocIds = new LinkedHashSet<>();
+                // Flush the bulk if not empty
+                BulkResponse bulkResponse = bulkRequest.get();
+                Set<String> missingDocIds = new LinkedHashSet<>();
 
-                    // If failures, continue but save missing blocks
-                    if (bulkResponse.hasFailures()) {
-                        // process failures by iterating through each bulk response item
-                        for (BulkItemResponse itemResponse : bulkResponse) {
-                            boolean skip = !itemResponse.isFailed()
-                                    || missingDocIds.contains(itemResponse.getId());
-                            if (!skip) {
-                                if (debug) {
-                                    logger.debug(String.format("[%s] [%s/%s] could not process _id=%s: %s. Skipping.", peer, toIndex, toType, itemResponse.getId(), itemResponse.getFailureMessage()));
-                                }
-                                missingDocIds.add(itemResponse.getId());
+                // If failures, continue but save missing blocks
+                if (bulkResponse.hasFailures()) {
+                    // process failures by iterating through each bulk response item
+                    for (BulkItemResponse itemResponse : bulkResponse) {
+                        boolean skip = !itemResponse.isFailed()
+                                || missingDocIds.contains(itemResponse.getId());
+                        if (!skip) {
+                            if (debug) {
+                                logger.debug(String.format("[%s] [%s/%s] could not process _id=%s: %s. Skipping.", peer, toIndex, toType, itemResponse.getId(), itemResponse.getFailureMessage()));
                             }
+                            missingDocIds.add(itemResponse.getId());
                         }
                     }
                 }
             }
-
-            // update result stats
-            result.addInserts(toIndex, toType, insertHits);
-            result.addUpdates(toIndex, toType, updateHits);
-
-            return counter;
-
-        } catch(IOException e) {
-            throw new TechnicalException("Unable to parse search response", e);
         }
+
+        // update result stats
+        result.addInserts(toIndex, toType, insertHits);
+        result.addUpdates(toIndex, toType, updateHits);
+
+        return counter;
+
+        /*}
         finally {
-            IOUtils.closeQuietly(response);
-        }
+            //IOUtils.closeQuietly(response);
+        }*/
     }
 }

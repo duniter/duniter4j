@@ -25,7 +25,6 @@ package org.duniter.core.client.model.bma;
 
 
 import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -69,7 +68,7 @@ public class BlockchainBlock implements Serializable {
     private Joiner[] actives;
     private Revoked[] revoked;
     private String[] excluded;
-    private String[] certifications;
+    private Certification[] certifications;
     private Transaction[] transactions;
     private String signature;
 
@@ -242,11 +241,11 @@ public class BlockchainBlock implements Serializable {
         this.excluded = excluded;
     }
 
-    public String[] getCertifications() {
+    public Certification[] getCertifications() {
         return certifications;
     }
 
-    public void setCertifications(String[] certifications) {
+    public void setCertifications(Certification[] certifications) {
         this.certifications = certifications;
     }
 
@@ -347,8 +346,8 @@ public class BlockchainBlock implements Serializable {
         }
         s += "\ncertifications:";
         if (certifications != null) {
-            for (String c : certifications) {
-                s += "\n\t" + c;
+            for (Certification c : certifications) {
+                s += "\n\t" + c.toString();
             }
         }
 
@@ -404,7 +403,7 @@ public class BlockchainBlock implements Serializable {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder()
-                    .append(":").append(publicKey)
+                    .append(publicKey)
                     .append(":").append(signature)
                     .append(":").append(blockUid)
                     .append("").append(userId);
@@ -471,7 +470,7 @@ public class BlockchainBlock implements Serializable {
         public String toString() {
 
             StringBuilder sb = new StringBuilder()
-                    .append(":").append(publicKey)
+                    .append(publicKey)
                     .append(":").append(signature)
                     .append(":").append(membershipBlockUid)
                     .append(":").append(idtyBlockUid)
@@ -505,13 +504,62 @@ public class BlockchainBlock implements Serializable {
         public String toString() {
 
             StringBuilder sb = new StringBuilder()
-                    .append(":").append(signature)
+                    .append(signature)
                     .append(":").append(userId);
 
             return sb.toString();
         }
     }
 
+    public static class Certification implements Serializable {
+        private String fromPubkey;
+        private String toPubkey;
+        private String blockId;
+        private String signature;
+
+        public String getFromPubkey() {
+            return fromPubkey;
+        }
+
+        public void setFromPubkey(String fromPubkey) {
+            this.fromPubkey = fromPubkey;
+        }
+
+        public String getToPubkey() {
+            return toPubkey;
+        }
+
+        public void setToPubkey(String toPubkey) {
+            this.toPubkey = toPubkey;
+        }
+
+        public String getSignature() {
+            return signature;
+        }
+        public void setSignature(String signature) {
+            this.signature = signature;
+        }
+
+        public String getBlockId() {
+            return blockId;
+        }
+
+        public void setBlockId(String blockId) {
+            this.blockId = blockId;
+        }
+
+        @Override
+        public String toString() {
+
+            StringBuilder sb = new StringBuilder()
+                    .append(fromPubkey)
+                    .append(":").append(toPubkey)
+                    .append(":").append(blockId)
+                    .append(":").append(signature);
+
+            return sb.toString();
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Transaction implements Serializable {

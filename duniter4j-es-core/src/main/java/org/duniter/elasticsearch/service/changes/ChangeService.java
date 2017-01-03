@@ -103,6 +103,12 @@ public class ChangeService {
                         }
 
                         @Override
+                        public Engine.Delete preDelete(Engine.Delete delete) {
+
+                            return delete;
+                        }
+
+                        @Override
                         public void postDelete(Engine.Delete delete) {
                             if (!hasListener(indexName, delete.type(), delete.id())) {
                                 return;

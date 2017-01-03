@@ -31,6 +31,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.concurrent.ConcurrentException;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
@@ -70,6 +71,7 @@ import org.nuiton.i18n.I18n;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 /**
@@ -535,7 +537,8 @@ public abstract class AbstractService implements Bean {
 
     protected void flushDeleteBulk(final String index, final String type, BulkRequestBuilder bulkRequest) {
         if (bulkRequest.numberOfActions() > 0) {
-            BulkResponse bulkResponse = bulkRequest.get();
+
+            BulkResponse bulkResponse = bulkRequest.execute().actionGet();
             // If failures, continue but save missing blocks
             if (bulkResponse.hasFailures()) {
                 // process failures by iterating through each bulk response item

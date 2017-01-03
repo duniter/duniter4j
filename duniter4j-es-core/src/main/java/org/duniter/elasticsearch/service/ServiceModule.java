@@ -37,6 +37,7 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginInit;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.changes.ChangeService;
+import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
@@ -47,6 +48,7 @@ public class ServiceModule extends AbstractModule implements Module {
 
         // common services
         bind(PluginSettings.class).asEagerSingleton();
+        bind(ThreadPool.class).asEagerSingleton();
         bind(PluginInit.class).asEagerSingleton();
         bind(ChangeService.class).asEagerSingleton();
 

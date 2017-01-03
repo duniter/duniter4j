@@ -26,6 +26,7 @@ package org.duniter.elasticsearch.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonSyntaxException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -36,20 +37,23 @@ import org.duniter.core.util.crypto.KeyPair;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.service.AbstractService;
-import org.duniter.elasticsearch.service.BlockchainService;
+import org.duniter.elasticsearch.service.changes.ChangeEvent;
+import org.duniter.elasticsearch.service.changes.ChangeService;
+import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserProfile;
+import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.action.update.UpdateRequestBuilder;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -58,14 +62,13 @@ import org.elasticsearch.search.SearchHit;
 import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class UserEventService extends AbstractService {
+public class UserEventService extends AbstractService implements ChangeService.ChangeListener {
+
 
     public interface UserEventListener {
         String getId();
@@ -75,7 +78,10 @@ public class UserEventService extends AbstractService {
 
     public static final String INDEX = "user";
     public static final String EVENT_TYPE = "event";
+
     private static final Map<String, UserEventListener> LISTENERS = new HashMap<>();
+
+    private static final List<ChangeSource> CHANGE_LISTEN_SOURCES = ImmutableList.of(new ChangeSource(INDEX, EVENT_TYPE));
 
     public static void registerListener(UserEventListener listener) {
         synchronized (LISTENERS) {
@@ -100,7 +106,6 @@ public class UserEventService extends AbstractService {
                             final PluginSettings pluginSettings,
                             final CryptoService cryptoService,
                             final MailService mailService,
-                            final BlockchainService blockchainService,
                             final ThreadPool threadPool) {
         super("duniter.user.event", client, pluginSettings, cryptoService);
         this.mailService = mailService;
@@ -112,6 +117,7 @@ public class UserEventService extends AbstractService {
             logger.trace("Mail disable");
         }
 
+        ChangeService.registerListener(this);
 
     }
 
@@ -119,23 +125,55 @@ public class UserEventService extends AbstractService {
      * Notify cluster admin
      */
     public void notifyAdmin(UserEvent event) {
-        // async
-        //threadPool.schedule(() -> {
-            doNotifyAdmin(event);
-        //});
+        Preconditions.checkNotNull(event);
+
+        UserProfile adminProfile;
+        if (StringUtils.isNotBlank(nodePubkey)) {
+            adminProfile = getUserProfile(nodePubkey, UserProfile.PROPERTY_EMAIL, UserProfile.PROPERTY_LOCALE);
+        }
+        else {
+            adminProfile = new UserProfile();
+        }
+
+        // Add new event to index
+        Locale locale = StringUtils.isNotBlank(adminProfile.getLocale()) ?
+                new Locale(adminProfile.getLocale()) :
+                I18n.getDefaultLocale();
+        if (StringUtils.isNotBlank(nodePubkey)) {
+            event.setRecipient(nodePubkey);
+            indexEvent(locale, event);
+        }
+
+        // Send email to admin
+        String adminEmail = StringUtils.isNotBlank(adminProfile.getEmail()) ?
+                adminProfile.getEmail() :
+                pluginSettings.getMailAdmin();
+        if (StringUtils.isNotBlank(adminEmail)) {
+            String subjectPrefix = pluginSettings.getMailSubjectPrefix();
+            sendEmail(adminEmail,
+                    I18n.l(locale, "duniter4j.event.subject."+event.getType().name(), subjectPrefix),
+                    event.getLocalizedMessage(locale));
+        }
     }
 
     /**
      * Notify a user
      */
-    public void notifyUser(UserEvent event) {
-        // async
-        threadPool.schedule(() -> {
-            doNotifyUser(event);
-        }, TimeValue.timeValueMillis(500));
+    public ListenableActionFuture<IndexResponse> notifyUser(UserEvent event) {
+        Preconditions.checkNotNull(event);
+        Preconditions.checkNotNull(event.getRecipient());
+
+        // Get user profile locale
+        UserProfile userProfile = getUserProfile(event.getRecipient(),
+                UserProfile.PROPERTY_EMAIL, UserProfile.PROPERTY_TITLE, UserProfile.PROPERTY_LOCALE);
+
+        Locale locale = userProfile.getLocale() != null ? new Locale(userProfile.getLocale()) : null;
+
+        // Add new event to index
+        return indexEvent(locale, event);
     }
 
-    public String indexEvent(Locale locale, UserEvent event) {
+    public ListenableActionFuture<IndexResponse> indexEvent(Locale locale, UserEvent event) {
         Preconditions.checkNotNull(event.getRecipient());
         Preconditions.checkNotNull(event.getType());
         Preconditions.checkNotNull(event.getCode());
@@ -167,11 +205,11 @@ public class UserEventService extends AbstractService {
 
     }
 
-    public String indexEvent(String eventJson) {
+    public ListenableActionFuture<IndexResponse> indexEvent(String eventJson) {
         return indexEvent(eventJson, true);
     }
 
-    public String indexEvent(String eventJson, boolean checkSignature) {
+    public ListenableActionFuture<IndexResponse> indexEvent(String eventJson, boolean checkSignature) {
 
         if (checkSignature) {
             JsonNode jsonNode = readAndVerifyIssuerSignature(eventJson);
@@ -184,25 +222,21 @@ public class UserEventService extends AbstractService {
             logger.trace(eventJson);
         }
 
-        IndexResponse response = client.prepareIndex(INDEX, EVENT_TYPE)
+        return client.prepareIndex(INDEX, EVENT_TYPE)
                 .setSource(eventJson)
                 .setRefresh(false)
-                .execute().actionGet();
-
-        return response.getId();
+                .execute();
     }
 
-    public void deleteEventsByReference(final UserEvent.Reference reference) {
+    public ActionFuture<?> deleteEventsByReference(final UserEvent.Reference reference) {
         Preconditions.checkNotNull(reference);
         Preconditions.checkNotNull(reference.getIndex());
         Preconditions.checkNotNull(reference.getType());
 
-        threadPool.schedule(() -> {
-            doDeleteEventsByReference(reference);
-        });
+        return threadPool.schedule(() -> doDeleteEventsByReference(reference));
     }
 
-    public void markEventAsRead(String id, String signature) {
+    public ListenableActionFuture<UpdateResponse> markEventAsRead(String id, String signature) {
 
         Map<String, Object> fields = getMandatoryFieldsById(INDEX, EVENT_TYPE, id, UserEvent.PROPERTY_HASH, UserEvent.PROPERTY_RECIPIENT);
         String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
@@ -214,9 +248,9 @@ public class UserEventService extends AbstractService {
             throw new InvalidSignatureException("Invalid signature: only the recipient can mark an event as read.");
         }
 
-        UpdateRequestBuilder request = client.prepareUpdate(INDEX, EVENT_TYPE, id)
-                .setDoc("read_signature", signature);
-        request.execute();
+        return client.prepareUpdate(INDEX, EVENT_TYPE, id)
+                .setDoc("read_signature", signature)
+                .execute();
     }
 
     /* -- Internal methods -- */
@@ -358,76 +392,7 @@ public class UserEventService extends AbstractService {
         return CryptoUtils.encodeBase58(nodeKeyPair.getPubKey());
     }
 
-    /**
-     * Notify cluster admin
-     */
-    public void doNotifyAdmin(UserEvent event) {
 
-        UserProfile adminProfile;
-        if (StringUtils.isNotBlank(nodePubkey)) {
-            adminProfile = getUserProfile(nodePubkey, UserProfile.PROPERTY_EMAIL, UserProfile.PROPERTY_LOCALE);
-        }
-        else {
-            adminProfile = new UserProfile();
-        }
-
-        // Add new event to index
-        Locale locale = StringUtils.isNotBlank(adminProfile.getLocale()) ?
-                new Locale(adminProfile.getLocale()) :
-                I18n.getDefaultLocale();
-        if (StringUtils.isNotBlank(nodePubkey)) {
-            event.setRecipient(nodePubkey);
-            indexEventAndNotifyListener(locale, event);
-        }
-
-        // Send email to admin
-        String adminEmail = StringUtils.isNotBlank(adminProfile.getEmail()) ?
-                adminProfile.getEmail() :
-                pluginSettings.getMailAdmin();
-        if (StringUtils.isNotBlank(adminEmail)) {
-            String subjectPrefix = pluginSettings.getMailSubjectPrefix();
-            sendEmail(adminEmail,
-                    I18n.l(locale, "duniter4j.event.subject."+event.getType().name(), subjectPrefix),
-                    event.getLocalizedMessage(locale));
-        }
-    }
-
-    /**
-     * Notify a user
-     */
-    private void doNotifyUser(final UserEvent event) {
-        Preconditions.checkNotNull(event.getRecipient());
-
-        // Get user profile locale
-        UserProfile userProfile = getUserProfile(event.getRecipient(),
-                UserProfile.PROPERTY_EMAIL, UserProfile.PROPERTY_TITLE, UserProfile.PROPERTY_LOCALE);
-
-        Locale locale = userProfile.getLocale() != null ? new Locale(userProfile.getLocale()) : null;
-
-        // Add new event to index
-        indexEventAndNotifyListener(locale, event);
-    }
-
-    private String indexEventAndNotifyListener(final Locale locale, final UserEvent event) {
-        // Add new event to index
-        final String eventId = indexEvent(locale, event);
-
-        final UserEvent eventCopy = new UserEvent(event);
-        eventCopy.setId(eventId);
-
-        // Notify listeners
-        threadPool.schedule(() -> {
-            synchronized (LISTENERS) {
-                LISTENERS.values().stream().forEach(listener -> {
-                    if (event.getRecipient().equals(listener.getPubkey())) {
-                        listener.onEvent(eventCopy);
-                    }
-                });
-            }
-        });
-
-        return eventId;
-    }
 
     private void doDeleteEventsByReference(final UserEvent.Reference reference) {
 
@@ -503,4 +468,62 @@ public class UserEventService extends AbstractService {
             throw new TechnicalException("Unable to serialize UserEvent object", e);
         }
     }
+
+    @Override
+    public String getId() {
+        return "duniter.user.event";
+    }
+
+    @Override
+    public Collection<ChangeSource> getChangeSources() {
+        return CHANGE_LISTEN_SOURCES;
+    }
+
+    @Override
+    public void onChange(ChangeEvent change) {
+
+        try {
+
+            switch (change.getOperation()) {
+                // on create
+                // on update
+                case INDEX:
+                case CREATE: // create
+                    if (change.getSource() != null) {
+                        UserEvent event = objectMapper.readValue(change.getSource().streamInput(), UserEvent.class);
+                        processEventCreateOrUpdate(change.getId(), event);
+                    }
+                    break;
+
+                // on delete
+                case DELETE:
+                    // Do not propagate deletion
+
+                    break;
+            }
+
+        }
+        catch(IOException e) {
+            throw new TechnicalException(String.format("Unable to parse received block %s", change.getId()), e);
+        }
+
+    }
+
+    private void processEventCreateOrUpdate(final String eventId, final UserEvent event) {
+
+        event.setId(eventId);
+
+        // Notify listeners
+        threadPool.schedule(() -> {
+            synchronized (LISTENERS) {
+                LISTENERS.values().stream().forEach(listener -> {
+                    if (event.getRecipient().equals(listener.getPubkey())) {
+                        listener.onEvent(event);
+                    }
+                });
+            }
+        });
+
+    }
+
 }

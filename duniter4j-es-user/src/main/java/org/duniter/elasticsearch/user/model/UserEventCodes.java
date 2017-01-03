@@ -40,6 +40,10 @@ public enum UserEventCodes {
     TX_SENT,
     TX_RECEIVED,
 
+    // CERTIFICATION
+    CERT_SENT,
+    CERT_RECEIVED,
+
     // Message
     MESSAGE_RECEIVED
 

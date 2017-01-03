@@ -815,7 +815,7 @@ public class BlockchainService extends AbstractService {
                     if (!processedBlockNumbers.contains(itemNumber)) {
                         // Add to bulk
                         bulkRequest.add(client.prepareIndex(currencyName, BLOCK_TYPE, String.valueOf(itemNumber))
-                                .setRefresh(false)
+                                .setRefresh(false) // recommended for heavy indexing
                                 .setSource(blockAsJson)
                         );
                         processedBlockNumbers.add(itemNumber);
@@ -935,7 +935,7 @@ public class BlockchainService extends AbstractService {
                             }
 
                             // Index the missing block
-                            indexBlockFromJson(currencyName, blockNumber, blockAsJson.getBytes(), false, true/*wait*/);
+                            indexBlockFromJson(currencyName, blockNumber, blockAsJson.getBytes(), false/*refresh*/, true/*wait*/);
 
                             // Remove this block number from the final missing list
                             newMissingBlocks.remove(blockNumber);

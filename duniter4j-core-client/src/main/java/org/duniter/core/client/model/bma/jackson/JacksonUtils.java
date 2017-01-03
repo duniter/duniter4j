@@ -15,10 +15,16 @@ public abstract class JacksonUtils extends SimpleModule {
 
         // Configure deserializer
         SimpleModule module = new SimpleModule();
+
+        // Blockchain
         module.addDeserializer(BlockchainBlock.Identity.class, new IdentityDeserializer());
         module.addDeserializer(BlockchainBlock.Joiner.class, new JoinerDeserializer());
         module.addDeserializer(BlockchainBlock.Revoked.class, new RevokedDeserializer());
+        module.addDeserializer(BlockchainBlock.Certification.class, new CertificationDeserializer());
+
+        // Network
         module.addDeserializer(NetworkPeering.Endpoint.class, new EndpointDeserializer());
+
 
         objectMapper.registerModule(module);
 
