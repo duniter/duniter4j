@@ -139,7 +139,7 @@ public class UserService extends AbstractService {
      * Update an user profile
      * @param profileJson
      */
-    public ListenableActionFuture<UpdateResponse> updateProfileFromJson(String profileJson, String id) {
+    public ListenableActionFuture<UpdateResponse> updateProfileFromJson(String id, String profileJson) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(profileJson);
         String issuer = getIssuer(actualObj);
