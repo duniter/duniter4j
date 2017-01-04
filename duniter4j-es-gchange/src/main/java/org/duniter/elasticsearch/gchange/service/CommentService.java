@@ -32,7 +32,7 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.exception.DocumentNotFoundException;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.gchange.PluginSettings;
-import org.duniter.elasticsearch.gchange.model.MarketRecord;
+import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;

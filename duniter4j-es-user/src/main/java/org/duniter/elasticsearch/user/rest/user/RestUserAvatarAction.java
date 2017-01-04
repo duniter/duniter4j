@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.gchange.rest.registry;
+package org.duniter.elasticsearch.user.rest.user;
 
 /*
  * #%L
@@ -22,22 +22,19 @@ package org.duniter.elasticsearch.gchange.rest.registry;
  * #L%
  */
 
-import org.duniter.elasticsearch.rest.AbstractRestPostUpdateAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.gchange.service.RegistryService;
-import org.elasticsearch.client.Client;
+import org.duniter.elasticsearch.user.model.UserProfile;
+import org.duniter.elasticsearch.user.service.UserService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestRequest;
 
-public class RestregistryCommentUpdateAction extends AbstractRestPostUpdateAction {
+public class RestUserAvatarAction {
 
     @Inject
-    public RestregistryCommentUpdateAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
-                                           RegistryService service) {
-        super(settings, controller, client, securityController,
-                RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE,
-                (id, json) -> service.updateCommentFromJson(id, json));
-    }
+    public RestUserAvatarAction(RestSecurityController securityController) {
 
+        // Allow to get avatar as image
+        securityController.allowImageAttachment(UserService.INDEX, UserService.PROFILE_TYPE, UserProfile.PROPERTY_AVATAR);
+
+    }
 }

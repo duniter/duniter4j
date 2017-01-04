@@ -33,7 +33,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.gchange.model.MarketRecord;
+import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.BlockchainService;

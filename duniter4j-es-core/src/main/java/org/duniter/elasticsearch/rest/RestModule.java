@@ -22,6 +22,7 @@ package org.duniter.elasticsearch.rest;
  * #L%
  */
 
+import org.duniter.elasticsearch.rest.attachment.RestImageAttachmentAction;
 import org.duniter.elasticsearch.rest.currency.RestCurrencyIndexAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityAuthAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
@@ -33,6 +34,9 @@ import org.elasticsearch.common.inject.Module;
 public class RestModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
+
+        // Attachment
+        bind(RestImageAttachmentAction.class).asEagerSingleton();
 
         // Currency
         bind(RestCurrencyIndexAction.class).asEagerSingleton();

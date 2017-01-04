@@ -34,6 +34,7 @@ public class UserProfile extends Record {
     public static final String PROPERTY_CITY="city";
     public static final String PROPERTY_EMAIL="email";
     public static final String PROPERTY_LOCALE="locale";
+    public static final String PROPERTY_AVATAR="avatar";
 
     private String title;
     private String description;

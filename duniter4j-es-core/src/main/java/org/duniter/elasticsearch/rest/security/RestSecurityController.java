@@ -30,7 +30,10 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestRequest;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Created by blavenie on 11/10/16.
@@ -52,6 +55,10 @@ public class RestSecurityController extends AbstractLifecycleComponent<RestSecur
 
     public RestSecurityController allowIndexType(RestRequest.Method method, String index, String type) {
         return allow(method, String.format("/%s/%s(/.*)?", index, type));
+    }
+
+    public RestSecurityController allowImageAttachment(String index, String type, String field) {
+        return allow(RestRequest.Method.GET, String.format("/%s/%s/[^/]+/_image/%s.*", index, type, field));
     }
 
     public RestSecurityController allow(RestRequest.Method method, String regexPath) {
