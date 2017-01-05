@@ -26,6 +26,7 @@ import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.Currency;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.service.CryptoService;
@@ -77,11 +78,11 @@ public class CurrencyRegistryRemoteServiceTest {
     }
 
     @Test
-    public void registerCurrency() {
+    public void registerCurrency() throws Exception {
         Currency currency = new Currency();
         currency.setCurrencyName("register-test-" + System.currentTimeMillis());
 
-        String currencyJson = GsonUtils.newBuilder().create().toJson(currency);
+        String currencyJson = JacksonUtils.newObjectMapper().writeValueAsString(currency);
 
         String pubKey = resource.getFixtures().getUserPublicKey();
         String secretKey = resource.getFixtures().getUserSecretKey();

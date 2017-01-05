@@ -22,11 +22,13 @@ package org.duniter.core.client.service.elasticsearch;
  * #L%
  */
 
-import com.google.common.base.Joiner;
-import com.google.gson.Gson;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
@@ -34,16 +36,11 @@ import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.bma.BaseRemoteServiceImpl;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.util.StringUtils;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
@@ -60,7 +57,6 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
 
     private Configuration config;
     private Peer peer;
-    private Gson gson;
 
     public CurrencyRegistryRemoteServiceImpl() {
         super();
@@ -71,7 +67,6 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         super.afterPropertiesSet();
         config = Configuration.instance();
         peer = new Peer(config.getNodeElasticSearchHost(), config.getNodeElasticSearchPort());
-        gson = GsonUtils.newBuilder().create();
     }
 
     @Override
@@ -79,7 +74,6 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         super.close();
         config = null;
         peer = null;
-        gson = null;
     }
 
     @Override
@@ -97,7 +91,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         String jsonResponse;
         try {
             jsonResponse = executeRequest(peer, URL_STATUS, String.class);
-            int statusCode = GsonUtils.getValueFromJSONAsInt(jsonResponse, "status");
+            int statusCode = JacksonUtils.getValueFromJSONAsInt(jsonResponse, "status");
             return statusCode == HttpStatus.SC_OK;
         }
         catch(TechnicalException e) {
@@ -118,7 +112,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         String path = getPath(peer, URL_ALL_CURRENCY_NAMES);
         String jsonResponse = executeRequest(new HttpGet(path), String.class);
 
-        List<String> currencyNames = GsonUtils.getValuesFromJSONAsString(jsonResponse, "currencyName");
+        List<String> currencyNames = JacksonUtils.getValuesFromJSONAsString(jsonResponse, "currencyName");
 
         // Sort into alphabetical order
         Collections.sort(currencyNames);
@@ -132,7 +126,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
             log.debug("Registering a new currency...");
         }
 
-        String currencyJson = gson.toJson(currency);
+        String currencyJson = GsonUtils.newBuilder().create().toJson(currency);
         CryptoService cryptoService = ServiceLocator.instance().getCryptoService();
         String signature = cryptoService.sign(currencyJson, wallet.getSecKey());
 

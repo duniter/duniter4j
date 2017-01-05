@@ -23,15 +23,17 @@ package org.duniter.elasticsearch.service;
  */
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointProtocol;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.bma.gson.JsonAttributeParser;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
@@ -98,13 +100,13 @@ public class BlockchainService extends AbstractService {
     private final JsonAttributeParser blockHashParser = new JsonAttributeParser("hash");
     private final JsonAttributeParser blockPreviousHashParser = new JsonAttributeParser("previousHash");
 
-    private Gson gson;
+    private ObjectMapper objectMapper;
 
     @Inject
     public BlockchainService(Client client, PluginSettings settings, ThreadPool threadPool,
                              final ServiceLocator serviceLocator){
         super("duniter.blockchain", client, settings);
-        this.gson = GsonUtils.newBuilder().create();
+        this.objectMapper = JacksonUtils.newObjectMapper();
         this.threadPool = threadPool;
         threadPool.scheduleOnStarted(() -> {
             blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
@@ -369,21 +371,28 @@ public class BlockchainService extends AbstractService {
 
         // Serialize into JSON
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
-        String json = gson.toJson(block);
+        try {
+            String json = objectMapper.writeValueAsString(block);
 
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(block.getCurrency(), BLOCK_TYPE)
-                .setId(block.getNumber().toString())
-                .setSource(json);
+            // Preparing indexBlocksFromNode
+            IndexRequestBuilder indexRequest = client.prepareIndex(block.getCurrency(), BLOCK_TYPE)
+                    .setId(block.getNumber().toString())
+                    .setSource(json);
 
-        // Execute indexBlocksFromNode
-        ActionFuture<IndexResponse> futureResponse = indexRequest
-                .setRefresh(true)
-                .execute();
+            // Execute indexBlocksFromNode
+            ActionFuture<IndexResponse> futureResponse = indexRequest
+                    .setRefresh(true)
+                    .execute();
 
-        if (wait) {
-            futureResponse.actionGet();
+            if (wait) {
+                futureResponse.actionGet();
+            }
         }
+        catch(JsonProcessingException e) {
+            throw new TechnicalException(e);
+        }
+
+
     }
 
     /**
@@ -491,9 +500,14 @@ public class BlockchainService extends AbstractService {
 
         // Serialize into JSON
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
-        String json = gson.toJson(currentBlock);
+        try {
+            String json = objectMapper.writeValueAsString(currentBlock);
 
-        indexCurrentBlockFromJson(currentBlock.getCurrency(), json, wait);
+
+            indexCurrentBlockFromJson(currentBlock.getCurrency(), json, wait);
+        } catch(IOException e) {
+            throw new TechnicalException(e);
+        }
     }
 
    /**
@@ -694,7 +708,7 @@ public class BlockchainService extends AbstractService {
             if (searchHit.source() != null) {
                 String jsonString = new String(searchHit.source());
                 try {
-                    block = GsonUtils.newBuilder().create().fromJson(jsonString, BlockchainBlock.class);
+                    block = objectMapper.readValue(jsonString, BlockchainBlock.class);
                 } catch(Exception e) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("Error while parsing block from JSON:\n" + jsonString);

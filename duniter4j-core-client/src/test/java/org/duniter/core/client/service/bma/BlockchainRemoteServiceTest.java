@@ -23,14 +23,14 @@ package org.duniter.core.client.service.bma;
  */
 
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonSyntaxException;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.ErrorCode;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.client.service.ServiceLocator;
@@ -39,6 +39,8 @@ import org.duniter.core.util.crypto.CryptoUtils;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class BlockchainRemoteServiceTest {
 
@@ -113,11 +115,12 @@ public class BlockchainRemoteServiceTest {
         Assert.assertEquals(10, result.length);
 
         // Make sure all json are valid blocks
-        Gson gson = GsonUtils.newBuilder().create();
+        ObjectMapper objectMapper = JacksonUtils.newObjectMapper();
+
         int number = 0;
         for (String jsonBlock: result) {
             try {
-                gson.fromJson(jsonBlock, BlockchainBlock.class);
+                objectMapper.readValue(jsonBlock, BlockchainBlock.class);
             }
             catch(JsonSyntaxException e) {
                 e.printStackTrace();
@@ -134,9 +137,14 @@ public class BlockchainRemoteServiceTest {
         isWebSocketNewBlockReceived = false;
 
         service.addBlockListener(createTestPeer(), (message) -> {
-            BlockchainBlock block = GsonUtils.newBuilder().create().fromJson(message, BlockchainBlock.class);
-            log.debug("Received block #" + block.getNumber());
-            isWebSocketNewBlockReceived = true;
+            try {
+                BlockchainBlock block = JacksonUtils.newObjectMapper().readValue(message, BlockchainBlock.class);
+                log.debug("Received block #" + block.getNumber());
+                isWebSocketNewBlockReceived = true;
+            }
+            catch (IOException e) {
+                Assert.fail(e.getMessage());
+            }
         });
 
         int count = 0;

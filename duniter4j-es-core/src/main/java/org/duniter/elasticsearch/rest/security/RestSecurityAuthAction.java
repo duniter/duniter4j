@@ -22,8 +22,7 @@ package org.duniter.elasticsearch.rest.security;
  * #L%
  */
 
-import com.google.gson.Gson;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.security.challenge.ChallengeMessageStore;
@@ -45,7 +44,7 @@ public class RestSecurityAuthAction extends BaseRestHandler {
 
     private ChallengeMessageStore challengeMessageStore;
     private SecurityTokenStore securityTokenStore;
-    private Gson gson;
+    private ObjectMapper objectMapper;
 
     @Inject
     public RestSecurityAuthAction(Settings settings, RestController controller, Client client,
@@ -55,7 +54,7 @@ public class RestSecurityAuthAction extends BaseRestHandler {
         super(settings, controller, client);
         this.challengeMessageStore = challengeMessageStore;
         this.securityTokenStore = securityTokenStore;
-        this.gson = GsonUtils.newBuilder().create();
+        this.objectMapper = new ObjectMapper();
         controller.registerHandler(POST, "/auth", this);
         securityController.allow(POST, "/auth");
     }
@@ -63,7 +62,7 @@ public class RestSecurityAuthAction extends BaseRestHandler {
     @Override
     protected void handleRequest(final RestRequest request, RestChannel restChannel, Client client) throws Exception {
 
-        AuthData authData = gson.fromJson(request.content().toUtf8(), AuthData.class);
+        AuthData authData = objectMapper.readValue(request.content().toUtf8(), AuthData.class);
 
         // TODO Authorization: Basic   instead ?
 

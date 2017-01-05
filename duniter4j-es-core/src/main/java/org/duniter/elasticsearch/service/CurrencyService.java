@@ -24,6 +24,7 @@ package org.duniter.elasticsearch.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -32,6 +33,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.gson.GsonUtils;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
@@ -72,7 +74,7 @@ public class CurrencyService extends AbstractService {
     public static final String INDEX = "currency";
     public static final String CURRENCY_TYPE = "record";
 
-    private final Gson gson;
+    private final ObjectMapper objectMapper;
     private BlockchainRemoteService blockchainRemoteService;
 
     @Inject
@@ -81,7 +83,7 @@ public class CurrencyService extends AbstractService {
                            CryptoService cryptoService,
                            BlockchainRemoteService blockchainRemoteService) {
         super("duniter." + INDEX, client, settings, cryptoService);
-        this.gson = GsonUtils.newBuilder().create();
+        this.objectMapper = JacksonUtils.newObjectMapper();
         this.blockchainRemoteService = blockchainRemoteService;
     }
 
@@ -299,14 +301,14 @@ public class CurrencyService extends AbstractService {
         Preconditions.checkNotNull(signature);
 
         if (!cryptoService.verify(jsonCurrency, signature, pubkey)) {
-            String currencyName = GsonUtils.getValueFromJSONAsString(jsonCurrency, "currencyName");
+            String currencyName = JacksonUtils.getValueFromJSONAsString(jsonCurrency, "currencyName");
             logger.warn(String.format("Currency not added, because bad signature. blockchain [%s]", currencyName));
             throw new InvalidSignatureException("Bad signature");
         }
 
         Currency currency = null;
         try {
-            currency = gson.fromJson(jsonCurrency, Currency.class);
+            currency = objectMapper.readValue(jsonCurrency, Currency.class);
             Preconditions.checkNotNull(currency);
             Preconditions.checkNotNull(currency.getCurrencyName());
         } catch(Throwable t) {
@@ -380,7 +382,7 @@ public class CurrencyService extends AbstractService {
             SearchHit[] searchHits = response.getHits().getHits();
             for (SearchHit searchHit : searchHits) {
                 if (searchHit.source() != null) {
-                    Currency currency = gson.fromJson(new String(searchHit.source(), "UTF-8"), Currency.class);
+                    Currency currency = objectMapper.readValue(new String(searchHit.source(), "UTF-8"), Currency.class);
                     return currency.getSenderPubkey();
                 }
                 else {
@@ -389,7 +391,7 @@ public class CurrencyService extends AbstractService {
                 }
             }
         }
-        catch(SearchPhaseExecutionException | JsonSyntaxException | UnsupportedEncodingException e) {
+        catch(SearchPhaseExecutionException | JsonSyntaxException | IOException e) {
             // Failed or no item on index
         }
 
