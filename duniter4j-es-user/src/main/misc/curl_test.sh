@@ -87,3 +87,21 @@ curl -XPOST "http://127.0.0.1:9200/user/event/_search?pretty" -d'
 }'
 
 
+echo "--- GET market pictures content_type--- "
+curl -XPOST "http://127.0.0.1:9200/market/record/_search?pretty" -d'
+{
+  query: {
+    constant_score: {
+        filter: [
+          {term: { issuer: "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"}}
+        ]
+      }
+  },
+  sort : [
+    { "time" : {"order" : "desc"}}
+  ],
+  from: 0,
+  size: 3,
+  _source: ["avatar._content_type"]
+}'
+

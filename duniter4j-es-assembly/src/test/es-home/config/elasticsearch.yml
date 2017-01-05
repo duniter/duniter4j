@@ -19,6 +19,7 @@ cluster.name: duniter4j-elasticsearch-TEST
 #
 # ------------------------------------ Node ------------------------------------
 #
+#
 # Use a descriptive name for the node:
 #
 # node.name: node-1
@@ -139,8 +140,8 @@ duniter.keyring.password: def
 
 # Enable security, to disable HTTP access to the default ES admin API
 #
-#duniter.security.enable: true
-duniter.security.enable: false
+duniter.security.enable: true
+#duniter.security.enable: false
 #
 # Security token prefix (default: 'duniter-')
 #
