@@ -132,7 +132,7 @@ duniter.port: 9330
 #
 # Enable security, to disable HTTP access to the default ES admin API
 #
-duniter.security.enable: false
+duniter.security.enable: true
 #
 # Security token prefix (default: 'duniter-')
 #
@@ -141,3 +141,33 @@ duniter.security.enable: false
 # Token validity duration, in seconds (default: 600)
 #
 # duniter.auth.tokenValidityDuration: 3600  # = 1hour
+# ---------------------------------- Duniter4j P2P sync -------------------------
+#
+# Should synchronize data using P2P
+#
+duniter.data.sync.enable: true
+duniter.data.sync.host: data.duniter.fr
+duniter.data.sync.port: 80
+
+# ---------------------------------- Duniter4j SMTP server -------------------------
+#
+# SMTP server configuration (host and port)
+#
+duniter.mail.enable: false
+#duniter.mail.smtp.host: localhost
+#duniter.mail.smtp.port: 25
+#
+# Mail 'from' address
+#
+#duniter.mail.from: no-reply@domain.com
+#
+# Mail: admin address
+#
+#duniter.mail.admin: user@domain.com
+#
+# Mail subject prefix
+#
+#duniter.mail.subject.prefix: [Duniter4j ES]
+
+duniter.changes.listenSource: '*/block'
+duniter.ws.port: 9400
