@@ -53,7 +53,7 @@ cluster.name: duniter4j-elasticsearch-TEST
 #
 # Set the bind address to a specific IP (IPv4 or IPv6):
 #
-#network.host: 192.168.233.118
+#network.host: 192.168.0.28
 #
 # Set a custom port for HTTP:
 #
@@ -140,8 +140,8 @@ duniter.keyring.password: def
 
 # Enable security, to disable HTTP access to the default ES admin API
 #
-duniter.security.enable: true
 #duniter.security.enable: false
+duniter.security.enable: false
 #
 # Security token prefix (default: 'duniter-')
 #

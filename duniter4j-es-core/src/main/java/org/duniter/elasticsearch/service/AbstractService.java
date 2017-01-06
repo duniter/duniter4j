@@ -369,6 +369,10 @@ public abstract class AbstractService implements Bean {
         return result.get(fieldName);
     }
 
+    protected <T> T getTypedFieldById(String index, String type, String docId, String fieldName) {
+        return (T)getFieldById(index, type, docId, fieldName);
+    }
+
     /**
      * Retrieve a document by id (safe mode)
      * @param docId

@@ -31,6 +31,7 @@ import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.RecordComment;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
@@ -60,10 +61,14 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
         I18n.n("duniter.market.error.comment.recordNotFound");
         I18n.n("duniter.market.event.newComment");
         I18n.n("duniter.market.event.updateComment");
+        I18n.n("duniter.market.event.newReplyComment");
+        I18n.n("duniter.market.event.updateReplyComment");
 
         I18n.n("duniter.registry.error.comment.recordNotFound");
         I18n.n("duniter.registry.event.newComment");
         I18n.n("duniter.registry.event.updateComment");
+        I18n.n("duniter.registry.event.newReplyComment");
+        I18n.n("duniter.registry.event.updateReplyComment");
     }
 
     public final UserService userService;
@@ -76,6 +81,8 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
 
     public final boolean enable;
 
+    public final String recordType;
+
     @Inject
     public CommentUserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
                                    BlockchainService blockchainService,
@@ -87,10 +94,12 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
         this.objectMapper = JacksonUtils.newObjectMapper();
         this.changeListenSources = ImmutableList.of(
                 new ChangeSource(MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE),
-                new ChangeSource(RegistryService.INDEX, MarketService.RECORD_COMMENT_TYPE));
+                new ChangeSource(RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE));
         ChangeService.registerListener(this);
 
         this.enable = pluginSettings.enableBlockchainSync();
+
+        this.recordType = MarketService.RECORD_TYPE; // same as RegistryService.RECORD_TYPE
 
         if (this.enable) {
             blockchainService.registerConnectionListener(createConnectionListeners());
@@ -107,19 +116,17 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
 
 
         try {
-
-
             switch (change.getOperation()) {
                 case CREATE:
                     if (change.getSource() != null) {
                         RecordComment comment = objectMapper.readValue(change.getSource().streamInput(), RecordComment.class);
-                        processCreateComment(change.getIndex(), MarketService.RECORD_TYPE, change.getId(), comment);
+                        processCreateComment(change.getIndex(), change.getType(), change.getId(), comment);
                     }
                     break;
                 case INDEX:
                     if (change.getSource() != null) {
                         RecordComment comment = objectMapper.readValue(change.getSource().streamInput(), RecordComment.class);
-                        processUpdateComment(change.getIndex(), MarketService.RECORD_TYPE, change.getId(), comment);
+                        processUpdateComment(change.getIndex(), change.getType(), change.getId(), comment);
                     }
                     break;
 
@@ -185,71 +192,73 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
         };
     }
 
-    private void processCreateComment(String index, String recordType, String commentId, RecordComment comment) {
+    /**
+     * Send notification from a new comment
+     *
+     * @param index
+     * @param type
+     * @param commentId
+     * @param comment
+     */
+    private void processCreateComment(String index, String type, String commentId, RecordComment comment) {
 
-        String issuer = comment.getIssuer();
-        String recordId = comment.getRecord();
-
-        // Notify issuer of record (is not same as comment writer)
-        Map<String, Object> recordFields = getFieldsById(index, recordType, recordId,
-                MarketRecord.PROPERTY_TITLE, MarketRecord.PROPERTY_ISSUER);
-        if (MapUtils.isEmpty(recordFields)) { // record not found
-            logger.warn(I18n.t(String.format("duniter.%s.error.comment.recordNotFound", index.toLowerCase()), recordId));
-        }
-        String recordIssuer = recordFields.get(MarketRecord.PROPERTY_ISSUER).toString();
-
-        // Get user title
-        String issuerTitle = userService.getProfileTitle(issuer);
-
-        String recordTitle = recordFields.get(MarketRecord.PROPERTY_TITLE).toString();
-        if (!issuer.equals(recordIssuer)) {
-            userEventService.notifyUser(
-                    UserEvent.newBuilder(UserEvent.EventType.INFO, GchangeEventCodes.NEW_COMMENT.name())
-                            .setMessage(
-                                    String.format("duniter.%s.event.newComment", index.toLowerCase()),
-                                    issuer,
-                                    issuerTitle != null ? issuerTitle : ModelUtils.minifyPubkey(issuer),
-                                    recordTitle
-                            )
-                            .setRecipient(recordIssuer)
-                            .setReference(index, recordType, recordId)
-                            .setReferenceAnchor(commentId)
-                            .setTime(comment.getTime())
-                            .build());
-        }
+        processUpdateOrCreateComment(index, type, commentId, comment,
+                GchangeEventCodes.NEW_COMMENT,  String.format("duniter.%s.event.newComment", index.toLowerCase()),
+                GchangeEventCodes.NEW_REPLY_COMMENT,  String.format("duniter.%s.event.newReplyComment", index.toLowerCase()));
     }
 
     /**
      * Same as processCreateComment(), but with other code and message.
      *
      * @param index
-     * @param recordType
+     * @param type
      * @param commentId
      * @param comment
      */
-    private void processUpdateComment(String index, String recordType, String commentId, RecordComment comment) {
+    private void processUpdateComment(String index, String type, String commentId, RecordComment comment) {
 
-        String issuer = comment.getIssuer();
+        processUpdateOrCreateComment(index, type, commentId, comment,
+                GchangeEventCodes.UPDATE_COMMENT,  String.format("duniter.%s.event.updateComment", index.toLowerCase()),
+                GchangeEventCodes.UPDATE_REPLY_COMMENT,  String.format("duniter.%s.event.updateReplyComment", index.toLowerCase()));
+    }
+
+
+    /**
+     * Same as processCreateComment(), but with other code and message.
+     *
+     * @param index
+     * @param type
+     * @param commentId
+     * @param comment
+     */
+    private void processUpdateOrCreateComment(String index, String type, String commentId, RecordComment comment,
+                                              GchangeEventCodes eventCodeForRecordIssuer, String messageKeyForRecordIssuer,
+                                              GchangeEventCodes eventCodeForParentCommentIssuer, String messageKeyForParentCommentIssuer) {
+        // Get record issuer
         String recordId = comment.getRecord();
-
-        // Notify issuer of record (is not same as comment writer)
-        Map<String, Object> recordFields = getFieldsById(index, recordType, recordId,
+        Map<String, Object> record = getFieldsById(index, this.recordType, recordId,
                 MarketRecord.PROPERTY_TITLE, MarketRecord.PROPERTY_ISSUER);
-        if (MapUtils.isEmpty(recordFields)) { // record not found
-            logger.warn(I18n.t(String.format("duniter.%s.error.comment.recordNotFound", index.toLowerCase()), recordId));
-            return; // no event to emit
-        }
-        String recordIssuer = recordFields.get(MarketRecord.PROPERTY_ISSUER).toString();
 
-        // Get user title
+        // Record not found : nothing to emit
+        if (MapUtils.isEmpty(record)) {
+            logger.warn(I18n.t(String.format("duniter.%s.error.comment.recordNotFound", index.toLowerCase()), recordId));
+            return;
+        }
+
+        // Fetch record info
+        String recordIssuer = record.get(MarketRecord.PROPERTY_ISSUER).toString();
+        String recordTitle = record.get(MarketRecord.PROPERTY_TITLE).toString();
+
+        // Get comment issuer title
+        String issuer = comment.getIssuer();
         String issuerTitle = userService.getProfileTitle(issuer);
 
-        String recordTitle = recordFields.get(MarketRecord.PROPERTY_TITLE).toString();
+        // Notify issuer of record (is not same as comment writer)
         if (!issuer.equals(recordIssuer)) {
             userEventService.notifyUser(
-                    UserEvent.newBuilder(UserEvent.EventType.INFO, GchangeEventCodes.UPDATE_COMMENT.name())
+                    UserEvent.newBuilder(UserEvent.EventType.INFO, eventCodeForRecordIssuer.name())
                             .setMessage(
-                                    String.format("duniter.%s.event.updateComment", index.toLowerCase()),
+                                    messageKeyForRecordIssuer,
                                     issuer,
                                     issuerTitle != null ? issuerTitle : ModelUtils.minifyPubkey(issuer),
                                     recordTitle
@@ -261,6 +270,30 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
                             .build());
         }
 
+        // Notify comment is a reply to another comment
+        if (StringUtils.isNotBlank(comment.getReplyTo())) {
+
+            String parentCommentIssuer = getTypedFieldById(index, type, commentId, RecordComment.PROPERTY_ISSUER);
+
+            if (StringUtils.isNotBlank(parentCommentIssuer) &&
+                    !issuer.equals(parentCommentIssuer) &&
+                    !recordIssuer.equals(parentCommentIssuer)) {
+
+                userEventService.notifyUser(
+                        UserEvent.newBuilder(UserEvent.EventType.INFO, eventCodeForParentCommentIssuer.name())
+                                .setMessage(
+                                        messageKeyForParentCommentIssuer,
+                                        issuer,
+                                        issuerTitle != null ? issuerTitle : ModelUtils.minifyPubkey(issuer),
+                                        recordTitle
+                                )
+                                .setRecipient(parentCommentIssuer)
+                                .setReference(index, recordType, recordId)
+                                .setReferenceAnchor(commentId)
+                                .setTime(comment.getTime())
+                                .build());
+            }
+        }
 
     }
 

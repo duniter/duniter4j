@@ -6,5 +6,7 @@ package org.duniter.elasticsearch.gchange.model.event;
 public enum GchangeEventCodes {
 
     NEW_COMMENT,
-    UPDATE_COMMENT
+    UPDATE_COMMENT,
+    NEW_REPLY_COMMENT,
+    UPDATE_REPLY_COMMENT,
 }
