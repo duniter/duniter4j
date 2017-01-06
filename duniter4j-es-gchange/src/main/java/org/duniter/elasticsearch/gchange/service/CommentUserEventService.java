@@ -273,7 +273,7 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
         // Notify comment is a reply to another comment
         if (StringUtils.isNotBlank(comment.getReplyTo())) {
 
-            String parentCommentIssuer = getTypedFieldById(index, type, commentId, RecordComment.PROPERTY_ISSUER);
+            String parentCommentIssuer = getTypedFieldById(index, type, comment.getReplyTo(), RecordComment.PROPERTY_ISSUER);
 
             if (StringUtils.isNotBlank(parentCommentIssuer) &&
                     !issuer.equals(parentCommentIssuer) &&
@@ -290,7 +290,7 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
                                 .setRecipient(parentCommentIssuer)
                                 .setReference(index, recordType, recordId)
                                 .setReferenceAnchor(commentId)
-                                .setTime(comment.getTime())
+                                /*.setTime(comment.getTime()) - DO NOT set time, has the comment time is NOT the update time*/
                                 .build());
             }
         }
