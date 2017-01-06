@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.duniter</groupId>
     <artifactId>duniter4j</artifactId>
-    <version>0.6.0</version>
+    <version>0.6.1-SNAPSHOT</version>
   </parent>
 
   <groupId>org.duniter</groupId>
