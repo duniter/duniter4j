@@ -128,7 +128,8 @@ duniter.blockchain.sync.enable: true
 #
 #duniter.host: cgeek.fr
 #duniter.port: 9330
-duniter.host: test-net.duniter.fr
+#duniter.host: test-net.duniter.fr
+duniter.host: 192.168.0.5
 duniter.port: 9201
 #duniter.host: 192.168.0.28
 #duniter.port: 21378
@@ -141,7 +142,7 @@ duniter.keyring.password: def
 # Enable security, to disable HTTP access to the default ES admin API
 #
 #duniter.security.enable: false
-duniter.security.enable: false
+duniter.security.enable: true
 #
 # Security token prefix (default: 'duniter-')
 #

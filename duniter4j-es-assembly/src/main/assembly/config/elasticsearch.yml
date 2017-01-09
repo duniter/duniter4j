@@ -114,7 +114,7 @@ security.manager.enabled: false
 # Reset and reload all Duniter4j data at startup - DO SET to true in production
 #
 # duniter.indices.reload: true
-#
+#:
 # Default string analyzer
 #
 duniter.string.analyzer: french
@@ -129,6 +129,11 @@ duniter.host: cgeek.fr
 duniter.port: 9330
 #
 # ---------------------------------- Duniter4j security -------------------------
+#
+# Allow admin actions
+#
+#duniter.keyring.salt:
+#duniter.keyring.password:
 #
 # Enable security, to disable HTTP access to the default ES admin API
 #

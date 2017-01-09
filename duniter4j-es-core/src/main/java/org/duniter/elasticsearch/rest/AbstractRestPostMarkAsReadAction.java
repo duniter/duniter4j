@@ -50,7 +50,7 @@ public abstract class AbstractRestPostMarkAsReadAction extends BaseRestHandler {
         controller.registerHandler(POST,
                 String.format("/%s/%s/{id}/_read", indexName, typeName),
                 this);
-        securityController.allowIndexType(POST, indexName, typeName);
+        securityController.allow(POST, String.format("/%s/%s/[^/]+/_read", indexName, typeName));
         log = ESLoggerFactory.getLogger(String.format("[%s]", indexName));
         this.updater = updater;
     }

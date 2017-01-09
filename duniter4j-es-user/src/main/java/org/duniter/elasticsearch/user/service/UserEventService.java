@@ -63,6 +63,7 @@ import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -100,6 +101,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
     public final KeyPair nodeKeyPair;
     public final String nodePubkey;
     public final boolean mailEnable;
+    public final boolean trace;
 
     @Inject
     public UserEventService(final Client client,
@@ -113,7 +115,8 @@ public class UserEventService extends AbstractService implements ChangeService.C
         this.nodeKeyPair = getNodeKeyPairOrNull(pluginSettings);
         this.nodePubkey = getNodePubKey(nodeKeyPair);
         this.mailEnable = pluginSettings.getMailEnable();
-        if (!this.mailEnable && logger.isTraceEnabled()) {
+        this.trace = logger.isTraceEnabled();
+        if (!this.mailEnable && this.trace) {
             logger.trace("Mail disable");
         }
 
@@ -486,12 +489,18 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
             switch (change.getOperation()) {
                 // on create
-                // on update
-                case INDEX:
-                case CREATE: // create
+                case CREATE:
                     if (change.getSource() != null) {
                         UserEvent event = objectMapper.readValue(change.getSource().streamInput(), UserEvent.class);
-                        processEventCreateOrUpdate(change.getId(), event);
+                        processEventCreate(change.getId(), event);
+                    }
+                    break;
+
+                // on update
+                case INDEX:
+                    if (change.getSource() != null) {
+                        UserEvent event = objectMapper.readValue(change.getSource().streamInput(), UserEvent.class);
+                        processEventUpdate(change.getId(), event);
                     }
                     break;
 
@@ -509,7 +518,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
     }
 
-    private void processEventCreateOrUpdate(final String eventId, final UserEvent event) {
+    private void processEventCreate(final String eventId, final UserEvent event) {
 
         event.setId(eventId);
 
@@ -524,6 +533,17 @@ public class UserEventService extends AbstractService implements ChangeService.C
             }
         });
 
+    }
+
+    private void processEventUpdate(final String eventId, final UserEvent event) {
+
+        // Skip if user has already read the event
+        if (StringUtils.isNotBlank(event.getReadSignature())) {
+            if (this.trace) logger.trace("Updated event already read: Skip propagation to listeners");
+            return;
+        }
+
+        processEventCreate(eventId, event);
     }
 
 }

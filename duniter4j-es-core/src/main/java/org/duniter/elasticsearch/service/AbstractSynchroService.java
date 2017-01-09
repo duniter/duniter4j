@@ -189,8 +189,8 @@ public abstract class AbstractSynchroService extends AbstractService {
 
         node = node.get("hits");
         int total = node == null ? 0 : node.get("total").asInt(0);
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s] [%s/%s] total to update: %s", peer, toIndex, toType, total));
+        if (logger.isDebugEnabled() && offset == 0) {
+            logger.debug(String.format("[%s] [%s/%s] Rows to update: %s", peer, toIndex, toType, total));
         }
 
         boolean debug = logger.isTraceEnabled();
