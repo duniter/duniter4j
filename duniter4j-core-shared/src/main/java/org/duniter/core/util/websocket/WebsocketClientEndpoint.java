@@ -195,7 +195,7 @@ public class WebsocketClientEndpoint implements Closeable {
             } catch (Exception e) {
                 notifyConnectionError(e);
                 if (!this.autoReconnect) throw new TechnicalException(e);
-                log.warn(String.format("[%s] Unable to connect [%s]. Retrying in 10s...", endpointURI.toString(), e.getMessage()));
+                log.warn(String.format("[%s] Unable to connect [%s]. Retrying in 10s...", endpointURI.toString(), e.getMessage()), e);
             }
 
             // wait 10s, then try again

@@ -68,6 +68,7 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
         modules.add(new WebSocketModule());
 
 
+
         return modules;
     }
 

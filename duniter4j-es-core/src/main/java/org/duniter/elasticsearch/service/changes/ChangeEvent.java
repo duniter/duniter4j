@@ -40,7 +40,6 @@ package org.duniter.elasticsearch.service.changes;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonSyntaxException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -139,12 +138,12 @@ public class ChangeEvent {
             BytesReference source = null;
             if (sourceNode != null) {
                 // TODO : fill bytes reference from source
-                //source = sourceNode.
+                //source =
             }
 
             ChangeEvent event = new ChangeEvent(index, type, id, timestamp, operation, version, source);
             return event;
-        } catch (IOException | JsonSyntaxException e) {
+        } catch (IOException e) {
             throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
         }
     }

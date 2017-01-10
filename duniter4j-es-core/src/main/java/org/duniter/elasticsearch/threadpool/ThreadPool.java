@@ -22,7 +22,7 @@ package org.duniter.elasticsearch.threadpool;
  * #L%
  */
 
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import com.google.common.collect.Lists;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsResponse;

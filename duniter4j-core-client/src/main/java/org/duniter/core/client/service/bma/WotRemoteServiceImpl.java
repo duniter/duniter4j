@@ -34,6 +34,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -221,8 +222,8 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     }
 
     public Collection<Certification> getCertifications(long currencyId, String uid, String pubkey, boolean isMember) {
-        ObjectUtils.checkNotNull(uid);
-        ObjectUtils.checkNotNull(pubkey);
+        Preconditions.checkNotNull(uid);
+        Preconditions.checkNotNull(pubkey);
 
         if (isMember) {
             return getCertificationsByPubkeyForMember(currencyId, pubkey, true);

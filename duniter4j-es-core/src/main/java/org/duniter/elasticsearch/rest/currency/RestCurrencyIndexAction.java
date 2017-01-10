@@ -22,33 +22,26 @@ package org.duniter.elasticsearch.rest.currency;
  * #L%
  */
 
+import org.duniter.elasticsearch.rest.AbstractRestPostIndexAction;
+import org.duniter.elasticsearch.rest.security.RestSecurityController;
+import org.duniter.elasticsearch.service.CurrencyService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.*;
-
-import static org.elasticsearch.rest.RestStatus.OK;
+import org.elasticsearch.rest.RestController;
 
 /**
  * A rest to post a request to process a new currency/peer.
  *
- * TODO :
- *  - add security, to allow only request from admin (check signature against settings keyring)
  */
-public class RestCurrencyIndexAction extends BaseRestHandler {
+public class RestCurrencyIndexAction extends AbstractRestPostIndexAction {
 
     @Inject
-    public RestCurrencyIndexAction(Settings settings, RestController controller, Client client) {
-        super(settings, controller, client);
-        controller.registerHandler(RestRequest.Method.POST, "/currency", this);
-    }
-
-    @Override
-    protected void handleRequest(RestRequest restRequest, RestChannel restChannel, Client client) throws Exception {
-        String json = restRequest.content().toUtf8();
-        //ServiceLocator.instance().getRegistryCurrencyIndexerService().indexCurrency();
-        String currencyName = "";
-        restChannel.sendResponse(new BytesRestResponse(OK, currencyName));
+    public RestCurrencyIndexAction(Settings settings, RestController controller, Client client,
+                                   RestSecurityController securityController, CurrencyService currencyService) {
+        super(settings, controller, client, securityController,
+                CurrencyService.INDEX, CurrencyService.RECORD_TYPE,
+                (json) -> currencyService.indexCurrencyFromJson(json));
     }
 
 }

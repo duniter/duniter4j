@@ -28,6 +28,7 @@ import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.cache.Cache;
 import org.duniter.core.util.cache.SimpleCache;
@@ -136,7 +137,7 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * @return
      */
     public Long getCurrencyIdByName(String currencyName) {
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(currencyName));
+        Preconditions.checkArgument(StringUtils.isNotBlank(currencyName));
 
         // Search from currencies
         for (Map.Entry<Long, Currency> entry : mCurrencyCache.entrySet()) {

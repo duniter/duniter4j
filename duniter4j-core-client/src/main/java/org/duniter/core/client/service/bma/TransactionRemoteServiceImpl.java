@@ -37,6 +37,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.crypto.DigestUtils;
 import org.apache.http.NameValuePair;
@@ -199,9 +200,9 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
     }
 
     public TxHistory getTxHistory(long currencyId, String pubKey, long fromBlockNumber, long toBlockNumber) {
-        ObjectUtils.checkNotNull(pubKey);
-        ObjectUtils.checkArgument(fromBlockNumber >= 0);
-        ObjectUtils.checkArgument(fromBlockNumber <= toBlockNumber);
+		Preconditions.checkNotNull(pubKey);
+        Preconditions.checkArgument(fromBlockNumber >= 0);
+        Preconditions.checkArgument(fromBlockNumber <= toBlockNumber);
 
         if (log.isDebugEnabled()) {
 			log.debug(String.format("Get TX history by pubKey [%s], from block [%s -> %s]", pubKey, fromBlockNumber, toBlockNumber));
@@ -222,9 +223,9 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 									   int locktime,
 									   long amount,
 									   String comment) throws InsufficientCreditException {
-        ObjectUtils.checkNotNull(wallet);
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(wallet.getCurrency()));
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(wallet.getPubKeyHash()));
+		Preconditions.checkNotNull(wallet);
+        Preconditions.checkArgument(StringUtils.isNotBlank(wallet.getCurrency()));
+        Preconditions.checkArgument(StringUtils.isNotBlank(wallet.getPubKeyHash()));
 
 		// Retrieve the wallet sources
 		TxSource sourceResults = getSources(wallet.getCurrencyId(), wallet.getPubKeyHash());

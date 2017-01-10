@@ -33,8 +33,21 @@
           <groupId>com.google.guava</groupId>
           <artifactId>guava</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.glassfish.tyrus</groupId>
+          <artifactId>tyrus-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.glassfish.tyrus</groupId>
+          <artifactId>tyrus-container-grizzly-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.websocket</groupId>
+          <artifactId>javax.websocket-api</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
+
     <!-- LOGGING DEPENDENCIES - SLF4J -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -67,11 +80,12 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna-platform</artifactId>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>net.java.dev.jna</groupId>
@@ -79,13 +93,22 @@
         </exclusion>
       </exclusions>
     </dependency>
+
+    <!-- Websocket -->
+    <dependency>
+      <groupId>javax.websocket</groupId>
+      <artifactId>javax.websocket-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>org.glassfish.tyrus</groupId>
       <artifactId>tyrus-server</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.glassfish.tyrus</groupId>
       <artifactId>tyrus-container-grizzly-server</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <!-- Unit test -->

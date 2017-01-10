@@ -25,7 +25,7 @@ package org.duniter.core.client.config;
  */
 
 import org.nuiton.config.ConfigOptionDef;
-import org.nuiton.util.Version;
+import org.nuiton.version.Version;
 
 import java.io.File;
 import java.net.URL;

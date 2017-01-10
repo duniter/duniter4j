@@ -40,10 +40,6 @@
       <groupId>com.lambdaworks</groupId>
       <artifactId>scrypt</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-    </dependency>
 
     <dependency>
       <groupId>javax.websocket</groupId>

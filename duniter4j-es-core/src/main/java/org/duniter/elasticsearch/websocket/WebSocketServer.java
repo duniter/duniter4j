@@ -54,6 +54,7 @@ import java.util.List;
 
 public class WebSocketServer {
 
+    public static final String WS_PATH = "/ws";
     private final ESLogger log = Loggers.getLogger("duniter.ws");
     private List<Class<?>> endPoints = new ArrayList<>();
 
@@ -84,10 +85,10 @@ public class WebSocketServer {
 
     private void startServer(String host, int port, Class<?>[] endPoints) {
 
-        final Server server = new Server(host, port, "/ws", null, endPoints) ;
+        final Server server = new Server(host, port, WS_PATH, null, endPoints) ;
 
         try {
-            log.info("Starting Websocket server...");
+            log.info(String.format("Starting Websocket server... [%s:%s%s]", host, port, WS_PATH));
             AccessController.doPrivileged(new PrivilegedAction() {
                 @Override
                 public Object run() {

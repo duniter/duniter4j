@@ -14,6 +14,9 @@ import java.util.List;
  */
 public abstract class JacksonUtils extends SimpleModule {
 
+    public static final String REGEX_ATTRIBUTE_REPLACE = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
+
+
     public static ObjectMapper newObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -28,7 +31,6 @@ public abstract class JacksonUtils extends SimpleModule {
 
         // Network
         module.addDeserializer(NetworkPeering.Endpoint.class, new EndpointDeserializer());
-
 
         objectMapper.registerModule(module);
 
@@ -54,4 +56,9 @@ public abstract class JacksonUtils extends SimpleModule {
     public static List<String> getArrayValuesFromJSONAsInt(String jsonString) {
         return new JsonArrayParser().getValuesAsList(jsonString);
     }
+
+    public static String removeAttribute(String jsonString, String attributeName) {
+        return jsonString.replaceAll(String.format(REGEX_ATTRIBUTE_REPLACE, attributeName), "");
+    }
+
 }

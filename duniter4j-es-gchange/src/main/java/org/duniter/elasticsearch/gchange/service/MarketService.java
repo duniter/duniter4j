@@ -28,7 +28,7 @@ import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.gchange.PluginSettings;
-import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.gchange.service.AbstractService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.service.UserEventService;

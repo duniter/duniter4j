@@ -23,7 +23,7 @@ package org.duniter.core.client.model.bma.gson;
  */
 
 import org.duniter.core.exception.TechnicalException;
-import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.Preconditions;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -43,7 +43,7 @@ public class JsonAttributeParser {
         private String attributeName;
 
         public JsonAttributeParser(String attributeName) {
-            ObjectUtils.checkNotNull(attributeName);
+            Preconditions.checkNotNull(attributeName);
 
             this.attributeName = attributeName;
             this.numericPattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_NUMERIC_VALUE, attributeName));
@@ -53,7 +53,7 @@ public class JsonAttributeParser {
         }
 
         public Number getValueAsNumber(String jsonString) {
-            ObjectUtils.checkNotNull(jsonString);
+            Preconditions.checkNotNull(jsonString);
 
             Matcher matcher = numericPattern.matcher(jsonString);
 

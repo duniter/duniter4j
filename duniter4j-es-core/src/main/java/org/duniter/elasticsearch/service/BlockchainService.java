@@ -31,7 +31,6 @@ import com.google.common.collect.Lists;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointProtocol;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.bma.gson.JsonAttributeParser;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
@@ -44,7 +43,7 @@ import org.duniter.core.model.NullProgressionModel;
 import org.duniter.core.model.ProgressionModel;
 import org.duniter.core.model.ProgressionModelImpl;
 import org.duniter.core.util.CollectionUtils;
-import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
@@ -298,9 +297,9 @@ public class BlockchainService extends AbstractService {
     }
 
     public void createBlock(BlockchainBlock block) throws org.duniter.elasticsearch.exception.DuplicateIndexIdException {
-        ObjectUtils.checkNotNull(block, "block could not be null") ;
-        ObjectUtils.checkNotNull(block.getCurrency(), "block attribute 'blockchain' could not be null");
-        ObjectUtils.checkNotNull(block.getNumber(), "block attribute 'number' could not be null");
+        Preconditions.checkNotNull(block, "block could not be null") ;
+        Preconditions.checkNotNull(block.getCurrency(), "block attribute 'blockchain' could not be null");
+        Preconditions.checkNotNull(block.getNumber(), "block attribute 'number' could not be null");
 
         BlockchainBlock existingBlock = getBlockById(block.getCurrency(), block.getNumber());
         if (existingBlock != null) {
@@ -318,10 +317,10 @@ public class BlockchainService extends AbstractService {
      * @throws DuplicateIndexIdException
      */
     public void saveBlock(BlockchainBlock block, boolean updateWhenSameHash, boolean wait) throws DuplicateIndexIdException {
-        ObjectUtils.checkNotNull(block, "block could not be null") ;
-        ObjectUtils.checkNotNull(block.getCurrency(), "block attribute 'blockchain' could not be null");
-        ObjectUtils.checkNotNull(block.getNumber(), "block attribute 'number' could not be null");
-        ObjectUtils.checkNotNull(block.getHash(), "block attribute 'hash' could not be null");
+        Preconditions.checkNotNull(block, "block could not be null") ;
+        Preconditions.checkNotNull(block.getCurrency(), "block attribute 'blockchain' could not be null");
+        Preconditions.checkNotNull(block.getNumber(), "block attribute 'number' could not be null");
+        Preconditions.checkNotNull(block.getHash(), "block attribute 'hash' could not be null");
 
         BlockchainBlock existingBlock = getBlockById(block.getCurrency(), block.getNumber());
 
@@ -364,10 +363,10 @@ public class BlockchainService extends AbstractService {
     }
 
     public void indexBlock(BlockchainBlock block, boolean wait) {
-        ObjectUtils.checkNotNull(block);
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(block.getCurrency()));
-        ObjectUtils.checkNotNull(block.getHash());
-        ObjectUtils.checkNotNull(block.getNumber());
+        Preconditions.checkNotNull(block);
+        Preconditions.checkArgument(StringUtils.isNotBlank(block.getCurrency()));
+        Preconditions.checkNotNull(block.getHash());
+        Preconditions.checkNotNull(block.getNumber());
 
         // Serialize into JSON
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
@@ -402,8 +401,8 @@ public class BlockchainService extends AbstractService {
      * @param json block as JSON
      */
     public BlockchainService indexBlockFromJson(String currencyName, int number, byte[] json, boolean refresh, boolean wait) {
-        ObjectUtils.checkNotNull(json);
-        ObjectUtils.checkArgument(json.length > 0);
+        Preconditions.checkNotNull(json);
+        Preconditions.checkArgument(json.length > 0);
 
         // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, BLOCK_TYPE)
@@ -428,8 +427,8 @@ public class BlockchainService extends AbstractService {
      * @param json block as json
      */
     public BlockchainService indexLastBlockFromJson(Peer peer, String json) {
-        ObjectUtils.checkNotNull(json);
-        ObjectUtils.checkArgument(json.length() > 0);
+        Preconditions.checkNotNull(json);
+        Preconditions.checkArgument(json.length() > 0);
 
         indexBlockFromJson(peer, json, true /*refresh*/, true /*is current*/, true/*check fork*/, true/*wait*/);
 
@@ -443,8 +442,8 @@ public class BlockchainService extends AbstractService {
      * @param wait need to wait until processed ?
      */
     public BlockchainService indexBlockFromJson(Peer peer, String json, boolean refresh, boolean isCurrent, boolean detectFork, boolean wait) {
-        ObjectUtils.checkNotNull(json);
-        ObjectUtils.checkArgument(json.length() > 0);
+        Preconditions.checkNotNull(json);
+        Preconditions.checkArgument(json.length() > 0);
 
         String currencyName = blockCurrencyParser.getValueAsString(json);
         int number = blockNumberParser.getValueAsInt(json);
@@ -493,10 +492,10 @@ public class BlockchainService extends AbstractService {
      * @param currentBlock
      */
     public void indexCurrentBlock(BlockchainBlock currentBlock, boolean wait) {
-        ObjectUtils.checkNotNull(currentBlock);
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(currentBlock.getCurrency()));
-        ObjectUtils.checkNotNull(currentBlock.getHash());
-        ObjectUtils.checkNotNull(currentBlock.getNumber());
+        Preconditions.checkNotNull(currentBlock);
+        Preconditions.checkArgument(StringUtils.isNotBlank(currentBlock.getCurrency()));
+        Preconditions.checkNotNull(currentBlock.getHash());
+        Preconditions.checkNotNull(currentBlock.getNumber());
 
         // Serialize into JSON
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
@@ -517,9 +516,9 @@ public class BlockchainService extends AbstractService {
     * @pram wait need to wait until block processed ?
     */
     public void indexCurrentBlockFromJson(String currencyName, String json, boolean wait) {
-        ObjectUtils.checkNotNull(json);
-        ObjectUtils.checkArgument(json.length() > 0);
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(currencyName));
+        Preconditions.checkNotNull(json);
+        Preconditions.checkArgument(json.length() > 0);
+        Preconditions.checkArgument(StringUtils.isNotBlank(currencyName));
 
         // Preparing indexBlocksFromNode
         IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, BLOCK_TYPE)
@@ -886,12 +885,12 @@ public class BlockchainService extends AbstractService {
      * @param tryCounter
      */
     protected Collection<String> indexMissingBlocksFromOtherPeers(Peer peer, BlockchainBlock currentBlock, Collection<String> sortedMissingBlocks, int tryCounter) {
-        ObjectUtils.checkNotNull(peer);
-        ObjectUtils.checkNotNull(currentBlock);
-        ObjectUtils.checkNotNull(currentBlock.getHash());
-        ObjectUtils.checkNotNull(currentBlock.getNumber());
-        ObjectUtils.checkArgument(CollectionUtils.isNotEmpty(sortedMissingBlocks));
-        ObjectUtils.checkArgument(tryCounter >= 1);
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(currentBlock);
+        Preconditions.checkNotNull(currentBlock.getHash());
+        Preconditions.checkNotNull(currentBlock.getNumber());
+        Preconditions.checkArgument(CollectionUtils.isNotEmpty(sortedMissingBlocks));
+        Preconditions.checkArgument(tryCounter >= 1);
 
         NetworkRemoteService networkRemoteService = ServiceLocator.instance().getNetworkRemoteService();
         BlockchainRemoteService blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();

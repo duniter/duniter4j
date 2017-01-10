@@ -22,7 +22,7 @@ package org.duniter.elasticsearch.security.challenge;
  * #L%
  */
 
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;

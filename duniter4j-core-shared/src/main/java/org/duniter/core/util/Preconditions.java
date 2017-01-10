@@ -26,35 +26,30 @@ package org.duniter.core.util;
 /**
  * Created by eis on 22/12/14.
  */
-public class ObjectUtils {
+public class Preconditions {
 
-    @Deprecated
     public static void checkNotNull(Object value) {
-        Preconditions.checkNotNull(value);
+        if (value == null) {
+            throw new NullPointerException();
+        }
     }
 
-    @Deprecated
     public static void checkNotNull(Object value, String message) {
-        Preconditions.checkNotNull(value, message);
+        if (value == null) {
+            throw new NullPointerException(message);
+        }
     }
 
-    @Deprecated
+
     public static void checkArgument(boolean value, String message) {
-        Preconditions.checkNotNull(value, message);
+        if (!value) {
+            throw new IllegalArgumentException(message);
+        }
     }
 
-    @Deprecated
     public static void checkArgument(boolean value) {
-        Preconditions.checkNotNull(value);
-    }
-
-    public static boolean equals(Object o1, Object o2) {
-        if (o1 == null && o2 == null) {
-            return true;
+        if (!value) {
+            throw new IllegalArgumentException();
         }
-        if ((o1 != null && o2 == null) ||(o1 == null && o2 != null)) {
-            return false;
-        }
-        return o1.equals(o2);
     }
 }

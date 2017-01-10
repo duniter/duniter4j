@@ -24,24 +24,17 @@ package org.duniter.core.client.service.elasticsearch;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
-import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.model.local.Wallet;
-import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.bma.BaseRemoteServiceImpl;
 import org.duniter.core.exception.TechnicalException;
-import org.duniter.core.service.CryptoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,9 +44,8 @@ import java.util.List;
 public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl implements CurrencyRegistryRemoteService, InitializingBean, Closeable{
     private static final Logger log = LoggerFactory.getLogger(CurrencyRegistryRemoteServiceImpl.class);
 
-    private final static String URL_STATUS = "/";
-    private final static String URL_ALL_CURRENCY_NAMES = "/currency/simple/_search?_source=currencyName";
-    private final static String URL_ADD_CURRENCY = "/rest/currency/add";
+    private final static String URL_STATUS = "/node/summary";
+    private final static String URL_ALL_CURRENCY_NAMES = "/currency/record/_search?_source=currencyName";
 
     private Configuration config;
     private Peer peer;
@@ -118,53 +110,6 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         Collections.sort(currencyNames);
 
         return currencyNames;
-    }
-
-    @Override
-    public void registerNewCurrency(Wallet wallet, Currency currency) {
-        if (log.isDebugEnabled()) {
-            log.debug("Registering a new currency...");
-        }
-
-        String currencyJson = GsonUtils.newBuilder().create().toJson(currency);
-        CryptoService cryptoService = ServiceLocator.instance().getCryptoService();
-        String signature = cryptoService.sign(currencyJson, wallet.getSecKey());
-
-        registerNewCurrency(
-                wallet.getPubKeyHash(),
-                currencyJson,
-                signature);
-
-        // get currency
-        //HttpGet httpGet = new HttpGet(getAppendedPath("/currency/simple/_search?_source=currencyName"));
-        //String jsonString = executeRequest(httpGet, String.class);
-
-    }
-
-    @Override
-    public void registerNewCurrency(String pubkey, String jsonCurrency, String signature) {
-        if (log.isDebugEnabled()) {
-            log.debug("Registering a new currency...");
-        }
-
-        URIBuilder builder = getURIBuilder(config.getNodeElasticSearchUrl(), URL_ADD_CURRENCY);
-        builder.addParameter("pubkey", pubkey);
-        builder.addParameter("currency", jsonCurrency);
-        builder.addParameter("sig", signature);
-
-        HttpGet httpGet;
-        try {
-            httpGet = new HttpGet(builder.build());
-        }
-        catch(URISyntaxException e) {
-            throw new TechnicalException(e);
-        }
-
-        String result = executeRequest(httpGet, String.class);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Server response, after currency registration: " + result);
-        }
     }
 
     /* -- protected methods -- */

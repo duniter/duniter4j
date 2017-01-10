@@ -25,14 +25,14 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.elasticsearch.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.MailService;
-import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.elasticsearch.action.ListenableActionFuture;
@@ -63,7 +63,7 @@ public class UserService extends AbstractService {
     public UserService(Client client,
                        PluginSettings settings,
                        CryptoService cryptoService) {
-        super("duniter." + INDEX, client, settings,cryptoService);
+        super("duniter." + INDEX, client, settings.getDelegate(), cryptoService);
     }
 
     /**

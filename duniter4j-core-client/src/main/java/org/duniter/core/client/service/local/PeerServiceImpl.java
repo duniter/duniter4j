@@ -30,6 +30,7 @@ import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.cache.Cache;
 import org.duniter.core.util.cache.SimpleCache;
@@ -68,10 +69,10 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     }
 
     public Peer save(final Peer peer) {
-        ObjectUtils.checkNotNull(peer);
-        ObjectUtils.checkNotNull(peer.getCurrencyId());
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(peer.getHost()));
-        ObjectUtils.checkArgument(peer.getPort() >= 0);
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(peer.getCurrencyId());
+        Preconditions.checkArgument(StringUtils.isNotBlank(peer.getHost()));
+        Preconditions.checkArgument(peer.getPort() >= 0);
 
         Peer result;
         // Create

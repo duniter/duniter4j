@@ -24,14 +24,8 @@ package org.duniter.elasticsearch.gchange.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.exception.TechnicalException;
-import org.duniter.core.util.StringUtils;
-import org.duniter.elasticsearch.gchange.PluginSettings;
+import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
@@ -41,8 +35,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
-import java.io.*;
-import java.util.Map;
+import java.io.IOException;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -57,15 +50,12 @@ public class CitiesRegistryService extends AbstractService {
 
     private static final String CITIES_SOURCE_FILE2 = "/home/blavenie/git/ucoin-io/duniter4j/duniter4j-elasticsearch/src/main/misc/geoflar-communes-2015.geojson";
 
-    public static final String INDEX_NAME = "registry";
-    public static final String INDEX_TYPE = "city";
-
-    private final Gson gson;
+    public static final String INDEX = "registry";
+    public static final String CITY_TYPE = "city";
 
     @Inject
     public CitiesRegistryService(Client client, PluginSettings settings) {
         super(client, settings);
-        gson = GsonUtils.newBuilder().create();
     }
 
     /**
@@ -73,12 +63,12 @@ public class CitiesRegistryService extends AbstractService {
      * @throws JsonProcessingException
      */
     public void deleteIndex() throws JsonProcessingException {
-        deleteIndexIfExists(INDEX_NAME);
+        deleteIndexIfExists(INDEX);
     }
 
 
     public boolean existsIndex() {
-        return super.existsIndex(INDEX_NAME);
+        return super.existsIndex(INDEX);
     }
 
     /**
@@ -86,12 +76,12 @@ public class CitiesRegistryService extends AbstractService {
      */
     public void createIndexIfNotExists() {
         try {
-            if (!existsIndex(INDEX_NAME)) {
+            if (!existsIndex(INDEX)) {
                 createIndex();
             }
         }
         catch(JsonProcessingException e) {
-            throw new TechnicalException(String.format("Error while creating index [%s]", INDEX_NAME));
+            throw new TechnicalException(String.format("Error while creating index [%s]", INDEX));
         }
     }
 
@@ -100,16 +90,16 @@ public class CitiesRegistryService extends AbstractService {
      * @throws JsonProcessingException
      */
     public void createIndex() throws JsonProcessingException {
-        log.info(String.format("Creating index [%s/%s]", INDEX_NAME, INDEX_TYPE));
+        log.info(String.format("Creating index [%s/%s]", INDEX, CITY_TYPE));
 
-        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX_NAME);
+        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
         org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", 1)
                 //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(INDEX_TYPE, createIndexMapping());
+        createIndexRequestBuilder.addMapping(CITY_TYPE, createIndexMapping());
         createIndexRequestBuilder.execute().actionGet();
     }
 
@@ -121,7 +111,7 @@ public class CitiesRegistryService extends AbstractService {
         //File bulkFile = createCitiesBulkFile2();
 
         // Insert cities
-        //bulkFromFile(bulkFile, INDEX_NAME, INDEX_TYPE);
+        //bulkFromFile(bulkFile, INDEX, CITY_TYPE);
     }
 
 
@@ -131,7 +121,7 @@ public class CitiesRegistryService extends AbstractService {
     public XContentBuilder createIndexMapping() {
 
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(INDEX_TYPE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(CITY_TYPE)
                     .startObject("properties")
 
                     // city
@@ -151,10 +141,11 @@ public class CitiesRegistryService extends AbstractService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX_NAME, INDEX_TYPE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, CITY_TYPE, ioe.getMessage()), ioe);
         }
     }
 
+    /*
     public File createCitiesBulkFile() {
 
         File result = new File(pluginSettings.getTempDirectory(), CITIES_BULK_FILENAME);
@@ -355,4 +346,5 @@ public class CitiesRegistryService extends AbstractService {
 
         return result;
     }
+    */
 }

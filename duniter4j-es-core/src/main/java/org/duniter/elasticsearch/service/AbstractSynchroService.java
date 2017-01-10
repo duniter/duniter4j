@@ -24,7 +24,7 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;

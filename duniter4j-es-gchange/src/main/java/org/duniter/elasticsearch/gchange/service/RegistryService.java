@@ -24,11 +24,10 @@ package org.duniter.elasticsearch.gchange.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.gchange.PluginSettings;
-import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.gchange.service.AbstractService;
 import org.duniter.elasticsearch.user.service.UserEventService;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;

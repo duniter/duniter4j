@@ -62,17 +62,29 @@
         <include>logging.yml</include>
       </includes>
     </fileSet>
+
+    <!-- websocket lib (tyrus )
+    <fileSet>
+      <directory>target/elasticsearch-${elasticsearch.version}</directory>
+      <outputDirectory>lib</outputDirectory>
+      <includes>
+        <include>elasticsearch.yml</include>
+        <include>logging.yml</include>
+      </includes>
+    </fileSet>-->
   </fileSets>
 
   <dependencySets>
     <dependencySet>
       <outputDirectory>lib</outputDirectory>
-      <useProjectArtifact>true</useProjectArtifact>
+      <useProjectArtifact>false</useProjectArtifact>
       <useTransitiveFiltering>true</useTransitiveFiltering>
       <includes>
         <include>javax.websocket:javax.websocket-api</include>
         <include>org.glassfish.tyrus:tyrus-client</include>
         <include>org.glassfish.tyrus:tyrus-container-grizzly-client</include>
+        <include>org.glassfish.tyrus:tyrus-server</include>
+        <include>org.glassfish.tyrus:tyrus-container-grizzly-server</include>
       </includes>
       <fileMode>0555</fileMode>
     </dependencySet>

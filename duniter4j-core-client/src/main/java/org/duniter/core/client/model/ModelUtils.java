@@ -24,7 +24,7 @@ package org.duniter.core.client.model;
 
 import java.util.*;
 
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.client.model.local.Certification;
 import org.duniter.core.client.model.local.Movement;
 import org.duniter.core.util.CollectionUtils;

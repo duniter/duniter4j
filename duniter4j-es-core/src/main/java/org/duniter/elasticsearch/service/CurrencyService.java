@@ -25,14 +25,10 @@ package org.duniter.elasticsearch.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
@@ -40,13 +36,12 @@ import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.exception.HttpConnectException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
-import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -62,7 +57,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Objects;
 
@@ -71,8 +65,10 @@ import java.util.Objects;
  */
 public class CurrencyService extends AbstractService {
 
+    protected static final String REGEX_WORD_SEPARATOR = "[-\\t@# _]+";
+
     public static final String INDEX = "currency";
-    public static final String CURRENCY_TYPE = "record";
+    public static final String RECORD_TYPE = "record";
 
     private final ObjectMapper objectMapper;
     private BlockchainRemoteService blockchainRemoteService;
@@ -116,7 +112,7 @@ public class CurrencyService extends AbstractService {
                 //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(CURRENCY_TYPE, createCurrencyType());
+        createIndexRequestBuilder.addMapping(RECORD_TYPE, createCurrencyType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -134,6 +130,19 @@ public class CurrencyService extends AbstractService {
     public boolean isCurrencyExists(String currencyName) {
         String pubkey = getSenderPubkeyByCurrencyId(currencyName);
         return !StringUtils.isEmpty(pubkey);
+    }
+
+
+    /**
+     * Add a new currency
+     * TODO :
+     *  - add security, to allow only request from admin (check signature against settings keyring)
+     *
+     * @param json
+     * @return
+     */
+    public String indexCurrencyFromJson(String json) {
+        throw new TechnicalException("Not implemented yet. Received JSON: " + json);
     }
 
     /**
@@ -194,7 +203,7 @@ public class CurrencyService extends AbstractService {
      */
     public void indexCurrency(Currency currency) {
         try {
-            ObjectUtils.checkNotNull(currency.getCurrencyName());
+            org.duniter.core.util.Preconditions.checkNotNull(currency.getCurrencyName());
 
             // Fill tags
             if (ArrayUtils.isEmpty(currency.getTags())) {
@@ -215,7 +224,7 @@ public class CurrencyService extends AbstractService {
             byte[] json = objectMapper.writeValueAsBytes(currency);
 
             // Preparing indexBlocksFromNode
-            IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, CURRENCY_TYPE)
+            IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_TYPE)
                     .setId(currency.getCurrencyName())
                     .setSource(json);
 
@@ -260,8 +269,8 @@ public class CurrencyService extends AbstractService {
      * @throws AccessDeniedException if exists and user if not the original blockchain sender
      */
     public void saveCurrency(Currency currency, String senderPubkey) throws DuplicateIndexIdException {
-        ObjectUtils.checkNotNull(currency, "currency could not be null") ;
-        ObjectUtils.checkNotNull(currency.getCurrencyName(), "currency attribute 'currencyName' could not be null");
+        Preconditions.checkNotNull(currency, "currency could not be null") ;
+        Preconditions.checkNotNull(currency.getCurrencyName(), "currency attribute 'currencyName' could not be null");
 
         String previousSenderPubkey = getSenderPubkeyByCurrencyId(currency.getCurrencyName());
 
@@ -306,7 +315,7 @@ public class CurrencyService extends AbstractService {
             throw new InvalidSignatureException("Bad signature");
         }
 
-        Currency currency = null;
+        Currency currency;
         try {
             currency = objectMapper.readValue(jsonCurrency, Currency.class);
             Preconditions.checkNotNull(currency);
@@ -323,7 +332,7 @@ public class CurrencyService extends AbstractService {
 
     public XContentBuilder createCurrencyType() {
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(CURRENCY_TYPE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
                     .startObject("properties")
 
                     // blockchain name
@@ -350,7 +359,7 @@ public class CurrencyService extends AbstractService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, CURRENCY_TYPE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
         }
     }
 
@@ -368,7 +377,7 @@ public class CurrencyService extends AbstractService {
         // Prepare request
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(INDEX)
-                .setTypes(CURRENCY_TYPE)
+                .setTypes(RECORD_TYPE)
                 .setSearchType(SearchType.QUERY_AND_FETCH);
 
         // If more than a word, search on terms match
@@ -391,7 +400,7 @@ public class CurrencyService extends AbstractService {
                 }
             }
         }
-        catch(SearchPhaseExecutionException | JsonSyntaxException | IOException e) {
+        catch(SearchPhaseExecutionException | IOException e) {
             // Failed or no item on index
         }
 

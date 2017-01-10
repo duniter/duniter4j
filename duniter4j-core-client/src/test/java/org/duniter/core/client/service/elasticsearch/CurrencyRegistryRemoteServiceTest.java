@@ -25,11 +25,8 @@ package org.duniter.core.client.service.elasticsearch;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.Currency;
-import org.duniter.core.client.model.bma.gson.GsonUtils;
-import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.client.service.ServiceLocator;
-import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.junit.*;
 import org.slf4j.Logger;
@@ -75,22 +72,6 @@ public class CurrencyRegistryRemoteServiceTest {
         for (String currencyName: currencyNames) {
             log.info("  - " + currencyName);
         }
-    }
-
-    @Test
-    public void registerCurrency() throws Exception {
-        Currency currency = new Currency();
-        currency.setCurrencyName("register-test-" + System.currentTimeMillis());
-
-        String currencyJson = JacksonUtils.newObjectMapper().writeValueAsString(currency);
-
-        String pubKey = resource.getFixtures().getUserPublicKey();
-        String secretKey = resource.getFixtures().getUserSecretKey();
-
-        CryptoService cryptoService = ServiceLocator.instance().getCryptoService();
-        String signature = cryptoService.sign(currencyJson, secretKey);
-
-        service.registerNewCurrency(pubKey, currencyJson, signature);
     }
 
     /* -- internal methods -- */

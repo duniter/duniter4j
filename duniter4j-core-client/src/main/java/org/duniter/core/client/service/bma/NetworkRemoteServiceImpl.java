@@ -30,6 +30,7 @@ import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 
 /**
@@ -64,7 +65,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
     @Override
     public List<Peer> findPeers(Peer peer, String status, EndpointProtocol endpointProtocol, Integer currentBlockNumber, String currentBlockHash) {
-        ObjectUtils.checkNotNull(peer);
+        Preconditions.checkNotNull(peer);
 
         List<Peer> result = new ArrayList<Peer>();
 
@@ -115,7 +116,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     }
 
     protected Integer parseBlockNumber(NetworkPeers.Peer remotePeer) {
-        ObjectUtils.checkNotNull(remotePeer);
+        Preconditions.checkNotNull(remotePeer);
 
         if (remotePeer.block == null) {
             return null;
@@ -134,7 +135,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     }
 
     protected String parseBlockHash(NetworkPeers.Peer remotePeer) {
-        ObjectUtils.checkNotNull(remotePeer);
+        Preconditions.checkNotNull(remotePeer);
 
         if (remotePeer.block == null) {
             return null;

@@ -23,6 +23,8 @@ package org.duniter.elasticsearch.gchange.service;
  */
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.collections4.MapUtils;
@@ -33,10 +35,10 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
-import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
+import org.duniter.elasticsearch.gchange.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
-import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
+import org.duniter.elasticsearch.gchange.service.AbstractService;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
@@ -50,7 +52,9 @@ import org.elasticsearch.common.inject.Inject;
 import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -83,6 +87,8 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
 
     public final String recordType;
 
+    public final boolean trace;
+
     @Inject
     public CommentUserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
                                    BlockchainService blockchainService,
@@ -92,12 +98,14 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
         this.userService = userService;
         this.userEventService = userEventService;
         this.objectMapper = JacksonUtils.newObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.changeListenSources = ImmutableList.of(
                 new ChangeSource(MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE),
                 new ChangeSource(RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE));
         ChangeService.registerListener(this);
 
         this.enable = pluginSettings.enableBlockchainSync();
+        this.trace = logger.isTraceEnabled();
 
         this.recordType = MarketService.RECORD_TYPE; // same as RegistryService.RECORD_TYPE
 
@@ -114,33 +122,28 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
     @Override
     public void onChange(ChangeEvent change) {
 
+        RecordComment comment;
 
-        try {
-            switch (change.getOperation()) {
-                case CREATE:
-                    if (change.getSource() != null) {
-                        RecordComment comment = objectMapper.readValue(change.getSource().streamInput(), RecordComment.class);
-                        processCreateComment(change.getIndex(), change.getType(), change.getId(), comment);
-                    }
-                    break;
-                case INDEX:
-                    if (change.getSource() != null) {
-                        RecordComment comment = objectMapper.readValue(change.getSource().streamInput(), RecordComment.class);
-                        processUpdateComment(change.getIndex(), change.getType(), change.getId(), comment);
-                    }
-                    break;
+        switch (change.getOperation()) {
+            case CREATE:
+                comment = readComment(change);
+                if (comment != null) {
+                    processCreateComment(change.getIndex(), change.getType(), change.getId(), comment);
+                }
+                break;
+            case INDEX:
+                comment = readComment(change);
+                if (comment != null) {
+                    processUpdateComment(change.getIndex(), change.getType(), change.getId(), comment);
+                }
+                break;
 
-                // on DELETE : remove user event on block (using link
-                case DELETE:
-                    processCommentDelete(change);
-
-                    break;
-            }
-
+            // on DELETE : remove user event on block (using link
+            case DELETE:
+                processCommentDelete(change);
+                break;
         }
-        catch(IOException e) {
-            throw new TechnicalException(String.format("Unable to parse received comment %s", change.getId()), e);
-        }
+
     }
 
     @Override
@@ -203,8 +206,8 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
     private void processCreateComment(String index, String type, String commentId, RecordComment comment) {
 
         processUpdateOrCreateComment(index, type, commentId, comment,
-                GchangeEventCodes.NEW_COMMENT,  String.format("duniter.%s.event.newComment", index.toLowerCase()),
-                GchangeEventCodes.NEW_REPLY_COMMENT,  String.format("duniter.%s.event.newReplyComment", index.toLowerCase()));
+                GchangeEventCodes.NEW_COMMENT, String.format("duniter.%s.event.newComment", index.toLowerCase()),
+                GchangeEventCodes.NEW_REPLY_COMMENT, String.format("duniter.%s.event.newReplyComment", index.toLowerCase()));
     }
 
     /**
@@ -218,8 +221,8 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
     private void processUpdateComment(String index, String type, String commentId, RecordComment comment) {
 
         processUpdateOrCreateComment(index, type, commentId, comment,
-                GchangeEventCodes.UPDATE_COMMENT,  String.format("duniter.%s.event.updateComment", index.toLowerCase()),
-                GchangeEventCodes.UPDATE_REPLY_COMMENT,  String.format("duniter.%s.event.updateReplyComment", index.toLowerCase()));
+                GchangeEventCodes.UPDATE_COMMENT, String.format("duniter.%s.event.updateComment", index.toLowerCase()),
+                GchangeEventCodes.UPDATE_REPLY_COMMENT, String.format("duniter.%s.event.updateReplyComment", index.toLowerCase()));
     }
 
 
@@ -304,5 +307,23 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
         userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
     }
 
-
+    private RecordComment readComment(ChangeEvent change) {
+        try {
+            if (change.getSource() != null) {
+                return objectMapper.readValue(change.getSource().streamInput(), RecordComment.class);
+            }
+            return null;
+        } catch (JsonProcessingException e) {
+            if (trace) {
+                logger.warn(String.format("Bad format for comment [%s]: %s. Skip this comment", change.getId(), e.getMessage()), e);
+            }
+            else {
+                logger.warn(String.format("Bad format for comment [%s]: %s. Skip this comment", change.getId(), e.getMessage()));
+            }
+            return null;
+        }
+        catch (IOException e) {
+            throw new TechnicalException(String.format("Unable to parse received comment %s", change.getId()), e);
+        }
+    }
 }

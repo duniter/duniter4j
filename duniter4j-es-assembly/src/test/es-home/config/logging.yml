@@ -24,7 +24,7 @@ logger:
   duniter : DEBUG
   duniter.security : ERROR
   duniter.user.event : INFO
-  duniter.network.p2p: TRACE
+  duniter.network.p2p: INFO
 
   security: DEBUG
 

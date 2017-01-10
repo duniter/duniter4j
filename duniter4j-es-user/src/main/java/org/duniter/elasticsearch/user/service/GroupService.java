@@ -25,17 +25,13 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Preconditions;
 import org.apache.commons.collections4.MapUtils;
-import org.duniter.core.client.model.ModelUtils;
-import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.elasticsearch.UserGroup;
-import org.duniter.core.client.model.elasticsearch.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
-import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.user.service.AbstractService;
+import org.duniter.elasticsearch.user.PluginSettings;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -63,7 +59,7 @@ public class GroupService extends AbstractService {
     public GroupService(Client client,
                         PluginSettings settings,
                         CryptoService cryptoService) {
-        super("duniter." + INDEX, client, settings,cryptoService);
+        super("duniter." + INDEX, client, settings, cryptoService);
     }
 
     /**

@@ -26,6 +26,7 @@ import org.duniter.elasticsearch.gchange.service.MarketService;
 import org.duniter.elasticsearch.gchange.service.RegistryService;
 import org.duniter.elasticsearch.gchange.service.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.duniter.elasticsearch.user.PluginSettings;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -58,9 +59,8 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             createIndices();
 
             // Waiting cluster back to GREEN or YELLOW state, before synchronize
-            threadPool.scheduleOnClusterHealthStatus(() -> {
-                synchronize();
-            }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+            threadPool.scheduleOnClusterHealthStatus(() -> synchronize(),
+                    ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
         }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
     }
 

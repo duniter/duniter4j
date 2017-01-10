@@ -23,7 +23,7 @@ package org.duniter.core.test;
  */
 
 
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.FileUtils;
 import org.duniter.core.util.StringUtils;
 import org.abstractj.kalium.NaCl;

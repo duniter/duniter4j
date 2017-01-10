@@ -16,7 +16,7 @@
     <file.encoding>UTF-8</file.encoding>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.5</slf4j.version>
-    <guava.version>19.0</guava.version>
+    <guava.version>18.0</guava.version>
     <xalan.version>2.7.1</xalan.version>
     <xerces.version>2.9.0</xerces.version>
     <xml-apis.version>2.0.2</xml-apis.version>
@@ -25,9 +25,10 @@
     <scrypt.version>1.4.0</scrypt.version>
     <elasticsearch.version>2.3.3</elasticsearch.version>
     <jna.version>4.1.0</jna.version>
-    <tyrus.version>1.12</tyrus.version>
+    <tyrus.version>1.13</tyrus.version>
 
     <nuitonConfigVersion>3.0-rc-4</nuitonConfigVersion>
+    <nuitonVersionVersion>1.0-rc-2</nuitonVersionVersion>
     <nuitonI18nVersion>3.5</nuitonI18nVersion>
 
     <!-- UI versions -->
@@ -170,6 +171,11 @@
         <groupId>org.nuiton</groupId>
         <artifactId>nuiton-config</artifactId>
         <version>${nuitonConfigVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.nuiton</groupId>
+        <artifactId>nuiton-version</artifactId>
+        <version>${nuitonVersionVersion}</version>
       </dependency>
       <dependency>
         <groupId>org.nuiton.i18n</groupId>
@@ -358,7 +364,7 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>2.6.4</version>
+        <version>2.6.6</version>
       </dependency>
 
       <!-- WebSocket -->

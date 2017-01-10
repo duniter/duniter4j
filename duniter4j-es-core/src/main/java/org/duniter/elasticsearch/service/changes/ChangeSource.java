@@ -39,7 +39,7 @@ package org.duniter.elasticsearch.service.changes;
 */
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import org.duniter.core.util.StringUtils;
 

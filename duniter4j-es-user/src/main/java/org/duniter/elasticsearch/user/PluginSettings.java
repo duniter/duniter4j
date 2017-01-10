@@ -23,6 +23,8 @@ package org.duniter.elasticsearch.user;
  */
 
 
+import org.elasticsearch.common.component.AbstractLifecycleComponent;
+import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 
@@ -31,31 +33,52 @@ import org.elasticsearch.common.settings.Settings;
  * @author Benoit Lavenier <benoit.lavenier@e-is.pro>
  * @since 1.0
  */
-public class PluginSettings extends org.duniter.elasticsearch.PluginSettings {
+public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
+
+    private org.duniter.elasticsearch.PluginSettings delegate;
 
     @Inject
-    public PluginSettings(Settings settings) {
+    public PluginSettings(Settings settings, org.duniter.elasticsearch.PluginSettings delegate) {
         super(settings);
+        this.delegate = delegate;
+
+        // Add i18n bundle name
+        delegate.addI18nBundleName(getI18nBundleName());
+    }
+
+    @Override
+    protected void doStart() {
+
+    }
+
+    @Override
+    protected void doClose() {
+
+    }
+
+    @Override
+    protected void doStop() {
+
+    }
+
+    public org.duniter.elasticsearch.PluginSettings getDelegate() {
+        return delegate;
     }
 
     public String getDefaultStringAnalyzer() {
-        return settings.get("duniter.string.analyzer", "english");
+        return delegate.getDefaultStringAnalyzer();
     }
 
-    public String getKeyringSalt() {
-        return settings.get("duniter.keyring.salt");
+    public boolean reloadIndices() {
+        return delegate.reloadIndices();
     }
 
-    public String getKeyringPassword() {
-        return settings.get("duniter.keyring.password");
+    public boolean enableDataSync() {
+        return delegate.enableDataSync();
     }
 
-    public String getKeyringPublicKey() {
-        return settings.get("duniter.keyring.pub");
-    }
-
-    public String getKeyringSecretKey() {
-        return settings.get("duniter.keyring.sec");
+    public boolean getMailEnable() {
+        return settings.getAsBoolean("duniter.mail.enable", Boolean.TRUE);
     }
 
     public String getMailSmtpHost()  {
@@ -86,7 +109,54 @@ public class PluginSettings extends org.duniter.elasticsearch.PluginSettings {
         return settings.get("duniter.mail.subject.prefix", "[Duniter4j ES]");
     }
 
+    /* -- delegate methods -- */
+
+    public String getClusterName() {
+        return delegate.getClusterName();
+    }
+
+    public String getNodeBmaHost() {
+        return delegate.getNodeBmaHost();
+    }
+
+    public int getNodeBmaPort() {
+        return delegate.getNodeBmaPort();
+    }
+
+    public int getIndexBulkSize() {
+        return delegate.getIndexBulkSize();
+    }
+
+    public boolean enableBlockchainSync() {
+        return delegate.enableBlockchainSync();
+    }
+
+    public String getKeyringSalt() {
+        return delegate.getKeyringSalt();
+    }
+
+    public String getKeyringPassword() {
+        return delegate.getKeyringPassword();
+    }
+
+    public String getKeyringPublicKey() {
+        return delegate.getKeyringPublicKey();
+    }
+
+    public String getKeyringSecretKey() {
+        return delegate.getKeyringSecretKey();
+    }
+
+    public void addI18nBundleName(String bundleName) {
+        delegate.addI18nBundleName(bundleName);
+    }
+
+
+    /* -- protected methods -- */
+
     protected String getI18nBundleName() {
         return "duniter4j-es-user-i18n";
     }
+
+
 }

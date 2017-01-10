@@ -23,7 +23,7 @@ package org.duniter.core.client.model.bma.gson;
  */
 
 
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.gson.*;

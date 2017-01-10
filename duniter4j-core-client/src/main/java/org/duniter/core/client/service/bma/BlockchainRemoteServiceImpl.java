@@ -22,7 +22,11 @@ package org.duniter.core.client.service.bma;
  * #L%
  */
 
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.bma.gson.JsonArrayParser;
@@ -33,16 +37,11 @@ import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.cache.Cache;
 import org.duniter.core.util.cache.SimpleCache;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -325,10 +324,10 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
      * @throws PubkeyAlreadyUsedException if pubkey already used by another member
      */
     public void checkNotMemberIdentity(Peer peer, Identity identity) throws UidAlreadyUsedException, PubkeyAlreadyUsedException {
-        ObjectUtils.checkNotNull(peer);
-        ObjectUtils.checkNotNull(identity);
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(identity.getUid()));
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(identity.getPubkey()));
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(identity);
+        Preconditions.checkArgument(StringUtils.isNotBlank(identity.getUid()));
+        Preconditions.checkArgument(StringUtils.isNotBlank(identity.getPubkey()));
 
         // Read membership data from the UID
         BlockchainMemberships result = getMembershipByPubkeyOrUid(peer, identity.getUid());
@@ -353,7 +352,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
      * @throws UidMatchAnotherPubkeyException is uid already used by another pubkey
      */
     public void loadAndCheckMembership(Peer peer, Wallet wallet) throws UidMatchAnotherPubkeyException {
-        ObjectUtils.checkNotNull(wallet);
+        Preconditions.checkNotNull(wallet);
 
         // Load membership data
         loadMembership(null, peer, wallet.getIdentity(), true);
@@ -375,7 +374,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
 
     public BlockchainMemberships getMembershipByUid(long currencyId, String uid) {
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(uid));
+        Preconditions.checkArgument(StringUtils.isNotBlank(uid));
 
         BlockchainMemberships result = getMembershipByPubkeyOrUid(currencyId, uid);
         if (result == null || !uid.equals(result.getUid())) {
@@ -385,7 +384,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     public BlockchainMemberships getMembershipByPublicKey(long currencyId, String pubkey) {
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(pubkey));
+        Preconditions.checkArgument(StringUtils.isNotBlank(pubkey));
 
         BlockchainMemberships result = getMembershipByPubkeyOrUid(currencyId, pubkey);
         if (result == null || !pubkey.equals(result.getPubkey())) {
@@ -398,9 +397,9 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
      * Request to integrate the wot
      */
     public void requestMembership(Wallet wallet) {
-        ObjectUtils.checkNotNull(wallet);
-        ObjectUtils.checkNotNull(wallet.getCurrencyId());
-        ObjectUtils.checkNotNull(wallet.getCertTimestamp());
+        Preconditions.checkNotNull(wallet);
+        Preconditions.checkNotNull(wallet.getCurrencyId());
+        Preconditions.checkNotNull(wallet.getCertTimestamp());
 
         BlockchainBlock block = getCurrentBlock(wallet.getCurrencyId());
 
@@ -605,10 +604,10 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
 
     protected void loadMembership(Long currencyId, Peer peer, Identity identity, boolean checkLookupForNonMember) {
-        ObjectUtils.checkNotNull(identity);
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(identity.getUid()));
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(identity.getPubkey()));
-        ObjectUtils.checkArgument(peer != null || currencyId != null);
+        Preconditions.checkNotNull(identity);
+        Preconditions.checkArgument(StringUtils.isNotBlank(identity.getUid()));
+        Preconditions.checkArgument(StringUtils.isNotBlank(identity.getPubkey()));
+        Preconditions.checkArgument(peer != null || currencyId != null);
 
         // Read membership data from the UID
         BlockchainMemberships result = peer != null

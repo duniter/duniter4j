@@ -47,8 +47,4 @@ public interface CurrencyRegistryRemoteService extends Service {
     boolean isNodeAlive(Peer peer);
 
     List<String> getAllCurrencyNames();
-
-    void registerNewCurrency(Wallet wallet, Currency currency);
-
-    void registerNewCurrency(String pubkey, String jsonCurrency, String signature);
 }

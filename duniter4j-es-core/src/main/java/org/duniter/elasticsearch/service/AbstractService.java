@@ -24,19 +24,19 @@ package org.duniter.elasticsearch.service;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.google.gson.JsonSyntaxException;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.concurrent.ConcurrentException;
 import org.duniter.core.beans.Bean;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
@@ -62,8 +62,6 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
@@ -71,7 +69,6 @@ import org.nuiton.i18n.I18n;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 /**
@@ -79,9 +76,6 @@ import java.util.regex.Pattern;
  */
 public abstract class AbstractService implements Bean {
 
-    protected static final String JSON_STRING_PROPERTY_REGEX = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
-    protected static final String REGEX_WORD_SEPARATOR = "[-\\t@# _]+";
-    protected static final String REGEX_SPACE = "[\\t\\n\\r ]+";
 
     protected final ESLogger logger;
     protected final Client client;
@@ -184,34 +178,30 @@ public abstract class AbstractService implements Bean {
             readAndVerifyIssuerSignature(recordJson, actualObj);
             return actualObj;
         }
-        catch(IOException | JsonSyntaxException e) {
+        catch(IOException e) {
             throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
         }
     }
 
     protected void readAndVerifyIssuerSignature(String recordJson, JsonNode actualObj) throws ElasticsearchException {
 
-        try {
-            Set<String> fieldNames = ImmutableSet.copyOf(actualObj.fieldNames());
-            if (!fieldNames.contains(Record.PROPERTY_ISSUER)
-                    || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
-                throw new InvalidFormatException(String.format("Invalid record JSON format. Required fields [%s,%s]", Record.PROPERTY_ISSUER, Record.PROPERTY_SIGNATURE));
-            }
-            String issuer = getMandatoryField(actualObj, Record.PROPERTY_ISSUER).asText();
-            String signature = getMandatoryField(actualObj, Record.PROPERTY_SIGNATURE).asText();
-
-            String recordNoSign = recordJson.replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_SIGNATURE), "")
-                    .replaceAll(String.format(JSON_STRING_PROPERTY_REGEX, Record.PROPERTY_HASH), "");
-
-            if (!cryptoService.verify(recordNoSign, signature, issuer)) {
-                throw new InvalidSignatureException("Invalid signature of JSON string");
-            }
-
-            // TODO: check issuer is in the WOT ?
+        Set<String> fieldNames = ImmutableSet.copyOf(actualObj.fieldNames());
+        if (!fieldNames.contains(Record.PROPERTY_ISSUER)
+                || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
+            throw new InvalidFormatException(String.format("Invalid record JSON format. Required fields [%s,%s]", Record.PROPERTY_ISSUER, Record.PROPERTY_SIGNATURE));
         }
-        catch(JsonSyntaxException e) {
-            throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
+        String issuer = getMandatoryField(actualObj, Record.PROPERTY_ISSUER).asText();
+        String signature = getMandatoryField(actualObj, Record.PROPERTY_SIGNATURE).asText();
+
+        // Remove hash and signature
+        recordJson = JacksonUtils.removeAttribute(recordJson, Record.PROPERTY_SIGNATURE);
+        recordJson = JacksonUtils.removeAttribute(recordJson, Record.PROPERTY_HASH);
+
+        if (!cryptoService.verify(recordJson, signature, issuer)) {
+            throw new InvalidSignatureException("Invalid signature of JSON string");
         }
+
+        // TODO: check issuer is in the WOT ?
     }
 
     protected void checkSameDocumentIssuer(String index, String type, String id, String expectedIssuer) throws ElasticsearchException {
@@ -305,7 +295,7 @@ public abstract class AbstractService implements Bean {
             }
             return result;
         }
-        catch(SearchPhaseExecutionException | JsonSyntaxException e) {
+        catch(SearchPhaseExecutionException e) {
             // Failed or no item on index
             throw new TechnicalException(String.format("[%s/%s] Unable to retrieve fields [%s] for id [%s]",
                     index, type,
@@ -347,7 +337,7 @@ public abstract class AbstractService implements Bean {
             }
             return result;
         }
-        catch(SearchPhaseExecutionException | JsonSyntaxException e) {
+        catch(SearchPhaseExecutionException e) {
             // Failed or no item on index
             throw new TechnicalException(String.format("[%s/%s] Unable to retrieve field [%s] for ids [%s]",
                     index, type, fieldName,
@@ -424,7 +414,7 @@ public abstract class AbstractService implements Bean {
             }
             return null;
         }
-        catch(SearchPhaseExecutionException | JsonSyntaxException | IOException e) {
+        catch(SearchPhaseExecutionException | IOException e) {
             // Failed to get source
             throw new TechnicalException(String.format("[%s/%s] Error while getting [%s]",
                     index, type,

@@ -30,6 +30,7 @@ import org.nuiton.config.ApplicationConfigHelper;
 import org.nuiton.config.ApplicationConfigProvider;
 import org.nuiton.config.ArgumentsParserException;
 import org.nuiton.version.Version;
+import org.nuiton.version.VersionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -211,7 +212,8 @@ public class Configuration  {
     }
 
     public Version getVersion() {
-        return applicationConfig.getOptionAsVersion(ConfigurationOption.VERSION.getKey());
+        String versionStr = applicationConfig.getOption(ConfigurationOption.VERSION.getKey());
+        return VersionBuilder.create(versionStr).build();
     }
 
     public File getI18nDirectory() {

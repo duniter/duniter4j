@@ -24,12 +24,12 @@ package org.duniter.elasticsearch.gchange.service;
 
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
-import org.duniter.elasticsearch.gchange.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.Protocol;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.duniter.elasticsearch.user.PluginSettings;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 
@@ -41,7 +41,7 @@ public class SynchroService extends AbstractSynchroService {
     @Inject
     public SynchroService(Client client, PluginSettings settings, CryptoService cryptoService,
                           ThreadPool threadPool, final ServiceLocator serviceLocator) {
-        super(client, settings, cryptoService, threadPool, serviceLocator);
+        super(client, settings.getDelegate(), cryptoService, threadPool, serviceLocator);
     }
 
     public void synchronize() {

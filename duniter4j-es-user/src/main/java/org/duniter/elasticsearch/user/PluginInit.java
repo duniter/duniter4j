@@ -64,19 +64,16 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             // Waiting cluster back to GREEN or YELLOW state, before synchronize
             threadPool.scheduleOnClusterHealthStatus(() -> {
                 synchronize();
+
+                // Notify admin
+                injector.getInstance(UserEventService.class)
+                        .notifyAdmin(new UserEvent(
+                                UserEvent.EventType.INFO,
+                                UserEventCodes.NODE_STARTED.name(),
+                                I18n.n("duniter.event.NODE_STARTED"),
+                                clusterName));
             }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
         }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
-
-        // When started
-        threadPool.scheduleOnStarted(() -> {
-            // Notify admin
-            injector.getInstance(UserEventService.class)
-                    .notifyAdmin(new UserEvent(
-                            UserEvent.EventType.INFO,
-                            UserEventCodes.NODE_STARTED.name(),
-                            I18n.n("duniter.event.NODE_STARTED"),
-                            clusterName));
-        });
     }
 
     @Override

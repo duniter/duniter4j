@@ -47,7 +47,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     private final ThreadPool threadPool;
     private final Injector injector;
     private final static ESLogger logger = Loggers.getLogger("duniter.core");
-    private final Client client;
 
     @Inject
     public PluginInit(Client client, Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
@@ -55,7 +54,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
         this.injector = injector;
-        this.client = client;
     }
 
     @Override

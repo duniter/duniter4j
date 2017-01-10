@@ -54,12 +54,123 @@ import static org.nuiton.i18n.I18n.t;
  * @author Benoit Lavenier <benoit.lavenier@e-is.pro>
  * @since 1.0
  */
-public class PluginSettings extends org.duniter.elasticsearch.user.PluginSettings {
+public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
+
+    private org.duniter.elasticsearch.user.PluginSettings delegate;
 
     @Inject
-    public PluginSettings(org.elasticsearch.common.settings.Settings settings) {
+    public PluginSettings(org.elasticsearch.common.settings.Settings settings,
+                          org.duniter.elasticsearch.user.PluginSettings delegate) {
         super(settings);
+        this.delegate = delegate;
+
+        // Add i18n bundle name
+        delegate.addI18nBundleName(getI18nBundleName());
+
     }
+
+    @Override
+    protected void doStart() {
+
+    }
+
+    @Override
+    protected void doStop() {
+
+    }
+
+    @Override
+    protected void doClose() {
+
+    }
+
+    public org.duniter.elasticsearch.user.PluginSettings getDelegate() {
+        return delegate;
+    }
+
+    /* -- delegate methods -- */
+
+    public boolean reloadIndices() {
+        return delegate.reloadIndices();
+    }
+
+    public boolean enableDataSync() {
+        return delegate.enableDataSync();
+    }
+
+    public boolean getMailEnable() {
+        return delegate.getMailEnable();
+    }
+
+    public String getMailSmtpHost() {
+        return delegate.getMailSmtpHost();
+    }
+
+    public int getMailSmtpPort() {
+        return delegate.getMailSmtpPort();
+    }
+
+    public String getMailSmtpUsername() {
+        return delegate.getMailSmtpUsername();
+    }
+
+    public String getMailSmtpPassword() {
+        return delegate.getMailSmtpPassword();
+    }
+
+    public String getMailAdmin() {
+        return delegate.getMailAdmin();
+    }
+
+    public String getMailFrom() {
+        return delegate.getMailFrom();
+    }
+
+    public String getMailSubjectPrefix() {
+        return delegate.getMailSubjectPrefix();
+    }
+
+    public String getClusterName() {
+        return delegate.getClusterName();
+    }
+
+    public String getNodeBmaHost() {
+        return delegate.getNodeBmaHost();
+    }
+
+    public int getNodeBmaPort() {
+        return delegate.getNodeBmaPort();
+    }
+
+    public int getIndexBulkSize() {
+        return delegate.getIndexBulkSize();
+    }
+
+    public boolean enableBlockchainSync() {
+        return delegate.enableBlockchainSync();
+    }
+
+    public String getKeyringSalt() {
+        return delegate.getKeyringSalt();
+    }
+
+    public String getKeyringPassword() {
+        return delegate.getKeyringPassword();
+    }
+
+    public String getKeyringPublicKey() {
+        return delegate.getKeyringPublicKey();
+    }
+
+    public String getKeyringSecretKey() {
+        return delegate.getKeyringSecretKey();
+    }
+
+    public String getDefaultStringAnalyzer() {
+        return delegate.getDefaultStringAnalyzer();
+    }
+
+    /* -- protected methods -- */
 
     protected String getI18nBundleName() {
         return "duniter4j-es-gchange-i18n";

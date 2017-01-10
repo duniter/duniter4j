@@ -38,7 +38,7 @@ package org.duniter.elasticsearch.service.changes;
     limitations under the License.
 */
 
-import com.google.common.base.Preconditions;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.CollectionUtils;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;

@@ -32,6 +32,7 @@ import org.duniter.core.client.config.ConfigurationProvider;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.StringUtils;
+import org.duniter.elasticsearch.i18n.I18nInitializer;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.elasticsearch.common.component.*;
 import org.elasticsearch.common.inject.Inject;
@@ -48,6 +49,8 @@ import org.nuiton.i18n.init.UserI18nInitializer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -61,6 +64,8 @@ import static org.nuiton.i18n.I18n.t;
 public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
 
     protected final Settings settings;
+
+    private List<String> i18nBundleNames = new ArrayList<>(); // Default
 
     /**
      * Delegate application config.
@@ -76,9 +81,11 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         this.applicationConfig = new ApplicationConfig();
 
         // Cascade the application config to the client module
-        clientConfig = new org.duniter.core.client.config.Configuration(applicationConfig);
+        clientConfig = new org.duniter.core.client.config.Configuration(this.applicationConfig);
         Configuration.setInstance(clientConfig);
 
+        // Set the default bundle name
+        addI18nBundleName(getI18nBundleName());
     }
 
     @Override
@@ -134,6 +141,8 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         catch(IOException e) {
             logger.error(String.format("Could not init i18n: %s", e.getMessage()), e);
         }
+
+        initVersion(applicationConfig);
     }
 
     @Override
@@ -250,38 +259,6 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.data.sync.port", 80);
     }
 
-    public boolean getMailEnable() {
-        return settings.getAsBoolean("duniter.mail.enable", Boolean.TRUE);
-    }
-
-    public String getMailSmtpHost()  {
-        return settings.get("duniter.mail.smtp.host", "localhost");
-    }
-
-    public int getMailSmtpPort()  {
-        return settings.getAsInt("duniter.mail.smtp.port", 25);
-    }
-
-    public String getMailSmtpUsername()  {
-        return settings.get("duniter.mail.smtp.username");
-    }
-
-    public String getMailSmtpPassword()  {
-        return settings.get("duniter.mail.smtp.password");
-    }
-
-    public String getMailAdmin()  {
-        return settings.get("duniter.mail.admin");
-    }
-
-    public String getMailFrom()  {
-        return settings.get("duniter.mail.from", "no-reply@duniter.fr");
-    }
-
-    public String getMailSubjectPrefix()  {
-        return settings.get("duniter.mail.subject.prefix", "[Duniter4j ES]");
-    }
-
     public String getWebSocketHost()  {
         return settings.get("network.host", "locahost");
     }
@@ -326,12 +303,35 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
                     i18nLocale, i18nDirectory));
         }
 
-        I18n.init(new UserI18nInitializer(
-                        i18nDirectory, new DefaultI18nInitializer(getI18nBundleName())),
+        I18n.init(new I18nInitializer(i18nDirectory, getI18nBundleNames()),
                 i18nLocale);
     }
 
     protected String getI18nBundleName() {
         return "duniter4j-es-core-i18n";
+    }
+
+    protected String[] getI18nBundleNames() {
+        return i18nBundleNames.toArray(new String[i18nBundleNames.size()]);
+    }
+
+    public void addI18nBundleName(String i18nBundleName) {
+        if (!this.i18nBundleNames.contains(i18nBundleName)) {
+            this.i18nBundleNames.add(i18nBundleName);
+        }
+    }
+
+    /**
+     * Override the version default option, from the MANIFEST implementation version (if any)
+     * @param applicationConfig
+     */
+    protected void initVersion(ApplicationConfig applicationConfig) {
+        // Override application version
+        String implementationVersion = this.getClass().getPackage().getSpecificationVersion();
+        if (implementationVersion != null) {
+            applicationConfig.setDefaultOption(
+                    ConfigurationOption.VERSION.getKey(),
+                    implementationVersion);
+        }
     }
 }
