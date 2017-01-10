@@ -27,6 +27,8 @@ import com.google.common.collect.Multimap;
 import com.google.gson.GsonBuilder;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.util.json.JsonArrayParser;
+import org.duniter.core.util.json.JsonAttributeParser;
 
 import java.util.List;
 

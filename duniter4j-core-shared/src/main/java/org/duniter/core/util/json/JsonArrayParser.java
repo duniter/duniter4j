@@ -1,4 +1,4 @@
-package org.duniter.core.client.model.bma.gson;
+package org.duniter.core.util.json;
 
 /*
  * #%L
@@ -22,7 +22,6 @@ package org.duniter.core.client.model.bma.gson;
  * #L%
  */
 
-import com.google.gson.JsonParseException;
 import org.duniter.core.util.CollectionUtils;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ public class JsonArrayParser {
         READING_ARRAY
     }
 
-    public String[] getValuesAsArray(String jsonArray) throws JsonParseException {
+    public String[] getValuesAsArray(String jsonArray) throws JsonSyntaxException {
         List<String> result = getValuesAsList(jsonArray);
         if (CollectionUtils.isEmpty(result)) {
             return null;
@@ -48,7 +47,7 @@ public class JsonArrayParser {
         return result.toArray(new String[result.size()]);
     }
 
-    public List<String> getValuesAsList(String jsonArray) throws JsonParseException {
+    public List<String> getValuesAsList(String jsonArray) throws JsonSyntaxException {
         ParserState state = ParserState.READING_ARRAY;
         List<String> result = new ArrayList<String>();
         StringBuilder currentObject = null;
@@ -67,7 +66,7 @@ public class JsonArrayParser {
                 }
                 case '}': {
                     if (state == ParserState.READING_ARRAY) {
-                        throw new JsonParseException("unexpected '}' at " + i);
+                        throw new JsonSyntaxException("unexpected '}' at " + i);
                     } else {
                         currentObject.append(c);
                         parenthesisBalance--;

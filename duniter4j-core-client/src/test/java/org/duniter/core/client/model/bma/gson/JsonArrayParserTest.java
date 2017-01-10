@@ -22,6 +22,7 @@ package org.duniter.core.client.model.bma.gson;
  * #L%
  */
 
+import org.duniter.core.util.json.JsonArrayParser;
 import org.junit.Assert;
 import org.junit.Test;
 

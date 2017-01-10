@@ -3,9 +3,9 @@ package org.duniter.core.client.model.bma.jackson;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.google.gson.JsonParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.core.util.json.JsonSyntaxException;
 
 import java.io.IOException;
 
@@ -22,7 +22,7 @@ public class CertificationDeserializer extends JsonDeserializer<BlockchainBlock.
 
         String[] parts = certificationStr.split(":");
         if (parts.length != 4) {
-            throw new JsonParseException(String.format("Bad format for BlockchainBlock.Certification. Should have 4 parts, but found %s.", parts.length));
+            throw new JsonSyntaxException(String.format("Bad format for BlockchainBlock.Certification. Should have 4 parts, but found %s.", parts.length));
         }
 
         BlockchainBlock.Certification result = new BlockchainBlock.Certification();

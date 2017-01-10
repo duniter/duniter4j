@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.NetworkPeering;
-import org.duniter.core.client.model.bma.gson.JsonArrayParser;
-import org.duniter.core.client.model.bma.gson.JsonAttributeParser;
+import org.duniter.core.util.json.JsonArrayParser;
+import org.duniter.core.util.json.JsonAttributeParser;
 
 import java.util.List;
 

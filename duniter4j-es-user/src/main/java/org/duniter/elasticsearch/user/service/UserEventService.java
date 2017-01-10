@@ -191,8 +191,8 @@ public class UserEventService extends AbstractService implements ChangeService.C
             signedEvent.setSignature(signature);
             eventJson = toJson(signedEvent);
         } else {
+            logger.debug("Could not generate hash for new user event (no keyring)");
             // Node has not keyring: do NOT sign it
-            // TODO : autogen a key pair ?
             eventJson = event.toJson(locale);
         }
 
@@ -377,14 +377,23 @@ public class UserEventService extends AbstractService implements ChangeService.C
     }
 
     private KeyPair getNodeKeyPairOrNull(PluginSettings pluginSettings) {
-
+        KeyPair result;
         if (StringUtils.isNotBlank(pluginSettings.getKeyringSalt()) &&
                 StringUtils.isNotBlank(pluginSettings.getKeyringPassword())) {
-            return cryptoService.getKeyPair(pluginSettings.getKeyringSalt(),
+            result = cryptoService.getKeyPair(pluginSettings.getKeyringSalt(),
                     pluginSettings.getKeyringPassword());
         }
+        else {
+            // Use a ramdom keypair
+            result = cryptoService.getRandomKeypair();
+            logger.warn(String.format("No keyring in config. salt/password (or keyring) is need to signed user event documents. Will use a generated key [%s]", getNodePubKey(result)));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("    salt: " + pluginSettings.getKeyringSalt().replaceAll(".", "*")));
+                logger.debug(String.format("password: " + pluginSettings.getKeyringPassword().replaceAll(".", "*")));
+            }
+        }
 
-        return null;
+        return result;
     }
 
     private String getNodePubKey(KeyPair nodeKeyPair) {

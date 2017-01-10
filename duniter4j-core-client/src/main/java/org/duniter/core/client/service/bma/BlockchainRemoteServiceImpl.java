@@ -29,7 +29,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
-import org.duniter.core.client.model.bma.gson.JsonArrayParser;
+import org.duniter.core.util.json.JsonArrayParser;
 import org.duniter.core.client.model.local.Identity;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;

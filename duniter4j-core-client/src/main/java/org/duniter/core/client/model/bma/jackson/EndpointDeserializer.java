@@ -1,13 +1,9 @@
 package org.duniter.core.client.model.bma.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.google.gson.JsonParseException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.util.InetAddressUtils;
-import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.EndpointProtocol;
 import org.duniter.core.client.model.bma.NetworkPeering;
 

@@ -98,6 +98,11 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
     }
 
     @Override
+    public KeyPair getRandomKeypair() {
+        return getKeyPairFromSeed(String.valueOf(System.currentTimeMillis()).getBytes());
+    }
+
+    @Override
     public String sign(String message, byte[] secretKey) {
         byte[] messageBinary = CryptoUtils.decodeUTF8(message);
         return CryptoUtils.encodeBase64(

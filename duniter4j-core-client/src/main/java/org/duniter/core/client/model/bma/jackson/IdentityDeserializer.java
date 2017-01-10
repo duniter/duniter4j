@@ -1,12 +1,11 @@
 package org.duniter.core.client.model.bma.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.google.gson.JsonParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.core.util.json.JsonSyntaxException;
 
 import java.io.IOException;
 
@@ -24,7 +23,7 @@ public class IdentityDeserializer extends JsonDeserializer<BlockchainBlock.Ident
 
         String[] identityParts = identityStr.split(":");
         if (identityParts.length != 4) {
-            throw new JsonParseException(String.format("Bad format for BlockchainBlock.Identity. Should have 4 parts, but found %s.", identityParts.length));
+            throw new JsonSyntaxException(String.format("Bad format for BlockchainBlock.Identity. Should have 4 parts, but found %s.", identityParts.length));
         }
 
         BlockchainBlock.Identity result = new BlockchainBlock.Identity();

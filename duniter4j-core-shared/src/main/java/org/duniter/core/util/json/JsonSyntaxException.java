@@ -1,4 +1,4 @@
-package org.duniter.core.client.service.exception;
+package org.duniter.core.util.json;
 
 /*
  * #%L

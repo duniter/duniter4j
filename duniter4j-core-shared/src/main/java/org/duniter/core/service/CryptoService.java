@@ -53,6 +53,8 @@ public interface CryptoService extends Bean {
      */
     KeyPair getKeyPairFromSeed(byte[] seed);
 
+    KeyPair getRandomKeypair();
+
     String sign(String message, byte[] secretKey);
 
     String sign(String message, String secretKey);
