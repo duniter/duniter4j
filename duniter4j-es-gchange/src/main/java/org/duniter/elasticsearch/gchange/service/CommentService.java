@@ -24,7 +24,6 @@ package org.duniter.elasticsearch.gchange.service;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.gson.JsonSyntaxException;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.elasticsearch.RecordComment;
 import org.duniter.core.exception.TechnicalException;
@@ -34,7 +33,6 @@ import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.gchange.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
-import org.duniter.elasticsearch.gchange.service.AbstractService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.HistoryService;
@@ -247,7 +245,7 @@ public class CommentService extends AbstractService {
             SearchResponse response = searchRequest.execute().actionGet();
             return response.getHits().getTotalHits();
         }
-        catch(SearchPhaseExecutionException | JsonSyntaxException e) {
+        catch(SearchPhaseExecutionException e) {
             // Failed or no item on index
             logger.error(String.format("Error while counting comment replies: %s", e.getMessage()), e);
         }

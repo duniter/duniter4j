@@ -26,7 +26,6 @@ package org.duniter.elasticsearch.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
-import com.google.gson.JsonSyntaxException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.MailService;
@@ -446,7 +445,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
             // last flush
             flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
         }
-        catch(SearchPhaseExecutionException | JsonSyntaxException e) {
+        catch(SearchPhaseExecutionException e) {
             // Failed or no item on index
             logger.error(String.format("Error while deleting by reference: %s. Skipping deletions.", e.getMessage()), e);
         }

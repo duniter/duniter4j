@@ -38,7 +38,6 @@ import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.gchange.PluginSettings;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
-import org.duniter.elasticsearch.gchange.service.AbstractService;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
