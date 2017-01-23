@@ -152,7 +152,7 @@ public interface BlockchainRemoteService extends Service {
     BlockchainParameters getBlockchainParametersFromPeer(Peer peer);
 
     /**
-     * Retrieve the last block with UD
+     * Retrieve the last emitted UD (or ud0 if not UD emitted yet)
      *
      * @param currencyId id of currency
      * @return
@@ -160,7 +160,7 @@ public interface BlockchainRemoteService extends Service {
     long getLastUD(long currencyId);
 
     /**
-     * Retrieve the last block with UD, from a peer
+     * Retrieve the last emitted UD, from a peer (or ud0 if not UD emitted yet)
      *
      * @param currencyId id of currency
      * @return

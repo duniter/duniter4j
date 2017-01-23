@@ -24,7 +24,6 @@ package org.duniter.core.client.model.elasticsearch;
 
 
 import org.duniter.core.client.model.bma.BlockchainParameters;
-import org.duniter.core.client.model.local.Peer;
 
 import java.io.Serializable;
 
@@ -33,24 +32,23 @@ import java.io.Serializable;
  */
 public class Currency implements Serializable {
 
-    public static final String PROPERTY_CURRENCY_NAME="currencyName";
+    public static final String PROPERTY_CURRENCY  = "currency";
 
-    private String currencyName;
+    private String currency;
     private Integer membersCount;
     private String firstBlockSignature;
     private Long lastUD;
     private BlockchainParameters parameters;
-    private Peer peers[];
 
     private String[] tags;
-    private String senderPubkey;
+    private String issuer;
 
-    public String getCurrencyName() {
-        return currencyName;
+    public String getCurrency() {
+        return currency;
     }
 
-    public void setCurrencyName(String currencyName) {
-        this.currencyName = currencyName;
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
     public Integer getMembersCount() {
@@ -85,14 +83,6 @@ public class Currency implements Serializable {
         this.parameters = parameters;
     }
 
-    public Peer[] getPeers() {
-        return peers;
-    }
-
-    public void setPeers(Peer[] peers) {
-        this.peers = peers;
-    }
-
     public String[] getTags() {
         return tags;
     }
@@ -101,11 +91,11 @@ public class Currency implements Serializable {
         this.tags = tags;
     }
 
-    public String getSenderPubkey() {
-        return senderPubkey;
+    public String getIssuer() {
+        return issuer;
     }
 
-    public void setSenderPubkey(String senderPubkey) {
-        this.senderPubkey = senderPubkey;
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 }

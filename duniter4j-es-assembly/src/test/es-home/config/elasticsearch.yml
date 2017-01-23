@@ -15,14 +15,14 @@
 # Use a descriptive name for your cluster:
 #
 # cluster.name: my-application
-cluster.name: duniter4j-elasticsearch-TEST
+cluster.name: gtest-duniter-es
 #
 # ------------------------------------ Node ------------------------------------
 #
 #
 # Use a descriptive name for the node:
 #
-# node.name: node-1
+node.name: EIS-DEV
 #
 # Add custom attributes to the node:
 #
@@ -126,13 +126,10 @@ duniter.blockchain.sync.enable: true
 #
 # Duniter node to synchronize
 #
-#duniter.host: cgeek.fr
-#duniter.port: 9330
-#duniter.host: test-net.duniter.fr
-duniter.host: 192.168.0.5
-duniter.port: 9201
-#duniter.host: 192.168.0.28
-#duniter.port: 21378
+
+duniter.host: gtest.duniter.fr
+duniter.port: 10900
+
 #
 # ---------------------------------- Duniter4j security -------------------------
 #
@@ -156,27 +153,27 @@ duniter.security.enable: true
 #
 # Should synchronize data using P2P
 #
-duniter.data.sync.enable: true
-duniter.data.sync.host: data.duniter.fr
-duniter.data.sync.port: 80
+duniter.data.sync.enable: false
+#duniter.data.sync.host: data.duniter.fr
+#duniter.data.sync.port: 80
 
 # ---------------------------------- Duniter4j SMTP server -------------------------
 #
 # SMTP server configuration (host and port)
 #
-#duniter.mail.enable: false
+duniter.mail.enable: false
 #duniter.mail.smtp.host: localhost
 #duniter.mail.smtp.port: 25
 #
 # Mail 'from' address
 #
 #duniter.mail.from: no-reply@domain.com
-duniter.mail.from: root@EIS-DEV
+#duniter.mail.from: root@EIS-DEV
 #
 # Mail: admin address
 #
 #duniter.mail.admin: user@domain.com
-duniter.mail.admin: blavenie@EIS-DEV
+#duniter.mail.admin: blavenie@EIS-DEV
 #
 # Mail subject prefix
 #

@@ -753,7 +753,12 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
             return null;
         }
 
-        String[] blockNumbers = json.substring(startIndex+arrayPrefix.length()+1,endIndex).trim().split(",");
+        String jsonArrayContent = json.substring(startIndex+arrayPrefix.length(),endIndex).trim();
+        if (jsonArrayContent.length() == 0) {
+            return null;
+        }
+
+        String[] blockNumbers = jsonArrayContent.split(",");
 
         try {
             int[] result = new int[blockNumbers.length];

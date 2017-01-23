@@ -196,7 +196,7 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
                     @Override
                     public Long load(final Long currencyId) {
                         // Retrieve the last UD from the blockchain
-                        final long lastUD = blockchainRemoteService.getLastUD(currencyId);
+                        final Long lastUD = blockchainRemoteService.getLastUD(currencyId);
 
                         // Update currency
                         Currency currency = getCurrencyById(currencyId);

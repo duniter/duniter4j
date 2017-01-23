@@ -31,9 +31,9 @@ import com.google.common.collect.Lists;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointProtocol;
+import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.util.json.JsonAttributeParser;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
-import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
 import org.duniter.core.client.service.exception.BlockNotFoundException;
@@ -82,6 +82,7 @@ import java.util.*;
 public class BlockchainService extends AbstractService {
 
     public static final String BLOCK_TYPE = "block";
+    public static final String PEER_TYPE = "peer";
     public static final String CURRENT_BLOCK_ID = "current";
 
     private static final int SYNC_MISSING_BLOCK_MAX_RETRY = 5;
@@ -292,7 +293,8 @@ public class BlockchainService extends AbstractService {
                 //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(BLOCK_TYPE, createBlockType());
+        createIndexRequestBuilder.addMapping(BLOCK_TYPE, createBlockTypeMapping());
+        createIndexRequestBuilder.addMapping(PEER_TYPE, createPeerTypeMapping());
         createIndexRequestBuilder.execute().actionGet();
     }
 
@@ -620,7 +622,7 @@ public class BlockchainService extends AbstractService {
     /* -- Internal methods -- */
 
 
-    public XContentBuilder createBlockType() {
+    public XContentBuilder createBlockTypeMapping() {
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder()
                     .startObject()
@@ -635,6 +637,12 @@ public class BlockchainService extends AbstractService {
                     // hash
                     .startObject("hash")
                     .field("type", "string")
+                    .endObject()
+
+                    // issuer
+                    .startObject("issuer")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // previous hash
@@ -652,14 +660,53 @@ public class BlockchainService extends AbstractService {
                     .field("type", "string")
                     .endObject()
 
+                    // unitbase
+                    .startObject("unitbase")
+                    .field("type", "integer")
+                    .endObject()
+
                     // membersChanges
                     .startObject("monetaryMass")
-                    .field("type", "string")
+                    .field("type", "long")
+                    .endObject()
+
+                    // dividend
+                    .startObject("dividend")
+                    .field("type", "integer")
                     .endObject()
 
                     // identities:
                     //.startObject("identities")
                     //.endObject()
+
+                    .endObject()
+                    .endObject().endObject();
+
+            return mapping;
+        }
+        catch(IOException ioe) {
+            throw new TechnicalException("Error while getting mapping for block index: " + ioe.getMessage(), ioe);
+        }
+    }
+
+    public XContentBuilder createPeerTypeMapping() {
+        try {
+            XContentBuilder mapping = XContentFactory.jsonBuilder()
+                    .startObject()
+                    .startObject(PEER_TYPE)
+                    .startObject("properties")
+
+                    // currency
+                    .startObject("currency")
+                    .field("type", "string")
+                    .endObject()
+
+                    // pubkey
+                    .startObject("pubkey")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
 
                     .endObject()
                     .endObject().endObject();

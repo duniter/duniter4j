@@ -132,6 +132,16 @@ public class BlockchainRemoteServiceTest {
     }
 
     @Test
+    public void getLastUD() throws Exception {
+        Peer peer = createTestPeer();
+
+        // Get the last UD
+        BlockchainRemoteService blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
+        long lastUD = blockchainRemoteService.getLastUD(peer);
+    }
+
+
+    @Test
     public void addNewBlockListener() throws Exception {
 
         isWebSocketNewBlockReceived = false;

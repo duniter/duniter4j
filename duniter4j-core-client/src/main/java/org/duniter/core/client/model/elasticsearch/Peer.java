@@ -1,4 +1,4 @@
-package org.duniter.core.client.model.local;
+package org.duniter.core.client.model.elasticsearch;
 
 /*
  * #%L
@@ -23,16 +23,14 @@ package org.duniter.core.client.model.local;
  */
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.Serializable;
 
-public class Peer implements LocalEntity, Serializable {
+public class Peer implements Serializable {
 
-    private Long id;
-    private Long currencyId;
+    private String currency;
     private String host;
     private int port;
+    private String path;
     private String url;
 
     public Peer() {
@@ -40,9 +38,14 @@ public class Peer implements LocalEntity, Serializable {
     }
 
     public Peer(String host, int port) {
+        this(host, port, null);
+    }
+
+    public Peer(String host, int port, String path) {
         this.host = host;
         this.port = port;
-        this.url = initUrl(host, port);
+        this.url = initUrl(host, port, path);
+        this.path = path;
     }
 
     public String getHost() {
@@ -57,39 +60,34 @@ public class Peer implements LocalEntity, Serializable {
         return url;
     }
 
-    public Long getId() {
-        return id;
+    public String getCurrency() {
+        return currency;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getCurrencyId() {
-        return currencyId;
-    }
-
-    public void setCurrencyId(Long currencyId) {
-        this.currencyId = currencyId;
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
     public void setPort(int port) {
         this.port = port;
-        this.url = initUrl(host, port);
+        this.url = initUrl(host, port, path);
     }
 
     public void setHost(String host) {
         this.host = host;
-        this.url = initUrl(host, port);
+        this.url = initUrl(host, port, path);
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+        this.url = initUrl(host, port, path);
     }
 
     public String toString() {
-/*
-        return new StringBuilder().append("url=").append(url).append(",")
-                .append("host=").append(host).append(",")
-                .append("port=").append(port)
-                .toString();
-*/
         return new StringBuilder().append(host)
                 .append(":")
                 .append(port)
@@ -101,15 +99,23 @@ public class Peer implements LocalEntity, Serializable {
         if (o == null) {
             return false;
         }
-        if (id != null && o instanceof Peer) {
-            return id.equals(((Peer)o).getId());
+        if (currency != null && o instanceof Peer) {
+            if (!currency.equals(((Peer) o).getCurrency())) {
+                return false;
+            }
+            if (!getUrl().equals(((Peer) o).getUrl())) {
+                return false;
+            }
         }
         return super.equals(o);
     }
 
     /* -- Internal methods -- */
 
-    protected String initUrl(String host, int port) {
-        return String.format("http://%s:%s", host, port);
+    protected String initUrl(String host, int port, String path) {
+        return String.format("%s://%s:%s%s",
+                port == 443 ? "https" : "http",
+                host, port,
+                (path != null) ? path : "");
     }
 }

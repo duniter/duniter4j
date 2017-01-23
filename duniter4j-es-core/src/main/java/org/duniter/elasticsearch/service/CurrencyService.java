@@ -69,6 +69,7 @@ public class CurrencyService extends AbstractService {
 
     public static final String INDEX = "currency";
     public static final String RECORD_TYPE = "record";
+    public static final String PEER_TYPE = "peer";
 
     private final ObjectMapper objectMapper;
     private BlockchainRemoteService blockchainRemoteService;
@@ -112,7 +113,7 @@ public class CurrencyService extends AbstractService {
                 //.put("analyzer", createDefaultAnalyzer())
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(RECORD_TYPE, createCurrencyType());
+        createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordTypeMapping());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
@@ -181,18 +182,19 @@ public class CurrencyService extends AbstractService {
         BlockchainParameters parameters = blockchainRemoteService.getParameters(peer);
         BlockchainBlock firstBlock = blockchainRemoteService.getBlock(peer, 0l);
         BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);
-        long lastUD = blockchainRemoteService.getLastUD(peer);
+        Long lastUD = blockchainRemoteService.getLastUD(peer);
 
 
         Currency result = new Currency();
-        result.setCurrencyName(parameters.getCurrency());
+        result.setCurrency(parameters.getCurrency());
         result.setFirstBlockSignature(firstBlock.getSignature());
         result.setMembersCount(currentBlock.getMembersCount());
         result.setLastUD(lastUD);
         result.setParameters(parameters);
-        result.setPeers(new Peer[]{peer});
 
         indexCurrency(result);
+
+        indexPeer(parameters.getCurrency(), peer);
 
         return result;
     }
@@ -203,11 +205,11 @@ public class CurrencyService extends AbstractService {
      */
     public void indexCurrency(Currency currency) {
         try {
-            org.duniter.core.util.Preconditions.checkNotNull(currency.getCurrencyName());
+            Preconditions.checkNotNull(currency.getCurrency());
 
             // Fill tags
             if (ArrayUtils.isEmpty(currency.getTags())) {
-                String currencyName = currency.getCurrencyName();
+                String currencyName = currency.getCurrency();
                 String[] tags = currencyName.split(REGEX_WORD_SEPARATOR);
                 List<String> tagsList = Lists.newArrayList(tags);
 
@@ -225,13 +227,34 @@ public class CurrencyService extends AbstractService {
 
             // Preparing indexBlocksFromNode
             IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_TYPE)
-                    .setId(currency.getCurrencyName())
+                    .setId(currency.getCurrency())
                     .setSource(json);
 
             // Execute indexBlocksFromNode
             indexRequest
                     .setRefresh(true)
                     .execute().actionGet();
+
+        } catch(JsonProcessingException e) {
+            throw new TechnicalException(e);
+        }
+    }
+
+    public String indexPeer(String currency, Peer peer) {
+        Preconditions.checkNotNull(currency);
+        Preconditions.checkNotNull(peer);
+        try {
+            // Serialize into JSON
+            byte[] json = objectMapper.writeValueAsBytes(peer);
+
+            // Preparing index
+            IndexRequestBuilder indexRequest = client.prepareIndex(currency, PEER_TYPE)
+                    .setSource(json);
+
+            // Execute index
+            return indexRequest
+                    .setRefresh(true)
+                    .execute().actionGet().getId();
 
         } catch(JsonProcessingException e) {
             throw new TechnicalException(e);
@@ -264,20 +287,20 @@ public class CurrencyService extends AbstractService {
     /**
      * Save a blockchain (update or create) into the blockchain index.
      * @param currency
-     * @param senderPubkey
+     * @param issuer
      * @throws DuplicateIndexIdException
      * @throws AccessDeniedException if exists and user if not the original blockchain sender
      */
-    public void saveCurrency(Currency currency, String senderPubkey) throws DuplicateIndexIdException {
+    public void saveCurrency(Currency currency, String issuer) throws DuplicateIndexIdException {
         Preconditions.checkNotNull(currency, "currency could not be null") ;
-        Preconditions.checkNotNull(currency.getCurrencyName(), "currency attribute 'currencyName' could not be null");
+        Preconditions.checkNotNull(currency.getCurrency(), "currency attribute 'currency' could not be null");
 
-        String previousSenderPubkey = getSenderPubkeyByCurrencyId(currency.getCurrencyName());
+        String previousIssuer = getSenderPubkeyByCurrencyId(currency.getCurrency());
 
         // Currency not exists, so create it
-        if (previousSenderPubkey == null) {
+        if (previousIssuer == null) {
             // make sure to fill the sender
-            currency.setSenderPubkey(senderPubkey);
+            currency.setIssuer(issuer);
 
             // Save it
             indexCurrency(currency);
@@ -285,12 +308,12 @@ public class CurrencyService extends AbstractService {
 
         // Exists, so check the owner signature
         else {
-            if (!Objects.equals(senderPubkey, previousSenderPubkey)) {
+            if (!Objects.equals(issuer, previousIssuer)) {
                 throw new AccessDeniedException("Could not change the currency, because it has been registered by another public key.");
             }
 
             // Make sure the sender is not changed
-            currency.setSenderPubkey(previousSenderPubkey);
+            currency.setIssuer(previousIssuer);
 
             // Save changes
             indexCurrency(currency);
@@ -319,7 +342,7 @@ public class CurrencyService extends AbstractService {
         try {
             currency = objectMapper.readValue(jsonCurrency, Currency.class);
             Preconditions.checkNotNull(currency);
-            Preconditions.checkNotNull(currency.getCurrencyName());
+            Preconditions.checkNotNull(currency.getCurrency());
         } catch(Throwable t) {
             logger.error("Error while reading blockchain JSON: " + jsonCurrency);
             throw new TechnicalException("Error while reading blockchain JSON: " + jsonCurrency, t);
@@ -330,19 +353,41 @@ public class CurrencyService extends AbstractService {
 
     /* -- Internal methods -- */
 
-    public XContentBuilder createCurrencyType() {
+    public XContentBuilder createRecordTypeMapping() {
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
                     .startObject("properties")
 
-                    // blockchain name
-                    .startObject("currencyName")
+                    // currency
+                    .startObject("currency")
                     .field("type", "string")
+                    .endObject()
+
+                    // firstBlockSignature
+                    .startObject("firstBlockSignature")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // member count
                     .startObject("membersCount")
                     .field("type", "long")
+                    .endObject()
+
+                    // lastUD
+                    .startObject("lastUD")
+                    .field("type", "long")
+                    .endObject()
+
+                    // unitbase
+                    .startObject("unitbase")
+                    .field("type", "integer")
+                    .endObject()
+
+                    // issuer
+                    .startObject("issuer")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // tags
@@ -392,10 +437,10 @@ public class CurrencyService extends AbstractService {
             for (SearchHit searchHit : searchHits) {
                 if (searchHit.source() != null) {
                     Currency currency = objectMapper.readValue(new String(searchHit.source(), "UTF-8"), Currency.class);
-                    return currency.getSenderPubkey();
+                    return currency.getIssuer();
                 }
                 else {
-                    SearchHitField field = searchHit.getFields().get("senderPubkey");
+                    SearchHitField field = searchHit.getFields().get("issuer");
                     return field.getValue().toString();
                 }
             }

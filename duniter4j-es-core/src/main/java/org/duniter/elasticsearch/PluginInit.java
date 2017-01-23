@@ -118,8 +118,11 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
             // Add access to currency index
             injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
-                    currency.getCurrencyName(),
+                    currency.getCurrency(),
                     BlockchainService.BLOCK_TYPE);
+            injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
+                    currency.getCurrency(),
+                    BlockchainService.PEER_TYPE);
 
             // Index blocks (and listen if new block appear)
             injector.getInstance(BlockchainService.class)
