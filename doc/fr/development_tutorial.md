@@ -248,7 +248,7 @@ Vous devriez avoir maintenant :
 [2016-11-17 13:29:41,655][INFO ][cluster.routing.allocation] [Att-Lass] Cluster health status changed from [RED] to [YELLOW] (reason: [shards started [[registry][1], [registry][1]] ...]).
 [2016-11-17 13:29:45,756][INFO ][node                     ] Checking Duniter indices...
 [2016-11-17 13:29:45,766][INFO ][node                     ] Checking Duniter indices... [OK]
-[2016-11-17 13:29:58,052][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing last blocks...
+[2016-11-17 13:29:58,052][INFO ][duniter.blockchain       ] [gtest] [cgeek.fr:9330] Indexing last blocks...
 ```
 
 ### Vérifier le fonctionnement
@@ -302,7 +302,7 @@ Duniter4j s'appuie sur ElasticSearch **en version 2.3**. D'excellentes documenta
 
 ## Niveau V : Requêtage sur ES API
 
-Nous allons requeter l'indexation de la BlockChain `test_net`, qui s'est fait dès le démarrage de votre noeud ElastiSearch. Nous appellons cette indexation l'**ES API**. 
+Nous allons requeter l'indexation de la BlockChain `gtest`, qui s'est fait dès le démarrage de votre noeud ElastiSearch. Nous appellons cette indexation l'**ES API**. 
 
 Il existe plusieurs manière de requéter un noeud ES : 
 
@@ -313,25 +313,25 @@ Il existe plusieurs manière de requéter un noeud ES :
 
 En utilisant un navigateur, vous allez requêter .
 
-- [GET-1] Visualisez un bloc quelconque (par exemple le premier #0): http://localhost:9200/test_net/block/0
+- [GET-1] Visualisez un bloc quelconque (par exemple le premier #0): http://localhost:9200/gtest/block/0
   
 Etudiez ensuite le format du résultat : 
 ```json
-{"_index":"test_net","_type":"block","_id":"0","_version":1,"found":true,"_source":{
+{"_index":"gtest","_type":"block","_id":"0","_version":1,"found":true,"_source":{
  ...
 }
 ```
 > Observez qu'ElasticSeach a ajouté des informations : `_index`, `_type`, etc.
 
-- [GET-2] Pour éviter d'avoir les informations additionnelles, ajoutez `/_source` : http://localhost:9200/test_net/block/0/_source
+- [GET-2] Pour éviter d'avoir les informations additionnelles, ajoutez `/_source` : http://localhost:9200/gtest/block/0/_source
 
-> Notez que le bloc courant est accessible en `/test_net/block/current`
+> Notez que le bloc courant est accessible en `/gtest/block/current`
         
-- [GET-3] Récupérer **uniquement** les champs `hash`, `dividend` et `memberCount`, pour le bloc #125 : http://localhost:9200/test_net/block/125/_source?_source=number,hash,dividend,membersCount
+- [GET-3] Récupérer **uniquement** les champs `hash`, `dividend` et `memberCount`, pour le bloc #125 : http://localhost:9200/gtest/block/125/_source?_source=number,hash,dividend,membersCount
 
 > Notez que vous pouvez avoir une meilleure présentation en ajoutant "`&pretty`" dans l'adresse;
 
-- [GET-4] Les blocks qui référence une clef publique (recherche full text) : http://localhost:9200/test_net/block/_search?q=8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU
+- [GET-4] Les blocks qui référence une clef publique (recherche full text) : http://localhost:9200/gtest/block/_search?q=8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU
 
 > Vous pouvez rechercher sur n'importe quelle chaine (recherche `full-text`), via cet option "`q=`" 
 
@@ -350,7 +350,7 @@ Dans un terminal, exécuter les commandes suivantes :
 
 - [POST-1] Récupérez les blocs ayant un dividende universel, en sélectionnant **quelques champs** uniquement (dividend, number, hash). : 
 ```bash
-curl -XGET 'http://localhost:9200/test_net/block/_search?pretty' -d '{
+curl -XGET 'http://localhost:9200/gtest/block/_search?pretty' -d '{
 "query": {
         "filtered" : {
             "filter": {
@@ -366,7 +366,7 @@ curl -XGET 'http://localhost:9200/test_net/block/_search?pretty' -d '{
 - [POST-2] Récupérez tous les blocs de #0 à #100 :
 
 ```bash
-curl -XGET 'http://localhost:9200/test_net/block/_search' -d '{
+curl -XGET 'http://localhost:9200/gtest/block/_search' -d '{
     "query": {
        "bool": {
            "should": {
@@ -393,11 +393,13 @@ Voici la documentation pour aller plus loin :
 Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, comme celles utilisées par Cesium+ et ĞChange : 
 
 - `/user/profile` : les profiles utilisateurs (nom complet, réseaux sociaux, avatar, etc.)   
-- `/message/record` : les messages privées envoyés    
+- `/message/inbox` : les messages privées envoyés    
 - `/market/record` : les annonces de la [place de maché](http://cesium.duniter.fr/#/app/market/lg) Ğchange;   
   * `/market/record` : les commentaires sur les annonces
 - `/registry/record` : les référencement de l'[annuaire pro](http://cesium.duniter.fr/#/app/registry/lg) Ğchange;   
   * `/market/comment` : les commentaires sur les référencements
+
+> La document de l'API HTTP est disponible [ici](../API.md).
 
 ### Requêtes sur `data.duniter.fr`
 
