@@ -116,11 +116,18 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             // Index (or refresh) node's currency
             Currency currency = injector.getInstance(CurrencyService.class).indexCurrencyFromPeer(peer, true);
 
-            // Add access to currency index
+            // Add access to currency/block index
             injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
                     currency.getCurrency(),
                     BlockchainService.BLOCK_TYPE);
+            injector.getInstance(RestSecurityController.class).allowPostSearchIndexType(
+                    currency.getCurrency(),
+                    BlockchainService.BLOCK_TYPE);
+            // Add access to currency/peer index
             injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
+                    currency.getCurrency(),
+                    BlockchainService.PEER_TYPE);
+            injector.getInstance(RestSecurityController.class).allowPostSearchIndexType(
                     currency.getCurrency(),
                     BlockchainService.PEER_TYPE);
 

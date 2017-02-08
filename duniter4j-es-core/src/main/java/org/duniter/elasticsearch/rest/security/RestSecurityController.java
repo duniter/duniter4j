@@ -57,6 +57,10 @@ public class RestSecurityController extends AbstractLifecycleComponent<RestSecur
         return allow(method, String.format("/%s/%s(/.*)?", index, type));
     }
 
+    public RestSecurityController allowPostSearchIndexType(String index, String type) {
+        return allow(RestRequest.Method.POST, String.format("/%s/%s/_search", index, type));
+    }
+
     public RestSecurityController allowImageAttachment(String index, String type, String field) {
         return allow(RestRequest.Method.GET, String.format("/%s/%s/[^/]+/_image/%s.*", index, type, field));
     }

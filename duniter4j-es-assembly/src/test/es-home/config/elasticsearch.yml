@@ -127,7 +127,7 @@ duniter.blockchain.sync.enable: true
 # Duniter node to synchronize
 #
 
-duniter.host: gtest.duniter.fr
+duniter.host: gtest.duniter.org
 duniter.port: 10900
 
 #

@@ -151,7 +151,7 @@ duniter.security.enable: true
 # Should synchronize data using P2P
 #
 duniter.data.sync.enable: true
-duniter.data.sync.host: data.duniter.fr
+duniter.data.sync.host: data.gtest.duniter.fr
 duniter.data.sync.port: 80
 
 # ---------------------------------- Duniter4j SMTP server -------------------------
