@@ -138,8 +138,8 @@ duniter.keyring.password: def
 
 # Enable security, to disable HTTP access to the default ES admin API
 #
-#duniter.security.enable: false
-duniter.security.enable: true
+duniter.security.enable: false
+#duniter.security.enable: true
 #
 # Security token prefix (default: 'duniter-')
 #
@@ -153,9 +153,9 @@ duniter.security.enable: true
 #
 # Should synchronize data using P2P
 #
-duniter.data.sync.enable: false
-#duniter.data.sync.host: data.duniter.fr
-#duniter.data.sync.port: 80
+duniter.data.sync.enable: true
+duniter.data.sync.host: data.gtest.duniter.fr
+duniter.data.sync.port: 80
 
 # ---------------------------------- Duniter4j SMTP server -------------------------
 #

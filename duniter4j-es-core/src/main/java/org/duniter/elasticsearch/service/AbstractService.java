@@ -237,7 +237,6 @@ public abstract class AbstractService implements Bean {
         }
     }
 
-
     protected String getIssuer(JsonNode actualObj) {
         return  getMandatoryField(actualObj, Record.PROPERTY_ISSUER).asText();
     }
@@ -259,7 +258,7 @@ public abstract class AbstractService implements Bean {
         Map<String, Object> fields = getFieldsById(index, type, docId, fieldNames);
         if (MapUtils.isEmpty(fields)) throw new NotFoundException(String.format("Document [%s/%s/%s] not exists.", index, type, docId));
         Arrays.stream(fieldNames).forEach((fieldName) -> {
-            if (!fields.containsKey(fieldName)) throw new NotFoundException(String.format("Document [%s/%s/%s] should have the madatory field [%s].", index, type, docId, fieldName));
+            if (!fields.containsKey(fieldName)) throw new NotFoundException(String.format("Document [%s/%s/%s] should have the mandatory field [%s].", index, type, docId, fieldName));
         });
         return fields;
     }

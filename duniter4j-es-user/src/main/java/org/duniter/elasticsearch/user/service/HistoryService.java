@@ -124,8 +124,12 @@ public class HistoryService extends AbstractService {
             throw new NotFoundException(String.format("Index [%s] not exists.", index));
         }
 
-        // Special case for message: check if issuer is recipient
+        // Special case for message: check if deletion issuer is the message recipient
         if (MessageService.INDEX.equals(index) && MessageService.INBOX_TYPE.equals(type)) {
+            checkSameDocumentField(index, type, id, MessageRecord.PROPERTY_RECIPIENT, issuer);
+        }
+        // Special case for invitation: check if deletion issuer is the invitation recipient
+        else if (UserInvitationService.INDEX.equals(index)) {
             checkSameDocumentField(index, type, id, MessageRecord.PROPERTY_RECIPIENT, issuer);
         }
         else {

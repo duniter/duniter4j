@@ -67,6 +67,7 @@ public class SynchroService extends AbstractSynchroService {
         importUserChanges(result, peer, sinceTime);
         importMessageChanges(result, peer, sinceTime);
         importGroupChanges(result, peer, sinceTime);
+        importInvitationChanges(result, peer, sinceTime);
 
         long duration = System.currentTimeMillis() - time;
         logger.info(String.format("[%s] Synchronizing user data since %s [OK] %s (ins %s ms)", peer.toString(), sinceTime, result.toString(), duration));
@@ -94,6 +95,10 @@ public class SynchroService extends AbstractSynchroService {
 
     protected void importGroupChanges(SynchroResult result, Peer peer, long sinceTime) {
         importChanges(result, peer, GroupService.INDEX, GroupService.RECORD_TYPE,  sinceTime);
+    }
+
+    protected void importInvitationChanges(SynchroResult result, Peer peer, long sinceTime) {
+        importChanges(result, peer, UserInvitationService.INDEX, UserInvitationService.CERTIFICATION_TYPE,  sinceTime);
     }
 
 }

@@ -172,6 +172,7 @@ public abstract class AbstractSynchroService extends AbstractService {
         JsonNode node;
         try {
             HttpPost httpPost = new HttpPost(httpService.getPath(peer, fromIndex, fromType, "_search"));
+            httpPost.setHeader("Content-Type", "application/json;charset=UTF-8");
             httpPost.setEntity(new ByteArrayEntity(bos.bytes().array()));
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("[%s] [%s/%s] Sending POST request: %s", peer, fromIndex, fromType, new String(bos.bytes().array())));

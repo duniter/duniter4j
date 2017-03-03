@@ -45,6 +45,8 @@ public enum UserEventCodes {
     CERT_RECEIVED,
 
     // Message
-    MESSAGE_RECEIVED
+    MESSAGE_RECEIVED,
 
+    // Invitation
+    INVITATION_TO_CERTIFY
 }

@@ -28,9 +28,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
-import org.duniter.elasticsearch.user.service.AbstractService;
+import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.Message;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
@@ -50,21 +49,17 @@ import java.util.Map;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class MessageService extends AbstractService {
+public class UserInvitationService extends AbstractService {
 
-    public static final String INDEX = "message";
-    public static final String INBOX_TYPE = "inbox";
-    public static final String OUTBOX_TYPE = "outbox";
-
-    @Deprecated
-    public static final String RECORD_TYPE = "record";
+    public static final String INDEX = "invitation";
+    public static final String CERTIFICATION_TYPE = "certification";
 
 
     private final UserEventService userEventService;
 
     @Inject
-    public MessageService(Client client, PluginSettings settings,
-                          CryptoService cryptoService, UserEventService userEventService) {
+    public UserInvitationService(Client client, PluginSettings settings,
+                                 CryptoService cryptoService, UserEventService userEventService) {
         super("duniter." + INDEX, client, settings, cryptoService);
         this.userEventService = userEventService;
     }
@@ -73,7 +68,7 @@ public class MessageService extends AbstractService {
      * Delete blockchain index, and all data
      * @throws JsonProcessingException
      */
-    public MessageService deleteIndex() {
+    public UserInvitationService deleteIndex() {
         deleteIndexIfExists(INDEX);
         return this;
     }
@@ -85,7 +80,7 @@ public class MessageService extends AbstractService {
     /**
      * Create index need for blockchain registry, if need
      */
-    public MessageService createIndexIfNotExists() {
+    public UserInvitationService createIndexIfNotExists() {
         try {
             if (!existsIndex(INDEX)) {
                 createIndex();
@@ -102,8 +97,8 @@ public class MessageService extends AbstractService {
      * Create index need for category registry
      * @throws JsonProcessingException
      */
-    public MessageService createIndex() throws JsonProcessingException {
-        logger.info(String.format("Creating index [%s/%s]", INDEX, INBOX_TYPE));
+    public UserInvitationService createIndex() throws JsonProcessingException {
+        logger.info(String.format("Creating index [%s/%s]", INDEX, CERTIFICATION_TYPE));
 
         CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
         Settings indexSettings = Settings.settingsBuilder()
@@ -111,14 +106,13 @@ public class MessageService extends AbstractService {
                 .put("number_of_replicas", 1)
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(INBOX_TYPE, createInboxType());
-        createIndexRequestBuilder.addMapping(OUTBOX_TYPE, createOutboxType());
+        createIndexRequestBuilder.addMapping(CERTIFICATION_TYPE, createCertificationType());
         createIndexRequestBuilder.execute().actionGet();
 
         return this;
     }
 
-    public String indexInboxFromJson(String recordJson) {
+    public String indexCertificationInvitationFromJson(String recordJson) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
         String issuer = getIssuer(actualObj);
@@ -126,46 +120,29 @@ public class MessageService extends AbstractService {
         Long time = getMandatoryField(actualObj, Message.PROPERTY_TIME).asLong();
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a message from issuer [%s]", issuer.substring(0, 8)));
+            logger.debug(String.format("Indexing a invitation to certify from issuer [%s]", issuer.substring(0, 8)));
         }
 
-        IndexResponse response = client.prepareIndex(INDEX, INBOX_TYPE)
+        IndexResponse response = client.prepareIndex(INDEX, CERTIFICATION_TYPE)
                 .setSource(recordJson)
                 .setRefresh(false)
                 .execute().actionGet();
 
-        String messageId = response.getId();
+        String invitationId = response.getId();
 
         // Notify recipient
-        userEventService.notifyUser(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.MESSAGE_RECEIVED.name())
+        userEventService.notifyUser(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.INVITATION_TO_CERTIFY.name())
                 .setRecipient(recipient)
-                .setMessage(I18n.n("duniter.user.event.message.received"), issuer, ModelUtils.minifyPubkey(issuer))
+                .setMessage(I18n.n("duniter.invitation.cert.received"), issuer, ModelUtils.minifyPubkey(issuer))
                 .setTime(time)
-                .setReference(INDEX, INBOX_TYPE, messageId)
+                .setReference(INDEX, CERTIFICATION_TYPE, invitationId)
                 .build());
 
-        return messageId;
+        return invitationId;
     }
 
-    public String indexOuboxFromJson(String recordJson) {
-
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = getIssuer(actualObj);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a message from issuer [%s]", issuer.substring(0, 8)));
-        }
-
-        IndexResponse response = client.prepareIndex(INDEX, OUTBOX_TYPE)
-                .setSource(recordJson)
-                .setRefresh(false)
-                .execute().actionGet();
-
-        return response.getId();
-    }
-
-    public void markMessageAsRead(String id, String signature) {
-        Map<String, Object> fields = getMandatoryFieldsById(INDEX, INBOX_TYPE, id, Message.PROPERTY_HASH, Message.PROPERTY_RECIPIENT);
+    public void markInvitationAsRead(String id, String signature) {
+        Map<String, Object> fields = getMandatoryFieldsById(INDEX, CERTIFICATION_TYPE, id, Message.PROPERTY_HASH, Message.PROPERTY_RECIPIENT);
         String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
         String hash = fields.get(UserEvent.PROPERTY_HASH).toString();
 
@@ -175,19 +152,15 @@ public class MessageService extends AbstractService {
             throw new InvalidSignatureException("Invalid signature: only the recipient can mark an message as read.");
         }
 
-        UpdateRequestBuilder request = client.prepareUpdate(INDEX, INBOX_TYPE, id)
+        UpdateRequestBuilder request = client.prepareUpdate(INDEX, CERTIFICATION_TYPE, id)
                 .setDoc("read_signature", signature);
         request.execute();
     }
 
     /* -- Internal methods -- */
 
-    public XContentBuilder createInboxType() {
-        return createMapping(INBOX_TYPE);
-    }
-
-    public XContentBuilder createOutboxType() {
-        return createMapping(OUTBOX_TYPE);
+    public XContentBuilder createCertificationType() {
+        return createMapping(CERTIFICATION_TYPE);
     }
 
     public XContentBuilder createMapping(String typeName) {
@@ -218,12 +191,6 @@ public class MessageService extends AbstractService {
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // title (encrypted)
-                    .startObject("title")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
                     // content (encrypted)
                     .startObject("content")
                     .field("type", "string")
@@ -242,7 +209,7 @@ public class MessageService extends AbstractService {
             return mapping;
         }
         catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, INBOX_TYPE, ioe.getMessage()), ioe);
+            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, CERTIFICATION_TYPE, ioe.getMessage()), ioe);
         }
     }
 }

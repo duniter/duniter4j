@@ -27,23 +27,13 @@ package org.duniter.core.client.model.elasticsearch;
  */
 public class UserGroup extends Record {
 
-    public static final String PROPERTY_NAME="name";
     public static final String PROPERTY_TITLE="title";
     public static final String PROPERTY_DESCRIPTION="description";
     public static final String PROPERTY_CREATION_TIME="creationTime";
 
-    private String name;
     private String title;
     private String description;
     private Long creationTime;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public String getTitle() {
         return title;

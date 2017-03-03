@@ -115,15 +115,17 @@ public class GroupService extends AbstractService {
     public String indexRecordProfileFromJson(String profileJson) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(profileJson);
-        String name = getName(actualObj);
+        String title = getTitle(actualObj);
+        String id = computeIdFromTitle(title);
+        String issuer = getIssuer(actualObj);
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a user profile from issuer [%s]", name.substring(0, 8)));
+            logger.debug(String.format("Indexing group [%s] from issuer [%s]", id, issuer.substring(0, 8)));
         }
 
         IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
                 .setSource(profileJson)
-                .setId(name) // always use the name as id
+                .setId(id)
                 .setRefresh(false)
                 .execute().actionGet();
         return response.getId();
@@ -133,39 +135,29 @@ public class GroupService extends AbstractService {
      * Update a record
      * @param recordJson
      */
-    public ListenableActionFuture<UpdateResponse> updateRecordFromJson(String recordJson, String id) {
+    public ListenableActionFuture<UpdateResponse> updateRecordFromJson(String id, String recordJson) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String name = getName(actualObj);
 
-        if (!Objects.equals(name, id)) {
-            throw new AccessDeniedException(String.format("Could not update this document: not issuer."));
-        }
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Updating a group from name [%s]", name));
+            logger.debug(String.format("Updating group [%s]", id));
         }
 
-        return client.prepareUpdate(INDEX, RECORD_TYPE, name)
+        return client.prepareUpdate(INDEX, RECORD_TYPE, id)
                 .setDoc(recordJson)
                 .execute();
     }
 
+    public String getTitleById(String id) {
 
-
-    protected String getName(JsonNode actualObj) {
-        return  getMandatoryField(actualObj, UserGroup.PROPERTY_NAME).asText();
-    }
-
-    public String getTitleByName(String name) {
-
-        Object title = getFieldById(INDEX, RECORD_TYPE, name, UserGroup.PROPERTY_NAME);
+        Object title = getFieldById(INDEX, RECORD_TYPE, id, UserGroup.PROPERTY_TITLE);
         if (title == null) return null;
         return title.toString();
     }
 
-    public Map<String, String> getTitlesByNames(Set<String> names) {
+    public Map<String, String> getTitlesByNames(Set<String> ids) {
 
-        Map<String, Object> titles = getFieldByIds(INDEX, RECORD_TYPE, names, UserGroup.PROPERTY_NAME);
+        Map<String, Object> titles = getFieldByIds(INDEX, RECORD_TYPE, ids, UserGroup.PROPERTY_TITLE);
         if (MapUtils.isEmpty(titles)) return null;
         Map<String, String> result = new HashMap<>();
         titles.entrySet().stream().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
@@ -174,6 +166,29 @@ public class GroupService extends AbstractService {
 
     /* -- Internal methods -- */
 
+
+    protected String getTitle(JsonNode actualObj) {
+        return  getMandatoryField(actualObj, UserGroup.PROPERTY_TITLE).asText();
+    }
+
+    protected String computeIdFromTitle(String title) {
+        return computeIdFromTitle(title, 0);
+    }
+
+    protected String computeIdFromTitle(String title, int counter) {
+
+        String id = title.replaceAll("\\s+", "");
+        id  = id.replaceAll("[^a-zA−Z_-]+", "");
+        if (counter > 0) {
+            id += "_" + counter;
+        }
+
+        if (!isDocumentExists(INDEX, RECORD_TYPE, id)) {
+            return id;
+        }
+
+        return computeIdFromTitle(title, counter+1);
+    }
 
     public XContentBuilder createRecordType() {
         String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
@@ -206,6 +221,18 @@ public class GroupService extends AbstractService {
 
                     // issuer
                     .startObject("issuer")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // hash
+                    .startObject("hash")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // signature
+                    .startObject("signature")
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()

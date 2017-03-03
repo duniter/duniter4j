@@ -106,6 +106,9 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(GroupService.class)
                     .deleteIndex()
                     .createIndexIfNotExists();
+            injector.getInstance(UserInvitationService.class)
+                    .deleteIndex()
+                    .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Reloading all Duniter indices... [OK]");
@@ -119,6 +122,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(UserService.class).createIndexIfNotExists();
             injector.getInstance(MessageService.class).createIndexIfNotExists();
             injector.getInstance(GroupService.class).createIndexIfNotExists();
+            injector.getInstance(UserInvitationService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking Duniter indices... [OK]");
