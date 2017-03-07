@@ -141,22 +141,6 @@ public class UserInvitationService extends AbstractService {
         return invitationId;
     }
 
-    public void markInvitationAsRead(String id, String signature) {
-        Map<String, Object> fields = getMandatoryFieldsById(INDEX, CERTIFICATION_TYPE, id, Message.PROPERTY_HASH, Message.PROPERTY_RECIPIENT);
-        String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
-        String hash = fields.get(UserEvent.PROPERTY_HASH).toString();
-
-        // Check signature
-        boolean valid = cryptoService.verify(hash, signature, recipient);
-        if (!valid) {
-            throw new InvalidSignatureException("Invalid signature: only the recipient can mark an message as read.");
-        }
-
-        UpdateRequestBuilder request = client.prepareUpdate(INDEX, CERTIFICATION_TYPE, id)
-                .setDoc("read_signature", signature);
-        request.execute();
-    }
-
     /* -- Internal methods -- */
 
     public XContentBuilder createCertificationType() {
@@ -197,8 +181,8 @@ public class UserInvitationService extends AbstractService {
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // read_signature
-                    .startObject("read_signature")
+                    // comment (encrypted)
+                    .startObject("comment")
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()

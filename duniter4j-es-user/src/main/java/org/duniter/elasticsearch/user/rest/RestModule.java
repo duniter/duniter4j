@@ -26,7 +26,6 @@ import org.duniter.elasticsearch.user.rest.group.RestGroupIndexAction;
 import org.duniter.elasticsearch.user.rest.group.RestGroupUpdateAction;
 import org.duniter.elasticsearch.user.rest.history.RestHistoryDeleteIndexAction;
 import org.duniter.elasticsearch.user.rest.invitation.RestInvitationCertificationIndexAction;
-import org.duniter.elasticsearch.user.rest.invitation.RestInvitationCertificationMarkAsReadAction;
 import org.duniter.elasticsearch.user.rest.message.RestMessageInboxIndexAction;
 import org.duniter.elasticsearch.user.rest.message.RestMessageInboxMarkAsReadAction;
 import org.duniter.elasticsearch.user.rest.message.RestMessageOutboxIndexAction;
@@ -65,7 +64,6 @@ public class RestModule extends AbstractModule implements Module {
 
         // Invitation
         bind(RestInvitationCertificationIndexAction.class).asEagerSingleton();
-        bind(RestInvitationCertificationMarkAsReadAction.class).asEagerSingleton();
 
         // Backward compatibility
         {
