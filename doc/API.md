@@ -15,6 +15,8 @@
   * [message](#message)
       * [message/inbox](#messageinbox)
       * [message/oubox](#messageoutbox)
+  * [invitation](#invitation)
+      * [invitation/certification](#invitationcertification)
 * [ES GCHANGE API](#gchangeapi)
   * [market](#market)
       * [market/category](#marketcategory)
@@ -45,6 +47,8 @@ Data is made accessible through an HTTP API :
     |-- message/
     |   |-- inbox
     |   `-- outbox
+    |-- invitation/
+    |   `-- certification
     |-- market/
     |   |-- category
     |   |-- record
@@ -58,18 +62,40 @@ Data is made accessible through an HTTP API :
  
 All stored documents use a JSON format.
 
-Every document must have the following fields:
+#### Data document
+
+Every document have the following mandatory fields:
 
 - `issuer` : The document's emitter
 - `hash`:
 - `signature`: the signature emitted by the issuer.
 
+#### Deletion
 
+Document deletion use a document with this mandatory fields:
+
+- `index` : The document's index
+- `type` : The document's type
+- `issuer`: The deletion issuer. Should correspond to the document's `issuer`, or the `recipient` in some special case ([inbox message](#messageinbox) or [invitation](#invitation))
+- `time`: the current time
+- `hash`
+- `signature`.
+
+For example, a deletion on `message/inbox` should send this document:
+
+```json
+
+```
+          
 ## ES CORE API
 
 ### `<currency>/*`
 
 #### `<currency>/block`
+
+ - Get the current block: `<currency>/block/current`
+ - Get a block by number: `<currency>/block/<number>`
+ - Search on blocks: `<currency>/block/_search` (POST or GET)
 
 ## ES USER API
 
@@ -84,6 +110,16 @@ Every document must have the following fields:
 #### `message/inbox`
 
 #### `message/outbox`
+
+### `invitation/*`
+
+#### `invitation/certification`
+
+ - Get an invitation, by id: `invitation/certification/<id>`
+ - Add a new invitation: `invitation/certification` (POST)
+ - Delete an existing invitation: `invitation/certification/_delete` (POST)
+ - Search on invitations: `invitation/certification/_search` (POST or GET)
+
 
 ## ES GCHANGE API
 
