@@ -53,6 +53,21 @@ public class BlockchainParameters implements Serializable{
     private Long ud0;
 
     /**
+     * Time for UD(0)
+     */
+    private Long udTime0;
+
+    /**
+     * First time for reveal UD
+     */
+    private Long udReevalTime0;
+
+    /**
+     * Time between two reveal UD
+     */
+    private Long dtReeval;
+
+    /**
      * Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
      */
     private Integer sigPeriod;
@@ -117,10 +132,6 @@ public class BlockchainParameters implements Serializable{
      */
     private Integer dtDiffEval;
 
-    /**
-     * The number of previous blocks to check for personalized difficulty
-     */
-    private Integer blocksRot;
 
     /**
      * The percent of previous issuers to reach for personalized difficulty
@@ -151,12 +162,36 @@ public class BlockchainParameters implements Serializable{
         this.dt = dt;
     }
 
+    public Long getUdTime0() {
+        return udTime0;
+    }
+
+    public void setUdTime0(Long udTime0) {
+        this.udTime0 = udTime0;
+    }
+
     public Long getUd0() {
         return ud0;
     }
 
     public void setUd0(Long ud0) {
         this.ud0 = ud0;
+    }
+
+    public Long getUdReevalTime0() {
+        return udReevalTime0;
+    }
+
+    public void setUdReevalTime0(Long udReevalTime0) {
+        this.udReevalTime0 = udReevalTime0;
+    }
+
+    public Long getDtReeval() {
+        return dtReeval;
+    }
+
+    public void setDtReeval(Long dtReeval) {
+        this.dtReeval = dtReeval;
     }
 
     public Integer getSigValidity() {
@@ -214,14 +249,6 @@ public class BlockchainParameters implements Serializable{
 
     public void setDtDiffEval(Integer dtDiffEval) {
         this.dtDiffEval = dtDiffEval;
-    }
-
-    public Integer getBlocksRot() {
-        return blocksRot;
-    }
-
-    public void setBlocksRot(Integer blocksRot) {
-        this.blocksRot = blocksRot;
     }
 
     public Double getPercentRot() {
@@ -300,7 +327,9 @@ public class BlockchainParameters implements Serializable{
                 .append("\nmedianTimeBlocks=").append(medianTimeBlocks)
                 .append("\navgGenTime=").append(avgGenTime)
                 .append("\ndtDiffEval=").append(dtDiffEval)
-                .append("\nblocksRot=").append(blocksRot)
+                .append("\nudTime0=").append(udTime0)
+                .append("\nudReevalTime0=").append(udReevalTime0)
+                .append("\ndtReeval=").append(dtReeval)
                 .append("\npercentRot=").append(percentRot)
                 .toString();
     }
