@@ -127,8 +127,8 @@ duniter.blockchain.sync.enable: true
 # Duniter node to synchronize
 #
 
-duniter.host: gtest.duniter.org
-duniter.port: 10900
+duniter.host: g1.duniter.org
+duniter.port: 10901
 
 #
 # ---------------------------------- Duniter4j security -------------------------
@@ -153,9 +153,10 @@ duniter.security.enable: false
 #
 # Should synchronize data using P2P
 #
-duniter.data.sync.enable: true
-duniter.data.sync.host: data.gtest.duniter.fr
-duniter.data.sync.port: 80
+duniter.data.sync.enable: false
+#duniter.data.sync.enable: true
+duniter.data.sync.host: g1.data.duniter.fr
+duniter.data.sync.port: 443
 
 # ---------------------------------- Duniter4j SMTP server -------------------------
 #
