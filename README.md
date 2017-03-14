@@ -11,8 +11,9 @@ duniter4j has four main components :
  
  - duniter4j-core-client: a Client API to access to a Duniter network.
    
- - duniter4j-elasticsearch: a ES plugin, to store blockchain, registry, market and more.
-    
+ - duniter4j-es-*: ElasticSearch plugins, to store blockchain, user profiles (Cesium+), registry, market and more.
+
+ - duniter4j-es-assembly: a standalone assembly with ElasticSearch and embedded plugins 
 
 ## Install as ES plugin
 
@@ -97,8 +98,8 @@ network.host: 192.168.0.28
 http.port: 9203
 
 # Duniter node to connect with
-duniter.host: cgeek.fr
-duniter.port: 9330
+duniter.host: gtest.duniter.org
+duniter.port: 10900
 
 # Should synchronize node blockchain ?
 duniter.blockchain.sync.enable: true
@@ -113,7 +114,7 @@ cd duniter4j-elasticsearch-X.Y/bin
 ./elasticsearch
 ```
 
-Output example (on [test_net](https://en.duniter.org/try/) currency):
+Output example (on [GTest](https://fr.duniter.org/monnaie-gtest/) currency):
 
 ```bash
 $ ./elasticsearch
@@ -131,13 +132,13 @@ $ ./elasticsearch
 [2016-09-24 00:16:53,570][INFO ][node                     ] [ES-NODE-1] started
 [2016-09-24 00:16:57,850][INFO ][node                     ] Checking Duniter indices...
 [2016-09-24 00:16:57,859][INFO ][node                     ] Checking Duniter indices... [OK]
-[2016-09-24 00:17:08,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing last blocks...
-[2016-09-24 00:17:08,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #999 / 41282 (2%)...
-[2016-09-24 00:17:08,045][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #1998 / 41282 (4%)...
-[2016-09-24 00:17:09,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #2997 / 41282 (6%)...
-[2016-09-24 00:17:10,057][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #3996 / 41282 (8%)...
+[2016-09-24 00:17:08,026][INFO ][duniter.blockchain       ] [gtest] [gtest.duniter.org:10900] Indexing last blocks...
+[2016-09-24 00:17:08,026][INFO ][duniter.blockchain       ] [gtest] [gtest.duniter.org:10900] Indexing block #999 / 41282 (2%)...
+[2016-09-24 00:17:08,045][INFO ][duniter.blockchain       ] [gtest] [gtest.duniter.org:10900] Indexing block #1998 / 41282 (4%)...
+[2016-09-24 00:17:09,026][INFO ][duniter.blockchain       ] [gtest] [gtest.duniter.org:10900] Indexing block #2997 / 41282 (6%)...
+[2016-09-24 00:17:10,057][INFO ][duniter.blockchain       ] [gtest] [gtest.duniter.org:10900] Indexing block #3996 / 41282 (8%)...
 ...
-[2016-09-24 00:17:11,026][INFO ][duniter.blockchain       ] [test_net] [cgeek.fr:9330] Indexing block #41282 - hash [00000AAD73B0E76B870E6779CD7ACCCE175802D7867C13B5C8ED077F380548C5]
+[2016-09-24 00:17:11,026][INFO ][duniter.blockchain       ] [gtest] [gtest.duniter.org:10900] Indexing block #41282 - hash [00000AAD73B0E76B870E6779CD7ACCCE175802D7867C13B5C8ED077F380548C5]
 ```
 
 
@@ -147,23 +148,23 @@ When a blockchain currency has been indexed, you can test some fun queries :
 
  - get a block by number (e.g the block #0):
     
-    http://localhost:9200/test_net/block/0 -> with some additional metadata given by ES
+    http://localhost:9200/gtest/block/0 -> with some additional metadata given by ES
     
-    http://localhost:9200/test_net/block/0/_source -> the original JSON block
+    http://localhost:9200/gtest/block/0/_source -> the original JSON block
         
  - Block #125 with only hash, dividend and memberCount:
  
-    http://localhost:9200/test_net/block/125/_source?_source=number,hash,dividend,membersCount
+    http://localhost:9200/gtest/block/125/_source?_source=number,hash,dividend,membersCount
       
  - All blocks using a pubkey (or whatever):
  
-    http://localhost:9200/test_net/block/_search?q=9sbUKBMvJVxtEVhC4N9zV1GFTdaempezehAmtwA8zjKQ1
+    http://localhost:9200/gtest/block/_search?q=9sbUKBMvJVxtEVhC4N9zV1GFTdaempezehAmtwA8zjKQ1
        
  - All blocks with a dividend, with only some selected fields (like dividend, number, hahs).
    Note : Query executed in command line, using CURL:
 
 ```bash
-curl -XGET 'http://localhost:9200/test_net/block/_search' -d '{
+curl -XGET 'http://localhost:9200/gtest/block/_search' -d '{
 "query": {
         "filtered" : {
             "filter": {
@@ -221,11 +222,11 @@ $ mvn install -DskipTests -DperformRelease
 
 ## Roadmap
 
- - Allow to store data in embedded database (SQLLite or HsqlDB) 
+ - Maintain a updated list of peers  
  
- - Add an embedded [Cesium](https://www.github.com/duniter/cesium) inside the ElasticSearch plugin 
-
- - Detect blockchain rollback
+ - Add a new index for TX, with validation percentage 
+ 
+ - Enable P2P synchronisation between Duniter4j ES nodes
 
 
 ## Troubleshooting

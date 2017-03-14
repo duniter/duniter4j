@@ -105,7 +105,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         applicationConfig.setDefaultOption(ConfigurationOption.BASEDIR.getKey(), baseDir);
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_HOST.getKey(), getNodeBmaHost());
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_PORT.getKey(), String.valueOf(getNodeBmaPort()));
-        applicationConfig.setDefaultOption(ConfigurationOption.NODE_PROTOCOL.getKey(), getNodeBmaPort() == 443 ? "https" : "http");
+        applicationConfig.setDefaultOption(ConfigurationOption.NODE_PROTOCOL.getKey(), getNodeBmaUseSsl() ? "https" : "http");
         applicationConfig.setDefaultOption(ConfigurationOption.NETWORK_TIMEOUT.getKey(), String.valueOf(getNetworkTimeout()));
 
         try {
@@ -160,11 +160,15 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public String getNodeBmaHost() {
-        return settings.get("duniter.host", "cgeek.fr");
+        return settings.get("duniter.host", "g1.duniter.org");
     }
 
     public int getNodeBmaPort() {
-        return settings.getAsInt("duniter.port", 9330);
+        return settings.getAsInt("duniter.port", 10901);
+    }
+
+    public boolean getNodeBmaUseSsl() {
+        return settings.getAsBoolean("duniter.useSsl", getNodeBmaPort() == 443);
     }
 
     public boolean isIndexBulkEnable() {
@@ -223,7 +227,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
             return null;
         }
 
-        Peer peer = new Peer(getNodeBmaHost(), getNodeBmaPort());
+        Peer peer = new Peer(getNodeBmaHost(), getNodeBmaPort(), getNodeBmaUseSsl());
         return peer;
     }
 
@@ -264,7 +268,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public int getWebSocketPort()  {
-        return settings.getAsInt("duniter.ws.port", 9200);
+        return settings.getAsInt("duniter.ws.port", 81);
     }
 
     public boolean getWebSocketEnable()  {

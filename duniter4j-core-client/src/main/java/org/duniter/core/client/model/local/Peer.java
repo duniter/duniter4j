@@ -23,8 +23,6 @@ package org.duniter.core.client.model.local;
  */
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.io.Serializable;
 
 public class Peer implements LocalEntity, Serializable {
@@ -33,7 +31,8 @@ public class Peer implements LocalEntity, Serializable {
     private Long currencyId;
     private String host;
     private int port;
-    private String url;
+    private boolean useSsl;
+    private String url; // computed
 
     public Peer() {
         // default constructor, need for de-serialization
@@ -42,7 +41,15 @@ public class Peer implements LocalEntity, Serializable {
     public Peer(String host, int port) {
         this.host = host;
         this.port = port;
-        this.url = initUrl(host, port);
+        this.useSsl = (port == 443);
+        this.url = computeUrl(this.host, this.port, this.useSsl);
+    }
+
+    public Peer(String host, int port, boolean useSsl) {
+        this.host = host;
+        this.port = port;
+        this.useSsl = useSsl;
+        this.url = computeUrl(this.host, this.port, this.useSsl);
     }
 
     public String getHost() {
@@ -75,24 +82,31 @@ public class Peer implements LocalEntity, Serializable {
 
     public void setPort(int port) {
         this.port = port;
-        this.url = initUrl(host, port);
+        if (port == 443) {
+            this.useSsl = true;
+        }
+        this.url = computeUrl(this.host, this.port, this.useSsl);
     }
 
     public void setHost(String host) {
         this.host = host;
-        this.url = initUrl(host, port);
+        this.url = computeUrl(this.host, this.port, this.useSsl);
+    }
+
+    public boolean isUseSsl() {
+        return this.useSsl;
+    }
+
+    public void setUseSsl(boolean useSsl) {
+        this.useSsl = useSsl;
+        this.url = computeUrl(this.host, this.port, this.useSsl);
     }
 
     public String toString() {
-/*
-        return new StringBuilder().append("url=").append(url).append(",")
-                .append("host=").append(host).append(",")
-                .append("port=").append(port)
-                .toString();
-*/
         return new StringBuilder().append(host)
                 .append(":")
                 .append(port)
+                .append(useSsl ? "[+SSL]" : "")
                 .toString();
     }
 
@@ -109,7 +123,7 @@ public class Peer implements LocalEntity, Serializable {
 
     /* -- Internal methods -- */
 
-    protected String initUrl(String host, int port) {
-        return String.format("http://%s:%s", host, port);
+    protected String computeUrl(String host, int port, boolean useSsl) {
+        return String.format("%s://%s:%s", (useSsl ? "https" : "http"), host, port);
     }
 }

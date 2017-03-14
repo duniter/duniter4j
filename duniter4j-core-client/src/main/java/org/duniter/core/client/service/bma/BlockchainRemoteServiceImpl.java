@@ -800,7 +800,8 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     public WebsocketClientEndpoint getWebsocketClientEndpoint(Peer peer, String path) {
 
         try {
-            URI wsBlockURI = new URI(String.format("ws://%s:%s%s",
+            URI wsBlockURI = new URI(String.format("%s://%s:%s%s",
+                    peer.isUseSsl() ? "wss" : "ws",
                     peer.getHost(),
                     peer.getPort(),
                     path));
