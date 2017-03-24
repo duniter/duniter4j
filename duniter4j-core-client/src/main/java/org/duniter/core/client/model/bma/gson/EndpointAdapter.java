@@ -25,9 +25,9 @@ package org.duniter.core.client.model.bma.gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import org.duniter.core.client.model.bma.EndpointProtocol;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
-import org.apache.http.conn.util.InetAddressUtils;
+import org.duniter.core.util.http.InetAddressUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,19 +51,19 @@ public class EndpointAdapter extends TypeAdapter<NetworkPeering.Endpoint> {
                     endpoint.ipv4 = word;
                 } else if (InetAddressUtils.isIPv6Address(word)) {
                     endpoint.ipv6 = word;
-                } else if (word.startsWith("http")) {
-                    endpoint.url = word;
+                } else if (word.trim().length() > 0) {
+                    endpoint.dns = word;
                 } else {
                     try {
-                        endpoint.protocol = EndpointProtocol.valueOf(word);
+                        endpoint.api = EndpointApi.valueOf(word);
                     } catch (IllegalArgumentException e) {
                         // skip this part
                     }
                 }
             }
 
-            if (endpoint.protocol == null) {
-                endpoint.protocol = EndpointProtocol.UNDEFINED;
+            if (endpoint.api == null) {
+                endpoint.api = EndpointApi.UNDEFINED;
             }
 
             return endpoint;
@@ -74,8 +74,8 @@ public class EndpointAdapter extends TypeAdapter<NetworkPeering.Endpoint> {
                 writer.nullValue();
                 return;
             }
-            writer.value(endpoint.protocol.name() + " " +
-                    endpoint.url + " " +
+            writer.value(endpoint.api.name() + " " +
+                    endpoint.dns + " " +
                     endpoint.ipv4 + " " +
                     endpoint.ipv6 + " " +
                     endpoint.port);

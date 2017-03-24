@@ -114,7 +114,7 @@ public class BlockchainRemoteServiceTest {
         Assert.assertNotNull(result);
         Assert.assertEquals(10, result.length);
 
-        // Make sure all json are valid blocks
+        // Make sure allOfToList json are valid blocks
         ObjectMapper objectMapper = JacksonUtils.newObjectMapper();
 
         int number = 0;
@@ -192,11 +192,10 @@ public class BlockchainRemoteServiceTest {
     /* -- Internal methods -- */
 
     protected Peer createTestPeer() {
-        Peer peer = new Peer(
-                Configuration.instance().getNodeHost(),
-                Configuration.instance().getNodePort());
-
-        return peer;
+        return Peer.newBuilder()
+                .setHost(Configuration.instance().getNodeHost())
+                .setPort(Configuration.instance().getNodePort())
+                .build();
     }
 
     protected Wallet createTestWallet() {

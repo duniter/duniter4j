@@ -104,6 +104,7 @@
     <module>duniter4j-es-user</module>
     <module>duniter4j-es-gchange</module>
     <module>duniter4j-es-assembly</module>
+      <module>duniter4j-cmd</module>
   </modules>
 
   <scm>
@@ -408,7 +409,7 @@
                 <!-- This is need to override the option version, in configuration classes -->
                 <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                 <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                <!-- Main class, configured in sub-modules -->
+                <!-- fr.duniter.cmd.Main class, configured in sub-modules -->
                 <mainClass>${maven.jar.main.class}</mainClass>
               </manifest>
               <manifestEntries>

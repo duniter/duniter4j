@@ -105,7 +105,6 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         applicationConfig.setDefaultOption(ConfigurationOption.BASEDIR.getKey(), baseDir);
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_HOST.getKey(), getNodeBmaHost());
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_PORT.getKey(), String.valueOf(getNodeBmaPort()));
-        applicationConfig.setDefaultOption(ConfigurationOption.NODE_PROTOCOL.getKey(), getNodeBmaUseSsl() ? "https" : "http");
         applicationConfig.setDefaultOption(ConfigurationOption.NETWORK_TIMEOUT.getKey(), String.valueOf(getNetworkTimeout()));
 
         try {
@@ -168,7 +167,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean getNodeBmaUseSsl() {
-        return settings.getAsBoolean("duniter.useSsl", getNodeBmaPort() == 443);
+        return settings.getAsBoolean("duniter.useSsl", null);
     }
 
     public boolean isIndexBulkEnable() {
@@ -227,7 +226,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
             return null;
         }
 
-        Peer peer = new Peer(getNodeBmaHost(), getNodeBmaPort(), getNodeBmaUseSsl());
+        Peer peer = Peer.newBuilder().setHost(getNodeBmaHost()).setPort(getNodeBmaPort()).setUseSsl(getNodeBmaUseSsl()).build();
         return peer;
     }
 

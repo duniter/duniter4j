@@ -155,7 +155,10 @@ public class TestResource extends org.duniter.core.test.TestResource {
         // Set a default account id, then load cache
         ServiceLocator.instance().getDataContext().setAccountId(0);
 
-        Peer peer = new Peer(config.getNodeHost(), config.getNodePort());
+        Peer peer = Peer.newBuilder()
+                .setHost(config.getNodeHost())
+                .setPort(config.getNodePort())
+                .build();
         peer.setCurrencyId(fixtures.getDefaultCurrencyId());
 
         ServiceLocator.instance().getPeerService().save(peer);

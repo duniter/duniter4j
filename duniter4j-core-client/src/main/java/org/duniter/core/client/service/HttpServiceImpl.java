@@ -24,7 +24,6 @@ package org.duniter.core.client.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -38,13 +37,13 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
+import org.duniter.core.client.model.bma.Constants;
 import org.duniter.core.client.model.bma.Error;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.cache.Cache;
 import org.duniter.core.util.cache.SimpleCache;
 import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
@@ -93,6 +92,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     protected void initCaches() {
         Configuration config = Configuration.instance();
         int cacheTimeInMillis = config.getNetworkCacheTimeInMillis();
+        int defaultTimeout = config.getNetworkTimeout();
 
         requestConfigCache = new SimpleCache<Integer, RequestConfig>(cacheTimeInMillis) {
             @Override
@@ -162,7 +162,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     }
 
     public <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass)  {
-        HttpGet httpGet = new HttpGet(getPath(peer, absolutePath));
+        HttpGet httpGet = new HttpGet(peer.getUrl() + absolutePath);
         return executeRequest(httpClientCache.get(0), httpGet, resultClass);
     }
 
@@ -228,12 +228,17 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     @SuppressWarnings("unchecked")
     protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass)  {
+        return executeRequest(httpClient, request, resultClass, errorClass, 5);
+    }
+
+    protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass, int retryCount)  {
         T result = null;
 
         if (debug) {
             log.debug("Executing request : " + request.getRequestLine());
         }
 
+        boolean retry = false;
         HttpResponse response = null;
         try {
             response = httpClient.execute(request);
@@ -271,6 +276,11 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                     catch(IOException e) {
                         throw new HttpBadRequestException(I18n.t("duniter4j.client.status", response.getStatusLine().toString()));
                     }
+
+                case HttpStatus.SC_SERVICE_UNAVAILABLE:
+                case Constants.HttpStatus.SC_TOO_MANY_REQUESTS:
+                    retry = true;
+                    break;
                 default:
                     throw new TechnicalException(I18n.t("duniter4j.client.status", request.toString(), response.getStatusLine().toString()));
             }
@@ -293,6 +303,23 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                 catch(IOException e) {
                     // Silent is gold
                 }
+            }
+        }
+
+        // HTTP requests limit exceed, retry when possible
+        if (retry) {
+            if (retryCount > 0) {
+                log.debug(String.format("Service unavailable: waiting [%s ms] before retrying...", Constants.Config.TOO_MANY_REQUEST_RETRY_TIME));
+                try {
+                    Thread.sleep(Constants.Config.TOO_MANY_REQUEST_RETRY_TIME);
+                } catch (InterruptedException e) {
+                    throw new TechnicalException(I18n.t("duniter4j.client.status", request.toString(), response.getStatusLine().toString()));
+                }
+                // iterate
+                return executeRequest(httpClient, request, resultClass, errorClass, retryCount - 1);
+            }
+            else {
+                throw new TechnicalException(I18n.t("duniter4j.client.status", request.toString(), response.getStatusLine().toString()));
             }
         }
 

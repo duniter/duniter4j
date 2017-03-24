@@ -84,14 +84,14 @@ public class Configuration  {
         this.applicationConfig.setEncoding(Charsets.UTF_8.name());
         this.applicationConfig.setConfigFileName(file);
 
-        // get all config providers
+        // get allOfToList config providers
         Set<ApplicationConfigProvider> providers =
                 ApplicationConfigHelper.getProviders(null,
                         null,
                         null,
                         true);
 
-        // load all default options
+        // load allOfToList default options
         ApplicationConfigHelper.loadAllDefaultOption(applicationConfig,
                 providers);
 
@@ -106,7 +106,7 @@ public class Configuration  {
         // Override application version
         initVersion(applicationConfig);
 
-        // get all transient and final option keys
+        // get allOfToList transient and final option keys
         Set<String> optionToSkip =
                 ApplicationConfigHelper.getTransientOptionKeys(providers);
 
@@ -233,11 +233,7 @@ public class Configuration  {
     public String getNodeCurrency() {
         return applicationConfig.getOption(ConfigurationOption.NODE_CURRENCY.getKey());
     }
-    
-    public String getNodeProtocol() {
-        return applicationConfig.getOption(ConfigurationOption.NODE_PROTOCOL.getKey());
-    }
-    
+
     public String getNodeHost() {
         return applicationConfig.getOption(ConfigurationOption.NODE_HOST.getKey());
     }

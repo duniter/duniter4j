@@ -27,9 +27,9 @@ package org.duniter.core.client.model.bma;
  */
 public interface Protocol {
 
-    String VERSION = "2";
+    String VERSION = "10";
 
-    String TX_VERSION = "3";
+    String TX_VERSION = "10";
 
     String TYPE_IDENTITY = "Identity";
 

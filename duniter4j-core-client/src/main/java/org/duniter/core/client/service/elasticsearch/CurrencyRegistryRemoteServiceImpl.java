@@ -58,7 +58,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
         config = Configuration.instance();
-        peer = new Peer(config.getNodeElasticSearchHost(), config.getNodeElasticSearchPort());
+        peer = Peer.newBuilder().setHost(config.getNodeElasticSearchHost()).setPort(config.getNodeElasticSearchPort()).build();
     }
 
     @Override
@@ -97,7 +97,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
     @Override
     public List<String> getAllCurrencyNames() {
         if (log.isDebugEnabled()) {
-            log.debug("Getting all currency names...");
+            log.debug("Getting allOfToList currency names...");
         }
 
         // get currency

@@ -150,7 +150,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     }
 
     /**
-     * Fill all cache need for currencies
+     * Fill allOfToList cache need for currencies
      * @param accountId
      */
     public void loadCache(long accountId) {

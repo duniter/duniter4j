@@ -22,6 +22,7 @@ package org.duniter.core.client.service.bma;
  * #L%
  */
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.duniter.core.util.Preconditions;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -76,6 +77,11 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     public static final String URL_MEMBERSHIP_SEARCH = URL_BASE + "/memberships/%s";
 
+    public static final String URL_WS_BLOCK = "/ws/block";
+
+    public static final String URL_WS_PEER = "/ws/peer";
+
+    private ObjectMapper objectMapper;
 
     private NetworkRemoteService networkRemoteService;
 
@@ -88,7 +94,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     // Cache on blockchain parameters
     private Cache<Long, BlockchainParameters> mParametersCache;
 
-    private Map<URI, WebsocketClientEndpoint> blockWsEndPoints = new HashMap<>();
+    private Map<URI, WebsocketClientEndpoint> wsEndPoints = new HashMap<>();
 
     public BlockchainRemoteServiceImpl() {
         super();
@@ -108,11 +114,11 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     public void close() throws IOException {
         super.close();
 
-        if (blockWsEndPoints.size() != 0) {
-            for (WebsocketClientEndpoint clientEndPoint: blockWsEndPoints.values()) {
+        if (wsEndPoints.size() != 0) {
+            for (WebsocketClientEndpoint clientEndPoint: wsEndPoints.values()) {
                 clientEndPoint.close();
             }
-            blockWsEndPoints.clear();
+            wsEndPoints.clear();
         }
     }
 
@@ -561,8 +567,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     @Override
     public WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener) {
-        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
-        return addBlockListener(peer, listener);
+        return addBlockListener(peerService.getActivePeerByCurrencyId(currencyId), listener);
     }
 
     @Override
@@ -570,8 +575,27 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(listener);
 
-        // Get the websocket endpoint
-        WebsocketClientEndpoint wsClientEndPoint = getWebsocketClientEndpoint(peer, "/ws/block");
+        // Get (or create) the websocket endpoint
+        WebsocketClientEndpoint wsClientEndPoint = getWebsocketClientEndpoint(peer, URL_WS_BLOCK);
+
+        // add listener
+        wsClientEndPoint.registerListener(listener);
+
+        return wsClientEndPoint;
+    }
+
+    @Override
+    public WebsocketClientEndpoint addPeerListener(long currencyId, WebsocketClientEndpoint.MessageListener listener) {
+        return addBlockListener(peerService.getActivePeerByCurrencyId(currencyId), listener);
+    }
+
+    @Override
+    public WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener) {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(listener);
+
+        // Get (or create) the websocket endpoint
+        WebsocketClientEndpoint wsClientEndPoint = getWebsocketClientEndpoint(peer, URL_WS_PEER);
 
         // add listener
         wsClientEndPoint.registerListener(listener);
@@ -807,17 +831,17 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
                     path));
 
             // Get the websocket, or open new one if not exists
-            WebsocketClientEndpoint wsClientEndPoint = blockWsEndPoints.get(wsBlockURI);
+            WebsocketClientEndpoint wsClientEndPoint = wsEndPoints.get(wsBlockURI);
             if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
-                log.info(String.format("Starting to listen block from [%s]...", wsBlockURI.toString()));
+                log.info(String.format("Starting to listen on [%s]...", wsBlockURI.toString()));
                 wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI);
-                blockWsEndPoints.put(wsBlockURI, wsClientEndPoint);
+                wsEndPoints.put(wsBlockURI, wsClientEndPoint);
             }
 
             return wsClientEndPoint;
 
         } catch (URISyntaxException | ServiceConfigurationError ex) {
-            throw new TechnicalException("could not create URI need for web socket on block: " + ex.getMessage());
+            throw new TechnicalException(String.format("Could not create URI need for web socket [%s]: %s", path, ex.getMessage()));
         }
 
     }

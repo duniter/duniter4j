@@ -25,18 +25,12 @@ package org.duniter.core.client.service;
 
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.model.bma.EndpointProtocol;
-import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.service.bma.NetworkRemoteService;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class HttpServiceTest {
 
@@ -64,10 +58,9 @@ public class HttpServiceTest {
 	/* -- internal methods */
 
     protected Peer createTestPeer() {
-        Peer peer = new Peer(
-                Configuration.instance().getNodeHost(),
-                Configuration.instance().getNodePort());
-
-        return peer;
+		return Peer.newBuilder()
+				.setHost(Configuration.instance().getNodeHost())
+				.setPort(Configuration.instance().getNodePort())
+				.build();
     }
 }

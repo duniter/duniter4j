@@ -32,4 +32,13 @@ public interface Constants {
         String CURRENCY_NAME = "[A-Za-z0-9_-]";
         String PUBKEY = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
     }
+
+    interface HttpStatus {
+        int SC_TOO_MANY_REQUESTS = 429;
+    }
+
+    interface Config {
+        int TOO_MANY_REQUEST_RETRY_TIME = 500; // 500 ms
+        int MAX_SAME_REQUEST_COUNT = 5; // 5 requests before to get 429 error
+    }
 }

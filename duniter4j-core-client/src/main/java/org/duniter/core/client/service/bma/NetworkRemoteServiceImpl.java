@@ -22,22 +22,31 @@ package org.duniter.core.client.service.bma;
  * #L%
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
-import org.duniter.core.client.model.bma.EndpointProtocol;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.client.model.bma.NetworkPeers;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.util.ObjectUtils;
+import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by eis on 05/02/15.
  */
 public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements NetworkRemoteService{
 
+    private static final Logger log = LoggerFactory.getLogger(NetworkRemoteServiceImpl.class);
 
     public static final String URL_BASE = "/network";
 
@@ -47,10 +56,20 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
     public static final String URL_PEERING_PEERS = URL_PEERING + "/peers";
 
-    public static final String URL_PEERING_PEERS_LEAF = URL_PEERING + "/peers?leaf=";
+    public static final String URL_PEERING_PEERS_LEAVES = URL_PEERING_PEERS + "?leaves=true";
+
+    public static final String URL_PEERING_PEERS_LEAF = URL_PEERING_PEERS + "?leaf=";
+
+    public static final String URL_WS_PEER = "/ws/peer";
+
+    protected ObjectMapper objectMapper;
+
+    private Map<URI, WebsocketClientEndpoint> wsEndPoints = new HashMap<>();
 
     public NetworkRemoteServiceImpl() {
         super();
+
+        objectMapper = JacksonUtils.newObjectMapper();
     }
 
     public NetworkPeering getPeering(Peer peer) {
@@ -59,12 +78,59 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     }
 
     @Override
+    public void close() throws IOException {
+        super.close();
+
+        if (wsEndPoints.size() != 0) {
+            for (WebsocketClientEndpoint clientEndPoint: wsEndPoints.values()) {
+                clientEndPoint.close();
+            }
+            wsEndPoints.clear();
+        }
+    }
+
+    @Override
     public List<Peer> getPeers(Peer peer) {
         return findPeers(peer, null, null, null, null);
     }
 
     @Override
-    public List<Peer> findPeers(Peer peer, String status, EndpointProtocol endpointProtocol, Integer currentBlockNumber, String currentBlockHash) {
+    public List<String> getPeersLeaves(Peer peer) {
+        Preconditions.checkNotNull(peer);
+
+        List<String> result = new ArrayList<>();
+        JsonNode jsonNode= httpService.executeRequest(peer, URL_PEERING_PEERS_LEAVES, JsonNode.class);
+        jsonNode.get("leaves").forEach(jsonNode1 -> {
+            result.add(jsonNode1.asText());
+        });
+        return result;
+    }
+
+    @Override
+    public NetworkPeers.Peer getPeerLeaf(Peer peer, String leaf) {
+        Preconditions.checkNotNull(peer);
+        JsonNode jsonNode = httpService.executeRequest(peer, URL_PEERING_PEERS_LEAF + leaf, JsonNode.class);
+        NetworkPeers.Peer result = null;
+
+        try {
+
+            if (jsonNode.has("leaf")) {
+                jsonNode = jsonNode.get("leaf");
+                if (jsonNode.has("value")) {
+                    jsonNode = jsonNode.get("value");
+                    String json = objectMapper.writeValueAsString(jsonNode);
+                    result = objectMapper.readValue(json, NetworkPeers.Peer.class);
+                }
+            }
+        } catch(IOException e) {
+            throw new TechnicalException(e);
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<Peer> findPeers(Peer peer, String status, EndpointApi endpointApi, Integer currentBlockNumber, String currentBlockHash) {
         Preconditions.checkNotNull(peer);
 
         List<Peer> result = new ArrayList<Peer>();
@@ -80,13 +146,15 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
                 for (NetworkPeering.Endpoint endpoint : remotePeer.endpoints) {
 
-                    match = endpointProtocol == null || endpointProtocol == endpoint.protocol;
+                    match = endpointApi == null || endpointApi == endpoint.api;
 
-                    if (match) {
-                        Peer childPeer = toPeer(endpoint);
-                        if (childPeer != null) {
-                            result.add(childPeer);
-                        }
+                    if (match && endpoint != null) {
+                        Peer childPeer = Peer.newBuilder()
+                                .setCurrency(remotePeer.getCurrency())
+                                .setPubkey(remotePeer.getPubkey())
+                                .setEndpoint(endpoint)
+                                .build();
+                        result.add(childPeer);
                     }
 
                 }
@@ -96,24 +164,21 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
         return result;
     }
 
-    /* -- Internal methods -- */
+    @Override
+    public WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(listener);
 
-    protected Peer toPeer(NetworkPeering.Endpoint source) {
-        Peer target = new Peer();
-        if (StringUtils.isNotBlank(source.ipv4)) {
-            target.setHost(source.ipv4);
-        } else if (StringUtils.isNotBlank(source.ipv6)) {
-            target.setHost(source.ipv6);
-        } else if (StringUtils.isNotBlank(source.url)) {
-            target.setHost(source.url);
-        } else {
-            target = null;
-        }
-        if (target != null && source.port != null) {
-            target.setPort(source.port);
-        }
-        return target;
+        // Get (or create) the websocket endpoint
+        WebsocketClientEndpoint wsClientEndPoint = getWebsocketClientEndpoint(peer, URL_WS_PEER, autoReconnect);
+
+        // add listener
+        wsClientEndPoint.registerListener(listener);
+
+        return wsClientEndPoint;
     }
+
+    /* -- Internal methods -- */
 
     protected Integer parseBlockNumber(NetworkPeers.Peer remotePeer) {
         Preconditions.checkNotNull(remotePeer);
@@ -147,5 +212,30 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
         String hash = remotePeer.block.substring(index+1);
         return hash;
+    }
+
+    public WebsocketClientEndpoint getWebsocketClientEndpoint(Peer peer, String path, boolean autoReconnect) {
+
+        try {
+            URI wsBlockURI = new URI(String.format("%s://%s:%s%s",
+                    peer.isUseSsl() ? "wss" : "ws",
+                    peer.getHost(),
+                    peer.getPort(),
+                    path));
+
+            // Get the websocket, or open new one if not exists
+            WebsocketClientEndpoint wsClientEndPoint = wsEndPoints.get(wsBlockURI);
+            if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
+                log.info(String.format("Starting to listen on [%s]...", wsBlockURI.toString()));
+                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI, autoReconnect);
+                wsEndPoints.put(wsBlockURI, wsClientEndPoint);
+            }
+
+            return wsClientEndPoint;
+
+        } catch (URISyntaxException | ServiceConfigurationError ex) {
+            throw new TechnicalException(String.format("Could not create URI need for web socket [%s]: %s", path, ex.getMessage()));
+        }
+
     }
 }

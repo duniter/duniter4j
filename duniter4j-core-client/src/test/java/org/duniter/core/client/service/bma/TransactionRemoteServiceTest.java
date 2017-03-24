@@ -90,10 +90,9 @@ public class TransactionRemoteServiceTest {
 	}
 
     protected Peer createTestPeer() {
-        Peer peer = new Peer(
-                Configuration.instance().getNodeHost(),
-                Configuration.instance().getNodePort());
-
-        return peer;
+		return Peer.newBuilder()
+				.setHost(Configuration.instance().getNodeHost())
+				.setPort(Configuration.instance().getNodePort())
+				.build();
     }
 }

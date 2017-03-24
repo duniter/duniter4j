@@ -32,6 +32,7 @@ import org.duniter.core.client.model.local.Wallet;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface WotRemoteService extends Service {
@@ -63,6 +64,10 @@ public interface WotRemoteService extends Service {
     WotCertification getCertifiersOf(long currencyId, String uid);
 
     String getSignedIdentity(String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid);
+
+    Map<String, String> getMembersUids(long currencyId);
+
+    Map<String, String> getMembersUids(Peer peer);
 
     void sendIdentity(long currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid);
 

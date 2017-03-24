@@ -67,7 +67,7 @@ public interface CurrencyService extends Service {
     int getCurrencyCount();
 
     /**
-     * Fill all cache need for currencies
+     * Fill allOfToList cache need for currencies
      * @param context
      */
     void loadCache(long accountId);

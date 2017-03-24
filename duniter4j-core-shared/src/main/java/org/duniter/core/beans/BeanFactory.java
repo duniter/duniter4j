@@ -120,7 +120,6 @@ public class BeanFactory implements Closeable{
         throw new TechnicalException(String.format("Unable to create bean with type [%s]: not configured for the service loader [%s]", clazz.getName(), Bean.class.getCanonicalName()));
     }
 
-
     @Override
     public void close() throws IOException {
         for(Object bean: beansCache.values()) {

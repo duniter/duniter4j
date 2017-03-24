@@ -98,7 +98,7 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
     public void doClose() {}
 
     /**
-     * Schedules an rest when node is started (all services and modules ready)
+     * Schedules an rest when node is started (allOfToList services and modules ready)
      *
      * @param job the rest to execute when node started
      * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
@@ -233,4 +233,7 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
         return canContinue;
     }
 
+    public ScheduledExecutorService scheduler() {
+        return delegate.scheduler();
+    }
 }

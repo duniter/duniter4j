@@ -28,7 +28,7 @@ package org.duniter.core.client.model.elasticsearch;
 public class DeleteRecord extends Record {
 
     public static final String PROPERTY_INDEX="index";
-    public static final String PROPERTY_TYPE="type";
+    public static final String PROPERTY_TYPE="sortType";
     public static final String PROPERTY_ID="id";
 
     private String index;

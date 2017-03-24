@@ -22,6 +22,7 @@ package org.duniter.core.client.service.bma;
  * #L%
  */
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.local.Certification;
@@ -53,6 +54,8 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     public static final String URL_BASE = "/wot";
 
     public static final String URL_ADD = URL_BASE + "/add";
+
+    public static final String URL_MEMBERS = URL_BASE + "/members";
 
     public static final String URL_LOOKUP = URL_BASE + "/lookup/%s";
 
@@ -118,6 +121,35 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         return null;
 
     }
+
+    public Map<String, String> getMembersUids(long currencyId) {
+        // get /wot/members
+        JsonNode json = executeRequest(currencyId, URL_MEMBERS, JsonNode.class);
+
+        if (json == null  || !json.has("results")) return null;
+
+        Map<String, String> result = new HashMap<>();
+
+        json.get("results").forEach(entry -> {
+            result.put(entry.get("pubkey").asText(), entry.get("uid").asText());
+        });
+        return result;
+    }
+
+    public Map<String, String> getMembersUids(Peer peer) {
+        // get /wot/members
+        JsonNode json = executeRequest(peer, URL_MEMBERS, JsonNode.class);
+
+        if (json == null || !json.has("results")) return null;
+
+        Map<String, String> result = new HashMap<>();
+
+        json.get("results").forEach(entry -> {
+            result.put(entry.get("pubkey").asText(), entry.get("uid").asText());
+        });
+        return result;
+    }
+
 
     public void getRequirments(long currencyId, String pubKey) {
         if (log.isDebugEnabled()) {

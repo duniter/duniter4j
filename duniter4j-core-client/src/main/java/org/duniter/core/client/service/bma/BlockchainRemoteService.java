@@ -76,7 +76,7 @@ public interface BlockchainRemoteService extends Service {
 
     /**
      * Retrieve the dividend of a block, by id (from 0 to current).
-     * Usefull method to avoid to deserialize all the block
+     * Usefull method to avoid to deserialize allOfToList the block
      *
      * @param currencyId
      * @param number
@@ -222,8 +222,24 @@ public interface BlockchainRemoteService extends Service {
      */
     Map<Integer, Long> getUDs(long currencyId, long startOffset);
 
+    /**
+     * Listening new block event
+     * @param currencyId
+     * @param listener
+     * @return
+     */
     WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener);
 
     WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener);
+
+    /**
+     * Listening new peer event
+     * @param currencyId
+     * @param listener
+     * @return
+     */
+    WebsocketClientEndpoint addPeerListener(long currencyId, WebsocketClientEndpoint.MessageListener listener);
+
+    WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener);
 
 }

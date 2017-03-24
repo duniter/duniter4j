@@ -25,7 +25,7 @@ package org.duniter.core.client.service.bma;
 
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.model.bma.EndpointProtocol;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.ServiceLocator;
@@ -69,7 +69,7 @@ public class NetworkRemoteServiceTest {
 	@Test
 	public void findPeers() throws Exception {
 
-		List<Peer> result = service.findPeers(peer, null, EndpointProtocol.BASIC_MERKLED_API, null, null);
+		List<Peer> result = service.findPeers(peer, null, EndpointApi.BASIC_MERKLED_API, null, null);
 
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.size() > 0);
@@ -87,10 +87,9 @@ public class NetworkRemoteServiceTest {
 	/* -- internal methods */
 
     protected Peer createTestPeer() {
-        Peer peer = new Peer(
-                Configuration.instance().getNodeHost(),
-                Configuration.instance().getNodePort());
-
-        return peer;
+		return Peer.newBuilder()
+				.setHost(Configuration.instance().getNodeHost())
+				.setPort(Configuration.instance().getNodePort())
+				.build();
     }
 }

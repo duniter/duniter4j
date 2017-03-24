@@ -23,9 +23,11 @@ package org.duniter.core.client.service.bma;
  */
 
 import org.duniter.core.beans.Service;
-import org.duniter.core.client.model.bma.EndpointProtocol;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 
 import java.util.List;
 
@@ -38,5 +40,11 @@ public interface NetworkRemoteService extends Service {
 
     List<Peer> getPeers(Peer peer);
 
-    List<Peer> findPeers(Peer peer, String status, EndpointProtocol endpointProtocol, Integer currentBlockNumber, String currentBlockHash);
+    List<String> getPeersLeaves(Peer peer);
+
+    NetworkPeers.Peer getPeerLeaf(Peer peer, String leaf);
+
+    List<Peer> findPeers(Peer peer, String status, EndpointApi endpointApi, Integer currentBlockNumber, String currentBlockHash);
+
+    WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 }

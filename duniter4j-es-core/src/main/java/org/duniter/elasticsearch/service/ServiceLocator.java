@@ -33,17 +33,15 @@ import org.duniter.core.client.service.DataContext;
 import org.duniter.core.client.service.HttpService;
 import org.duniter.core.client.service.HttpServiceImpl;
 import org.duniter.core.client.service.bma.*;
+import org.duniter.core.client.service.local.*;
+import org.duniter.core.client.service.local.NetworkService;
 import org.duniter.core.client.service.local.CurrencyService;
-import org.duniter.core.client.service.local.CurrencyServiceImpl;
-import org.duniter.core.client.service.local.PeerService;
-import org.duniter.core.client.service.local.PeerServiceImpl;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.Ed25519CryptoServiceImpl;
 import org.duniter.core.service.MailService;
 import org.duniter.core.service.MailServiceImpl;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Singleton;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -95,6 +93,7 @@ public class ServiceLocator
                 .bind(MailService.class, MailServiceImpl.class)
                 .bind(PeerService.class, PeerServiceImpl.class)
                 .bind(CurrencyService.class, CurrencyServiceImpl.class)
+                .bind(NetworkService.class, NetworkServiceImpl.class)
                 .bind(HttpService.class, HttpServiceImpl.class)
                 .bind(CurrencyDao.class, MemoryCurrencyDaoImpl.class)
                 .bind(PeerDao.class, MemoryPeerDaoImpl.class)

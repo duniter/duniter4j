@@ -137,6 +137,17 @@ public class WebsocketClientEndpoint implements Closeable {
     }
 
     /**
+     * unregister message listener
+     *
+     * @param listener
+     */
+    public void unregisterListener(MessageListener listener) {
+        synchronized (messageListeners) {
+            this.messageListeners.remove(listener);
+        }
+    }
+
+    /**
      * register connection listener
      *
      * @param listener
@@ -146,6 +157,18 @@ public class WebsocketClientEndpoint implements Closeable {
             this.connectionListeners.add(listener);
         }
     }
+
+    /**
+     * unregister connection listener
+     *
+     * @param listener
+     */
+    public void unregisterListener(ConnectionListener listener) {
+        synchronized (connectionListeners) {
+            this.connectionListeners.remove(listener);
+        }
+    }
+
 
     /**
      * Send a message.

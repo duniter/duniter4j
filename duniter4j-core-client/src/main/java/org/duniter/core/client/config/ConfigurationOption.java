@@ -143,14 +143,14 @@ public enum ConfigurationOption implements ConfigOptionDef {
     NODE_HOST(
             "duniter4j.node.host",
             n("duniter4j.config.option.node.host.description"),
-            "cgeek.fr",
+            "g1.duniter.org",
             String.class,
             false),
 
     NODE_PORT(
             "duniter4j.node.port",
             n("duniter4j.config.option.node.port.description"),
-            "9330",
+            "10901",
             Integer.class,
             false),
 
@@ -164,7 +164,7 @@ public enum ConfigurationOption implements ConfigOptionDef {
     NETWORK_TIMEOUT(
             "duniter4j.network.timeout",
             n("duniter4j.config.option.network.timeout.description"),
-            "100000", // = 10 s
+            "20000", // = 2 s
             Integer.class,
             false),
 

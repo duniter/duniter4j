@@ -148,7 +148,9 @@ public class NetworkPeers implements Serializable {
                     "status=" + status + "\n" +
                     "block=" + block + "\n";
             for(NetworkPeering.Endpoint endpoint: endpoints) {
-                s += endpoint.toString() + "\n";
+                if (endpoint != null) {
+                    s += endpoint.toString() + "\n";
+                }
             }
             return s;
         }

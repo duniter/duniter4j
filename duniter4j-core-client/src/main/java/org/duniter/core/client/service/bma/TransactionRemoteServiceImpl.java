@@ -308,7 +308,9 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		}
 
 		// Comment
-		sb.append("Comment: ").append(comments).append('\n');
+		sb.append("Comment: ");
+		if (comments != null) sb.append(comments);
+		sb.append('\n');
 
 		return sb.toString();
 	}

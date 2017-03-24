@@ -58,7 +58,7 @@ public class MultimapTypeAdapter implements JsonSerializer<Multimap>, JsonDeseri
         Preconditions.checkArgument(multimapType instanceof ParameterizedType);
         final ParameterizedType paramType = (ParameterizedType)multimapType;
         final Type[] typeArguments = paramType.getActualTypeArguments();
-        Preconditions.checkArgument(2 == typeArguments.length, "Type must contain exactly 2 type arguments.");
+        Preconditions.checkArgument(2 == typeArguments.length, "Type must contain exactly 2 sortType arguments.");
 
         final ParameterizedTypeImpl valueType = new ParameterizedTypeImpl(Collection.class, null, typeArguments[1]);
         final ParameterizedTypeImpl mapType = new ParameterizedTypeImpl(Map.class, null, typeArguments[0], valueType);

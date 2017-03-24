@@ -35,6 +35,7 @@ public class NetworkPeering implements Serializable {
     private String block;
     private String signature;
 
+
     private String raw;
 
     private String pubkey;
@@ -112,26 +113,26 @@ public class NetworkPeering implements Serializable {
     }
 
     public static class Endpoint implements Serializable {
-        public EndpointProtocol protocol;
-        public String url;
+        public EndpointApi api;
+        public String dns;
         public String ipv4;
         public String ipv6;
         public Integer port;
 
-        public EndpointProtocol getProtocol() {
-            return protocol;
+        public EndpointApi getApi() {
+            return api;
         }
 
-        public void setProtocol(EndpointProtocol protocol) {
-            this.protocol = protocol;
+        public void setApi(EndpointApi api) {
+            this.api = api;
         }
 
-        public String getUrl() {
-            return url;
+        public String getDns() {
+            return dns;
         }
 
-        public void setUrl(String url) {
-            this.url = url;
+        public void setDns(String dns) {
+            this.dns = dns;
         }
 
         public String getIpv4() {
@@ -160,8 +161,8 @@ public class NetworkPeering implements Serializable {
 
         @Override
         public String toString() {
-            String s = "protocol=" + protocol.name() + "\n" +
-                    "url=" + url + "\n" +
+            String s = "api=" + api.name() + "\n" +
+                    "dns=" + dns + "\n" +
                     "ipv4=" + ipv4 + "\n" +
                     "ipv6=" + ipv6 + "\n" +
                     "port=" + port + "\n";

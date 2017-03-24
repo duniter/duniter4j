@@ -105,7 +105,7 @@ public class CitiesRegistryService extends AbstractService {
 
     public void initCities() {
         if (log.isDebugEnabled()) {
-            log.debug("Initializing all registry cities");
+            log.debug("Initializing allOfToList registry cities");
         }
 
         //File bulkFile = createCitiesBulkFile2();

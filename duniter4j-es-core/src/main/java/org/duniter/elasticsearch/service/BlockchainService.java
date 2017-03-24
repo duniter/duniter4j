@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
-import org.duniter.core.client.model.bma.EndpointProtocol;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.util.json.JsonAttributeParser;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
@@ -178,7 +178,7 @@ public class BlockchainService extends AbstractService {
             // Check if index exists
             createIndexIfNotExists(currencyName, true/*wait cluster health*/);
 
-            // Then index all blocks
+            // Then index allOfToList blocks
             BlockchainBlock peerCurrentBlock = blockchainRemoteService.getCurrentBlock(peer);
 
             if (peerCurrentBlock != null) {
@@ -243,7 +243,7 @@ public class BlockchainService extends AbstractService {
                         progressionModel.setStatus(ProgressionModel.Status.SUCCESS);
                     }
                     else {
-                        logger.warn(String.format("[%s] [%s] Could not indexed all blocks. Missing %s blocks.", currencyName, peer, missingBlocks.size()));
+                        logger.warn(String.format("[%s] [%s] Could not indexed allOfToList blocks. Missing %s blocks.", currencyName, peer, missingBlocks.size()));
                         progressionModel.setStatus(ProgressionModel.Status.FAILED);
                     }
                 }
@@ -294,7 +294,7 @@ public class BlockchainService extends AbstractService {
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(BLOCK_TYPE, createBlockTypeMapping());
-        createIndexRequestBuilder.addMapping(PEER_TYPE, createPeerTypeMapping());
+        createIndexRequestBuilder.addMapping(PEER_TYPE, NetworkService.createPeerTypeMapping());
         createIndexRequestBuilder.execute().actionGet();
     }
 
@@ -689,34 +689,6 @@ public class BlockchainService extends AbstractService {
         }
     }
 
-    public XContentBuilder createPeerTypeMapping() {
-        try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder()
-                    .startObject()
-                    .startObject(PEER_TYPE)
-                    .startObject("properties")
-
-                    // currency
-                    .startObject("currency")
-                    .field("type", "string")
-                    .endObject()
-
-                    // pubkey
-                    .startObject("pubkey")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-
-                    .endObject()
-                    .endObject().endObject();
-
-            return mapping;
-        }
-        catch(IOException ioe) {
-            throw new TechnicalException("Error while getting mapping for block index: " + ioe.getMessage(), ioe);
-        }
-    }
 
     public BlockchainBlock getBlockByIdStr(String currencyName, String blockId) {
 
@@ -954,9 +926,9 @@ public class BlockchainService extends AbstractService {
         // Select other peers, in filtering on the same blockchain version
 
         // TODO : a activer quand les peers seront bien mis à jour (UP/DOWN, block, hash...)
-        //List<Peer> otherPeers = networkRemoteService.findPeers(peer, "UP", EndpointProtocol.BASIC_MERKLED_API,
+        //List<Peer> otherPeers = networkRemoteService.findPeers(peer, "UP", EndpointApi.BASIC_MERKLED_API,
         //        currentBlock.getNumber(), currentBlock.getHash());
-        List<Peer> otherPeers = networkRemoteService.findPeers(peer, null, EndpointProtocol.BASIC_MERKLED_API,
+        List<Peer> otherPeers = networkRemoteService.findPeers(peer, null, EndpointApi.BASIC_MERKLED_API,
                 null, null);
 
         for(Peer childPeer: otherPeers) {
