@@ -24,6 +24,7 @@ package org.duniter.core.client.model.local;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.base.Joiner;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.util.Preconditions;
@@ -341,6 +342,11 @@ public class Peer implements LocalEntity, Serializable {
     @JsonIgnore
     public void setStats(Stats stats) {
         this.stats = stats;
+    }
+
+    @JsonIgnore
+    public String computeKey()  {
+        return Joiner.on('-').skipNulls().join(pubkey, dns, ipv4, ipv6, port, useSsl);
     }
 
     public String toString() {

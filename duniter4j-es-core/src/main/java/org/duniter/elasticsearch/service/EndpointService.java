@@ -119,12 +119,12 @@ public class EndpointService extends AbstractService {
         }
     }
 
-    public EndpointService indexLastPeers(Peer peer) {
-        indexLastPeers(peer, nullProgressionModel);
+    public EndpointService indexAllEndpoints(Peer peer) {
+        indexAllEndpoints(peer, nullProgressionModel);
         return this;
     }
 
-    public EndpointService indexLastPeers(Peer peer, ProgressionModel progressionModel) {
+    public EndpointService indexAllEndpoints(Peer peer, ProgressionModel progressionModel) {
 
         try {
             // Get the blockchain name from node
@@ -139,7 +139,7 @@ public class EndpointService extends AbstractService {
             indexPeers(currencyName, peer, progressionModel);
 
         } catch(Exception e) {
-            logger.error("Error during indexLastPeers: " + e.getMessage(), e);
+            logger.error("Error during indexAllEndpoints: " + e.getMessage(), e);
             progressionModel.setStatus(ProgressionModel.Status.FAILED);
         }
 
@@ -243,32 +243,33 @@ public class EndpointService extends AbstractService {
     public Peer savePeer(final Peer peer, boolean wait) throws DuplicateIndexIdException {
         Preconditions.checkNotNull(peer, "peer could not be null") ;
         Preconditions.checkNotNull(peer.getCurrency(), "peer attribute 'currency' could not be null");
-        //Preconditions.checkNotNull(peer.getHash(), "peer attribute 'hash' could not be null");
         Preconditions.checkNotNull(peer.getPubkey(), "peer attribute 'pubkey' could not be null");
         Preconditions.checkNotNull(peer.getHost(), "peer attribute 'host' could not be null");
         Preconditions.checkNotNull(peer.getApi(), "peer 'api' could not be null");
 
-        Peer existingPeer = getPeerByHash(peer.getCurrency(), peer.getHash());
+        String id = cryptoService.hash(peer.computeKey());
+
+        boolean exists = isDocumentExists(peer.getCurrency(), ENDPOINT_TYPE, id);
 
         // Currency not exists, or has changed, so create it
-        if (existingPeer == null) {
+        if (!exists) {
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("Insert new peer [%s]", peer));
             }
 
             // Index new peer
-            indexPeer(peer, wait);
+            indexPeer(peer, id, wait);
         }
 
         // Update existing peer
         else {
             logger.trace(String.format("Update peer [%s]", peer));
-            updatePeer(peer, wait);
+            updatePeer(peer, id, wait);
         }
         return peer;
     }
 
-    public void indexPeer(Peer peer, boolean wait) {
+    public void indexPeer(Peer peer, String id, boolean wait) {
         Preconditions.checkNotNull(peer);
         Preconditions.checkArgument(StringUtils.isNotBlank(peer.getCurrency()));
         Preconditions.checkNotNull(peer.getHash());
@@ -282,7 +283,7 @@ public class EndpointService extends AbstractService {
 
             // Preparing indexBlocksFromNode
             IndexRequestBuilder indexRequest = client.prepareIndex(peer.getCurrency(), ENDPOINT_TYPE)
-                    .setId(peer.getHash())
+                    .setId(id)
                     .setSource(json);
 
             // Execute indexBlocksFromNode
@@ -299,7 +300,7 @@ public class EndpointService extends AbstractService {
         }
     }
 
-    public void updatePeer(Peer peer, boolean wait) {
+    public void updatePeer(Peer peer, String id, boolean wait) {
         Preconditions.checkNotNull(peer);
         Preconditions.checkArgument(StringUtils.isNotBlank(peer.getCurrency()));
         Preconditions.checkNotNull(peer.getHash());
@@ -312,7 +313,7 @@ public class EndpointService extends AbstractService {
             String json = objectMapper.writeValueAsString(peer);
 
             // Preparing indexBlocksFromNode
-            UpdateRequestBuilder updateRequest = client.prepareUpdate(peer.getCurrency(), ENDPOINT_TYPE, peer.getHash())
+            UpdateRequestBuilder updateRequest = client.prepareUpdate(peer.getCurrency(), ENDPOINT_TYPE, id)
                     .setDoc(json);
 
             // Execute indexBlocksFromNode
@@ -327,33 +328,6 @@ public class EndpointService extends AbstractService {
         catch(JsonProcessingException e) {
             throw new TechnicalException(e);
         }
-    }
-
-    /**
-     *
-     * @param currencyName
-     * @param number the peer hash
-     * @param json block as JSON
-     */
-    public EndpointService indexPeerFromJson(String currencyName, int number, byte[] json, boolean refresh, boolean wait) {
-        Preconditions.checkNotNull(json);
-        Preconditions.checkArgument(json.length > 0);
-
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, ENDPOINT_TYPE)
-                .setId(String.valueOf(number))
-                .setRefresh(refresh)
-                .setSource(json);
-
-        // Execute indexBlocksFromNode
-        if (!wait) {
-            indexRequest.execute();
-        }
-        else {
-            indexRequest.execute().actionGet();
-        }
-
-        return this;
     }
 
     /**
@@ -432,7 +406,7 @@ public class EndpointService extends AbstractService {
         SearchResponse searchResponse = searchRequest.execute().actionGet();
 
         // Read query result
-        return toBlocks(searchResponse, true);
+        return toPeers(searchResponse, true);
     }
 
     /* -- Internal methods -- */
@@ -491,7 +465,7 @@ public class EndpointService extends AbstractService {
         }
     }
 
-    public Peer getPeerByHash(String currencyName, String hash) {
+    public Peer getPeerByHash(String currencyName, String id) {
 
         // Prepare request
         SearchRequestBuilder searchRequest = client
@@ -500,26 +474,26 @@ public class EndpointService extends AbstractService {
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // If more than a word, search on terms match
-        searchRequest.setQuery(QueryBuilders.matchQuery("_id", hash));
+        searchRequest.setQuery(QueryBuilders.matchQuery("_id", id));
 
         // Execute query
         try {
             SearchResponse searchResponse = searchRequest.execute().actionGet();
-            List<Peer> blocks = toBlocks(searchResponse, false);
-            if (CollectionUtils.isEmpty(blocks)) {
+            List<Peer> peers = toPeers(searchResponse, false);
+            if (CollectionUtils.isEmpty(peers)) {
                 return null;
             }
 
             // Return the unique result
-            return CollectionUtils.extractSingleton(blocks);
+            return CollectionUtils.extractSingleton(peers);
         }
         catch(JsonSyntaxException e) {
-            throw new TechnicalException(String.format("Error while getting indexed peer #%s for [%s]", hash, currencyName), e);
+            throw new TechnicalException(String.format("Error while getting indexed peer #%s for [%s]", id, currencyName), e);
         }
 
     }
 
-    protected List<Peer> toBlocks(SearchResponse response, boolean withHighlight) {
+    protected List<Peer> toPeers(SearchResponse response, boolean withHighlight) {
         // Read query result
         List<Peer> result = Lists.newArrayList();
         response.getHits().forEach(searchHit -> {
@@ -555,16 +529,5 @@ public class EndpointService extends AbstractService {
         return result;
     }
 
-
-    protected void reportIndexPeersProgress(ProgressionModel progressionModel, String currencyName, Peer peer, int offset, int total) {
-        int pct = offset * 100 / total;
-        progressionModel.setCurrent(pct);
-
-        progressionModel.setMessage(I18n.t("duniter4j.es.networkService.indexPeers.progress", currencyName, peer, offset, pct));
-        if (logger.isInfoEnabled()) {
-            logger.info(I18n.t("duniter4j.es.networkService.indexPeers.progress", currencyName, peer, offset, pct));
-        }
-
-    }
 
 }

@@ -33,9 +33,16 @@ public class StringUtils {
     public static boolean isNotBlank(String value) {
         return value != null && value.trim().length() > 0;
     }
+    public static boolean isNotBlank(char[] value) {
+        return value != null && value.length > 0;
+    }
 
     public static boolean isBlank(String value) {
         return value == null || value.trim().length() == 0;
+    }
+
+    public static boolean isBlank(char[] value) {
+        return value == null || value.length == 0;
     }
 
     public static boolean isNotEmpty(String value) {

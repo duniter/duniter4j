@@ -2,10 +2,11 @@ package fr.duniter.cmd;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.Lists;
 import fr.duniter.cmd.actions.NetworkAction;
-import fr.duniter.cmd.actions.SentMoneyAction;
+import fr.duniter.cmd.actions.TransactionAction;
 import org.apache.commons.io.FileUtils;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.service.ServiceLocator;
@@ -13,8 +14,6 @@ import org.duniter.core.util.StringUtils;
 import org.nuiton.i18n.I18n;
 import org.nuiton.i18n.init.DefaultI18nInitializer;
 import org.nuiton.i18n.init.UserI18nInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +33,7 @@ public class Main {
     @Parameter(names = "-config", description = "Configuration file path")
     private String configFilename = "duniter-cmd.config";
 
+
     public static void main(String ... args) {
         Main main = new Main();
         main.run(args);
@@ -43,13 +43,24 @@ public class Main {
 
         Map<String, Runnable> actions = new HashMap<>();
         actions.put("network", new NetworkAction());
-        actions.put("send", new SentMoneyAction());
+        actions.put("transaction", new TransactionAction());
 
         // Parsing args
         JCommander jc = new JCommander(this);
         actions.entrySet().stream().forEach(entry -> jc.addCommand(entry.getKey(), entry.getValue()));
         try {
             jc.parse(args);
+
+            jc.getParameters().stream().forEach(param -> {
+              if (param.getParameter().password()
+                      && param.getParameter().required()
+                      && param.getParameter().echoInput()
+                      && !param.isAssigned()) {
+                  System.out.print(param.getParameter().getParameter().description());
+                  //var17.addValue(new String(var11));
+              }
+            });
+            //jc.parse(args);
         }
         catch(ParameterException e) {
             System.err.println(e.getMessage());

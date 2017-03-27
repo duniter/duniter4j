@@ -298,19 +298,6 @@ public class BlockchainService extends AbstractService {
         createIndexRequestBuilder.execute().actionGet();
     }
 
-    public void createBlock(BlockchainBlock block) throws org.duniter.elasticsearch.exception.DuplicateIndexIdException {
-        Preconditions.checkNotNull(block, "block could not be null") ;
-        Preconditions.checkNotNull(block.getCurrency(), "block attribute 'blockchain' could not be null");
-        Preconditions.checkNotNull(block.getNumber(), "block attribute 'number' could not be null");
-
-        BlockchainBlock existingBlock = getBlockById(block.getCurrency(), block.getNumber());
-        if (existingBlock != null) {
-            throw new DuplicateIndexIdException(String.format("Block with number [%s] already exists.", block.getNumber()));
-        }
-
-        indexBlock(block, false);
-    }
-
     /**
      * Create or update a block, depending on its existence and hash
      * @param block

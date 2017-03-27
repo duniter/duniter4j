@@ -139,7 +139,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
             // Index peers (and listen if new peer appear)
             injector.getInstance(EndpointService.class)
-                    .indexLastPeers(peer)/*
+                    .indexAllEndpoints(peer)/*
                     .listenAndIndexNewPeer(peer)*/;
         }
     }

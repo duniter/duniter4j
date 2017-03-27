@@ -33,6 +33,28 @@ import org.duniter.core.client.service.exception.InsufficientCreditException;
 
 public interface TransactionRemoteService extends Service {
 
+    /**
+     * Transfer TX to the given peer, or if null to currency's default peer
+     * @param peer
+     * @param wallet
+     * @param destPubKey
+     * @param amount
+     * @param comment
+     * @return
+     * @throws InsufficientCreditException
+     */
+    String transfer(Peer peer, Wallet wallet, String destPubKey, long amount,
+                    String comment) throws InsufficientCreditException;
+
+    /**
+     * Same, using the default currency's peer
+     * @param wallet
+     * @param destPubKey
+     * @param amount
+     * @param comment
+     * @return
+     * @throws InsufficientCreditException
+     */
 	String transfer(Wallet wallet, String destPubKey, long amount,
                     String comment) throws InsufficientCreditException;
 

@@ -32,7 +32,16 @@ import org.duniter.core.util.crypto.KeyPair;
  * Created by eis on 10/01/15.
  */
 public interface CryptoService extends Bean {
+
+    /**
+     * generate a crypto seed, using default N,r,p parameters (4096,16,1)
+     * @param salt
+     * @param password
+     * @return
+     */
     byte[] getSeed(String salt, String password);
+
+    byte[] getSeed(String salt, String password, int N, int r, int p);
 
     /**
      * Returns a new signing key pair generated from salt and password.

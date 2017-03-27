@@ -77,24 +77,38 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
         cryptoService = ServiceLocator.instance().getCryptoService();
 	}
 
+
 	public String transfer(Wallet wallet, String destPubKey, long amount,
 						   String comment) throws InsufficientCreditException {
+		Preconditions.checkNotNull(wallet);
+		Preconditions.checkNotNull(wallet.getCurrencyId());
+
+		return transfer(null, wallet, destPubKey, amount, comment);
+	}
+
+	public String transfer(Peer peer, Wallet wallet, String destPubKey, long amount,
+						   String comment) throws InsufficientCreditException {
+		Preconditions.checkNotNull(wallet);
+		Preconditions.checkArgument(peer != null || wallet.getCurrencyId() != null);
 
 		// Get current block
-		BlockchainBlock currentBlock = executeRequest(wallet.getCurrencyId(), BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class);
+		BlockchainBlock currentBlock = peer != null ?
+				executeRequest(peer, BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class) :
+				executeRequest(wallet.getCurrencyId(), BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class);
 
 		// http post /tx/process
-		HttpPost httpPost = new HttpPost(
-				getPath(wallet.getCurrencyId(), URL_TX_PROCESS));
+		HttpPost httpPost = peer != null ?
+				new HttpPost(getPath(peer, URL_TX_PROCESS)) :
+				new HttpPost(getPath(wallet.getCurrencyId(), URL_TX_PROCESS));
 
 		// compute transaction
-		String transaction = getSignedTransaction(wallet, currentBlock, destPubKey, 0, amount,
-                comment);
+		String transaction = getSignedTransaction(peer, wallet, currentBlock, destPubKey, 0, amount,
+				comment);
 
 		if (log.isDebugEnabled()) {
 			log.debug(String.format(
-                "Will send transaction document: \n------\n%s------",
-                transaction));
+					"Will send transaction document: \n------\n%s------",
+					transaction));
 		}
 
 		List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
@@ -107,16 +121,19 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		}
 
 		String selfResult = executeRequest(httpPost, String.class);
-		log.info("received from /tx/process: " + selfResult);
+		if (log.isDebugEnabled()) {
+			log.debug("Received from /tx/process: " + selfResult);
+		}
 
 
-        String fingerprint = DigestUtils.sha1Hex(transaction);
+		String fingerprint = DigestUtils.sha1Hex(transaction);
 		if (log.isDebugEnabled()) {
 			log.debug(String.format(
 					"Fingerprint: %s",
 					fingerprint));
 		}
-        return fingerprint;
+		return fingerprint;
+
 	}
 
 	public TxSource getSources(long currencyId, String pubKey) {
@@ -217,7 +234,8 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 	/* -- internal methods -- */
 
-	public String getSignedTransaction(Wallet wallet,
+	protected String getSignedTransaction(Peer peer,
+									   Wallet wallet,
 									   BlockchainBlock block,
 									   String destPubKey,
 									   int locktime,
@@ -228,7 +246,9 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
         Preconditions.checkArgument(StringUtils.isNotBlank(wallet.getPubKeyHash()));
 
 		// Retrieve the wallet sources
-		TxSource sourceResults = getSources(wallet.getCurrencyId(), wallet.getPubKeyHash());
+		TxSource sourceResults = peer != null ?
+				getSources(peer, wallet.getPubKeyHash()) :
+				getSources(wallet.getCurrencyId(), wallet.getPubKeyHash());
 		if (sourceResults == null) {
 			throw new TechnicalException("Unable to load user sources.");
 		}

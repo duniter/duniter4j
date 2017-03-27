@@ -50,10 +50,10 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
     // Length of a secret key
     private static int SECRETKEY_BYTES = 64;
 
-    // Scrypt parameter
-    private static int SCRYPT_PARAMS_N = 4096;
-    private static int SCRYPT_PARAMS_r = 16;
-    private static int SCRYPT_PARAMS_p = 1;
+    // Scrypt default parameters
+    public static int SCRYPT_PARAMS_N = 4096;
+    public static int SCRYPT_PARAMS_r = 16;
+    public static int SCRYPT_PARAMS_p = 1;
 
     protected final static char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
 
@@ -68,12 +68,16 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
 
     @Override
     public byte[] getSeed(String salt, String password) {
+        return getSeed(salt, password, SCRYPT_PARAMS_N, SCRYPT_PARAMS_r, SCRYPT_PARAMS_p);
+    }
+
+    @Override
+    public byte[] getSeed(String salt, String password, int N, int r, int p) {
         try {
             byte[] seed = SCrypt.scrypt(
                     CryptoUtils.decodeAscii(password),
                     CryptoUtils.decodeAscii(salt),
-                    SCRYPT_PARAMS_N, SCRYPT_PARAMS_r,
-                    SCRYPT_PARAMS_p, SEED_BYTES);
+                    N, r, p, SEED_BYTES);
             return seed;
         } catch (GeneralSecurityException e) {
             throw new TechnicalException(
@@ -85,7 +89,6 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
     public KeyPair getKeyPair(String salt, String password) {
         return getKeyPairFromSeed(getSeed(salt, password));
     }
-
 
     @Override
     public KeyPair getKeyPairFromSeed(byte[] seed) {
