@@ -27,7 +27,7 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.CurrencyService;
-import org.duniter.elasticsearch.service.NetworkService;
+import org.duniter.elasticsearch.service.EndpointService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
@@ -138,7 +138,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .listenAndIndexNewBlock(peer);
 
             // Index peers (and listen if new peer appear)
-            injector.getInstance(NetworkService.class)
+            injector.getInstance(EndpointService.class)
                     .indexLastPeers(peer)/*
                     .listenAndIndexNewPeer(peer)*/;
         }

@@ -54,7 +54,7 @@ public class ServiceModule extends AbstractModule implements Module {
 
         // blockchain indexation services
         bind(BlockchainService.class).asEagerSingleton();
-        bind(NetworkService.class).asEagerSingleton();
+        bind(EndpointService.class).asEagerSingleton();
 
         // Duniter Client API beans
         bindWithLocator(BlockchainRemoteService.class);

@@ -294,7 +294,7 @@ public class BlockchainService extends AbstractService {
                 .build();
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(BLOCK_TYPE, createBlockTypeMapping());
-        createIndexRequestBuilder.addMapping(PEER_TYPE, NetworkService.createPeerTypeMapping());
+        createIndexRequestBuilder.addMapping(PEER_TYPE, EndpointService.createEndpointTypeMapping());
         createIndexRequestBuilder.execute().actionGet();
     }
 

@@ -146,7 +146,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
                 for (NetworkPeering.Endpoint endpoint : remotePeer.endpoints) {
 
-                    match = endpointApi == null || endpointApi == endpoint.api;
+                    match = endpointApi == null || (endpoint != null && endpointApi == endpoint.api);
 
                     if (match && endpoint != null) {
                         Peer childPeer = Peer.newBuilder()

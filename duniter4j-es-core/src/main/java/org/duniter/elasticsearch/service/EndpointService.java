@@ -31,7 +31,6 @@ import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.service.local.NetworkServiceImpl;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.model.NullProgressionModel;
 import org.duniter.core.model.ProgressionModel;
@@ -71,9 +70,9 @@ import java.util.stream.Collectors;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class NetworkService extends AbstractService {
+public class EndpointService extends AbstractService {
 
-    public static final String PEER_TYPE = "peer";
+    public static final String ENDPOINT_TYPE = "endpoint";
 
     private final ProgressionModel nullProgressionModel = new NullProgressionModel();
 
@@ -89,8 +88,8 @@ public class NetworkService extends AbstractService {
     private ObjectMapper objectMapper;
 
     @Inject
-    public NetworkService(Client client, PluginSettings settings, ThreadPool threadPool,
-                          final ServiceLocator serviceLocator){
+    public EndpointService(Client client, PluginSettings settings, ThreadPool threadPool,
+                           final ServiceLocator serviceLocator){
         super("duniter.network", client, settings);
         this.objectMapper = JacksonUtils.newObjectMapper();
         this.threadPool = threadPool;
@@ -120,12 +119,12 @@ public class NetworkService extends AbstractService {
         }
     }
 
-    public NetworkService indexLastPeers(Peer peer) {
+    public EndpointService indexLastPeers(Peer peer) {
         indexLastPeers(peer, nullProgressionModel);
         return this;
     }
 
-    public NetworkService indexLastPeers(Peer peer, ProgressionModel progressionModel) {
+    public EndpointService indexLastPeers(Peer peer, ProgressionModel progressionModel) {
 
         try {
             // Get the blockchain name from node
@@ -148,7 +147,7 @@ public class NetworkService extends AbstractService {
     }
 
 
-    public NetworkService indexPeers(String currencyName, Peer firstPeer, ProgressionModel progressionModel) {
+    public EndpointService indexPeers(String currencyName, Peer firstPeer, ProgressionModel progressionModel) {
         progressionModel.setStatus(ProgressionModel.Status.RUNNING);
         progressionModel.setTotal(100);
         long timeStart = System.currentTimeMillis();
@@ -282,7 +281,7 @@ public class NetworkService extends AbstractService {
             String json = objectMapper.writeValueAsString(peer);
 
             // Preparing indexBlocksFromNode
-            IndexRequestBuilder indexRequest = client.prepareIndex(peer.getCurrency(), PEER_TYPE)
+            IndexRequestBuilder indexRequest = client.prepareIndex(peer.getCurrency(), ENDPOINT_TYPE)
                     .setId(peer.getHash())
                     .setSource(json);
 
@@ -313,7 +312,7 @@ public class NetworkService extends AbstractService {
             String json = objectMapper.writeValueAsString(peer);
 
             // Preparing indexBlocksFromNode
-            UpdateRequestBuilder updateRequest = client.prepareUpdate(peer.getCurrency(), PEER_TYPE, peer.getHash())
+            UpdateRequestBuilder updateRequest = client.prepareUpdate(peer.getCurrency(), ENDPOINT_TYPE, peer.getHash())
                     .setDoc(json);
 
             // Execute indexBlocksFromNode
@@ -336,12 +335,12 @@ public class NetworkService extends AbstractService {
      * @param number the peer hash
      * @param json block as JSON
      */
-    public NetworkService indexPeerFromJson(String currencyName, int number, byte[] json, boolean refresh, boolean wait) {
+    public EndpointService indexPeerFromJson(String currencyName, int number, byte[] json, boolean refresh, boolean wait) {
         Preconditions.checkNotNull(json);
         Preconditions.checkArgument(json.length > 0);
 
         // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, PEER_TYPE)
+        IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, ENDPOINT_TYPE)
                 .setId(String.valueOf(number))
                 .setRefresh(refresh)
                 .setSource(json);
@@ -370,7 +369,7 @@ public class NetworkService extends AbstractService {
      * @param refresh Enable ES update with 'refresh' tag ?
      * @param wait need to wait until processed ?
      */
-    public NetworkService indexPeer(Peer peer, String json, boolean refresh, boolean wait) {
+    public EndpointService indexPeer(Peer peer, String json, boolean refresh, boolean wait) {
         Preconditions.checkNotNull(json);
         Preconditions.checkArgument(json.length() > 0);
 
@@ -384,7 +383,7 @@ public class NetworkService extends AbstractService {
 
 
         // Preparing index
-        IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, PEER_TYPE)
+        IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, ENDPOINT_TYPE)
                 .setId(hash)
                 .setRefresh(refresh)
                 .setSource(json);
@@ -406,7 +405,7 @@ public class NetworkService extends AbstractService {
         // Prepare request
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(currencyName)
-                .setTypes(PEER_TYPE)
+                .setTypes(ENDPOINT_TYPE)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // If only one term, search as prefix
@@ -438,11 +437,11 @@ public class NetworkService extends AbstractService {
 
     /* -- Internal methods -- */
 
-    public static XContentBuilder createPeerTypeMapping() {
+    public static XContentBuilder createEndpointTypeMapping() {
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder()
                     .startObject()
-                    .startObject(PEER_TYPE)
+                    .startObject(ENDPOINT_TYPE)
                     .startObject("properties")
 
                     // currency
@@ -497,7 +496,7 @@ public class NetworkService extends AbstractService {
         // Prepare request
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(currencyName)
-                .setTypes(PEER_TYPE)
+                .setTypes(ENDPOINT_TYPE)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // If more than a word, search on terms match

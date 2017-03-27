@@ -27,7 +27,9 @@ package org.duniter.core.client.model.bma;
  */
 public interface ErrorCode {
 
+    int ALREADY_UP_TO_DATE = 1004;
     int NO_MATCHING_IDENTITY = 2001;
     int UID_ALREADY_USED = 2003;
+    int WRONG_SIGNATURE_MEMBERSHIP = 2006;
     int MEMBERSHRIP_ALREADY_SEND = 2007;
 }
