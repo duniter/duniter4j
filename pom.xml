@@ -37,8 +37,10 @@
     <junit.version>4.12</junit.version>
     <jetty.version>9.0.4.v20130625</jetty.version>
 
+
     <!--license-maven-plugin config -->
     <maven.license.file>${project.basedir}/LICENSE</maven.license.file>
+    <license.licenseFile>${maven.license.file}</license.licenseFile>
     <license.useMissingFile>true</license.useMissingFile>
     <license.failIfWarning>true</license.failIfWarning>
     <license.organizationName>EIS</license.organizationName>
@@ -50,6 +52,9 @@
     <arguments />
     <preparationGoals>verify</preparationGoals>
     <projectInfoReportsPluginVersion>2.7</projectInfoReportsPluginVersion>
+
+    <!-- Last JRE version to use -->
+    <jreVersion>1.8.77</jreVersion>
 
     <jarPluginVersion>2.5</jarPluginVersion>
 
@@ -100,11 +105,11 @@
   <modules>
     <module>duniter4j-core-shared</module>
     <module>duniter4j-core-client</module>
+    <module>duniter4j-client</module>
     <module>duniter4j-es-core</module>
     <module>duniter4j-es-user</module>
     <module>duniter4j-es-gchange</module>
     <module>duniter4j-es-assembly</module>
-      <module>duniter4j-cmd</module>
   </modules>
 
   <scm>
@@ -611,6 +616,9 @@
                     </licenseMerge>
                     <licenseMerge>
                       Lesser General Public License (LPGL)|GNU Lesser General Public License|GNU LESSER GENERAL PUBLIC LICENSE|LGPL|lgpl
+                    </licenseMerge>
+                    <licenseMerge>
+                      Lesser General Public License (LPGL) version 3.0|GNU General Lesser Public License (LGPL) version 3.0|LGPL_v3|lgpl_v3
                     </licenseMerge>
                     <licenseMerge>
                       COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0|Common Development and Distribution License (CDDL)

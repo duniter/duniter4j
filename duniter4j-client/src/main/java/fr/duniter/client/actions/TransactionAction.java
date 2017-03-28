@@ -1,13 +1,36 @@
-package fr.duniter.cmd.actions;
+package fr.duniter.client.actions;
+
+/*
+ * #%L
+ * Duniter4j :: Client
+ * %%
+ * Copyright (C) 2014 - 2017 EIS
+ * %%
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the 
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public 
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/gpl-3.0.html>.
+ * #L%
+ */
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.beust.jcommander.validators.PositiveInteger;
 import com.google.common.collect.ImmutableList;
-import fr.duniter.cmd.actions.params.AuthParameters;
-import fr.duniter.cmd.actions.params.PeerParameters;
-import fr.duniter.cmd.actions.utils.Formatters;
+import fr.duniter.client.actions.params.AuthParameters;
+import fr.duniter.client.actions.params.PeerParameters;
+import fr.duniter.client.actions.utils.Formatters;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Peer;
@@ -21,6 +44,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.crypto.KeyPair;
+import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +53,8 @@ import java.util.List;
 /**
  * Created by blavenie on 22/03/17.
  */
-public class TransactionAction implements Runnable {
+@Parameters(resourceBundle = "i18n.duniter4j-client", commandDescription = "Send a transaction", commandDescriptionKey = "duniter4j.client.transaction.action")
+public class TransactionAction extends AbstractAction  {
 
     private static Logger log = LoggerFactory.getLogger(TransactionAction.class);
 
@@ -50,6 +75,10 @@ public class TransactionAction implements Runnable {
 
     private int mainConsensusPeerCount = 0;
     private int forkConsensusPeerCount = 0;
+
+    public TransactionAction() {
+        super();
+    }
 
     @Override
     public void run() {
@@ -85,7 +114,7 @@ public class TransactionAction implements Runnable {
                         ));
             }
             else {
-                fail("Unknwon authentification type");
+                fail(I18n.t("duniter4j.client.transaction.error.unknownAuth"));
                 return;
             }
 
@@ -111,18 +140,13 @@ public class TransactionAction implements Runnable {
         }
     }
 
-    protected void fail(String message) {
-        log.error(message);
-        System.exit(-1);
-    }
-
     protected void sendToPeer(Peer peer, Wallet wallet) {
         TransactionRemoteService txService = ServiceLocator.instance().getTransactionRemoteService();
 
         logTxSummary(wallet);
 
         txService.transfer(peer, wallet, output, amount, comment);
-        JCommander.getConsole().println("Transaction successfully sent.");
+        JCommander.getConsole().println(I18n.t("duniter4j.client.transaction.sent"));
     }
 
     protected void sendBroadcast(Peer mainPeer, Currency currency, Wallet wallet, boolean useSsl) {
@@ -130,7 +154,7 @@ public class TransactionAction implements Runnable {
         TransactionRemoteService txService = ServiceLocator.instance().getTransactionRemoteService();
         PeerService peerService = ServiceLocator.instance().getPeerService();
 
-        log.info("Loading member peers...");
+        log.info(I18n.t("duniter4j.client.transaction.loadingMemberPeers"));
 
         // Filter to [member + UP] peers
         NetworkService.Filter peersFilter = new NetworkService.Filter();
@@ -151,12 +175,12 @@ public class TransactionAction implements Runnable {
         List<Peer> peers = ServiceLocator.instance().getNetworkService().getPeers(mainPeer, peersFilter, sortLesserDifficulty);
 
         if (CollectionUtils.isEmpty(peers)) {
-            log.warn("No members peers found! Skipping --broadcast option.");
+            log.warn(I18n.t("duniter4j.client.transaction.error.broadcast.noMemberPeer"));
             sendToPeer(mainPeer, wallet);
             return;
         }
 
-        log.info(String.format("%d member peers found for broadcast", peers.size()));
+        log.info(I18n.t("duniter4j.client.transaction.broadcast.memberPeerCount", peers.size()));
 
         logTxSummary(wallet);
 
@@ -169,7 +193,7 @@ public class TransactionAction implements Runnable {
             try {
                 txService.transfer(peer, wallet, output, amount, comment);
 
-                log.warn(String.format("Successfully sent to [%s]", peer));
+                log.debug(String.format("Successfully sent to [%s]", peer));
 
                 if (peer.getStats() != null) {
                     if (peer.getStats().isMainConsensus()) {
@@ -181,18 +205,18 @@ public class TransactionAction implements Runnable {
 
             }
             catch (Exception e) {
-                log.warn(String.format("Could not send transaction to [%s]: %s", peer, e.getMessage()));
+                log.debug(String.format("Could not send transaction to [%s]: %s", peer, e.getMessage()));
             }
         });
 
         if (mainConsensusPeerCount > 0) {
-            JCommander.getConsole().println(String.format("Transaction successfully sent (to %d nodes on the main blockchain consensus).", mainConsensusPeerCount));
+            JCommander.getConsole().println(I18n.t("duniter4j.client.transaction.broadcast.success", mainConsensusPeerCount));
         }
         else if (forkConsensusPeerCount > 0){
-            fail(String.format("Transaction has NOT been sent to the main consensus BlockChain, but ONLY to %d peers on a fork of the blockchain.", forkConsensusPeerCount));
+            fail(I18n.t("duniter4j.client.transaction.broadcast.successOnForkOnly", forkConsensusPeerCount));
         }
         else {
-            fail(String.format("Transaction has NOT been sent. Not a single peer has accepted the transaction."));
+            fail(I18n.t("duniter4j.client.transaction.broadcast.failed"));
         }
 
     }
@@ -200,14 +224,11 @@ public class TransactionAction implements Runnable {
 
     protected void logTxSummary(Wallet wallet) {
         // Log TX summary
-        JCommander.getConsole().println(String.format("Generate Transation:\n\t- From:   %s\n\t- To:     %s\n\t- Amount: %s %s",
+        JCommander.getConsole().println(I18n.t("duniter4j.client.transaction.broadcast.summary",
                 Formatters.formatPubkey(wallet.getPubKeyHash()),
                 Formatters.formatPubkey(output),
                 amount,
                 Formatters.currencySymbol(wallet.getCurrency())));
     }
 
-    protected void fail(Exception e) {
-        fail(e.getMessage());
-    }
 }

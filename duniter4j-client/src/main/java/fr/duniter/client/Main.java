@@ -1,38 +1,69 @@
-package fr.duniter.cmd;
+package fr.duniter.client;
+
+/*
+ * #%L
+ * Duniter4j :: Client
+ * %%
+ * Copyright (C) 2014 - 2017 EIS
+ * %%
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the 
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public 
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/gpl-3.0.html>.
+ * #L%
+ */
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.ParameterException;
+import com.beust.jcommander.Parameters;
 import com.google.common.collect.Lists;
-import fr.duniter.cmd.actions.NetworkAction;
-import fr.duniter.cmd.actions.TransactionAction;
+import fr.duniter.client.actions.NetworkAction;
+import fr.duniter.client.actions.TransactionAction;
 import org.apache.commons.io.FileUtils;
 import org.duniter.core.client.config.Configuration;
+import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.util.StringUtils;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.nuiton.i18n.I18n;
 import org.nuiton.i18n.init.DefaultI18nInitializer;
 import org.nuiton.i18n.init.UserI18nInitializer;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Created by blavenie on 22/03/17.
  */
+@Parameters(resourceBundle = "i18n.duniter4j-client")
 public class Main {
 
-    @Parameter(names = "-debug", description = "Debug mode", arity = 1)
+    @Parameter(names = "-debug", description = "Debug mode", descriptionKey = "duniter4j.params.debug")
     private boolean debug = false;
 
     @Parameter(names = "--help", help = true)
     private boolean help;
 
-    @Parameter(names = "-config", description = "Configuration file path")
-    private String configFilename = "duniter-cmd.config";
+    @Parameter(names = "--basedir", hidden = true)
+    private File basedir;
 
+    @Parameter(names = "--config", description = "Configuration file path", descriptionKey="duniter4j.params.config" )
+    private String configFilename = "duniter-client.config";
 
     public static void main(String ... args) {
         Main main = new Main();
@@ -104,7 +135,7 @@ public class Main {
 
 
     protected String getI18nBundleName() {
-        return "duniter4j-core-client-i18n";
+        return "duniter4j-client-i18n";
     }
 
     /* -- -- */
@@ -113,7 +144,6 @@ public class Main {
      * Convenience methods that could be override to initialize other configuration
      *
      * @param configFilename
-     * @param configArgs
      */
     protected void initConfiguration(String configFilename) {
         String[] configArgs = getConfigArgs();
@@ -127,7 +157,7 @@ public class Main {
         // --------------------------------------------------------------------//
         // init i18n
         // --------------------------------------------------------------------//
-        File i18nDirectory = new File(config.getDataDirectory(), "i18n");
+        File i18nDirectory = config.getI18nDirectory();
         if (i18nDirectory.exists()) {
             // clean i18n cache
             FileUtils.cleanDirectory(i18nDirectory);
@@ -136,13 +166,21 @@ public class Main {
         FileUtils.forceMkdir(i18nDirectory);
 
         if (debug) {
-            System.out.println("I18N directory: " + i18nDirectory);
+            System.out.println("INFO - I18N directory: " + i18nDirectory);
         }
 
         Locale i18nLocale = config.getI18nLocale();
 
+        // Fix locale
+        if (i18nLocale.equals(Locale.FRENCH)) {
+            i18nLocale = Locale.FRANCE;
+        }
+        else if (i18nLocale.equals(Locale.ENGLISH)) {
+            i18nLocale = Locale.UK;
+        }
+
         if (debug) {
-            System.out.println(String.format("Starts i18n with locale [%s] at [%s]",
+            System.out.println(String.format("INFO - Starts i18n with locale [%s] at [%s]",
                     i18nLocale, i18nDirectory));
         }
         I18n.init(new UserI18nInitializer(
@@ -152,8 +190,11 @@ public class Main {
 
     protected String[] getConfigArgs() {
         List<String> configArgs = Lists.newArrayList();
-        /*configArgs.addAll(Lists.newArrayList(
-                "--option", ConfigurationOption.BASEDIR.getKey(), getResourceDirectory().getAbsolutePath()));*/
+
+        if (basedir != null) {
+            configArgs.addAll(Lists.newArrayList(
+                "--option", ConfigurationOption.BASEDIR.getKey(), basedir.getAbsolutePath()));
+        }
         return configArgs.toArray(new String[configArgs.size()]);
     }
 

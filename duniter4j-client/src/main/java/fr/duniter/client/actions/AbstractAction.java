@@ -1,8 +1,8 @@
-package org.duniter.elasticsearch.gchange.model.event;
+package fr.duniter.client.actions;
 
 /*
  * #%L
- * Duniter4j :: ElasticSearch GChange plugin
+ * Duniter4j :: Client
  * %%
  * Copyright (C) 2014 - 2017 EIS
  * %%
@@ -23,12 +23,25 @@ package org.duniter.elasticsearch.gchange.model.event;
  */
 
 /**
- * Created by blavenie on 01/12/16.
+ * Created by blavenie on 28/03/17.
  */
-public enum GchangeEventCodes {
 
-    NEW_COMMENT,
-    UPDATE_COMMENT,
-    NEW_REPLY_COMMENT,
-    UPDATE_REPLY_COMMENT,
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public abstract class AbstractAction implements Runnable {
+
+    protected Logger log;
+
+    protected AbstractAction() {
+        log = LoggerFactory.getLogger(getClass());
+    }
+
+    protected void fail(Exception e) {
+        fail(e.getMessage());
+    }
+    protected void fail(String message) {
+        log.error(message);
+        System.exit(-1);
+    }
 }
