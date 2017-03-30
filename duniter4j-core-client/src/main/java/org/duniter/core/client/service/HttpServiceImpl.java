@@ -32,6 +32,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -301,8 +302,8 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         catch (ConnectException e) {
             throw new HttpConnectException(I18n.t("duniter4j.client.core.connect", request.toString()), e);
         }
-        catch (SocketTimeoutException e) {
-            throw new TechnicalException(I18n.t("duniter4j.client.core.timeout"), e);
+        catch (SocketTimeoutException | ConnectTimeoutException e) {
+            throw new HttpTimeoutException(I18n.t("duniter4j.client.core.timeout"), e);
         }
         catch (IOException e) {
             throw new TechnicalException(e.getMessage(), e);

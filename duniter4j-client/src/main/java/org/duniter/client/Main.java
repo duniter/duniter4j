@@ -51,16 +51,16 @@ import java.util.Map;
 @Parameters(resourceBundle = "i18n.duniter4j-client")
 public class Main {
 
-    @Parameter(names = "-debug", description = "Debug mode", descriptionKey = "duniter4j.params.debug")
+    @Parameter(names = "-debug", description = "Debug mode", descriptionKey = "duniter4j.client.params.debug")
     private boolean debug = false;
 
-    @Parameter(names = "--help", help = true)
+    @Parameter(names = "--help", help = true, description = "Display help", descriptionKey = "duniter4j.client.params.help")
     private boolean help;
 
     @Parameter(names = "--basedir", hidden = true)
     private File basedir;
 
-    @Parameter(names = "--config", description = "Configuration file path", descriptionKey="duniter4j.params.config" )
+    @Parameter(names = "--config", description = "Configuration file path", descriptionKey="duniter4j.client.params.config" )
     private String configFilename = "duniter-client.config";
 
     public static void main(String ... args) {

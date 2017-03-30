@@ -39,16 +39,13 @@ public class PeerParameters {
 
     private static Logger log = LoggerFactory.getLogger(PeerParameters.class);
 
-    @Parameter(names = {"-p", "--peer"}, description = "Peer address (use format: 'host:port')", descriptionKey = "duniter4j.params.peer")
+    @Parameter(names = {"-p", "--peer"}, description = "Peer address (use format: 'host:port')", descriptionKey = "duniter4j.client.params.peer")
     public String peerStr;
 
-    @Parameter(names = "--broadcast", description = "Broadcast document sent to all nodes")
-    public boolean broadcast = false;
-
-    @Parameter(names = "--ssl", description = "Using SSL connection to node")
+    @Parameter(names = "--ssl", description = "Using SSL connection to node", descriptionKey = "duniter4j.client.params.peer.useSsl")
     public boolean useSsl = false;
 
-    @Parameter(names = "--timeout", description = "HTTP request timeout, in millisecond")
+    @Parameter(names = "--timeout", description = "HTTP request timeout, in millisecond", descriptionKey = "duniter4j.client.params.peer.timeout")
     public Long timeout = null;
 
     private Peer peer = null;
@@ -71,14 +68,14 @@ public class PeerParameters {
             }
             peer = peerBuilder.build();
 
-            log.info(I18n.t("duniter4j.client.params.peer", peer.getHost(), peer.getPort()));
+            log.info(I18n.t("duniter4j.client.info.peer", peer.getHost(), peer.getPort()));
         }
         else {
             Configuration config = Configuration.instance();
             peer = Peer.newBuilder().setHost(config.getNodeHost())
                     .setPort(config.getNodePort())
                     .build();
-            log.info(I18n.t("duniter4j.client.params.peer.fallback", peer.getHost(), peer.getPort()));
+            log.info(I18n.t("duniter4j.client.info.peer.fallback", peer.getHost(), peer.getPort()));
         }
     }
 

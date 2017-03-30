@@ -31,6 +31,8 @@ import com.google.common.collect.ImmutableList;
 import org.duniter.client.actions.params.AuthParameters;
 import org.duniter.client.actions.params.PeerParameters;
 import org.duniter.client.actions.utils.Formatters;
+import org.duniter.core.client.config.Configuration;
+import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Peer;
@@ -73,6 +75,9 @@ public class TransactionAction extends AbstractAction  {
     @Parameter(names = "--comment", description = "TX Comment")
     public String comment;
 
+    @Parameter(names = "--broadcast", description = "Broadcast document sent to all nodes")
+    public boolean broadcast = false;
+
     private int mainConsensusPeerCount = 0;
     private int forkConsensusPeerCount = 0;
 
@@ -89,7 +94,9 @@ public class TransactionAction extends AbstractAction  {
             peerParameters.parse();
 
             // Reducing node timeout when broadcast
-
+            if (peerParameters.timeout != null) {
+                Configuration.instance().getApplicationConfig().setOption(ConfigurationOption.NETWORK_TIMEOUT.getKey(), peerParameters.timeout.toString());
+            }
 
             Peer peer = peerParameters.getPeer();
 
@@ -126,7 +133,7 @@ public class TransactionAction extends AbstractAction  {
             wallet.setCurrencyId(currency.getId());
 
             // Send TX document to ONE peer
-            if (!peerParameters.broadcast) {
+            if (!broadcast) {
                 sendToPeer(peer, wallet);
             }
 

@@ -36,7 +36,12 @@ public class InetAddressUtils {
 
     public static boolean isNotLocalIPv4Address(String input) {
         return org.apache.http.conn.util.InetAddressUtils.isIPv4Address(input) &&
-                !LOCAL_IP_ADDRESS_PATTERN.matcher(input).matches();
+                !LOCAL_IP_ADDRESS_PATTERN.matcher(input).find();
+    }
+
+    public static boolean isLocalIPv4Address(String input) {
+        return org.apache.http.conn.util.InetAddressUtils.isIPv4Address(input) &&
+                LOCAL_IP_ADDRESS_PATTERN.matcher(input).find();
     }
 
     public static boolean isIPv4Address(String input) {

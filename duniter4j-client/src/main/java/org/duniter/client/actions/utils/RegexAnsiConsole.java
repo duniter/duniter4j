@@ -41,6 +41,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class RegexAnsiConsole extends PrintStream {
 
     private Long rowsCount = 0l;
+    private Map<String, Ansi.Color> fgStrings = Maps.newHashMap();
     private Map<Pattern, Ansi.Color> fgRegexps = Maps.newHashMap();
 
     public RegexAnsiConsole(OutputStream delegate) {
@@ -80,9 +81,16 @@ public class RegexAnsiConsole extends PrintStream {
         super.print(ansi);
         return this;
     }
-    
-    public RegexAnsiConsole resetFgRegexps() {
+
+    public RegexAnsiConsole reset() {
+        fgStrings.clear();
         fgRegexps.clear();
+        super.print(ansi().reset());
+        return this;
+    }
+
+    public RegexAnsiConsole fgString(String value, Ansi.Color color) {
+        fgStrings.put(value, color);
         return this;
     }
 
@@ -94,20 +102,38 @@ public class RegexAnsiConsole extends PrintStream {
     @Override
     public void print(String s) {
 
-        for (Pattern pattern: fgRegexps.keySet()) {
-            Matcher matcher = pattern.matcher(s);
+        for (Map.Entry<Pattern, Ansi.Color> entry: fgRegexps.entrySet()) {
+            Matcher matcher = entry.getKey().matcher(s);
             if (matcher.find()) {
-                Ansi.Color fgColor = fgRegexps.get(pattern);
                 Ansi ansi = ansi();
                 if (matcher.start() > 0) {
                     ansi.a(s.substring(0, matcher.start()));
                 }
 
-                ansi.fg(fgColor)
+                ansi.fg(entry.getValue())
                         .a(s.substring(matcher.start(), matcher.end()))
                         .reset();
                 if (matcher.end() < s.length()) {
                     ansi.a(s.substring(matcher.end()));
+                }
+                s = ansi.toString();
+            }
+        }
+
+        for (Map.Entry<String, Ansi.Color> entry: fgStrings.entrySet()) {
+            String expression = entry.getKey();
+            int index = s.indexOf(expression);
+            if (index != -1) {
+                Ansi ansi = ansi();
+                if (index > 0) {
+                    ansi.a(s.substring(0, index));
+                }
+
+                ansi.fg(entry.getValue())
+                        .a(expression)
+                        .reset();
+                if (index + expression.length() < s.length()) {
+                    ansi.a(s.substring(index + expression.length()));
                 }
                 s = ansi.toString();
             }

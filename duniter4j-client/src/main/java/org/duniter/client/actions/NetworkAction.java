@@ -30,6 +30,8 @@ import org.duniter.client.actions.params.PeerParameters;
 import org.duniter.client.actions.utils.RegexAnsiConsole;
 import org.duniter.client.actions.utils.Formatters;
 import org.apache.commons.io.IOUtils;
+import org.duniter.core.client.config.Configuration;
+import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.local.NetworkService;
@@ -76,7 +78,12 @@ public class NetworkAction extends AbstractAction {
         final Peer mainPeer = peerParameters.getPeer();
         checkOutputFileIfNotNull(); // make sure the file (if any) is writable
 
-        dateFormat = SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, I18n.getDefaultLocale());
+        // Reducing node timeout when broadcast
+        if (peerParameters.timeout != null) {
+            Configuration.instance().getApplicationConfig().setOption(ConfigurationOption.NETWORK_TIMEOUT.getKey(), peerParameters.timeout.toString());
+        }
+
+        dateFormat = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.MEDIUM, I18n.getDefaultLocale());
 
         console = new RegexAnsiConsole();
         System.setOut(console);
@@ -122,22 +129,24 @@ public class NetworkAction extends AbstractAction {
         Peer.Stats mainConsensusStats = mainConsensusPeer.getStats();
         if (mainConsensusStats.isMainConsensus()) {
             Long mediantTime = mainConsensusStats.getMedianTime();
+            String medianTime = dateFormat.format(new Date(mediantTime * 1000));
             String mainBuid = formatBuid(mainConsensusStats);
 
-            console.resetFgRegexps()
-                   .fgRegexp(I18n.t("duniter4j.client.network.ssl"), Ansi.Color.MAGENTA)
-                   .fgRegexp(I18n.t("duniter4j.client.network.mirror"), Ansi.Color.CYAN)
-                   .fgRegexp(mainBuid, Ansi.Color.GREEN);
+            console.reset()
+                   .fgString(I18n.t("duniter4j.client.network.ssl"), Ansi.Color.MAGENTA)
+                   .fgString(I18n.t("duniter4j.client.network.mirror"), Ansi.Color.CYAN)
+                   .fgString(mainBuid, Ansi.Color.GREEN)
+                   .fgString(medianTime, Ansi.Color.GREEN);
 
             peers.stream()
                     .filter(peer -> peer.getStats().isForkConsensus())
                     .map(peer -> formatBuid(peer.getStats()))
-                    .forEach(forkConsensusBuid -> console.fgRegexp(Formatters.formatBuid(forkConsensusBuid), Ansi.Color.YELLOW));
+                    .forEach(forkConsensusBuid -> console.fgString(Formatters.formatBuid(forkConsensusBuid), Ansi.Color.YELLOW));
 
             // Log blockchain info
             console.println("\t" + I18n.t("duniter4j.client.network.header",
                     mainBuid,
-                    dateFormat.format(new Date(mediantTime * 1000)),
+                    medianTime,
                     mainConsensusStats.getConsensusPct()
             ));
         }

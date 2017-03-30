@@ -21,9 +21,7 @@
         <i18n.bundleOutputName>duniter4j-client-i18n</i18n.bundleOutputName>
         <i18n.bundleCsvFile>${i18n.bundleOutputName}.csv</i18n.bundleCsvFile>
 
-        <maven.jar.main.class>
-            org.duniter.client.Main
-        </maven.jar.main.class>
+        <maven.jar.main.class>org.duniter.client.Main</maven.jar.main.class>
 
         <bundlePrefix>duniter4j-client-${project.version}</bundlePrefix>
 
