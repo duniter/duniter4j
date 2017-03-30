@@ -64,7 +64,6 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
     protected ObjectMapper objectMapper;
 
-    private Map<URI, WebsocketClientEndpoint> wsEndPoints = new HashMap<>();
 
     public NetworkRemoteServiceImpl() {
         super();
@@ -75,18 +74,6 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     public NetworkPeering getPeering(Peer peer) {
         NetworkPeering result = httpService.executeRequest(peer, URL_PEERING, NetworkPeering.class);
         return result;
-    }
-
-    @Override
-    public void close() throws IOException {
-        super.close();
-
-        if (wsEndPoints.size() != 0) {
-            for (WebsocketClientEndpoint clientEndPoint: wsEndPoints.values()) {
-                clientEndPoint.close();
-            }
-            wsEndPoints.clear();
-        }
     }
 
     @Override
@@ -164,6 +151,13 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
         return result;
     }
 
+
+    @Override
+    public WebsocketClientEndpoint addPeerListener(long currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
+        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+        return addPeerListener(peer, listener, autoReconnect);
+    }
+
     @Override
     public WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
         Preconditions.checkNotNull(peer);
@@ -214,28 +208,5 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
         return hash;
     }
 
-    public WebsocketClientEndpoint getWebsocketClientEndpoint(Peer peer, String path, boolean autoReconnect) {
 
-        try {
-            URI wsBlockURI = new URI(String.format("%s://%s:%s%s",
-                    peer.isUseSsl() ? "wss" : "ws",
-                    peer.getHost(),
-                    peer.getPort(),
-                    path));
-
-            // Get the websocket, or open new one if not exists
-            WebsocketClientEndpoint wsClientEndPoint = wsEndPoints.get(wsBlockURI);
-            if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
-                log.info(String.format("Starting to listen on [%s]...", wsBlockURI.toString()));
-                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI, autoReconnect);
-                wsEndPoints.put(wsBlockURI, wsClientEndPoint);
-            }
-
-            return wsClientEndPoint;
-
-        } catch (URISyntaxException | ServiceConfigurationError ex) {
-            throw new TechnicalException(String.format("Could not create URI need for web socket [%s]: %s", path, ex.getMessage()));
-        }
-
-    }
 }

@@ -22,7 +22,7 @@ export JAR="$JARDIR/${project.build.finalName}.${project.packaging}"
 export I18N_DIR="$APPDIR/i18n"
 
 # Retrieve the JAVA installation
-if [ "~$JAVA_HOME" -eq "~" ]; then
+if [ "$JAVA_HOME~" == "~" ]; then
     export JAVA_HOME="$APPDIR/jre"
     export JAVA_COMMAND="$JAVA_HOME/bin/java"
 

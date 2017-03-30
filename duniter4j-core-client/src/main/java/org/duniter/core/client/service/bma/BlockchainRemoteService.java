@@ -226,20 +226,12 @@ public interface BlockchainRemoteService extends Service {
      * Listening new block event
      * @param currencyId
      * @param listener
+     * @param autoReconnect
      * @return
      */
-    WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener);
+    WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 
-    WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener);
+    WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 
-    /**
-     * Listening new peer event
-     * @param currencyId
-     * @param listener
-     * @return
-     */
-    WebsocketClientEndpoint addPeerListener(long currencyId, WebsocketClientEndpoint.MessageListener listener);
-
-    WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener);
 
 }

@@ -37,6 +37,10 @@ import java.util.function.Predicate;
  */
 public interface NetworkService extends Service {
 
+    interface PeersChangeListener {
+        void onChanged(List<Peer> peers);
+    }
+
     class Sort {
         public SortType sortType;
         public boolean sortAsc;
@@ -74,6 +78,12 @@ public interface NetworkService extends Service {
     Predicate<Peer> peerFilter(Filter filter);
 
     Comparator<Peer> peerComparator(Sort sort);
+
+    void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener);
+
+    void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener,
+                                final Filter filter, final Sort sort, final boolean autoreconnect,
+                                final ExecutorService executor);
 
 
 }

@@ -27,7 +27,10 @@ import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.exception.PeerConnectionException;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 
 /**
@@ -52,4 +55,12 @@ public interface HttpService extends Service {
     String getPath(String... absolutePath);
 
     URIBuilder getURIBuilder(URI baseUri, String... path);
+
+    WebsocketClientEndpoint getWebsocketClientEndpoint(Peer peer, String path, boolean autoReconnect);
+
+    <T> T readValue(String json, Class<T> clazz) throws IOException;
+
+    <T> T readValue(byte[] json, Class<T> clazz) throws IOException;
+
+    <T> T readValue(InputStream json, Class<T> clazz) throws IOException;
 }

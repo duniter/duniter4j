@@ -1,4 +1,4 @@
-package fr.duniter.client;
+package org.duniter.client;
 
 /*
  * #%L
@@ -27,15 +27,13 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.Lists;
-import fr.duniter.client.actions.NetworkAction;
-import fr.duniter.client.actions.TransactionAction;
+import org.duniter.client.actions.NetworkAction;
+import org.duniter.client.actions.TransactionAction;
 import org.apache.commons.io.FileUtils;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.util.StringUtils;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 import org.nuiton.i18n.I18n;
 import org.nuiton.i18n.init.DefaultI18nInitializer;
 import org.nuiton.i18n.init.UserI18nInitializer;

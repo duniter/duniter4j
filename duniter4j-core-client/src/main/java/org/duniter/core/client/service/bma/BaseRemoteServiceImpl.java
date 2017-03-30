@@ -31,11 +31,13 @@ import org.duniter.core.client.service.local.PeerService;
 import org.duniter.core.client.service.ServiceLocator;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ServiceConfigurationError;
 
 /**
  * Created by eis on 05/02/15.
@@ -90,5 +92,17 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
         catch(URISyntaxException e) {
             throw new TechnicalException(e);
         }
+    }
+
+    public WebsocketClientEndpoint getWebsocketClientEndpoint(Peer peer, String path, boolean autoReconnect) {
+        return httpService.getWebsocketClientEndpoint(peer, path, autoReconnect);
+    }
+
+    public <T> T readValue(String json, Class<T> clazz) throws IOException {
+        return httpService.readValue(json, clazz);
+    }
+
+    public <T> T readValue(byte[] json, Class<T> clazz) throws IOException {
+        return httpService.readValue(json, clazz);
     }
 }

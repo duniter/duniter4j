@@ -1,4 +1,4 @@
-package fr.duniter.client.actions;
+package org.duniter.client.actions;
 
 /*
  * #%L
@@ -28,9 +28,9 @@ import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
 import com.beust.jcommander.validators.PositiveInteger;
 import com.google.common.collect.ImmutableList;
-import fr.duniter.client.actions.params.AuthParameters;
-import fr.duniter.client.actions.params.PeerParameters;
-import fr.duniter.client.actions.utils.Formatters;
+import org.duniter.client.actions.params.AuthParameters;
+import org.duniter.client.actions.params.PeerParameters;
+import org.duniter.client.actions.utils.Formatters;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Peer;

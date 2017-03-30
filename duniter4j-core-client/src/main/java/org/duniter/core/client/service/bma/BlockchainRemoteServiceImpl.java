@@ -566,17 +566,17 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener) {
-        return addBlockListener(peerService.getActivePeerByCurrencyId(currencyId), listener);
+    public WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
+        return addBlockListener(peerService.getActivePeerByCurrencyId(currencyId), listener, autoReconnect);
     }
 
     @Override
-    public WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener) {
+    public WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(listener);
 
         // Get (or create) the websocket endpoint
-        WebsocketClientEndpoint wsClientEndPoint = getWebsocketClientEndpoint(peer, URL_WS_BLOCK);
+        WebsocketClientEndpoint wsClientEndPoint = getWebsocketClientEndpoint(peer, URL_WS_BLOCK, autoReconnect);
 
         // add listener
         wsClientEndPoint.registerListener(listener);
@@ -584,24 +584,6 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         return wsClientEndPoint;
     }
 
-    @Override
-    public WebsocketClientEndpoint addPeerListener(long currencyId, WebsocketClientEndpoint.MessageListener listener) {
-        return addBlockListener(peerService.getActivePeerByCurrencyId(currencyId), listener);
-    }
-
-    @Override
-    public WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener) {
-        Preconditions.checkNotNull(peer);
-        Preconditions.checkNotNull(listener);
-
-        // Get (or create) the websocket endpoint
-        WebsocketClientEndpoint wsClientEndPoint = getWebsocketClientEndpoint(peer, URL_WS_PEER);
-
-        // add listener
-        wsClientEndPoint.registerListener(listener);
-
-        return wsClientEndPoint;
-    }
 
     /* -- Internal methods -- */
 
@@ -819,30 +801,5 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         }
 
         return Long.parseLong(dividendStr);
-    }
-
-    public WebsocketClientEndpoint getWebsocketClientEndpoint(Peer peer, String path) {
-
-        try {
-            URI wsBlockURI = new URI(String.format("%s://%s:%s%s",
-                    peer.isUseSsl() ? "wss" : "ws",
-                    peer.getHost(),
-                    peer.getPort(),
-                    path));
-
-            // Get the websocket, or open new one if not exists
-            WebsocketClientEndpoint wsClientEndPoint = wsEndPoints.get(wsBlockURI);
-            if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
-                log.info(String.format("Starting to listen on [%s]...", wsBlockURI.toString()));
-                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI);
-                wsEndPoints.put(wsBlockURI, wsClientEndPoint);
-            }
-
-            return wsClientEndPoint;
-
-        } catch (URISyntaxException | ServiceConfigurationError ex) {
-            throw new TechnicalException(String.format("Could not create URI need for web socket [%s]: %s", path, ex.getMessage()));
-        }
-
     }
 }

@@ -23,14 +23,14 @@ package org.duniter.core.client.service.local;
  */
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import org.duniter.core.client.model.bma.Constants;
-import org.duniter.core.client.model.bma.EndpointApi;
-import org.duniter.core.client.model.bma.NetworkPeering;
-import org.duniter.core.client.model.bma.NetworkPeers;
+import org.duniter.core.client.model.bma.*;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.bma.BaseRemoteServiceImpl;
+import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
 import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.client.service.exception.HttpConnectException;
@@ -45,6 +45,7 @@ import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
@@ -65,17 +66,35 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     private NetworkRemoteService networkRemoteService;
     private CryptoService cryptoService;
     private WotRemoteService wotRemoteService;
+    private BlockchainRemoteService blockchainRemoteService;
+
+    protected class Locker {
+        private boolean lock = false;
+        public boolean isLocked() {
+            return this.lock;
+        }
+        public void lock() {
+            Preconditions.checkArgument(!this.lock);
+            this.lock = !this.lock;
+        }
+        public void unlock() {
+            Preconditions.checkArgument(this.lock);
+            this.lock = !this.lock;
+        }
+    }
 
     public NetworkServiceImpl() {
     }
 
     public NetworkServiceImpl(NetworkRemoteService networkRemoteService,
                               WotRemoteService wotRemoteService,
-                              CryptoService cryptoService) {
+                              CryptoService cryptoService,
+                              BlockchainRemoteService blockchainRemoteService) {
         this();
         this.networkRemoteService = networkRemoteService;
         this.wotRemoteService = wotRemoteService;
         this.cryptoService = cryptoService;
+        this.blockchainRemoteService = blockchainRemoteService;
     }
 
     @Override
@@ -84,6 +103,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         this.networkRemoteService = ServiceLocator.instance().getNetworkRemoteService();
         this.wotRemoteService = ServiceLocator.instance().getWotRemoteService();
         this.cryptoService = ServiceLocator.instance().getCryptoService();
+        this.blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
     }
 
     @Override
@@ -146,37 +166,41 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 new CompletableFuture[] {peersFuture, memberUidsFuture})
                 .thenApply(v -> {
                     final Map<String, String> memberUids = memberUidsFuture.join();
-                    return peersFuture.join().stream().map(peer ->
-                        CompletableFuture.supplyAsync(() -> getVersion(peer), pool)
-                            .thenApply(this::getCurrentBlock)
-                            .exceptionally(throwable -> {
-                                peer.getStats().setStatus(Peer.PeerStatus.DOWN);
-                                if(!(throwable instanceof HttpConnectException)) {
-                                    Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
-                                    peer.getStats().setError(cause.getMessage());
-                                    if (log.isDebugEnabled()) {
-                                        if (log.isTraceEnabled()) {
-                                            log.debug(String.format("[%s] is DOWN: %s", peer, cause.getMessage()), cause);
-                                        }
-                                        else log.debug(String.format("[%s] is DOWN: %s", peer, cause.getMessage()));
-                                    }
-                                }
-                                else if (log.isTraceEnabled()) log.debug(String.format("[%s] is DOWN", peer));
-                                return peer;
-                            })
-                            .thenApply(apeer -> {
-                                String uid = StringUtils.isNotBlank(peer.getPubkey()) ? memberUids.get(peer.getPubkey()) : null;
-                                peer.getStats().setUid(uid);
-                                if (peer.getStats().isReacheable() && StringUtils.isNotBlank(uid)) {
-                                    getHardship(peer);
-                                }
-                                return apeer;
-                            })
-                            .exceptionally(throwable -> {
-                                peer.getStats().setHardshipLevel(0);
-                                return peer;
-                            })
-                        ).collect(Collectors.toList());
+                    return peersFuture.join().stream()
+                            .map(peer -> asyncRefreshPeer(peer, memberUids, pool))
+                            .collect(Collectors.toList());
+                });
+    }
+
+    public CompletableFuture<Peer> asyncRefreshPeer(final Peer peer, final Map<String, String> memberUids, final ExecutorService pool) {
+        return CompletableFuture.supplyAsync(() -> getVersion(peer), pool)
+                .thenApply(this::getCurrentBlock)
+                .exceptionally(throwable -> {
+                    peer.getStats().setStatus(Peer.PeerStatus.DOWN);
+                    if(!(throwable instanceof HttpConnectException)) {
+                        Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                        peer.getStats().setError(cause.getMessage());
+                        if (log.isDebugEnabled()) {
+                            if (log.isTraceEnabled()) {
+                                log.debug(String.format("[%s] is DOWN: %s", peer, cause.getMessage()), cause);
+                            }
+                            else log.debug(String.format("[%s] is DOWN: %s", peer, cause.getMessage()));
+                        }
+                    }
+                    else if (log.isTraceEnabled()) log.debug(String.format("[%s] is DOWN", peer));
+                    return peer;
+                })
+                .thenApply(apeer -> {
+                    String uid = StringUtils.isNotBlank(peer.getPubkey()) ? memberUids.get(peer.getPubkey()) : null;
+                    peer.getStats().setUid(uid);
+                    if (peer.getStats().isReacheable() && StringUtils.isNotBlank(uid)) {
+                        getHardship(peer);
+                    }
+                    return apeer;
+                })
+                .exceptionally(throwable -> {
+                    peer.getStats().setHardshipLevel(0);
+                    return peer;
                 });
     }
 
@@ -223,6 +247,135 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return peers;
     }
 
+    public void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener) {
+
+        // Default filter
+        Filter filterDef = new Filter();
+        filterDef.filterType = null;
+        filterDef.filterStatus = Peer.PeerStatus.UP;
+        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name());
+
+        // Default sort
+        Sort sortDef = new Sort();
+        sortDef.sortType = null;
+
+        addPeersChangeListener(mainPeer, listener, filterDef, sortDef, true, null);
+
+    }
+
+    public void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener,
+                                       final Filter filter, final Sort sort, final boolean autoreconnect,
+                                       final ExecutorService executor) {
+
+
+        final  Locker threadLock = new Locker();
+        final List<Peer> result = new ArrayList<>();
+        final List<String> knownBlocks = new ArrayList<>();
+        final Map<String, Peer> knownPeers = new HashMap<>();
+
+        final Predicate<Peer> peerFilter = peerFilter(filter);
+        final Comparator<Peer> peerComparator = peerComparator(sort);
+        final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
+
+        // Manage new block event
+        blockchainRemoteService.addBlockListener(mainPeer, json -> {
+            if (threadLock.isLocked()) return;
+            synchronized (threadLock) {
+                threadLock.lock();
+            }
+            try {
+                BlockchainBlock block = readValue(json, BlockchainBlock.class);
+                String blockBuid = buid(block);
+                boolean isNewBlock = (blockBuid != null && !knownBlocks.contains(blockBuid));
+
+                // If new block + wait 5s for network propagation
+                if (isNewBlock && waitSafe(5000)) {
+                    List<Peer> updatedPeers = getPeers(mainPeer, filter, sort);
+
+                    knownPeers.clear();
+                    updatedPeers.stream().forEach(peer -> {
+                        String buid = buid(peer.getStats());
+                        if (!knownBlocks.contains(buid)) {
+                            knownBlocks.add(buid);
+                        }
+                        knownPeers.put(peer.toString(), peer);
+                    });
+
+                    result.clear();
+                    result.addAll(updatedPeers);
+                    listener.onChanged(result);
+                }
+            } catch(IOException e) {
+                log.error("Could not parse peer received by WS: " + e.getMessage(), e);
+            }
+            finally {
+                synchronized (threadLock) {
+                    threadLock.unlock();
+                }
+            }
+        }, autoreconnect);
+
+        // Manage new peer event
+        networkRemoteService.addPeerListener(mainPeer, json -> {
+            if (threadLock.isLocked()) return;
+            synchronized (threadLock) {
+                threadLock.lock();
+            }
+
+            try {
+                NetworkPeers.Peer bmaPeer = readValue(json, NetworkPeers.Peer.class);
+                final List<Peer> newPeers = new ArrayList<>();
+                addEndpointsAsPeers(bmaPeer, newPeers, null);
+
+                CompletableFuture<List<CompletableFuture<Peer>>> jobs =
+                        CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool)
+                    .thenApply(memberUids ->
+                        newPeers.stream().map(peer ->
+                            asyncRefreshPeer(peer, memberUids, pool))
+                            .collect(Collectors.toList())
+                    );
+                jobs.thenCompose(refreshedPeersFuture -> CompletableFutures.allOfToList(refreshedPeersFuture, refreshedPeer -> {
+                        boolean exists = knownPeers.containsKey(refreshedPeer.toString());
+                        boolean include = peerFilter.test(refreshedPeer);
+                        if (!include && exists) {
+                            Peer removedPeer = knownPeers.remove(refreshedPeer.toString());
+                            result.remove(removedPeer);
+                        }
+                        else if (include && exists) {
+                            result.remove(knownPeers.get(refreshedPeer.toString()));
+                        }
+                        return include;
+                    }))
+                    .thenApply(addedPeers -> {
+                        result.addAll(addedPeers);
+                        fillPeerStatsConsensus(result);
+                        result.sort(peerComparator);
+
+                        result.stream().forEach(peer -> {
+                            String buid = buid(peer.getStats());
+                            if (!knownBlocks.contains(buid)) {
+                                knownBlocks.add(buid);
+                            }
+                            knownPeers.put(peer.toString(), peer);
+                        });
+
+                        listener.onChanged(result);
+                        return result;
+                    });
+
+            } catch(IOException e) {
+                log.error("Could not parse peer received by WS: " + e.getMessage(), e);
+            }
+            finally {
+                synchronized (threadLock) {
+                    threadLock.unlock();
+                }
+            }
+
+        }, autoreconnect);
+    }
+
+
     /* -- protected methods -- */
 
     protected List<Peer> loadPeerLeafs(Peer peer) {
@@ -266,25 +419,27 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
             String leaf = leaves.get(i);
             try {
                 NetworkPeers.Peer peer = networkRemoteService.getPeerLeaf(requestedPeer, leaf);
-
-                if (CollectionUtils.isNotEmpty(peer.getEndpoints())) {
-                    for (NetworkPeering.Endpoint ep: peer.getEndpoints()) {
-                        if (ep != null && ep.getApi() != null) {
-                            Peer peerEp = Peer.newBuilder()
-                                    .setCurrency(peer.getCurrency())
-                                    .setHash(leaf)
-                                    .setPubkey(peer.getPubkey())
-                                    .setEndpoint(ep)
-                                    .build();
-                            result.add(peerEp);
-                        }
-                    }
-                }
-
+                addEndpointsAsPeers(peer, result, leaf);
 
             } catch(HttpNotFoundException e) {
                 log.warn("Peer not found for leaf=" + leaf);
                 // skip
+            }
+        }
+    }
+
+    protected void addEndpointsAsPeers(NetworkPeers.Peer peer, List<Peer> result, String hash) {
+        if (CollectionUtils.isNotEmpty(peer.getEndpoints())) {
+            for (NetworkPeering.Endpoint ep: peer.getEndpoints()) {
+                if (ep != null && ep.getApi() != null) {
+                    Peer peerEp = Peer.newBuilder()
+                            .setCurrency(peer.getCurrency())
+                            .setHash(hash)
+                            .setPubkey(peer.getPubkey())
+                            .setEndpoint(ep)
+                            .build();
+                    result.add(peerEp);
+                }
             }
         }
     }
@@ -462,5 +617,19 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return stats.getStatus() == Peer.PeerStatus.UP
                 ? stats.getBlockNumber() + "-" + stats.getBlockHash()
                 : null;
+    }
+
+    protected String buid(BlockchainBlock block) {
+        if (block == null || block.getNumber() == null || block.getHash() == null) return null;
+        return block.getNumber() + "-" + block.getHash();
+    }
+
+    protected boolean waitSafe(long duration) {
+        try {
+            Thread.sleep(duration);
+            return true;
+        } catch (InterruptedException e) {
+            return false;
+        }
     }
 }

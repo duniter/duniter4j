@@ -1,4 +1,4 @@
-package fr.duniter.client.actions;
+package org.duniter.client.actions;
 
 /*
  * #%L

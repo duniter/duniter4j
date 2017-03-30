@@ -146,7 +146,7 @@ public class BlockchainRemoteServiceTest {
 
         isWebSocketNewBlockReceived = false;
 
-        service.addBlockListener(createTestPeer(), (message) -> {
+        /*service.addBlockListener(createTestPeer(), (message) -> {
             try {
                 BlockchainBlock block = JacksonUtils.newObjectMapper().readValue(message, BlockchainBlock.class);
                 log.debug("Received block #" + block.getNumber());
@@ -155,7 +155,7 @@ public class BlockchainRemoteServiceTest {
             catch (IOException e) {
                 Assert.fail(e.getMessage());
             }
-        });
+        });*/
 
         int count = 0;
         while(!isWebSocketNewBlockReceived) {

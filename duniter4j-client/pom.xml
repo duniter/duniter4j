@@ -15,13 +15,14 @@
     <properties>
         <jTextUtilsVersion>0.3.3</jTextUtilsVersion>
         <opencsvVersion>2.3</opencsvVersion>
+        <jansiVersion>1.15</jansiVersion>
 
         <!-- i18n configuration -->
         <i18n.bundleOutputName>duniter4j-client-i18n</i18n.bundleOutputName>
         <i18n.bundleCsvFile>${i18n.bundleOutputName}.csv</i18n.bundleCsvFile>
 
         <maven.jar.main.class>
-            fr.duniter.client.Main
+            org.duniter.client.Main
         </maven.jar.main.class>
 
         <bundlePrefix>duniter4j-client-${project.version}</bundlePrefix>
@@ -79,10 +80,11 @@
             <version>${opencsvVersion}</version>
         </dependency>
 
+
         <dependency>
-            <groupId>org.jline</groupId>
-            <artifactId>jline</artifactId>
-            <version>3.2.0</version>
+            <groupId>org.fusesource.jansi</groupId>
+            <artifactId>jansi</artifactId>
+            <version>${jansiVersion}</version>
         </dependency>
     </dependencies>
 

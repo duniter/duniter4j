@@ -1,4 +1,4 @@
-package fr.duniter.client.actions;
+package org.duniter.client.actions;
 
 /*
  * #%L
@@ -25,24 +25,22 @@ package fr.duniter.client.actions;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.beust.jcommander.ParametersDelegate;
-import com.beust.jcommander.internal.Lists;
 import dnl.utils.text.table.TextTable;
-import fr.duniter.client.actions.params.PeerParameters;
-import fr.duniter.client.actions.utils.ClearableConsole;
-import fr.duniter.client.actions.utils.Formatters;
+import org.duniter.client.actions.params.PeerParameters;
+import org.duniter.client.actions.utils.RegexAnsiConsole;
+import org.duniter.client.actions.utils.Formatters;
 import org.apache.commons.io.IOUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.ServiceLocator;
-import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.local.NetworkService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.FileUtils;
+import org.fusesource.jansi.Ansi;
 import org.nuiton.i18n.I18n;
 
 import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -62,10 +60,9 @@ public class NetworkAction extends AbstractAction {
     @Parameter(names = "--output", description = "Output file (CSV format)", descriptionKey = "duniter4j.client.network.params.output")
     private File outputFile = null;
 
-    private ClearableConsole console;
+    private RegexAnsiConsole console;
 
     private DateFormat dateFormat;
-    private List<String> knownBlocks = Lists.newArrayList();
 
     public NetworkAction() {
         super();
@@ -74,81 +71,40 @@ public class NetworkAction extends AbstractAction {
     @Override
     public void run() {
 
+
         peerParameters.parse();
         final Peer mainPeer = peerParameters.getPeer();
         checkOutputFileIfNotNull(); // make sure the file (if any) is writable
 
         dateFormat = SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, I18n.getDefaultLocale());
 
-        console = new ClearableConsole(System.out)
-            .putRegexColor(I18n.t("duniter4j.client.network.ssl"), ClearableConsole.Color.green)
-            .putRegexColor(I18n.t("duniter4j.client.network.mirror"), ClearableConsole.Color.lightgray);
-
+        console = new RegexAnsiConsole();
         System.setOut(console);
 
         log.info(I18n.t("duniter4j.client.network.loadingPeers"));
-        List<Peer> peers = loadPeers(mainPeer);
 
-        showPeersTable(peers, true/*autoRefresh*/);
+        NetworkService service = ServiceLocator.instance().getNetworkService();
 
-        if (autoRefresh) {
-            BlockchainRemoteService bcService = ServiceLocator.instance().getBlockchainRemoteService();
-
-            peers.stream().forEach(peer -> {
-                String buid = peer.getStats().getBlockNumber() + "-" + peer.getStats().getBlockHash();
-                if (!knownBlocks.contains(buid)) {
-                    knownBlocks.add(buid);
-                }
-            });
-
-            // Start listening for new peer...
-            bcService.addPeerListener(mainPeer, message -> updatePeers(mainPeer, knownBlocks));
-            // Start listening for new block...
-            bcService.addBlockListener(mainPeer, message -> updatePeers(mainPeer, knownBlocks));
+        if (!autoRefresh) {
+            List<Peer> peers = service.getPeers(mainPeer);
+            showPeersTable(peers, false);
+        }
+        else {
+            service.addPeersChangeListener(mainPeer, peers -> showPeersTable(peers, true));
 
             try {
                 while(true) {
                     Thread.sleep(10000); // 10 s
-
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
 
-        // TODO: DEV only
-       /* else  {
-            try {
-                int blockCount = 1500;
-                while(true) {
-                    Thread.sleep(2000); // 2 s
-
-                    List<Peer> updatedPeers = new ArrayList<>();
-
-                    for (int i=0; i<5; i++) {
-                        Peer peer = Peer.newBuilder().setHost("p1").setPort(80)
-                                .build();
-                        peer.getStats().setBlockNumber(blockCount);
-                        updatedPeers.add(peer);
-                    }
-                    updatedPeers.addAll(peers);
-
-                    showPeersTable(updatedPeers, true);
-                    blockCount++;
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }*/
-
     }
 
     /* -- protected methods -- */
 
-    public List<Peer> loadPeers(Peer mainPeer) {
-        NetworkService service = ServiceLocator.instance().getNetworkService();
-        return service.getPeers(mainPeer);
-    }
 
     public void showPeersTable(List<Peer> peers, boolean clearConsole) {
 
@@ -163,18 +119,27 @@ public class NetworkAction extends AbstractAction {
         }
 
         Peer mainConsensusPeer = peers.get(0);
-        if (mainConsensusPeer.getStats().isMainConsensus()) {
-            Long mediantTime = mainConsensusPeer.getStats().getMedianTime();
-            if (mediantTime != null) {
-                console.println(I18n.t("duniter4j.client.network.medianTime",
-                        dateFormat.format(new Date(mediantTime * 1000))));
-            }
+        Peer.Stats mainConsensusStats = mainConsensusPeer.getStats();
+        if (mainConsensusStats.isMainConsensus()) {
+            Long mediantTime = mainConsensusStats.getMedianTime();
+            String mainBuid = formatBuid(mainConsensusStats);
 
-            knownBlocks.stream().forEach(buid -> {
-                console.putRegexColor(Formatters.formatBuid(buid), ClearableConsole.Color.lightgray);
-            });
+            console.resetFgRegexps()
+                   .fgRegexp(I18n.t("duniter4j.client.network.ssl"), Ansi.Color.MAGENTA)
+                   .fgRegexp(I18n.t("duniter4j.client.network.mirror"), Ansi.Color.CYAN)
+                   .fgRegexp(mainBuid, Ansi.Color.GREEN);
 
-            console.putRegexColor(formatBuid(mainConsensusPeer.getStats()), ClearableConsole.Color.green);
+            peers.stream()
+                    .filter(peer -> peer.getStats().isForkConsensus())
+                    .map(peer -> formatBuid(peer.getStats()))
+                    .forEach(forkConsensusBuid -> console.fgRegexp(Formatters.formatBuid(forkConsensusBuid), Ansi.Color.YELLOW));
+
+            // Log blockchain info
+            console.println("\t" + I18n.t("duniter4j.client.network.header",
+                    mainBuid,
+                    dateFormat.format(new Date(mediantTime * 1000)),
+                    mainConsensusStats.getConsensusPct()
+            ));
         }
 
         String[] columnNames = {
@@ -207,7 +172,6 @@ public class NetworkAction extends AbstractAction {
         for (Object[] row : data) {
             rows[i++] = row;
         }
-
 
         TextTable tt = new TextTable(columnNames, rows);
 
@@ -256,25 +220,8 @@ public class NetworkAction extends AbstractAction {
         }
     }
 
-    protected void updatePeers(Peer mainPeer, List<String> knownBlocks) {
-        List<Peer> updatedPeers = loadPeers(mainPeer);
-
-        int knowBlockSize = knownBlocks.size();
-        updatedPeers.stream().forEach(peer -> {
-            String buid = peer.getStats().getBlockNumber() + "-" + peer.getStats().getBlockHash();
-            if (!knownBlocks.contains(buid)) {
-                knownBlocks.add(buid);
-            }
-        });
-
-        // new block received: refresh console
-        if (knowBlockSize < knownBlocks.size()) {
-            showPeersTable(updatedPeers, true);
-        }
-    }
-
     protected void clearConsole() {
-        console.clearConsole();
+        console.eraseScreen();
     }
 
     protected String formatBuid(Peer.Stats stats) {

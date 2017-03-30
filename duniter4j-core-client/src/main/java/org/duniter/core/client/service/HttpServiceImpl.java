@@ -45,6 +45,7 @@ import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.cache.SimpleCache;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,11 @@ import java.io.*;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ServiceConfigurationError;
 
 /**
  * Created by eis on 05/02/15.
@@ -71,6 +76,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     protected SimpleCache<Integer, RequestConfig> requestConfigCache;
     protected SimpleCache<Integer, HttpClient> httpClientCache;
 
+    protected Map<URI, WebsocketClientEndpoint> wsEndPoints = new HashMap<>();
 
     public HttpServiceImpl() {
         super();
@@ -144,6 +150,13 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     public void close() throws IOException {
         httpClientCache.clear();
         requestConfigCache.clear();
+
+        if (wsEndPoints.size() != 0) {
+            for (WebsocketClientEndpoint clientEndPoint: wsEndPoints.values()) {
+                clientEndPoint.close();
+            }
+            wsEndPoints.clear();
+        }
     }
 
     public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass)  {
@@ -359,7 +372,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         // deserialize using gson
         else {
             try {
-                result = objectMapper.readValue(content, ResultClass);
+                result = readValue(content, ResultClass);
             }
             catch (Exception e) {
                 throw new TechnicalException(I18n.t("duniter4j.client.core.invalidResponse"), e);
@@ -429,5 +442,42 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         } catch(IOException e) {
             // silent is gold
         }
+    }
+
+    public WebsocketClientEndpoint getWebsocketClientEndpoint(Peer peer, String path, boolean autoReconnect) {
+
+        try {
+            URI wsBlockURI = new URI(String.format("%s://%s:%s%s",
+                    peer.isUseSsl() ? "wss" : "ws",
+                    peer.getHost(),
+                    peer.getPort(),
+                    path));
+
+            // Get the websocket, or open new one if not exists
+            WebsocketClientEndpoint wsClientEndPoint = wsEndPoints.get(wsBlockURI);
+            if (wsClientEndPoint == null || wsClientEndPoint.isClosed()) {
+                log.info(String.format("Starting to listen on [%s]...", wsBlockURI.toString()));
+                wsClientEndPoint = new WebsocketClientEndpoint(wsBlockURI, autoReconnect);
+                wsEndPoints.put(wsBlockURI, wsClientEndPoint);
+            }
+
+            return wsClientEndPoint;
+
+        } catch (URISyntaxException | ServiceConfigurationError ex) {
+            throw new TechnicalException(String.format("Could not create URI need for web socket [%s]: %s", path, ex.getMessage()));
+        }
+
+    }
+
+    public <T> T readValue(String json, Class<T> clazz) throws IOException {
+        return objectMapper.readValue(json, clazz);
+    }
+
+    public <T> T readValue(byte[] json, Class<T> clazz) throws IOException {
+        return objectMapper.readValue(json, clazz);
+    }
+
+    public <T> T readValue(InputStream json, Class<T> clazz) throws IOException {
+        return objectMapper.readValue(json, clazz);
     }
 }
