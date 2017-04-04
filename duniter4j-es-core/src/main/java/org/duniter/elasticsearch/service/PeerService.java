@@ -35,6 +35,7 @@ import org.duniter.core.model.NullProgressionModel;
 import org.duniter.core.model.ProgressionModel;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.concurrent.CompletableFutures;
 import org.duniter.core.util.json.JsonSyntaxException;
@@ -132,6 +133,8 @@ public class PeerService extends AbstractService {
                         .thenCompose(CompletableFutures::allOfToList)
                         .thenApply(networkService::fillPeerStatsConsensus)
                         .thenApply(peers -> peers.stream()
+                                // filter on currency
+                                .filter(peer -> ObjectUtils.equals(firstPeer.getCurrency(), peer.getCurrency()))
                                 // filter, then sort
                                 .filter(networkService.peerFilter(filterDef))
                                 .map(peer -> savePeer(peer))

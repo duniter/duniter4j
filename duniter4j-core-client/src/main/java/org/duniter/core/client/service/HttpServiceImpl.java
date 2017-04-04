@@ -370,7 +370,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
             }
         }
 
-        // deserialize using gson
+        // deserialize Json
         else {
             try {
                 result = readValue(content, ResultClass);

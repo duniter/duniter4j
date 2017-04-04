@@ -38,6 +38,7 @@ import org.duniter.core.client.service.exception.HttpNotFoundException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.concurrent.CompletableFutures;
@@ -125,13 +126,15 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     @Override
-    public List<Peer> getPeers(Peer firstPeer, Filter filter, Sort sort) {
+    public List<Peer> getPeers(final Peer mainPeer, Filter filter, Sort sort) {
 
         try {
-            return asyncGetPeers(firstPeer, null)
+            return asyncGetPeers(mainPeer, null)
                 .thenCompose(CompletableFutures::allOfToList)
                 .thenApply(this::fillPeerStatsConsensus)
                 .thenApply(peers -> peers.stream()
+                        // Filter on currency
+                        .filter(peer -> ObjectUtils.equals(mainPeer.getCurrency(), peer.getCurrency()))
                         // filter, then sort
                         .filter(peerFilter(filter))
                         .sorted(peerComparator(sort))
@@ -154,7 +157,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     @Override
-    public CompletableFuture<List<CompletableFuture<Peer>>> asyncGetPeers(Peer mainPeer, ExecutorService executor) throws ExecutionException, InterruptedException {
+    public CompletableFuture<List<CompletableFuture<Peer>>> asyncGetPeers(final Peer mainPeer, ExecutorService executor) throws ExecutionException, InterruptedException {
         Preconditions.checkNotNull(mainPeer);
 
         log.debug("Loading network peers...");
@@ -169,7 +172,12 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 .thenApply(v -> {
                     final Map<String, String> memberUids = memberUidsFuture.join();
                     return peersFuture.join().stream()
-                            .map(peer -> asyncRefreshPeer(peer, memberUids, pool))
+                            .map(peer -> {
+                                if (mainPeer.getUrl().equals(peer.getUrl())) {
+                                    return asyncRefreshPeer(mainPeer, memberUids, pool);
+                                }
+                                return asyncRefreshPeer(peer, memberUids, pool);
+                            })
                             .collect(Collectors.toList());
                 });
     }
@@ -532,6 +540,9 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     protected Peer getCurrentBlock(final Peer peer) {
         JsonNode json = executeRequest(peer, BMA_URL_BLOCKCHAIN_CURRENT , JsonNode.class);
+
+        String currency = json.has("currency") ? json.get("currency").asText() : null;
+        peer.setCurrency(currency);
 
         Integer number = json.has("number") ? json.get("number").asInt() : null;
         peer.getStats().setBlockNumber(number);

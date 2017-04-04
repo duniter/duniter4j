@@ -23,8 +23,8 @@ package org.duniter.core.client.service.bma;
  */
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonSyntaxException;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.BlockchainBlock;
@@ -39,8 +39,6 @@ import org.duniter.core.util.crypto.CryptoUtils;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class BlockchainRemoteServiceTest {
 
@@ -122,7 +120,7 @@ public class BlockchainRemoteServiceTest {
             try {
                 objectMapper.readValue(jsonBlock, BlockchainBlock.class);
             }
-            catch(JsonSyntaxException e) {
+            catch(JsonProcessingException e) {
                 e.printStackTrace();
                 Assert.fail(String.format("Invalid block format #%s. See previous error", number));
             }

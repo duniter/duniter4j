@@ -41,31 +41,32 @@ import java.util.stream.Collectors;
  */
 public class AuthParameters {
 
-    @Parameter(names = "--auth-scrypt", description = "Authenticate using Scrypt ?")
+    @Parameter(names = "--auth-scrypt", description = "Authenticate using Scrypt ?", descriptionKey = "duniter4j.client.params.authScrypt")
     public boolean authScrypt = true;
 
-    @Parameter(names = "--salt", description = "Salt (to generate the keypair)", password = true)
+    @Parameter(names = "--salt", description = "Salt (to generate the keypair)", password = true, descriptionKey = "duniter4j.client.params.authScrypt.salt")
     public char[] salt;
 
-    @Parameter(names = "--passwd", description = "Password (to generate the keypair)", password = true)
+    @Parameter(names = "--passwd", description = "Password (to generate the keypair)", password = true, descriptionKey = "duniter4j.client.params.authScrypt.passwd")
     public char[] password;
 
     @Parameter(names = "--scrypt-params", description = "Scrypt parameters (N,r,p)",
             splitter = CommaParameterSplitter.class,
-            validateWith = PositiveInteger.class)
-    public List<Integer> scryptPArams;
+            validateWith = PositiveInteger.class,
+            descriptionKey = "duniter4j.client.params.authScrypt.scryptParams")
+    public List<Integer> scryptParams;
 
     public void parse() {
         // Compute keypair and wallet
         if (StringUtils.isBlank(salt) && authScrypt) {
-            JCommander.getConsole().print(I18n.t("duniter4j.client.params.authScrypt.ask.salt"));
-            salt = JCommander.getConsole().readPassword(true);
+            JCommander.getConsole().print(I18n.t("duniter4j.client.params.authScrypt.ask.salt") + " ");
+            salt = JCommander.getConsole().readPassword(false);
         }
         if (StringUtils.isBlank(password) && authScrypt){
-            JCommander.getConsole().print(I18n.t("duniter4j.client.params.authScrypt.ask.passwd"));
-            password = JCommander.getConsole().readPassword(true);
+            JCommander.getConsole().print(I18n.t("duniter4j.client.params.authScrypt.ask.passwd") + " ");
+            password = JCommander.getConsole().readPassword(false);
         }
-        if (scryptPArams == null && authScrypt) {
+        if (scryptParams == null && authScrypt) {
             JCommander.getConsole().print(I18n.t("duniter4j.client.params.authScrypt.ask.scryptParams",
                     Ed25519CryptoServiceImpl.SCRYPT_PARAMS_N,
                     Ed25519CryptoServiceImpl.SCRYPT_PARAMS_r,
@@ -76,10 +77,10 @@ public class AuthParameters {
                 if (parts.length != 3) {
                     throw new ParameterException(I18n.t("duniter4j.client.params.authScrypt.error.scryptParams"));
                 }
-                scryptPArams = Arrays.asList(parts).stream().map(part -> Integer.parseInt(part)).collect(Collectors.toList());
+                scryptParams = Arrays.asList(parts).stream().map(part -> Integer.parseInt(part)).collect(Collectors.toList());
             }
             else {
-                scryptPArams = ImmutableList.of(
+                scryptParams = ImmutableList.of(
                         Ed25519CryptoServiceImpl.SCRYPT_PARAMS_N,
                         Ed25519CryptoServiceImpl.SCRYPT_PARAMS_r,
                         Ed25519CryptoServiceImpl.SCRYPT_PARAMS_p);

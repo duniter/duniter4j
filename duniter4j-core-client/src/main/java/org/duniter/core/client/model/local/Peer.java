@@ -239,6 +239,21 @@ public class Peer implements LocalEntity<String>, Serializable {
         this.id  = id;
     }
 
+    @JsonIgnore
+    public String getHost() {
+        return this.host; // computed in init()
+    }
+
+    @JsonIgnore
+    public String getUrl() {
+        return this.url; // computed in init()
+    }
+
+    @JsonIgnore
+    public String computeKey()  {
+        return Joiner.on('-').skipNulls().join(pubkey, dns, ipv4, ipv6, port, useSsl);
+    }
+
     public String getApi() {
         return api;
     }
@@ -296,16 +311,6 @@ public class Peer implements LocalEntity<String>, Serializable {
         this.pubkey = pubkey;
     }
 
-    @JsonIgnore
-    public String getHost() {
-        return this.host; // computed in init()
-    }
-
-    @JsonIgnore
-    public String getUrl() {
-        return this.url; // computed in init()
-    }
-
     public String getHash() {
         return hash;
     }
@@ -322,19 +327,12 @@ public class Peer implements LocalEntity<String>, Serializable {
         this.currency = currency;
     }
 
-    @JsonIgnore
     public Stats getStats() {
         return stats;
     }
 
-    @JsonIgnore
     public void setStats(Stats stats) {
         this.stats = stats;
-    }
-
-    @JsonIgnore
-    public String computeKey()  {
-        return Joiner.on('-').skipNulls().join(pubkey, dns, ipv4, ipv6, port, useSsl);
     }
 
     public String toString() {

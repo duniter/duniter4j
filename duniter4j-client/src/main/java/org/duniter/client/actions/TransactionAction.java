@@ -22,15 +22,13 @@ package org.duniter.client.actions;
  * #L%
  */
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
-import com.beust.jcommander.ParametersDelegate;
+import com.beust.jcommander.*;
 import com.beust.jcommander.validators.PositiveInteger;
 import com.google.common.collect.ImmutableList;
 import org.duniter.client.actions.params.AuthParameters;
 import org.duniter.client.actions.params.PeerParameters;
 import org.duniter.client.actions.utils.Formatters;
+import org.duniter.client.actions.validators.PubkeyValidator;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.model.bma.EndpointApi;
@@ -66,10 +64,10 @@ public class TransactionAction extends AbstractAction  {
     @ParametersDelegate
     public PeerParameters peerParameters = new PeerParameters();
 
-    @Parameter(names = "--amount", description = "Amount", required = true, validateWith = PositiveInteger.class)
-    public int amount;
+    @Parameter(names = "--amount", description = "Amount", validateWith = PositiveInteger.class)
+    public Integer amount;
 
-    @Parameter(names = "--output", description = "Output pubkey", required = true)
+    @Parameter(names = "--output", description = "Output pubkey", validateWith = PubkeyValidator.class)
     public String output;
 
     @Parameter(names = "--comment", description = "TX Comment")
@@ -102,7 +100,6 @@ public class TransactionAction extends AbstractAction  {
 
             Currency currency = ServiceLocator.instance().getBlockchainRemoteService().getCurrencyFromPeer(peer);
             ServiceLocator.instance().getCurrencyService().save(currency);
-            peer.setCurrencyId(currency.getId());
             peer.setCurrency(currency.getCurrencyName());
             ServiceLocator.instance().getPeerService().save(peer);
 
@@ -115,9 +112,9 @@ public class TransactionAction extends AbstractAction  {
                         cryptoService.getSeed(
                         new String(authParameters.salt),
                         new String(authParameters.password),
-                                authParameters.scryptPArams.get(0), // N
-                                authParameters.scryptPArams.get(1), // p
-                                authParameters.scryptPArams.get(2) // r
+                                authParameters.scryptParams.get(0), // N
+                                authParameters.scryptParams.get(1), // p
+                                authParameters.scryptParams.get(2) // r
                         ));
             }
             else {
@@ -132,6 +129,9 @@ public class TransactionAction extends AbstractAction  {
                     keypair.getSecKey());
             wallet.setCurrencyId(currency.getId());
 
+            // Parse TX parameters
+            parseTransactionParameters();
+
             // Send TX document to ONE peer
             if (!broadcast) {
                 sendToPeer(peer, wallet);
@@ -144,6 +144,33 @@ public class TransactionAction extends AbstractAction  {
         }
         catch(BusinessException | TechnicalException e) {
             fail(e);
+        }
+    }
+
+    protected void parseTransactionParameters() {
+
+        // Get output
+        while (output == null) {
+            JCommander.getConsole().print(I18n.t("duniter4j.client.transaction.params.output.ask") + " ");
+            output = new String(JCommander.getConsole().readPassword(false));
+            try {
+                new PubkeyValidator().validate("output", output);
+            } catch (ParameterException e) {
+                JCommander.getConsole().println(e.getMessage());
+                output = null;
+            }
+        }
+
+        // Get Amount
+        while (amount == null) {
+            JCommander.getConsole().print(I18n.t("duniter4j.client.transaction.params.amount.ask") + " ");
+            String amountStr = new String(JCommander.getConsole().readPassword(false));
+            try {
+                new PositiveInteger().validate("amount", amountStr);
+                amount = Integer.parseInt(amountStr);
+            } catch (ParameterException e) {
+                JCommander.getConsole().println(e.getMessage());
+            }
         }
     }
 
@@ -192,7 +219,6 @@ public class TransactionAction extends AbstractAction  {
         logTxSummary(wallet);
 
         peers.stream().forEach(peer -> {
-            peer.setCurrencyId(currency.getId());
             peer.setCurrency(currency.getCurrencyName());
             peerService.save(peer);
 
@@ -227,7 +253,6 @@ public class TransactionAction extends AbstractAction  {
         }
 
     }
-
 
     protected void logTxSummary(Wallet wallet) {
         // Log TX summary
