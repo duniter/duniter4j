@@ -61,23 +61,34 @@ public class BeanFactory implements Closeable{
         beansCache.put(clazz, bean);
 
         // Call initialization
-        if (bean instanceof InitializingBean){
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Initializing bean of type [%s]", clazz.getName()));
-            }
-            try {
-                ((InitializingBean) bean).afterPropertiesSet();
-            }
-            catch(Exception e) {
-                throw new TechnicalException(String.format("Unable to initialize bean of type [%s]", clazz.getName()), e);
-            }
-        }
+        initBean(bean);
 
         return bean;
     }
 
+    public <S extends Bean, B extends S> void setBean(B bean, Class<S> clazz) {
+        if (!beansCache.containsKey(clazz)) {
+            beansCache.put(clazz, bean);
+        }
+    }
 
-    public <S extends Bean> S newBean(Class<S> clazz) {
+    /* -- protected methods -- */
+
+    protected <S extends Bean> void initBean(S bean) {
+        if (bean instanceof InitializingBean){
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Initializing bean of type [%s]", bean.getClass().getName()));
+            }
+            try {
+                ((InitializingBean)bean).afterPropertiesSet();
+            }
+            catch(Exception e) {
+                throw new TechnicalException(String.format("Unable to initialize bean of type [%s]", bean.getClass().getName()), e);
+            }
+        }
+    }
+
+    protected <S extends Bean> S newBean(Class<S> clazz) {
         if (log.isTraceEnabled()) {
             log.trace(String.format("Asking bean on type [%s]...", clazz.getName()));
         }
@@ -106,18 +117,21 @@ public class BeanFactory implements Closeable{
 
                     Class<? extends Bean> beanDefClass = beanDef.getValue();
                     try {
-                        Bean bean = beanDefClass.newInstance();
-                        if (clazz.isInstance(bean)) {
+                        if (clazz.isAssignableFrom(beanDefClass)) {
                             return (S) beanDefClass.newInstance();
                         }
                     } catch (Exception e) {
                         // skip
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format("Unable to create the bean of type [%s] with class [%s]", clazz.getName(), beanDef.getValue().getName()), e);
+                        }
+
                     }
                 }
             }
         }
 
-        throw new TechnicalException(String.format("Unable to create bean with type [%s]: not configured for the service loader [%s]", clazz.getName(), Bean.class.getCanonicalName()));
+        throw new BeanCreationException(String.format("Unable to create bean with type [%s]: not configured for the service loader [%s]", clazz.getName(), Bean.class.getCanonicalName()));
     }
 
     @Override

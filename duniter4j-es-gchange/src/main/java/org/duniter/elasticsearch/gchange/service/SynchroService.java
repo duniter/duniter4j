@@ -24,6 +24,13 @@ package org.duniter.elasticsearch.gchange.service;
 
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
+import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.gchange.dao.market.MarketCommentDao;
+import org.duniter.elasticsearch.gchange.dao.market.MarketIndexDao;
+import org.duniter.elasticsearch.gchange.dao.market.MarketRecordDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryCommentDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryIndexDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryRecordDao;
 import org.duniter.elasticsearch.gchange.model.Protocol;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
@@ -39,7 +46,7 @@ import org.elasticsearch.common.inject.Inject;
 public class SynchroService extends AbstractSynchroService {
 
     @Inject
-    public SynchroService(Client client, PluginSettings settings, CryptoService cryptoService,
+    public SynchroService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
                           ThreadPool threadPool, final ServiceLocator serviceLocator) {
         super(client, settings.getDelegate(), cryptoService, threadPool, serviceLocator);
     }
@@ -69,12 +76,12 @@ public class SynchroService extends AbstractSynchroService {
     }
 
     protected void importMarketChanges(SynchroResult result, Peer peer, long sinceTime) {
-        importChanges(result, peer, MarketService.INDEX, MarketService.RECORD_TYPE,  sinceTime);
-        importChanges(result, peer, MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE,  sinceTime);
+        importChanges(result, peer, MarketIndexDao.INDEX, MarketRecordDao.TYPE,  sinceTime);
+        importChanges(result, peer, MarketIndexDao.INDEX, MarketCommentDao.TYPE,  sinceTime);
     }
 
     protected void importRegistryChanges(SynchroResult result, Peer peer, long sinceTime) {
-        importChanges(result, peer, RegistryService.INDEX, RegistryService.RECORD_TYPE,  sinceTime);
-        importChanges(result, peer, RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE,  sinceTime);
+        importChanges(result, peer, RegistryIndexDao.INDEX, RegistryRecordDao.TYPE,  sinceTime);
+        importChanges(result, peer, RegistryIndexDao.INDEX, RegistryCommentDao.TYPE,  sinceTime);
     }
 }

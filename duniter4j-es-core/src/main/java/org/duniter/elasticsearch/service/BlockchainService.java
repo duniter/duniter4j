@@ -23,7 +23,6 @@ package org.duniter.elasticsearch.service;
  */
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
@@ -32,12 +31,12 @@ import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.json.JsonAttributeParser;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
 import org.duniter.core.client.service.exception.BlockNotFoundException;
-import org.duniter.core.util.json.JsonSyntaxException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.model.NullProgressionModel;
 import org.duniter.core.model.ProgressionModel;
@@ -47,30 +46,16 @@ import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.dao.BlockDao;
+import org.duniter.elasticsearch.dao.impl.BlockDaoImpl;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHitField;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.metrics.max.Max;
-import org.elasticsearch.search.highlight.HighlightField;
-import org.elasticsearch.search.sort.SortOrder;
 import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
@@ -100,14 +85,19 @@ public class BlockchainService extends AbstractService {
     private final JsonAttributeParser blockHashParser = new JsonAttributeParser("hash");
     private final JsonAttributeParser blockPreviousHashParser = new JsonAttributeParser("previousHash");
 
-    private ObjectMapper objectMapper;
+    private Client client;
+    private BlockDao blockDao;
 
     @Inject
-    public BlockchainService(Client client, PluginSettings settings, ThreadPool threadPool,
+    public BlockchainService(Duniter4jClient client,
+                             PluginSettings settings,
+                             ThreadPool threadPool,
+                             BlockDao blockDao,
                              final ServiceLocator serviceLocator){
         super("duniter.blockchain", client, settings);
-        this.objectMapper = JacksonUtils.newObjectMapper();
         this.threadPool = threadPool;
+        this.client = client;
+        this.blockDao = blockDao;
         threadPool.scheduleOnStarted(() -> {
             blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
         });
@@ -140,7 +130,7 @@ public class BlockchainService extends AbstractService {
     }
 
     public BlockchainService listenAndIndexNewBlock(final Peer peer){
-        WebsocketClientEndpoint wsEndPoint = blockchainRemoteService.addBlockListener(peer, message -> indexLastBlockFromJson(peer, message));
+        WebsocketClientEndpoint wsEndPoint = blockchainRemoteService.addBlockListener(peer, message -> indexLastBlockFromJson(peer, message), true /*autoreconnect*/);
         wsEndPoint.registerListener(dispatchConnectionListener);
         return this;
     }
@@ -170,14 +160,6 @@ public class BlockchainService extends AbstractService {
             progressionModel.setTask(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.task", currencyName, peer));
             logger.info(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.task", currencyName, peer));
 
-            // Create index blockchain if need
-            if (!currencyService.isCurrencyExists(currencyName)) {
-                currencyService.indexCurrencyFromPeer(peer);
-            }
-
-            // Check if index exists
-            createIndexIfNotExists(currencyName, true/*wait cluster health*/);
-
             // Then index allOfToList blocks
             BlockchainBlock peerCurrentBlock = blockchainRemoteService.getCurrentBlock(peer);
 
@@ -205,7 +187,7 @@ public class BlockchainService extends AbstractService {
                 // When current block not found,
                 // try to use the max(number), because block with _id='current' may not has been indexed
                 if (startNumber <= 1 ){
-                    startNumber = getMaxBlockNumber(currencyName) + 1;
+                    startNumber = blockDao.getMaxBlockNumber(currencyName) + 1;
                 }
 
                 // If some block has been already indexed: detect and resolve fork
@@ -262,42 +244,6 @@ public class BlockchainService extends AbstractService {
         return this;
     }
 
-    public BlockchainService deleteIndex(String currencyName) {
-        deleteIndexIfExists(currencyName);
-        return this;
-    }
-
-    public boolean existsIndex(String currencyName) {
-        return super.existsIndex(currencyName);
-    }
-
-    public BlockchainService createIndexIfNotExists(String currencyName, boolean waitClusterHealth) {
-        if (!existsIndex(currencyName)) {
-            createIndex(currencyName);
-
-            // when wait cluster state
-            if (waitClusterHealth) {
-                threadPool.waitClusterHealthStatus(ClusterHealthStatus.GREEN, ClusterHealthStatus.YELLOW);
-            }
-        }
-        return this;
-    }
-
-    public void createIndex(String currencyName) {
-        logger.info(String.format("Creating index [%s]", currencyName));
-
-        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(currencyName);
-        org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
-                .put("number_of_shards", 1)
-                .put("number_of_replicas", 1)
-                //.put("analyzer", createDefaultAnalyzer())
-                .build();
-        createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(BLOCK_TYPE, createBlockTypeMapping());
-        createIndexRequestBuilder.addMapping(PEER_TYPE, EndpointService.createEndpointTypeMapping());
-        createIndexRequestBuilder.execute().actionGet();
-    }
-
     /**
      * Create or update a block, depending on its existence and hash
      * @param block
@@ -311,7 +257,7 @@ public class BlockchainService extends AbstractService {
         Preconditions.checkNotNull(block.getNumber(), "block attribute 'number' could not be null");
         Preconditions.checkNotNull(block.getHash(), "block attribute 'hash' could not be null");
 
-        BlockchainBlock existingBlock = getBlockById(block.getCurrency(), block.getNumber());
+        BlockchainBlock existingBlock = blockDao.getBlockById(block.getCurrency(), getBlockId(block.getNumber()));
 
         // Currency not exists, or has changed, so create it
         if (existingBlock == null) {
@@ -320,12 +266,12 @@ public class BlockchainService extends AbstractService {
             }
 
             // Create new block
-            indexBlock(block, wait);
+            blockDao.create(block, wait);
         }
 
         // Exists, so check the owner signature
         else {
-            boolean doUpdate = false;
+            boolean doUpdate;
             if (updateWhenSameHash) {
                 doUpdate = true;
                 if (logger.isTraceEnabled() && doUpdate) {
@@ -346,68 +292,9 @@ public class BlockchainService extends AbstractService {
 
             // Update existing block
             if (doUpdate) {
-                indexBlock(block, wait);
+                blockDao.update(block, wait);
             }
         }
-    }
-
-    public void indexBlock(BlockchainBlock block, boolean wait) {
-        Preconditions.checkNotNull(block);
-        Preconditions.checkArgument(StringUtils.isNotBlank(block.getCurrency()));
-        Preconditions.checkNotNull(block.getHash());
-        Preconditions.checkNotNull(block.getNumber());
-
-        // Serialize into JSON
-        // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
-        try {
-            String json = objectMapper.writeValueAsString(block);
-
-            // Preparing indexBlocksFromNode
-            IndexRequestBuilder indexRequest = client.prepareIndex(block.getCurrency(), BLOCK_TYPE)
-                    .setId(block.getNumber().toString())
-                    .setSource(json);
-
-            // Execute indexBlocksFromNode
-            ActionFuture<IndexResponse> futureResponse = indexRequest
-                    .setRefresh(true)
-                    .execute();
-
-            if (wait) {
-                futureResponse.actionGet();
-            }
-        }
-        catch(JsonProcessingException e) {
-            throw new TechnicalException(e);
-        }
-
-
-    }
-
-    /**
-     *
-     * @param currencyName
-     * @param number the block number
-     * @param json block as JSON
-     */
-    public BlockchainService indexBlockFromJson(String currencyName, int number, byte[] json, boolean refresh, boolean wait) {
-        Preconditions.checkNotNull(json);
-        Preconditions.checkArgument(json.length > 0);
-
-        // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, BLOCK_TYPE)
-                .setId(String.valueOf(number))
-                .setRefresh(refresh)
-                .setSource(json);
-
-        // Execute indexBlocksFromNode
-        if (!wait) {
-            indexRequest.execute();
-        }
-        else {
-            indexRequest.execute().actionGet();
-        }
-
-        return this;
     }
 
     /**
@@ -419,7 +306,7 @@ public class BlockchainService extends AbstractService {
         Preconditions.checkNotNull(json);
         Preconditions.checkArgument(json.length() > 0);
 
-        indexBlockFromJson(peer, json, true /*refresh*/, true /*is current*/, true/*check fork*/, true/*wait*/);
+        indexBlockFromJson(peer, json, true /*is current*/, true/*check fork*/, true/*wait*/);
 
         return this;
     }
@@ -427,10 +314,9 @@ public class BlockchainService extends AbstractService {
     /**
      *
      * @param json block as json
-     * @param refresh Could be an existing block ?
      * @param wait need to wait until processed ?
      */
-    public BlockchainService indexBlockFromJson(Peer peer, String json, boolean refresh, boolean isCurrent, boolean detectFork, boolean wait) {
+    public BlockchainService indexBlockFromJson(Peer peer, String json, boolean isCurrent, boolean detectFork, boolean wait) {
         Preconditions.checkNotNull(json);
         Preconditions.checkArgument(json.length() > 0);
 
@@ -455,18 +341,7 @@ public class BlockchainService extends AbstractService {
         }
 
         // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, BLOCK_TYPE)
-                .setId(String.valueOf(number))
-                .setRefresh(refresh)
-                .setSource(json);
-
-        // Execute indexBlocksFromNode
-        if (!wait) {
-            indexRequest.execute();
-        }
-        else {
-            indexRequest.execute().actionGet();
-        }
+        blockDao.create(currencyName, getBlockId(number), json.getBytes(), wait);
 
         // Update current
         if (isCurrent) {
@@ -510,239 +385,25 @@ public class BlockchainService extends AbstractService {
         Preconditions.checkArgument(StringUtils.isNotBlank(currencyName));
 
         // Preparing indexBlocksFromNode
-        IndexRequestBuilder indexRequest = client.prepareIndex(currencyName, BLOCK_TYPE)
-                .setId(CURRENT_BLOCK_ID)
-                .setRefresh(true)
-                .setSource(json);
-
-        // Execute in a pool
-        if (!wait) {
-            boolean acceptedInPool = false;
-            while(!acceptedInPool)
-                try {
-                    indexRequest.execute();
-                    acceptedInPool = true;
-                }
-                catch(EsRejectedExecutionException e) {
-                    // not accepted, so wait
-                    try {
-                        Thread.sleep(1000); // 1s
-                    }
-                    catch(InterruptedException e2) {
-                        // silent
-                    }
-                }
-
-        } else {
-            indexRequest.execute().actionGet();
+        if (blockDao.isExists(currencyName, CURRENT_BLOCK_ID)) {
+            blockDao.update(currencyName, CURRENT_BLOCK_ID, json.getBytes(), wait);
         }
-    }
-
-    public List<BlockchainBlock> findBlocksByHash(String currencyName, String query) {
-        String[] queryParts = query.split("[\\t ]+");
-
-        // Prepare request
-        SearchRequestBuilder searchRequest = client
-                .prepareSearch(currencyName)
-                .setTypes(BLOCK_TYPE)
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
-
-        // If only one term, search as prefix
-        if (queryParts.length == 1) {
-            searchRequest.setQuery(QueryBuilders.prefixQuery("hash", query));
-        }
-
-        // If more than a word, search on terms match
         else {
-            searchRequest.setQuery(QueryBuilders.matchQuery("hash", query));
+            blockDao.create(currencyName, CURRENT_BLOCK_ID, json.getBytes(), wait);
         }
-
-        // Sort as score/memberCount
-        searchRequest.addSort("_score", SortOrder.DESC)
-                .addSort("number", SortOrder.DESC);
-
-        // Highlight matched words
-        searchRequest.setHighlighterTagsSchema("styled")
-                .addHighlightedField("hash")
-                .addFields("hash")
-                .addFields("*", "_source");
-
-        // Execute query
-        SearchResponse searchResponse = searchRequest.execute().actionGet();
-
-        // Read query result
-        return toBlocks(searchResponse, true);
-    }
-
-    public int getMaxBlockNumber(String currencyName) {
-        // Prepare request
-        SearchRequestBuilder searchRequest = client
-                .prepareSearch(currencyName)
-                .setTypes(BLOCK_TYPE)
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
-
-        // Get max(number)
-        searchRequest.addAggregation(AggregationBuilders.max("max_number").field("number"));
-
-        // Execute query
-        SearchResponse searchResponse = searchRequest.execute().actionGet();
-
-        // Read query result
-        Max result = searchResponse.getAggregations().get("max_number");
-        if (result == null) {
-            return -1;
-        }
-
-        return (result.getValue() == Double.NEGATIVE_INFINITY)
-                ? -1
-                : (int)result.getValue();
     }
 
     public BlockchainBlock getBlockById(String currencyName, int number) {
-        return getBlockByIdStr(currencyName, String.valueOf(number));
+        return blockDao.getBlockById(currencyName, String.valueOf(number));
     }
 
     public BlockchainBlock getCurrentBlock(String currencyName) {
-        return getBlockByIdStr(currencyName, CURRENT_BLOCK_ID);
+        return blockDao.getBlockById(currencyName, CURRENT_BLOCK_ID);
     }
 
     /* -- Internal methods -- */
 
-
-    public XContentBuilder createBlockTypeMapping() {
-        try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder()
-                    .startObject()
-                    .startObject(BLOCK_TYPE)
-                    .startObject("properties")
-
-                    // block number
-                    .startObject("number")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // hash
-                    .startObject("hash")
-                    .field("type", "string")
-                    .endObject()
-
-                    // issuer
-                    .startObject("issuer")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // previous hash
-                    .startObject("previousHash")
-                    .field("type", "string")
-                    .endObject()
-
-                    // membercount
-                    .startObject("memberCount")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // membersChanges
-                    .startObject("membersChanges")
-                    .field("type", "string")
-                    .endObject()
-
-                    // unitbase
-                    .startObject("unitbase")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // membersChanges
-                    .startObject("monetaryMass")
-                    .field("type", "long")
-                    .endObject()
-
-                    // dividend
-                    .startObject("dividend")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // identities:
-                    //.startObject("identities")
-                    //.endObject()
-
-                    .endObject()
-                    .endObject().endObject();
-
-            return mapping;
-        }
-        catch(IOException ioe) {
-            throw new TechnicalException("Error while getting mapping for block index: " + ioe.getMessage(), ioe);
-        }
-    }
-
-
-    public BlockchainBlock getBlockByIdStr(String currencyName, String blockId) {
-
-        // Prepare request
-        SearchRequestBuilder searchRequest = client
-                .prepareSearch(currencyName)
-                .setTypes(BLOCK_TYPE)
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
-
-        // If more than a word, search on terms match
-        searchRequest.setQuery(QueryBuilders.matchQuery("_id", blockId));
-
-        // Execute query
-        try {
-            SearchResponse searchResponse = searchRequest.execute().actionGet();
-            List<BlockchainBlock> blocks = toBlocks(searchResponse, false);
-            if (CollectionUtils.isEmpty(blocks)) {
-                return null;
-            }
-
-            // Return the unique result
-            return CollectionUtils.extractSingleton(blocks);
-        }
-        catch(JsonSyntaxException e) {
-            throw new TechnicalException(String.format("Error while getting indexed block #%s for blockchain [%s]", blockId, currencyName), e);
-        }
-
-    }
-
-    protected List<BlockchainBlock> toBlocks(SearchResponse response, boolean withHighlight) {
-        // Read query result
-        List<BlockchainBlock> result = Lists.newArrayList();
-        response.getHits().forEach(searchHit -> {
-            BlockchainBlock block;
-            if (searchHit.source() != null) {
-                String jsonString = new String(searchHit.source());
-                try {
-                    block = objectMapper.readValue(jsonString, BlockchainBlock.class);
-                } catch(Exception e) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Error while parsing block from JSON:\n" + jsonString);
-                    }
-                    throw new JsonSyntaxException("Error while read block from JSON: " + e.getMessage(), e);
-                }
-            }
-            else {
-                block = new BlockchainBlock();
-                SearchHitField field = searchHit.getFields().get("hash");
-                block.setHash(field.getValue());
-            }
-            result.add(block);
-
-            // If possible, use highlights
-            if (withHighlight) {
-                Map<String, HighlightField> fields = searchHit.getHighlightFields();
-                for (HighlightField field : fields.values()) {
-                    String blockNameHighLight = field.getFragments()[0].string();
-                    block.setHash(blockNameHighLight);
-                }
-            }
-        });
-
-        return result;
-    }
-
-
-    public Collection<String> indexBlocksNoBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
+    protected Collection<String> indexBlocksNoBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
         Set<String> missingBlockNumbers = new LinkedHashSet<>();
 
         for (int curNumber = firstNumber; curNumber <= lastNumber; curNumber++) {
@@ -763,7 +424,7 @@ public class BlockchainService extends AbstractService {
 
             try {
                 String blockAsJson = blockchainRemoteService.getBlockAsJson(peer, curNumber);
-                indexBlockFromJson(currencyName, curNumber, blockAsJson.getBytes(), false, true /*wait*/);
+                blockDao.create(currencyName, getBlockId(curNumber), blockAsJson.getBytes(), true /*wait*/);
 
                 // If last block
                 if (curNumber == lastNumber - 1) {
@@ -780,7 +441,7 @@ public class BlockchainService extends AbstractService {
         return missingBlockNumbers;
     }
 
-    public Collection<String> indexBlocksUsingBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
+    protected Collection<String> indexBlocksUsingBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
         Set<String> missingBlockNumbers = new LinkedHashSet<>();
 
         boolean debug = logger.isDebugEnabled();
@@ -954,7 +615,7 @@ public class BlockchainService extends AbstractService {
                             }
 
                             // Index the missing block
-                            indexBlockFromJson(currencyName, blockNumber, blockAsJson.getBytes(), false/*refresh*/, true/*wait*/);
+                            blockDao.create(currencyName, getBlockId(blockNumber), blockAsJson.getBytes(), true/*wait*/);
 
                             // Remove this block number from the final missing list
                             newMissingBlocks.remove(blockNumber);
@@ -1018,13 +679,15 @@ public class BlockchainService extends AbstractService {
     }
 
     protected boolean isBlockIndexed(String currencyName, int number, String hash) {
+        Preconditions.checkNotNull(currencyName);
+        Preconditions.checkNotNull(hash);
         // Check if previous block exists
-        BlockchainBlock block = getBlockByIdStr(currencyName, String.valueOf(number));
+        BlockchainBlock block = getBlockById(currencyName, number);
         boolean blockExists = block != null;
         if (!blockExists) {
             return blockExists;
         }
-        return block.getHash() != null && block.getHash().equals(hash);
+        return ObjectUtils.equals(block.getHash(), hash);
     }
 
     protected boolean detectAndResolveFork(Peer peer, final String currencyName, final String hash, final int number){
@@ -1064,7 +727,7 @@ public class BlockchainService extends AbstractService {
         if (forkOriginNumber < number) {
             logger.info(I18n.t("duniter4j.blockIndexerService.detectFork.resync", currencyName, peer, forkOriginNumber));
             // Remove some previous block
-            deleteBlocksFromNumber(currencyName, forkOriginNumber/*from*/, number+forkResyncWindow/*to*/);
+            blockDao.deleteRange(currencyName, forkOriginNumber/*from*/, number+forkResyncWindow/*to*/);
 
             // Re-indexing blocks
             indexBlocksUsingBulk(peer, currencyName, forkOriginNumber/*from*/, number, nullProgressionModel);
@@ -1073,32 +736,8 @@ public class BlockchainService extends AbstractService {
         return true; // sync OK
     }
 
-    /**
-     * Delete blocks from a start number (using bulk)
-     * @param currencyName
-     * @param fromNumber
-     */
-    protected void deleteBlocksFromNumber(final String currencyName, final int fromNumber, final int toNumber) {
 
-        int bulkSize = pluginSettings.getIndexBulkSize();
-
-        BulkRequestBuilder bulkRequest = client.prepareBulk();
-        for (int number=fromNumber; number<=toNumber; number++) {
-
-            bulkRequest.add(
-                client.prepareDelete(currencyName, BLOCK_TYPE, String.valueOf(number))
-            );
-
-            // Flush the bulk if not empty
-            if ((fromNumber - number % bulkSize) == 0) {
-                flushDeleteBulk(currencyName, BLOCK_TYPE, bulkRequest);
-                bulkRequest = client.prepareBulk();
-            }
-        }
-
-        // last flush
-        flushDeleteBulk(currencyName, BLOCK_TYPE, bulkRequest);
+    protected String getBlockId(int number) {
+        return number == -1 ? CURRENT_BLOCK_ID : String.valueOf(number);
     }
-
-
 }

@@ -22,15 +22,12 @@ package org.duniter.core.client.service.bma;
  * #L%
  */
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.duniter.core.util.Preconditions;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
-import org.duniter.core.util.json.JsonArrayParser;
 import org.duniter.core.client.model.local.Identity;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
@@ -38,10 +35,12 @@ import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.cache.Cache;
 import org.duniter.core.util.cache.SimpleCache;
 import org.duniter.core.util.crypto.CryptoUtils;
+import org.duniter.core.util.json.JsonArrayParser;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +48,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 
 public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implements BlockchainRemoteService {
@@ -79,20 +77,14 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     public static final String URL_WS_BLOCK = "/ws/block";
 
-    public static final String URL_WS_PEER = "/ws/peer";
-
-    private ObjectMapper objectMapper;
-
-    private NetworkRemoteService networkRemoteService;
-
     private Configuration config;
 
     // Cache need for wallet refresh : iteration on wallet should not
     // execute a download of the current block
-    private Cache<Long, BlockchainBlock> mCurrentBlockCache;
+    private Cache<String, BlockchainBlock> mCurrentBlockCache;
 
     // Cache on blockchain parameters
-    private Cache<Long, BlockchainParameters> mParametersCache;
+    private Cache<String, BlockchainParameters> mParametersCache;
 
     private Map<URI, WebsocketClientEndpoint> wsEndPoints = new HashMap<>();
 
@@ -103,7 +95,6 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     @Override
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
-        networkRemoteService = ServiceLocator.instance().getNetworkRemoteService();
         config = Configuration.instance();
 
         // Initialize caches
@@ -123,7 +114,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public BlockchainParameters getParameters(long currencyId, boolean useCache) {
+    public BlockchainParameters getParameters(String currencyId, boolean useCache) {
         if (!useCache) {
             return getParameters(currencyId);
         } else {
@@ -132,7 +123,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public BlockchainParameters getParameters(long currencyId) {
+    public BlockchainParameters getParameters(String currencyId) {
         // get blockchain parameter
         BlockchainParameters result = executeRequest(currencyId, URL_PARAMETERS, BlockchainParameters.class);
         return result;
@@ -146,7 +137,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public BlockchainBlock getBlock(long currencyId, long number) throws BlockNotFoundException  {
+    public BlockchainBlock getBlock(String currencyId, long number) throws BlockNotFoundException  {
         String path = String.format(URL_BLOCK, number);
         try {
             return executeRequest(currencyId, path, BlockchainBlock.class);
@@ -157,7 +148,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public Long getBlockDividend(long currencyId, long number) throws BlockNotFoundException {
+    public Long getBlockDividend(String currencyId, long number) throws BlockNotFoundException {
         String path = String.format(URL_BLOCK, number);
         try {
             String json = executeRequest(currencyId, path, String.class);
@@ -221,7 +212,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
      *
      * @return
      */
-    public BlockchainBlock getCurrentBlock(long currencyId, boolean useCache) {
+    public BlockchainBlock getCurrentBlock(String currencyId, boolean useCache) {
         if (!useCache) {
             return getCurrentBlock(currencyId);
         } else {
@@ -230,7 +221,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public BlockchainBlock getCurrentBlock(long currencyId) {
+    public BlockchainBlock getCurrentBlock(String currencyId) {
         // get blockchain parameter
         BlockchainBlock result = executeRequest(currencyId, URL_BLOCK_CURRENT, BlockchainBlock.class);
         return result;
@@ -264,7 +255,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public long getLastUD(long currencyId) {
+    public long getLastUD(String currencyId) {
         // get block number with UD
         String blocksWithUdResponse = executeRequest(currencyId, URL_BLOCK_WITH_UD, String.class);
         Integer blockNumber = getLastBlockNumberFromJson(blocksWithUdResponse);
@@ -374,12 +365,12 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
      *
      * @param identity
      */
-    public void loadMembership(long currencyId, Identity identity, boolean checkLookupForNonMember) {
+    public void loadMembership(String currencyId, Identity identity, boolean checkLookupForNonMember) {
         loadMembership(currencyId, null, identity, checkLookupForNonMember);
     }
 
 
-    public BlockchainMemberships getMembershipByUid(long currencyId, String uid) {
+    public BlockchainMemberships getMembershipByUid(String currencyId, String uid) {
         Preconditions.checkArgument(StringUtils.isNotBlank(uid));
 
         BlockchainMemberships result = getMembershipByPubkeyOrUid(currencyId, uid);
@@ -389,7 +380,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         return result;
     }
 
-    public BlockchainMemberships getMembershipByPublicKey(long currencyId, String pubkey) {
+    public BlockchainMemberships getMembershipByPublicKey(String currencyId, String pubkey) {
         Preconditions.checkArgument(StringUtils.isNotBlank(pubkey));
 
         BlockchainMemberships result = getMembershipByPubkeyOrUid(currencyId, pubkey);
@@ -460,7 +451,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         executeRequest(httpPost, String.class);
     }
 
-    public BlockchainMemberships getMembershipByPubkeyOrUid(long currencyId, String uidOrPubkey) {
+    public BlockchainMemberships getMembershipByPubkeyOrUid(String currencyId, String uidOrPubkey) {
         String path = String.format(URL_MEMBERSHIP_SEARCH, uidOrPubkey);
 
         // search blockchain membership
@@ -514,7 +505,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
      * @param startOffset
      * @return
      */
-    public Map<Integer, Long> getUDs(long currencyId, long startOffset) {
+    public Map<Integer, Long> getUDs(String currencyId, long startOffset) {
         log.debug(String.format("Getting block's UD from block [%s]", startOffset));
 
         int[] blockNumbersWithUD = getBlocksWithUD(currencyId);
@@ -566,7 +557,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
+    public WebsocketClientEndpoint addBlockListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
         return addBlockListener(peerService.getActivePeerByCurrencyId(currencyId), listener, autoReconnect);
     }
 
@@ -593,23 +584,23 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     protected void initCaches() {
         int cacheTimeInMillis = config.getNetworkCacheTimeInMillis();
 
-        mCurrentBlockCache = new SimpleCache<Long, BlockchainBlock>(cacheTimeInMillis) {
+        mCurrentBlockCache = new SimpleCache<String, BlockchainBlock>(cacheTimeInMillis) {
             @Override
-            public BlockchainBlock load(Long currencyId) {
+            public BlockchainBlock load(String currencyId) {
                 return getCurrentBlock(currencyId);
             }
         };
 
-        mParametersCache = new SimpleCache<Long, BlockchainParameters>(/*eternal cache*/) {
+        mParametersCache = new SimpleCache<String, BlockchainParameters>(/*eternal cache*/) {
             @Override
-            public BlockchainParameters load(Long currencyId) {
+            public BlockchainParameters load(String currencyId) {
                 return getParameters(currencyId);
             }
         };
     }
 
 
-    protected void loadMembership(Long currencyId, Peer peer, Identity identity, boolean checkLookupForNonMember) {
+    protected void loadMembership(String currencyId, Peer peer, Identity identity, boolean checkLookupForNonMember) {
         Preconditions.checkNotNull(identity);
         Preconditions.checkArgument(StringUtils.isNotBlank(identity.getUid()));
         Preconditions.checkArgument(StringUtils.isNotBlank(identity.getPubkey()));
@@ -655,7 +646,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     }
 
-    private int[] getBlocksWithUD(long currencyId) {
+    private int[] getBlocksWithUD(String currencyId) {
         log.debug("Getting blocks with UD");
 
         String json = executeRequest(currencyId, URL_BLOCK_WITH_UD, String.class);

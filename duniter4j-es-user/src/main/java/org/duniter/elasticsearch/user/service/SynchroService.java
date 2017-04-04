@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.user.service;
 import org.duniter.core.client.model.elasticsearch.Protocol;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.ServiceLocator;
@@ -39,7 +40,7 @@ import org.elasticsearch.common.inject.Inject;
 public class SynchroService extends AbstractSynchroService {
 
    @Inject
-    public SynchroService(Client client, PluginSettings settings, CryptoService cryptoService,
+    public SynchroService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
                           ThreadPool threadPool, final ServiceLocator serviceLocator) {
         super(client, settings.getDelegate(), cryptoService, threadPool, serviceLocator);
     }

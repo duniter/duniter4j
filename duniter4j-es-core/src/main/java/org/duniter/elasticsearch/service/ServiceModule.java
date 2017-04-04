@@ -32,8 +32,8 @@ import org.duniter.core.client.service.bma.NetworkRemoteService;
 import org.duniter.core.client.service.bma.TransactionRemoteService;
 import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.client.service.local.CurrencyService;
-import org.duniter.core.client.service.local.PeerService;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.service.MailService;
 import org.duniter.elasticsearch.PluginInit;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.changes.ChangeService;
@@ -54,23 +54,23 @@ public class ServiceModule extends AbstractModule implements Module {
 
         // blockchain indexation services
         bind(BlockchainService.class).asEagerSingleton();
-        bind(EndpointService.class).asEagerSingleton();
+        bind(PeerService.class).asEagerSingleton();
 
         // Duniter Client API beans
         bindWithLocator(BlockchainRemoteService.class);
         bindWithLocator(NetworkRemoteService.class);
         bindWithLocator(WotRemoteService.class);
         bindWithLocator(TransactionRemoteService.class);
-        bindWithLocator(PeerService.class);
+        bindWithLocator(org.duniter.core.client.service.local.PeerService.class);
         bindWithLocator(CurrencyService.class);
         bindWithLocator(HttpService.class);
-        bindWithLocator(CurrencyDao.class);
-        bindWithLocator(PeerDao.class);
+        //bindWithLocator(CurrencyDao.class);
+        //bindWithLocator(PeerDao.class);
         bindWithLocator(DataContext.class);
 
         // Duniter Shared API beans
         bindWithLocator(CryptoService.class);
-        bindWithLocator(org.duniter.core.service.MailService.class);
+        bindWithLocator(MailService.class);
     }
 
     /* protected methods */

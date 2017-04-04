@@ -110,18 +110,20 @@ public class WebsocketClientEndpoint implements Closeable {
      */
     @OnMessage
     public void onMessage(final String message) {
+
         if (CollectionUtils.isNotEmpty(messageListeners)) {
             if (log.isDebugEnabled()) {
                 log.debug("[%s] Received message: " + message);
             }
-
-            messageListeners.stream().forEach(messageListener -> {
-                try {
-                    messageListener.onMessage(message);
-                } catch (Exception e) {
-                    log.error(String.format("[%s] Error during message handling: %s", endpointURI, e.getMessage()), e);
-                }
-            });
+            synchronized (messageListeners) {
+                messageListeners.stream().forEach(messageListener -> {
+                    try {
+                        messageListener.onMessage(message);
+                    } catch (Exception e) {
+                        log.error(String.format("[%s] Error during message handling: %s", endpointURI, e.getMessage()), e);
+                    }
+                });
+            }
         }
     }
 

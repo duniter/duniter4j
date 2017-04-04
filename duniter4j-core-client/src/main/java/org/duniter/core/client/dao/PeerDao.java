@@ -29,7 +29,9 @@ import java.util.List;
 /**
  * Created by blavenie on 29/12/15.
  */
-public interface PeerDao extends EntityDao<Peer> {
+public interface PeerDao extends EntityDao<String, Peer> {
 
-    List<Peer> getPeersByCurrencyId(long currencyId);
+    List<Peer> getPeersByCurrencyId(String currencyId);
+
+    boolean isExists(String currencyId, String peerId);
 }

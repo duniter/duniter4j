@@ -47,8 +47,8 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
 
     private static final long UD_CACHE_TIME_MILLIS = 5 * 60 * 1000; // = 5 min
 
-    private Cache<Long, Currency> mCurrencyCache;
-    private Cache<Long, Long> mUDCache;
+    private Cache<String, Currency> mCurrencyCache;
+    private Cache<String, Long> mUDCache;
 
     private BlockchainRemoteService blockchainRemoteService;
     private CurrencyDao currencyDao;
@@ -84,9 +84,6 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
         ObjectUtils.checkNotNull(currency.getLastUD());
         ObjectUtils.checkArgument(currency.getLastUD().longValue() > 0);
 
-        ObjectUtils.checkArgument((currency.getAccount() != null && currency.getAccount().getId() != null)
-            || currency.getAccountId() != null, "One of 'currency.account.id' or 'currency.accountId' is mandatory.");
-
         Currency result;
 
         // Create
@@ -114,7 +111,7 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
     }
 
 
-    public Currency getCurrencyById(long currencyId) {
+    public Currency getCurrencyById(String currencyId) {
         return mCurrencyCache.get(currencyId);
     }
 
@@ -123,7 +120,7 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * @param currencyId
      * @return
      */
-    public String getCurrencyNameById(long currencyId) {
+    public String getCurrencyNameById(String currencyId) {
         Currency currency = mCurrencyCache.getIfPresent(currencyId);
         if (currency == null) {
             return null;
@@ -136,11 +133,11 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * @param currencyName
      * @return
      */
-    public Long getCurrencyIdByName(String currencyName) {
+    public String getCurrencyIdByName(String currencyName) {
         Preconditions.checkArgument(StringUtils.isNotBlank(currencyName));
 
         // Search from currencies
-        for (Map.Entry<Long, Currency> entry : mCurrencyCache.entrySet()) {
+        for (Map.Entry<String, Currency> entry : mCurrencyCache.entrySet()) {
             Currency currency = entry.getValue();
             if (ObjectUtils.equals(currencyName, currency.getCurrencyName())) {
                 return entry.getKey();
@@ -153,7 +150,7 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * Return a (cached) list of currency ids
      * @return
      */
-    public Set<Long> getCurrencyIds() {
+    public Set<String> getCurrencyIds() {
         return mCurrencyCache.keySet();
     }
 
@@ -176,9 +173,9 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
             List<Currency> currencies = getCurrencies(accountId);
             if (mCurrencyCache == null) {
 
-                mCurrencyCache = new SimpleCache<Long, Currency>() {
+                mCurrencyCache = new SimpleCache<String, Currency>() {
                     @Override
-                    public Currency load(Long currencyId) {
+                    public Currency load(String currencyId) {
                         return currencyDao.getById(currencyId);
                     }
                 };
@@ -192,9 +189,9 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
             // Create the UD cache
             if (mUDCache == null) {
 
-                mUDCache = new SimpleCache<Long, Long>(UD_CACHE_TIME_MILLIS) {
+                mUDCache = new SimpleCache<String, Long>(UD_CACHE_TIME_MILLIS) {
                     @Override
-                    public Long load(final Long currencyId) {
+                    public Long load(final String currencyId) {
                         // Retrieve the last UD from the blockchain
                         final Long lastUD = blockchainRemoteService.getLastUD(currencyId);
 
@@ -217,7 +214,7 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * @param currencyId
      * @return
      */
-    public long getLastUD(long currencyId) {
+    public long getLastUD(String currencyId) {
         return mUDCache.get(currencyId);
     }
 
@@ -225,7 +222,7 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * Return a map of UD (key=blockNumber, value=amount)
      * @return
      */
-    public Map<Integer, Long> refreshAndGetUD(long currencyId, long lastSyncBlockNumber) {
+    public Map<Integer, Long> refreshAndGetUD(String currencyId, long lastSyncBlockNumber) {
 
         // Retrieve new UDs from blockchain
         Map<Integer, Long> newUDs = blockchainRemoteService.getUDs(currencyId, lastSyncBlockNumber + 1);
@@ -242,7 +239,7 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * Return a map of UD (key=blockNumber, value=amount)
      * @return
      */
-    public Map<Integer, Long> getAllUD(long currencyId) {
+    public Map<Integer, Long> getAllUD(String currencyId) {
         return currencyDao.getAllUD(currencyId);
     }
 

@@ -38,27 +38,27 @@ public interface CurrencyService extends Service {
 
     List<Currency> getCurrencies(long accountId);
 
-    Currency getCurrencyById(long currencyId);
+    Currency getCurrencyById(String currencyId);
 
     /**
      * Return a (cached) currency name, by id
      * @param currencyId
      * @return
      */
-    String getCurrencyNameById(long currencyId);
+    String getCurrencyNameById(String currencyId);
 
     /**
      * Return a currency id, by name
      * @param currencyName
      * @return
      */
-    Long getCurrencyIdByName(String currencyName);
+    String getCurrencyIdByName(String currencyName);
 
     /**
      * Return a (cached) list of currency ids
      * @return
      */
-    Set<Long> getCurrencyIds();
+    Set<String> getCurrencyIds();
 
     /**
      * Return a (cached) number of registered currencies
@@ -77,17 +77,17 @@ public interface CurrencyService extends Service {
      * @param currencyId
      * @return
      */
-    long getLastUD(long currencyId);
+    long getLastUD(String currencyId);
 
     /**
      * Return a map of UD (key=blockNumber, value=amount)
      * @return
      */
-    Map<Integer, Long> refreshAndGetUD(long currencyId, long lastSyncBlockNumber);
+    Map<Integer, Long> refreshAndGetUD(String currencyId, long lastSyncBlockNumber);
 
     /**
      * Return a map of UD (key=blockNumber, value=amount)
      * @return
      */
-     Map<Integer, Long> getAllUD(long currencyId);
+     Map<Integer, Long> getAllUD(String currencyId);
 }

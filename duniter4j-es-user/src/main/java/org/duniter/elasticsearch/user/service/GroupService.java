@@ -29,6 +29,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.elasticsearch.UserGroup;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.user.service.AbstractService;
 import org.duniter.elasticsearch.user.PluginSettings;
@@ -56,7 +57,7 @@ public class GroupService extends AbstractService {
     public static final String RECORD_TYPE = "record";
 
     @Inject
-    public GroupService(Client client,
+    public GroupService(Duniter4jClient client,
                         PluginSettings settings,
                         CryptoService cryptoService) {
         super("duniter." + INDEX, client, settings, cryptoService);
@@ -67,7 +68,7 @@ public class GroupService extends AbstractService {
      */
     public GroupService createIndexIfNotExists() {
         try {
-            if (!existsIndex(INDEX)) {
+            if (!client.existsIndex(INDEX)) {
                 createIndex();
             }
         }
@@ -98,12 +99,12 @@ public class GroupService extends AbstractService {
     }
 
     public GroupService deleteIndex() {
-        deleteIndexIfExists(INDEX);
+        client.deleteIndexIfExists(INDEX);
         return this;
     }
 
     public boolean existsIndex() {
-        return super.existsIndex(INDEX);
+        return client.existsIndex(INDEX);
     }
 
     /**
@@ -150,17 +151,17 @@ public class GroupService extends AbstractService {
 
     public String getTitleById(String id) {
 
-        Object title = getFieldById(INDEX, RECORD_TYPE, id, UserGroup.PROPERTY_TITLE);
+        Object title = client.getFieldById(INDEX, RECORD_TYPE, id, UserGroup.PROPERTY_TITLE);
         if (title == null) return null;
         return title.toString();
     }
 
     public Map<String, String> getTitlesByNames(Set<String> ids) {
 
-        Map<String, Object> titles = getFieldByIds(INDEX, RECORD_TYPE, ids, UserGroup.PROPERTY_TITLE);
+        Map<String, Object> titles = client.getFieldByIds(INDEX, RECORD_TYPE, ids, UserGroup.PROPERTY_TITLE);
         if (MapUtils.isEmpty(titles)) return null;
         Map<String, String> result = new HashMap<>();
-        titles.entrySet().stream().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
+        titles.entrySet().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
         return result;
     }
 
@@ -183,7 +184,7 @@ public class GroupService extends AbstractService {
             id += "_" + counter;
         }
 
-        if (!isDocumentExists(INDEX, RECORD_TYPE, id)) {
+        if (!client.isDocumentExists(INDEX, RECORD_TYPE, id)) {
             return id;
         }
 

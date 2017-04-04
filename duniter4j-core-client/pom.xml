@@ -7,7 +7,6 @@
     <version>0.9.2-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.duniter</groupId>
   <artifactId>duniter4j-core-client</artifactId>
   <packaging>jar</packaging>
   <name>Duniter4j :: Core Client API</name>

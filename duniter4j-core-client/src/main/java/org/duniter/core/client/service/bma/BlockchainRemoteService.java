@@ -47,7 +47,7 @@ public interface BlockchainRemoteService extends Service {
      * @param useCache
      * @return
      */
-    BlockchainParameters getParameters(long currencyId, boolean useCache);
+    BlockchainParameters getParameters(String currencyId, boolean useCache);
 
     /**
      * get the blockchain parameters (currency parameters)
@@ -55,7 +55,7 @@ public interface BlockchainRemoteService extends Service {
      * @param currencyId
      * @return
      */
-    BlockchainParameters getParameters(long currencyId);
+    BlockchainParameters getParameters(String currencyId);
 
     /**
      * get the blockchain parameters (currency parameters)
@@ -72,7 +72,7 @@ public interface BlockchainRemoteService extends Service {
      * @param number
      * @return
      */
-    BlockchainBlock getBlock(long currencyId, long number) throws BlockNotFoundException;
+    BlockchainBlock getBlock(String currencyId, long number) throws BlockNotFoundException;
 
     /**
      * Retrieve the dividend of a block, by id (from 0 to current).
@@ -82,7 +82,7 @@ public interface BlockchainRemoteService extends Service {
      * @param number
      * @return
      */
-    Long getBlockDividend(long currencyId, long number) throws BlockNotFoundException;
+    Long getBlockDividend(String currencyId, long number) throws BlockNotFoundException;
 
     /**
      * Retrieve a block, by id (from 0 to current)
@@ -124,14 +124,14 @@ public interface BlockchainRemoteService extends Service {
      *
      * @return
      */
-    BlockchainBlock getCurrentBlock(long currencyId, boolean useCache);
+    BlockchainBlock getCurrentBlock(String currencyId, boolean useCache);
 
     /**
      * Retrieve the current block
      *
      * @return
      */
-    BlockchainBlock getCurrentBlock(long currencyId);
+    BlockchainBlock getCurrentBlock(String currencyId);
 
     /**
      * Retrieve the current block
@@ -157,7 +157,7 @@ public interface BlockchainRemoteService extends Service {
      * @param currencyId id of currency
      * @return
      */
-    long getLastUD(long currencyId);
+    long getLastUD(String currencyId);
 
     /**
      * Retrieve the last emitted UD, from a peer (or ud0 if not UD emitted yet)
@@ -191,12 +191,12 @@ public interface BlockchainRemoteService extends Service {
      *
      * @param identity
      */
-    void loadMembership(long currencyId, Identity identity, boolean checkLookupForNonMember);
+    void loadMembership(String currencyId, Identity identity, boolean checkLookupForNonMember);
 
 
-    BlockchainMemberships getMembershipByUid(long currencyId, String uid);
+    BlockchainMemberships getMembershipByUid(String currencyId, String uid);
 
-    BlockchainMemberships getMembershipByPublicKey(long currencyId, String pubkey);
+    BlockchainMemberships getMembershipByPublicKey(String currencyId, String pubkey);
 
     /**
      * Request to integrate the wot
@@ -205,7 +205,7 @@ public interface BlockchainRemoteService extends Service {
 
     void requestMembership(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String membershipBlockUid, String selfBlockUid);
 
-    BlockchainMemberships getMembershipByPubkeyOrUid(long currencyId, String uidOrPubkey);
+    BlockchainMemberships getMembershipByPubkeyOrUid(String currencyId, String uidOrPubkey);
 
     BlockchainMemberships getMembershipByPubkeyOrUid(Peer peer, String uidOrPubkey);
 
@@ -220,7 +220,7 @@ public interface BlockchainRemoteService extends Service {
      * @param startOffset
      * @return
      */
-    Map<Integer, Long> getUDs(long currencyId, long startOffset);
+    Map<Integer, Long> getUDs(String currencyId, long startOffset);
 
     /**
      * Listening new block event
@@ -229,7 +229,7 @@ public interface BlockchainRemoteService extends Service {
      * @param autoReconnect
      * @return
      */
-    WebsocketClientEndpoint addBlockListener(long currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
+    WebsocketClientEndpoint addBlockListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 
     WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 

@@ -22,8 +22,8 @@ package org.duniter.elasticsearch.gchange.rest.market;
  * #L%
  */
 
+import org.duniter.elasticsearch.gchange.dao.market.MarketIndexDao;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.gchange.service.MarketService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.rest.RestRequest;
 
@@ -32,7 +32,7 @@ public class RestMarketCategoryAction {
     @Inject
     public RestMarketCategoryAction(RestSecurityController securityController) {
         // Add security rule for category
-        securityController.allowIndexType(RestRequest.Method.GET, MarketService.INDEX, MarketService.RECORD_CATEGORY_TYPE);
+        securityController.allowIndexType(RestRequest.Method.GET, MarketIndexDao.INDEX, MarketIndexDao.CATEGORY_TYPE);
     }
 
 }

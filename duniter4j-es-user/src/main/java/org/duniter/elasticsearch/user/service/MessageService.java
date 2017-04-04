@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.user.service.AbstractService;
@@ -63,7 +64,7 @@ public class MessageService extends AbstractService {
     private final UserEventService userEventService;
 
     @Inject
-    public MessageService(Client client, PluginSettings settings,
+    public MessageService(Duniter4jClient client, PluginSettings settings,
                           CryptoService cryptoService, UserEventService userEventService) {
         super("duniter." + INDEX, client, settings, cryptoService);
         this.userEventService = userEventService;
@@ -74,12 +75,12 @@ public class MessageService extends AbstractService {
      * @throws JsonProcessingException
      */
     public MessageService deleteIndex() {
-        deleteIndexIfExists(INDEX);
+        client.deleteIndexIfExists(INDEX);
         return this;
     }
 
     public boolean existsIndex() {
-        return super.existsIndex(INDEX);
+        return client.existsIndex(INDEX);
     }
 
     /**
@@ -87,7 +88,7 @@ public class MessageService extends AbstractService {
      */
     public MessageService createIndexIfNotExists() {
         try {
-            if (!existsIndex(INDEX)) {
+            if (!client.existsIndex(INDEX)) {
                 createIndex();
             }
         }
@@ -165,7 +166,7 @@ public class MessageService extends AbstractService {
     }
 
     public void markMessageAsRead(String id, String signature) {
-        Map<String, Object> fields = getMandatoryFieldsById(INDEX, INBOX_TYPE, id, Message.PROPERTY_HASH, Message.PROPERTY_RECIPIENT);
+        Map<String, Object> fields = client.getMandatoryFieldsById(INDEX, INBOX_TYPE, id, Message.PROPERTY_HASH, Message.PROPERTY_RECIPIENT);
         String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
         String hash = fields.get(UserEvent.PROPERTY_HASH).toString();
 

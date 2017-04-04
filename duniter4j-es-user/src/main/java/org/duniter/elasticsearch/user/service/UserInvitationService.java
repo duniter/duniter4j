@@ -28,15 +28,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.elasticsearch.exception.InvalidSignatureException;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.Message;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.update.UpdateRequestBuilder;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -44,7 +42,6 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -54,12 +51,12 @@ public class UserInvitationService extends AbstractService {
     public static final String INDEX = "invitation";
     public static final String CERTIFICATION_TYPE = "certification";
 
-
     private final UserEventService userEventService;
 
     @Inject
-    public UserInvitationService(Client client, PluginSettings settings,
-                                 CryptoService cryptoService, UserEventService userEventService) {
+    public UserInvitationService(Duniter4jClient client, PluginSettings settings,
+                                 CryptoService cryptoService,
+                                 UserEventService userEventService) {
         super("duniter." + INDEX, client, settings, cryptoService);
         this.userEventService = userEventService;
     }
@@ -69,12 +66,8 @@ public class UserInvitationService extends AbstractService {
      * @throws JsonProcessingException
      */
     public UserInvitationService deleteIndex() {
-        deleteIndexIfExists(INDEX);
+        client.deleteIndexIfExists(INDEX);
         return this;
-    }
-
-    public boolean existsIndex() {
-        return super.existsIndex(INDEX);
     }
 
     /**
@@ -82,7 +75,7 @@ public class UserInvitationService extends AbstractService {
      */
     public UserInvitationService createIndexIfNotExists() {
         try {
-            if (!existsIndex(INDEX)) {
+            if (!client.existsIndex(INDEX)) {
                 createIndex();
             }
         }

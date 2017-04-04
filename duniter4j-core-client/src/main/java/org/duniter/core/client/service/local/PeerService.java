@@ -34,21 +34,19 @@ public interface PeerService extends Service {
 
     Peer save(final Peer peer);
 
-    Peer getPeerById(long peerId);
-
     /**
      * Return a (cached) active peer, by currency id
      * @param currencyId
      * @return
      */
-    Peer getActivePeerByCurrencyId(long currencyId);
+    Peer getActivePeerByCurrencyId(String currencyId);
 
     /**
      * Return a (cached) peer list, by currency id
      * @param currencyId
      * @return
      */
-    List<Peer> getPeersByCurrencyId(long currencyId);
+    List<Peer> getPeersByCurrencyId(String currencyId);
 
     /**
      * Fill all cache need for currencies

@@ -26,8 +26,8 @@ package org.duniter.core.client.model.local;
 /**
  * Created by eis on 07/02/15.
  */
-public interface LocalEntity {
+public interface LocalEntity<I extends Object> {
 
-    Long getId();
-    void setId(Long id);
+    I getId();
+    void setId(I id);
 }

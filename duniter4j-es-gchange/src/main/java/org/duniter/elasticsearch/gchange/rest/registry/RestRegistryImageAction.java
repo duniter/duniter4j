@@ -22,6 +22,9 @@ package org.duniter.elasticsearch.gchange.rest.registry;
  * #L%
  */
 
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryCommentDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryIndexDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryRecordDao;
 import org.duniter.elasticsearch.gchange.model.registry.RegistryRecord;
 import org.duniter.elasticsearch.gchange.service.RegistryService;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
@@ -35,7 +38,7 @@ public class RestRegistryImageAction {
     public RestRegistryImageAction(RestSecurityController securityController) {
 
         // Allow to get thumbnail
-        securityController.allowImageAttachment(RegistryService.INDEX, RegistryService.RECORD_TYPE, RegistryRecord.PROPERTY_THUMBNAIL);
+        securityController.allowImageAttachment(RegistryIndexDao.INDEX, RegistryRecordDao.TYPE, RegistryRecord.PROPERTY_THUMBNAIL);
 
         // TODO : allow to get pictures
     }

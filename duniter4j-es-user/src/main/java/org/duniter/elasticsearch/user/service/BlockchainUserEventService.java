@@ -33,6 +33,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
@@ -40,7 +41,6 @@ import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.nuiton.i18n.I18n;
 
@@ -69,7 +69,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
     public final boolean enable;
 
     @Inject
-    public BlockchainUserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
+    public BlockchainUserEventService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
                                       BlockchainService blockchainService,
                                       UserService userService,
                                       UserEventService userEventService) {

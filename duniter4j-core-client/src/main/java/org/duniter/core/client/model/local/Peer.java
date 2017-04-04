@@ -34,7 +34,7 @@ import org.duniter.core.util.http.InetAddressUtils;
 import java.io.Serializable;
 import java.util.StringJoiner;
 
-public class Peer implements LocalEntity, Serializable {
+public class Peer implements LocalEntity<String>, Serializable {
 
 
 
@@ -161,9 +161,7 @@ public class Peer implements LocalEntity, Serializable {
     }
 
 
-    // Local entity attribute (only used for local DB)
-    private Long id;
-    private Long currencyId;
+    private String id;
 
     private String api;
     private String dns;
@@ -232,23 +230,13 @@ public class Peer implements LocalEntity, Serializable {
     }
 
     @JsonIgnore
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
     @JsonIgnore
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    @JsonIgnore
-    public Long getCurrencyId() {
-        return currencyId;
-    }
-
-    @JsonIgnore
-    public void setCurrencyId(Long currencyId) {
-        this.currencyId = currencyId;
+    public void setId(String id) {
+        this.id  = id;
     }
 
     public String getApi() {

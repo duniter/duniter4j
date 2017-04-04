@@ -22,6 +22,8 @@ package org.duniter.elasticsearch.gchange.rest.market;
  * #L%
  */
 
+import org.duniter.elasticsearch.gchange.dao.market.MarketIndexDao;
+import org.duniter.elasticsearch.gchange.dao.market.MarketRecordDao;
 import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
 import org.duniter.elasticsearch.gchange.model.registry.RegistryRecord;
 import org.duniter.elasticsearch.gchange.service.MarketService;
@@ -36,7 +38,7 @@ public class RestMarketImageAction {
     public RestMarketImageAction(RestSecurityController securityController) {
 
         // Allow to get thumbnail
-        securityController.allowImageAttachment(MarketService.INDEX, MarketService.RECORD_TYPE, MarketRecord.PROPERTY_THUMBNAIL);
+        securityController.allowImageAttachment(MarketIndexDao.INDEX, MarketRecordDao.TYPE, MarketRecord.PROPERTY_THUMBNAIL);
 
         // TODO : allow to get pictures
     }

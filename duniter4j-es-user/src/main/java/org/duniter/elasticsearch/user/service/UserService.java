@@ -31,7 +31,7 @@ import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.elasticsearch.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.service.MailService;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.AbstractService;
@@ -60,7 +60,7 @@ public class UserService extends AbstractService {
     public static final String SETTINGS_TYPE = "settings";
 
     @Inject
-    public UserService(Client client,
+    public UserService(Duniter4jClient client,
                        PluginSettings settings,
                        CryptoService cryptoService) {
         super("duniter." + INDEX, client, settings.getDelegate(), cryptoService);
@@ -71,7 +71,7 @@ public class UserService extends AbstractService {
      */
     public UserService createIndexIfNotExists() {
         try {
-            if (!existsIndex(INDEX)) {
+            if (!client.existsIndex(INDEX)) {
                 createIndex();
             }
         }
@@ -104,12 +104,8 @@ public class UserService extends AbstractService {
     }
 
     public UserService deleteIndex() {
-        deleteIndexIfExists(INDEX);
+        client.deleteIndexIfExists(INDEX);
         return this;
-    }
-
-    public boolean existsIndex() {
-        return super.existsIndex(INDEX);
     }
 
     /**
@@ -203,17 +199,17 @@ public class UserService extends AbstractService {
 
     public String getProfileTitle(String issuer) {
 
-        Object title = getFieldById(INDEX, PROFILE_TYPE, issuer, UserProfile.PROPERTY_TITLE);
+        Object title = client.getFieldById(INDEX, PROFILE_TYPE, issuer, UserProfile.PROPERTY_TITLE);
         if (title == null) return null;
         return title.toString();
     }
 
     public Map<String, String> getProfileTitles(Set<String> issuers) {
 
-        Map<String, Object> titles = getFieldByIds(INDEX, PROFILE_TYPE, issuers, UserProfile.PROPERTY_TITLE);
+        Map<String, Object> titles = client.getFieldByIds(INDEX, PROFILE_TYPE, issuers, UserProfile.PROPERTY_TITLE);
         if (MapUtils.isEmpty(titles)) return null;
         Map<String, String> result = new HashMap<>();
-        titles.entrySet().stream().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
+        titles.entrySet().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
         return result;
     }
 
@@ -230,7 +226,7 @@ public class UserService extends AbstractService {
 
         Map<String, String> profileTitles = getProfileTitles(pubkeys);
         StringBuilder sb = new StringBuilder();
-        pubkeys.stream().forEach((pubkey)-> {
+        pubkeys.forEach((pubkey)-> {
             String title = profileTitles != null ? profileTitles.get(pubkey) : null;
             sb.append(separator);
             sb.append(title != null ? title :
@@ -241,7 +237,6 @@ public class UserService extends AbstractService {
     }
 
     /* -- Internal methods -- */
-
 
     public XContentBuilder createProfileType() {
         String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();

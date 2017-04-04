@@ -153,7 +153,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
 
     @Override
-    public WebsocketClientEndpoint addPeerListener(long currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
+    public WebsocketClientEndpoint addPeerListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
         Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
         return addPeerListener(peer, listener, autoReconnect);
     }

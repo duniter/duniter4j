@@ -28,7 +28,7 @@ import org.duniter.core.client.model.local.LocalEntity;
 /**
  * Created by eis on 07/02/15.
  */
-public class Account implements LocalEntity {
+public class Account implements LocalEntity<Long> {
 
     private Long id;
     private String uid;

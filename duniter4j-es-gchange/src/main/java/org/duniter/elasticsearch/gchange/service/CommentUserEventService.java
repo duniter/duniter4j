@@ -25,28 +25,28 @@ package org.duniter.elasticsearch.gchange.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
-import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.RecordComment;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.websocket.WebsocketClientEndpoint;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.gchange.PluginSettings;
+import org.duniter.elasticsearch.gchange.dao.RecordDao;
+import org.duniter.elasticsearch.gchange.dao.market.MarketCommentDao;
+import org.duniter.elasticsearch.gchange.dao.market.MarketIndexDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryCommentDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryIndexDao;
 import org.duniter.elasticsearch.gchange.model.event.GchangeEventCodes;
 import org.duniter.elasticsearch.gchange.model.market.MarketRecord;
-import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.duniter.elasticsearch.user.model.UserEvent;
-import org.duniter.elasticsearch.user.model.UserEventCodes;
 import org.duniter.elasticsearch.user.service.UserEventService;
 import org.duniter.elasticsearch.user.service.UserService;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.nuiton.i18n.I18n;
 
@@ -74,43 +74,30 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
         I18n.n("duniter.registry.event.updateReplyComment");
     }
 
-    public final UserService userService;
-
-    public final UserEventService userEventService;
-
-    public final ObjectMapper objectMapper;
-
-    public final List<ChangeSource> changeListenSources;
-
-    public final boolean enable;
-
-    public final String recordType;
-
-    public final boolean trace;
+    private final UserService userService;
+    private final UserEventService userEventService;
+    private final List<ChangeSource> changeListenSources;
+    private final String recordType;
+    private final boolean trace;
 
     @Inject
-    public CommentUserEventService(Client client, PluginSettings settings, CryptoService cryptoService,
-                                   BlockchainService blockchainService,
+    public CommentUserEventService(Duniter4jClient client,
+                                   PluginSettings settings,
+                                   CryptoService cryptoService,
                                    UserService userService,
                                    UserEventService userEventService) {
         super("duniter.user.event.comment", client, settings, cryptoService);
         this.userService = userService;
         this.userEventService = userEventService;
-        this.objectMapper = JacksonUtils.newObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.changeListenSources = ImmutableList.of(
-                new ChangeSource(MarketService.INDEX, MarketService.RECORD_COMMENT_TYPE),
-                new ChangeSource(RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE));
+                new ChangeSource(MarketIndexDao.INDEX, MarketCommentDao.TYPE),
+                new ChangeSource(RegistryIndexDao.INDEX, RegistryCommentDao.TYPE));
         ChangeService.registerListener(this);
 
-        this.enable = pluginSettings.enableBlockchainSync();
         this.trace = logger.isTraceEnabled();
 
-        this.recordType = MarketService.RECORD_TYPE; // same as RegistryService.RECORD_TYPE
-
-        if (this.enable) {
-            blockchainService.registerConnectionListener(createConnectionListeners());
-        }
+        this.recordType = RecordDao.TYPE;
     }
 
     @Override
@@ -151,48 +138,6 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
     }
 
     /* -- internal method -- */
-
-    /**
-     * Create a listener that notify admin when the Duniter node connection is lost or retrieve
-     */
-    private WebsocketClientEndpoint.ConnectionListener createConnectionListeners() {
-        return new WebsocketClientEndpoint.ConnectionListener() {
-            private boolean errorNotified = false;
-
-            @Override
-            public void onSuccess() {
-                // Send notify on reconnection
-                if (errorNotified) {
-                    errorNotified = false;
-                    userEventService.notifyAdmin(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.NODE_BMA_UP.name())
-                            .setMessage(I18n.n("duniter.event.NODE_BMA_UP"),
-                                    pluginSettings.getNodeBmaHost(),
-                                    String.valueOf(pluginSettings.getNodeBmaPort()),
-                                    pluginSettings.getClusterName())
-                            .build());
-                }
-            }
-
-            @Override
-            public void onError(Exception e, long lastTimeUp) {
-                if (errorNotified) return; // already notify
-
-                // Wait 1 min, then notify admin (once)
-                long now = System.currentTimeMillis() / 1000;
-                boolean wait = now - lastTimeUp < 60;
-                if (!wait) {
-                    errorNotified = true;
-                    userEventService.notifyAdmin(UserEvent.newBuilder(UserEvent.EventType.ERROR, UserEventCodes.NODE_BMA_DOWN.name())
-                            .setMessage(I18n.n("duniter.event.NODE_BMA_DOWN"),
-                                    pluginSettings.getNodeBmaHost(),
-                                    String.valueOf(pluginSettings.getNodeBmaPort()),
-                                    pluginSettings.getClusterName(),
-                                    String.valueOf(lastTimeUp))
-                            .build());
-                }
-            }
-        };
-    }
 
     /**
      * Send notification from a new comment
@@ -238,7 +183,7 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
                                               GchangeEventCodes eventCodeForParentCommentIssuer, String messageKeyForParentCommentIssuer) {
         // Get record issuer
         String recordId = comment.getRecord();
-        Map<String, Object> record = getFieldsById(index, this.recordType, recordId,
+        Map<String, Object> record = client.getFieldsById(index, this.recordType, recordId,
                 MarketRecord.PROPERTY_TITLE, MarketRecord.PROPERTY_ISSUER);
 
         // Record not found : nothing to emit
@@ -275,7 +220,7 @@ public class CommentUserEventService extends AbstractService implements ChangeSe
         // Notify comment is a reply to another comment
         if (StringUtils.isNotBlank(comment.getReplyTo())) {
 
-            String parentCommentIssuer = getTypedFieldById(index, type, comment.getReplyTo(), RecordComment.PROPERTY_ISSUER);
+            String parentCommentIssuer = client.getTypedFieldById(index, type, comment.getReplyTo(), RecordComment.PROPERTY_ISSUER);
 
             if (StringUtils.isNotBlank(parentCommentIssuer) &&
                     !issuer.equals(parentCommentIssuer) &&

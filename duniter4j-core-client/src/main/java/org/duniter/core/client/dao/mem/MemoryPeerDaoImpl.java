@@ -29,20 +29,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by blavenie on 29/12/15.
  */
 public class MemoryPeerDaoImpl implements PeerDao {
 
-    private Map<Long, Peer> peersByCurrencyId = new HashMap<>();
+    private Map<String, Peer> peersByCurrencyId = new HashMap<>();
+
+    public MemoryPeerDaoImpl() {
+        super();
+    }
 
     @Override
     public Peer create(Peer entity) {
-        long id = getMaxId() + 1;
-        entity.setId(id);
+        entity.setId(entity.computeKey());
 
-        peersByCurrencyId.put(id, entity);
+        peersByCurrencyId.put(entity.getId(), entity);
 
         return entity;
     }
@@ -54,7 +58,7 @@ public class MemoryPeerDaoImpl implements PeerDao {
     }
 
     @Override
-    public Peer getById(long id) {
+    public Peer getById(String id) {
         return peersByCurrencyId.get(id);
     }
 
@@ -64,29 +68,15 @@ public class MemoryPeerDaoImpl implements PeerDao {
     }
 
     @Override
-    public List<Peer> getPeersByCurrencyId(long currencyId) {
-
-        List<Peer> result = new ArrayList<>();
-
-        for(Peer peer: peersByCurrencyId.values()) {
-            if (peer.getCurrencyId() == currencyId) {
-                result.add(peer);
-            }
-        }
-
-        return result;
+    public List<Peer> getPeersByCurrencyId(final String currencyId) {
+        return peersByCurrencyId.values().stream()
+            .filter(peer -> currencyId.equals(peer.getCurrency()))
+                .collect(Collectors.toList());
     }
 
-    /* -- internal methods -- */
-
-    protected long getMaxId() {
-        long currencyId = -1;
-        for (Long anId : peersByCurrencyId.keySet()) {
-            if (anId > currencyId) {
-                currencyId = anId;
-            }
-        }
-
-        return currencyId;
+    @Override
+    public boolean isExists(final String currencyId, final  String peerId) {
+        return peersByCurrencyId.values().stream()
+                .anyMatch(peer -> currencyId.equals(peer.getCurrency()) && peerId.equals(peer.getId()));
     }
 }

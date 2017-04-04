@@ -285,11 +285,6 @@
         <version>${tyrus.version}</version>
       </dependency>
 
-      <dependency>
-        <groupId>com.github.spullara.mustache.java</groupId>
-        <artifactId>mustache.java</artifactId>
-        <version>0.9.4</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 

@@ -22,6 +22,8 @@ package org.duniter.elasticsearch.gchange.rest.registry;
  * #L%
  */
 
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryCommentDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryIndexDao;
 import org.duniter.elasticsearch.rest.AbstractRestPostIndexAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.gchange.service.RegistryService;
@@ -36,7 +38,7 @@ public class RestRegistryCommentIndexAction extends AbstractRestPostIndexAction 
     public RestRegistryCommentIndexAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
                                           RegistryService service) {
         super(settings, controller, client, securityController,
-                RegistryService.INDEX, RegistryService.RECORD_COMMENT_TYPE,
+                RegistryIndexDao.INDEX, RegistryCommentDao.TYPE,
                 json -> service.indexCommentFromJson(json));
     }
 

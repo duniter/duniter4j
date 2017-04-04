@@ -33,6 +33,7 @@ import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.core.util.crypto.KeyPair;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
@@ -101,7 +102,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
     public final boolean trace;
 
     @Inject
-    public UserEventService(final Client client,
+    public UserEventService(final Duniter4jClient client,
                             final PluginSettings pluginSettings,
                             final CryptoService cryptoService,
                             final MailService mailService,
@@ -238,7 +239,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
     public ListenableActionFuture<UpdateResponse> markEventAsRead(String id, String signature) {
 
-        Map<String, Object> fields = getMandatoryFieldsById(INDEX, EVENT_TYPE, id, UserEvent.PROPERTY_HASH, UserEvent.PROPERTY_RECIPIENT);
+        Map<String, Object> fields = client.getMandatoryFieldsById(INDEX, EVENT_TYPE, id, UserEvent.PROPERTY_HASH, UserEvent.PROPERTY_RECIPIENT);
         String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
         String hash = fields.get(UserEvent.PROPERTY_HASH).toString();
 
@@ -446,13 +447,13 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
                 // Flush the bulk if not empty
                 if ((counter % bulkSize) == 0) {
-                    flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
+                    client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
                     bulkRequest = client.prepareBulk();
                 }
             }
 
             // last flush
-            flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
+            client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
         }
         catch(SearchPhaseExecutionException e) {
             // Failed or no item on index
@@ -461,13 +462,13 @@ public class UserEventService extends AbstractService implements ChangeService.C
     }
 
     private UserProfile getUserProfile(String pubkey, String... fieldnames) {
-        UserProfile result = getSourceByIdOrNull(UserService.INDEX, UserService.PROFILE_TYPE, pubkey, UserProfile.class, fieldnames);
+        UserProfile result = client.getSourceByIdOrNull(UserService.INDEX, UserService.PROFILE_TYPE, pubkey, UserProfile.class, fieldnames);
         if (result == null) result = new UserProfile();
         return result;
     }
 
     private UserProfile getUserProfileOrNull(String pubkey, String... fieldnames) {
-        return getSourceByIdOrNull(UserService.INDEX, UserService.PROFILE_TYPE, pubkey, UserProfile.class, fieldnames);
+        return client.getSourceByIdOrNull(UserService.INDEX, UserService.PROFILE_TYPE, pubkey, UserProfile.class, fieldnames);
     }
 
     private String toJson(UserEvent userEvent) {
@@ -531,7 +532,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
         // Notify listeners
         threadPool.schedule(() -> {
             synchronized (LISTENERS) {
-                LISTENERS.values().stream().forEach(listener -> {
+                LISTENERS.values().forEach(listener -> {
                     if (event.getRecipient().equals(listener.getPubkey())) {
                         listener.onEvent(event);
                     }

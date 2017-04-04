@@ -32,7 +32,7 @@ import java.util.Set;
 /**
  * Created by eis on 07/02/15.
  */
-public interface CurrencyDao extends Bean, EntityDao<Currency> {
+public interface CurrencyDao extends Bean, EntityDao<String, Currency> {
 
     Currency create(final Currency currency);
 
@@ -43,43 +43,19 @@ public interface CurrencyDao extends Bean, EntityDao<Currency> {
     List<Currency> getCurrencies(long accountId);
 
     /**
-     * Return a (cached) currency name, by id
-     * @param currencyId
-     * @return
-     */
-    String getCurrencyNameById(long currencyId);
-
-    /**
-     * Return a currency id, by name
-     * @param currencyName
-     * @return
-     */
-    Long getCurrencyIdByName(String currencyName);
-
-    /**
-     * Return a (cached) list of blockchain ids
-     * @return
-     */
-    Set<Long> getCurrencyIds();
-
-    /**
-     * Return a (cached) number of registered currencies
-     * @return
-     */
-    int getCurrencyCount();
-
-    /**
      * Return the value of the last universal dividend
      * @param currencyId
      * @return
      */
-    long getLastUD(long currencyId);
+    long getLastUD(String currencyId);
 
     /**
      * Return a map of UD (key=blockNumber, value=amount)
      * @return
      */
-     Map<Integer, Long> getAllUD(long currencyId);
+     Map<Integer, Long> getAllUD(String currencyId);
 
-     void insertUDs(Long currencyId,  Map<Integer, Long> newUDs);
+     void insertUDs(String currencyId,  Map<Integer, Long> newUDs);
+
+    boolean isExists(String currencyId);
 }

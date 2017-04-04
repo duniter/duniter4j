@@ -24,9 +24,8 @@ package org.duniter.elasticsearch.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
-import org.apache.commons.lang3.ArrayUtils;
+import org.duniter.core.client.dao.CurrencyDao;
+import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
@@ -37,27 +36,27 @@ import org.duniter.core.client.service.exception.HttpConnectException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.Preconditions;
-import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.dao.*;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -65,85 +64,39 @@ import java.util.Objects;
  */
 public class CurrencyService extends AbstractService {
 
-    protected static final String REGEX_WORD_SEPARATOR = "[-\\t@# _]+";
-
     public static final String INDEX = "currency";
     public static final String RECORD_TYPE = "record";
-    public static final String PEER_TYPE = "peer";
 
-    private final ObjectMapper objectMapper;
     private BlockchainRemoteService blockchainRemoteService;
+    private CurrencyExtendDao currencyDao;
+    private Map<String, IndexDao<?>> currencyDataDaos = new HashMap<>();
+    private Injector injector;
 
     @Inject
-    public CurrencyService(Client client,
+    public CurrencyService(Duniter4jClient client,
                            PluginSettings settings,
                            CryptoService cryptoService,
-                           BlockchainRemoteService blockchainRemoteService) {
+                           CurrencyDao currencyDao,
+                           BlockchainRemoteService blockchainRemoteService,
+                           Injector injector) {
         super("duniter." + INDEX, client, settings, cryptoService);
-        this.objectMapper = JacksonUtils.newObjectMapper();
         this.blockchainRemoteService = blockchainRemoteService;
+        this.currencyDao = (CurrencyExtendDao)currencyDao;
+        this.injector = injector;
     }
 
-    /**
-     * Create index need for blockchain registry, if need
-     */
     public CurrencyService createIndexIfNotExists() {
-        try {
-            if (!existsIndex(INDEX)) {
-                createIndex();
-            }
-        }
-        catch(JsonProcessingException e) {
-            throw new TechnicalException(String.format("Error while creating index [%s]", INDEX));
-        }
-        return this;
-    }
-
-    /**
-     * Create index for registry
-     * @throws JsonProcessingException
-     */
-    public CurrencyService createIndex() throws JsonProcessingException {
-        logger.info(String.format("Creating index [%s]", INDEX));
-
-        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
-        org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
-                .put("number_of_shards", 3)
-                .put("number_of_replicas", 1)
-                //.put("analyzer", createDefaultAnalyzer())
-                .build();
-        createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordTypeMapping());
-        createIndexRequestBuilder.execute().actionGet();
-
+        currencyDao.createIndexIfNotExists();
         return this;
     }
 
     public CurrencyService deleteIndex() {
-        deleteIndexIfExists(INDEX);
+        currencyDao.deleteIndex();
         return this;
     }
 
-    public boolean existsIndex() {
-        return super.existsIndex(INDEX);
-    }
-
     public boolean isCurrencyExists(String currencyName) {
-        String pubkey = getSenderPubkeyByCurrencyId(currencyName);
-        return !StringUtils.isEmpty(pubkey);
-    }
-
-
-    /**
-     * Add a new currency
-     * TODO :
-     *  - add security, to allow only request from admin (check signature against settings keyring)
-     *
-     * @param json
-     * @return
-     */
-    public String indexCurrencyFromJson(String json) {
-        throw new TechnicalException("Not implemented yet. Received JSON: " + json);
+        return currencyDao.isExists(currencyName);
     }
 
     /**
@@ -186,103 +139,17 @@ public class CurrencyService extends AbstractService {
 
 
         Currency result = new Currency();
-        result.setCurrency(parameters.getCurrency());
+        result.setCurrencyName(parameters.getCurrency());
         result.setFirstBlockSignature(firstBlock.getSignature());
         result.setMembersCount(currentBlock.getMembersCount());
         result.setLastUD(lastUD);
         result.setParameters(parameters);
 
-        indexCurrency(result);
-
-        indexPeer(parameters.getCurrency(), peer);
+        // Save it
+        saveCurrency(result, pluginSettings.getKeyringPublicKey());
 
         return result;
     }
-
-    /**
-     * Index a blockchain
-     * @param currency
-     */
-    public void indexCurrency(Currency currency) {
-        try {
-            Preconditions.checkNotNull(currency.getCurrency());
-
-            // Fill tags
-            if (ArrayUtils.isEmpty(currency.getTags())) {
-                String currencyName = currency.getCurrency();
-                String[] tags = currencyName.split(REGEX_WORD_SEPARATOR);
-                List<String> tagsList = Lists.newArrayList(tags);
-
-                // Convert as a sentence (replace seprator with a space)
-                String sentence = currencyName.replaceAll(REGEX_WORD_SEPARATOR, " ");
-                if (!tagsList.contains(sentence)) {
-                    tagsList.add(sentence);
-                }
-
-                currency.setTags(tagsList.toArray(new String[tagsList.size()]));
-            }
-
-            // Serialize into JSON
-            byte[] json = objectMapper.writeValueAsBytes(currency);
-
-            // Preparing indexBlocksFromNode
-            IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_TYPE)
-                    .setId(currency.getCurrency())
-                    .setSource(json);
-
-            // Execute indexBlocksFromNode
-            indexRequest
-                    .setRefresh(true)
-                    .execute().actionGet();
-
-        } catch(JsonProcessingException e) {
-            throw new TechnicalException(e);
-        }
-    }
-
-    public String indexPeer(String currency, Peer peer) {
-        Preconditions.checkNotNull(currency);
-        Preconditions.checkNotNull(peer);
-        try {
-            // Serialize into JSON
-            byte[] json = objectMapper.writeValueAsBytes(peer);
-
-            // Preparing index
-            IndexRequestBuilder indexRequest = client.prepareIndex(currency, PEER_TYPE)
-                    .setSource(json);
-
-            // Execute index
-            return indexRequest
-                    .setRefresh(true)
-                    .execute().actionGet().getId();
-
-        } catch(JsonProcessingException e) {
-            throw new TechnicalException(e);
-        }
-    }
-
-    /**
-     * Get suggestions from a string query. Useful for web autocomplete field (e.g. text full search)
-     * @param query
-     * @return
-     */
-   /* public List<String> getSuggestions(String query) {
-        CompletionSuggestionBuilder suggestionBuilder = new CompletionSuggestionBuilder(INDEX_TYPE)
-                .text(query)
-                .size(10) // limit to 10 results
-                .field("tags");
-
-        // Prepare request
-        SuggestRequestBuilder suggestRequest = client
-                .prepareSuggest(INDEX_NAME)
-                .addSuggestion(suggestionBuilder);
-
-        // Execute query
-        SuggestResponse response = suggestRequest.execute().actionGet();
-
-        // Read query result
-        return toSuggestions(response, RECORD_CATEGORY_TYPE, query);
-    }*/
 
     /**
      * Save a blockchain (update or create) into the blockchain index.
@@ -293,9 +160,9 @@ public class CurrencyService extends AbstractService {
      */
     public void saveCurrency(Currency currency, String issuer) throws DuplicateIndexIdException {
         Preconditions.checkNotNull(currency, "currency could not be null") ;
-        Preconditions.checkNotNull(currency.getCurrency(), "currency attribute 'currency' could not be null");
+        Preconditions.checkNotNull(currency.getId(), "currency attribute 'currency' could not be null");
 
-        String previousIssuer = getSenderPubkeyByCurrencyId(currency.getCurrency());
+        String previousIssuer = getSenderPubkeyByCurrencyId(currency.getId());
 
         // Currency not exists, so create it
         if (previousIssuer == null) {
@@ -303,20 +170,32 @@ public class CurrencyService extends AbstractService {
             currency.setIssuer(issuer);
 
             // Save it
-            indexCurrency(currency);
+            currencyDao.create(currency);
+
+            // Create data index (delete first if exists)
+            getCurrencyDataDao(currency.getId())
+                .deleteIndex()
+                .createIndexIfNotExists();
+
         }
 
         // Exists, so check the owner signature
         else {
-            if (!Objects.equals(issuer, previousIssuer)) {
+            if (issuer != null && !Objects.equals(issuer, previousIssuer)) {
                 throw new AccessDeniedException("Could not change the currency, because it has been registered by another public key.");
             }
 
             // Make sure the sender is not changed
-            currency.setIssuer(previousIssuer);
+            if (issuer != null) {
+                currency.setIssuer(previousIssuer);
+            }
 
             // Save changes
-            indexCurrency(currency);
+            currencyDao.update(currency);
+
+            // Create data index (if need)
+            getCurrencyDataDao(currency.getId())
+                    .createIndexIfNotExists();
         }
     }
 
@@ -342,7 +221,7 @@ public class CurrencyService extends AbstractService {
         try {
             currency = objectMapper.readValue(jsonCurrency, Currency.class);
             Preconditions.checkNotNull(currency);
-            Preconditions.checkNotNull(currency.getCurrency());
+            Preconditions.checkNotNull(currency.getCurrencyName());
         } catch(Throwable t) {
             logger.error("Error while reading blockchain JSON: " + jsonCurrency);
             throw new TechnicalException("Error while reading blockchain JSON: " + jsonCurrency, t);
@@ -353,60 +232,7 @@ public class CurrencyService extends AbstractService {
 
     /* -- Internal methods -- */
 
-    public XContentBuilder createRecordTypeMapping() {
-        try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
-                    .startObject("properties")
 
-                    // currency
-                    .startObject("currency")
-                    .field("type", "string")
-                    .endObject()
-
-                    // firstBlockSignature
-                    .startObject("firstBlockSignature")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // member count
-                    .startObject("membersCount")
-                    .field("type", "long")
-                    .endObject()
-
-                    // lastUD
-                    .startObject("lastUD")
-                    .field("type", "long")
-                    .endObject()
-
-                    // unitbase
-                    .startObject("unitbase")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // issuer
-                    .startObject("issuer")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // tags
-                    .startObject("tags")
-                    .field("type", "completion")
-                    .field("search_analyzer", "simple")
-                    .field("analyzer", "simple")
-                    .field("preserve_separators", "false")
-
-                    .endObject()
-                    .endObject()
-                    .endObject().endObject();
-
-            return mapping;
-        }
-        catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
-        }
-    }
 
     /**
      * Retrieve a blockchain from its name
@@ -415,11 +241,12 @@ public class CurrencyService extends AbstractService {
      */
     protected String getSenderPubkeyByCurrencyId(String currencyId) {
 
-        if (!existsIndex(currencyId)) {
+        if (!isCurrencyExists(currencyId)) {
             return null;
         }
 
         // Prepare request
+
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(INDEX)
                 .setTypes(RECORD_TYPE)
@@ -450,5 +277,42 @@ public class CurrencyService extends AbstractService {
         }
 
         return null;
+    }
+
+    protected IndexDao<?> getCurrencyDataDao(final String currencyId) {
+        // Create data
+        IndexDao<?> dataDao = currencyDataDaos.get(currencyId);
+        if (dataDao == null) {
+            dataDao = new AbstractIndexDao(currencyId) {
+                @Override
+                protected void createIndex() throws JsonProcessingException {
+                    logger.info(String.format("Creating index [%s]", currencyId));
+
+                    CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(currencyId);
+                    org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
+                            .put("number_of_shards", 3)
+                            .put("number_of_replicas", 1)
+                            //.put("analyzer", createDefaultAnalyzer())
+                            .build();
+                    createIndexRequestBuilder.setSettings(indexSettings);
+
+                    // Add peer type
+                    TypeDao<?> peerDao = (TypeDao<?>)ServiceLocator.instance().getBean(PeerDao.class);
+                    createIndexRequestBuilder.addMapping(peerDao.getType(), peerDao.createTypeMapping());
+
+                    // Add block type
+                    BlockDao blockDao = ServiceLocator.instance().getBean(BlockDao.class);
+                    createIndexRequestBuilder.addMapping(blockDao.getType(), blockDao.createTypeMapping());
+
+                    createIndexRequestBuilder.execute().actionGet();
+                }
+            };
+            injector.injectMembers(dataDao);
+            currencyDataDaos.put(currencyId, dataDao);
+        }
+
+        return dataDao;
+
+
     }
 }

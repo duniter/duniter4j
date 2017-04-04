@@ -22,14 +22,14 @@ package org.duniter.core.client.service.bma;
  * #L%
  */
 
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.HttpService;
-import org.duniter.core.client.service.local.PeerService;
 import org.duniter.core.client.service.ServiceLocator;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.duniter.core.client.service.local.PeerService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 
@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ServiceConfigurationError;
 
 /**
  * Created by eis on 05/02/15.
@@ -63,7 +62,7 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
         return httpService.executeRequest(peer, absolutePath, resultClass);
     }
 
-    public <T> T executeRequest(long currencyId, String absolutePath, Class<? extends T> resultClass)  {
+    public <T> T executeRequest(String currencyId, String absolutePath, Class<? extends T> resultClass)  {
         Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
         return httpService.executeRequest(peer, absolutePath, resultClass);
     }
@@ -72,7 +71,7 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
         return httpService.executeRequest(request, resultClass);
     }
 
-    public String getPath(long currencyId, String aPath) {
+    public String getPath(String currencyId, String aPath) {
         Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
         return httpService.getPath(peer, aPath);
     }

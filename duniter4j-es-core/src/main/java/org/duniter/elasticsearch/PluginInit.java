@@ -27,7 +27,7 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.CurrencyService;
-import org.duniter.elasticsearch.service.EndpointService;
+import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
@@ -101,7 +101,8 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                 logger.info("Checking Duniter core indices...");
             }
 
-            injector.getInstance(CurrencyService.class).createIndexIfNotExists();
+            injector.getInstance(CurrencyService.class)
+                    .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking Duniter core indices... [OK]");
@@ -115,21 +116,22 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             Peer peer = pluginSettings.checkAndGetPeer();
 
             // Index (or refresh) node's currency
-            Currency currency = injector.getInstance(CurrencyService.class).indexCurrencyFromPeer(peer, true);
+            Currency currency = injector.getInstance(CurrencyService.class)
+                    .indexCurrencyFromPeer(peer, true);
 
             // Add access to currency/block index
             injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
-                    currency.getCurrency(),
+                    currency.getCurrencyName(),
                     BlockchainService.BLOCK_TYPE);
             injector.getInstance(RestSecurityController.class).allowPostSearchIndexType(
-                    currency.getCurrency(),
+                    currency.getCurrencyName(),
                     BlockchainService.BLOCK_TYPE);
             // Add access to currency/peer index
             injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
-                    currency.getCurrency(),
+                    currency.getCurrencyName(),
                     BlockchainService.PEER_TYPE);
             injector.getInstance(RestSecurityController.class).allowPostSearchIndexType(
-                    currency.getCurrency(),
+                    currency.getCurrencyName(),
                     BlockchainService.PEER_TYPE);
 
             // Index blocks (and listen if new block appear)
@@ -138,9 +140,9 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .listenAndIndexNewBlock(peer);
 
             // Index peers (and listen if new peer appear)
-            injector.getInstance(EndpointService.class)
-                    .indexAllEndpoints(peer)/*
-                    .listenAndIndexNewPeer(peer)*/;
+            injector.getInstance(PeerService.class)
+                    //.indexAllPeers(peer)
+                    .listenAndIndexPeers(peer);
         }
     }
 }

@@ -32,7 +32,7 @@ import java.util.List;
  * A wallet is a user account
  * Created by eis on 13/01/15.
  */
-public class Contact implements LocalEntity, Serializable {
+public class Contact implements LocalEntity<Long>, Serializable {
 
     private long id;
     private long accountId;
@@ -111,12 +111,9 @@ public class Contact implements LocalEntity, Serializable {
         return false;
     }
 
-    public boolean hasIdentityForCurrency(long currencyId) {
-        for(Identity identity:identities) {
-            if (identity.getCurrencyId() != null && identity.getCurrencyId().longValue() == currencyId) {
-                return true;
-            }
-        }
-        return false;
+    public boolean hasIdentityForCurrency(String currencyId) {
+        return identities.stream()
+                .anyMatch(identity -> identity.getCurrencyId() != null
+                        && currencyId.equals(identity.getCurrencyId()));
     }
 }

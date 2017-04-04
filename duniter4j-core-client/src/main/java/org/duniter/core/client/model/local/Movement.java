@@ -28,7 +28,7 @@ import java.io.Serializable;
  * A wallet's movement (DU or transfer)
  * @author
  */
-public class Movement implements LocalEntity, Serializable {
+public class Movement implements LocalEntity<Long>, Serializable {
 
     private Long id;
     private long walletId;

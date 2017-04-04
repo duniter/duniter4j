@@ -35,7 +35,7 @@ public class Certification {
 
     private static final long serialVersionUID = 2204517069552693026L;
 
-    private long currencyId;
+    private String currencyId;
 
     private String uid;
 
@@ -68,11 +68,11 @@ public class Certification {
         super();
     }
 
-    public long getCurrencyId() {
+    public String getCurrencyId() {
         return currencyId;
     }
 
-    public void setCurrencyId(long currencyId) {
+    public void setCurrencyId(String currencyId) {
         this.currencyId = currencyId;
     }
 

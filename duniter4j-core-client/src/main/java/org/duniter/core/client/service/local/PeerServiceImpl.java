@@ -44,8 +44,8 @@ import java.util.List;
  */
 public class PeerServiceImpl implements PeerService, InitializingBean {
 
-    private Cache<Long, List<Peer>> peersByCurrencyIdCache;
-    private Cache<Long, Peer> activePeerByCurrencyIdCache;
+    private Cache<String, List<Peer>> peersByCurrencyIdCache;
+    private Cache<String, Peer> activePeerByCurrencyIdCache;
 
     private CurrencyService currencyService;
     private PeerDao peerDao;
@@ -70,7 +70,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
     public Peer save(final Peer peer) {
         Preconditions.checkNotNull(peer);
-        Preconditions.checkNotNull(peer.getCurrencyId());
+        Preconditions.checkNotNull(peer.getCurrency());
         Preconditions.checkArgument(StringUtils.isNotBlank(peer.getHost()));
         Preconditions.checkArgument(peer.getPort() >= 0);
 
@@ -88,10 +88,10 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
         // update cache (if already loaded)
         if (peersByCurrencyIdCache != null) {
-            List<Peer> peers = peersByCurrencyIdCache.get(peer.getCurrencyId());
+            List<Peer> peers = peersByCurrencyIdCache.get(peer.getCurrency());
             if (peers == null) {
-                peers = new ArrayList<Peer>();
-                peersByCurrencyIdCache.put(peer.getCurrencyId(), peers);
+                peers = new ArrayList<>();
+                peersByCurrencyIdCache.put(peer.getCurrency(), peers);
                 peers.add(peer);
             }
             else if (!peers.contains(peer)) {
@@ -102,23 +102,18 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         return result;
     }
 
-
-    public Peer getPeerById(long peerId) {
-        return peerDao.getById(peerId);
-    }
-
-    /**
+   /**
      * Return a (cached) active peer, by currency id
      * @param currencyId
      * @return
      */
-    public Peer getActivePeerByCurrencyId(long currencyId) {
+    public Peer getActivePeerByCurrencyId(String currency) {
         // Check if cache as been loaded
         if (activePeerByCurrencyIdCache == null) {
 
-            activePeerByCurrencyIdCache = new SimpleCache<Long, Peer>() {
+            activePeerByCurrencyIdCache = new SimpleCache<String, Peer>() {
                 @Override
-                public Peer load(Long currencyId) {
+                public Peer load(String currencyId) {
                     List<Peer> peers = peerDao.getPeersByCurrencyId(currencyId);
                     if (CollectionUtils.isEmpty(peers)) {
                         String currencyName = currencyService.getCurrencyNameById(currencyId);
@@ -132,7 +127,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
             };
         }
 
-        return activePeerByCurrencyIdCache.get(currencyId);
+        return activePeerByCurrencyIdCache.get(currency);
     }
 
     /**
@@ -140,7 +135,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
      * @param currencyId
      * @return
      */
-    public List<Peer> getPeersByCurrencyId(long currencyId) {
+    public List<Peer> getPeersByCurrencyId(String currencyId) {
         // Check if cache as been loaded
         if (peersByCurrencyIdCache == null) {
             throw new TechnicalException("Cache not initialize. Please call loadCache() before getPeersByCurrencyId().");
@@ -158,9 +153,9 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
             return;
         }
 
-        peersByCurrencyIdCache = new SimpleCache<Long, List<Peer>>() {
+        peersByCurrencyIdCache = new SimpleCache<String, List<Peer>>() {
             @Override
-            public List<Peer> load(Long currencyId) {
+            public List<Peer> load(String currencyId) {
                 return peerDao.getPeersByCurrencyId(currencyId);
             }
         };

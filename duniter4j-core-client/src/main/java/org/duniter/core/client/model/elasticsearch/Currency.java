@@ -30,58 +30,10 @@ import java.io.Serializable;
 /**
  * Created by eis on 05/02/15.
  */
-public class Currency implements Serializable {
-
-    public static final String PROPERTY_CURRENCY  = "currency";
-
-    private String currency;
-    private Integer membersCount;
-    private String firstBlockSignature;
-    private Long lastUD;
-    private BlockchainParameters parameters;
+public class Currency extends org.duniter.core.client.model.local.Currency implements Serializable {
 
     private String[] tags;
     private String issuer;
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public Integer getMembersCount() {
-        return membersCount;
-    }
-
-    public void setMembersCount(Integer membersCount) {
-        this.membersCount = membersCount;
-    }
-
-    public String getFirstBlockSignature() {
-        return firstBlockSignature;
-    }
-
-    public void setFirstBlockSignature(String firstBlockSignature) {
-        this.firstBlockSignature = firstBlockSignature;
-    }
-
-    public Long getLastUD() {
-        return lastUD;
-    }
-
-    public void setLastUD(Long lastUD) {
-        this.lastUD = lastUD;
-    }
-
-    public BlockchainParameters getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(BlockchainParameters parameters) {
-        this.parameters = parameters;
-    }
 
     public String[] getTags() {
         return tags;

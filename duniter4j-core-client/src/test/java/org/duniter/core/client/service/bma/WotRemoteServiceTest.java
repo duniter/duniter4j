@@ -60,8 +60,8 @@ public class WotRemoteServiceTest {
 
 	@Test
 	public void getIdentity() throws Exception {
-        Set<Long> currencyIds = new HashSet<>();
-        currencyIds.add(resource.getFixtures().getDefaultCurrencyId());
+        Set<String> currencyIds = new HashSet<>();
+        currencyIds.add(resource.getFixtures().getDefaultCurrency());
 		List<Identity> result = service
 				.findIdentities(currencyIds, resource.getFixtures().getUid());
 		Assert.assertNotNull(result);
@@ -71,7 +71,7 @@ public class WotRemoteServiceTest {
 	@Test
 	public void findByUid() throws Exception {
 		WotLookup.Uid result = service
-				.findByUid(resource.getFixtures().getDefaultCurrencyId(),
+				.findByUid(resource.getFixtures().getDefaultCurrency(),
 						resource.getFixtures().getUid());
 		Assert.assertNotNull(result);
 	}
@@ -82,7 +82,7 @@ public class WotRemoteServiceTest {
 	public void getCertifiedBy() throws Exception {
 		WotRemoteService service = ServiceLocator.instance().getWotRemoteService();
 		WotCertification result = service.getCertifiedBy(
-				resource.getFixtures().getDefaultCurrencyId(),
+				resource.getFixtures().getDefaultCurrency(),
 				resource.getFixtures().getUid());
 
 		Assert.assertNotNull(result);
@@ -111,7 +111,7 @@ public class WotRemoteServiceTest {
 	// FIXME: user 'gab' has no certification
 	public void getCertifiersOf() throws Exception {
 		WotCertification result = service.getCertifiersOf(
-				resource.getFixtures().getDefaultCurrencyId(),
+				resource.getFixtures().getDefaultCurrency(),
 				resource.getFixtures().getUid());
 
 		Assert.assertNotNull(result);

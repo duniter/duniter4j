@@ -49,7 +49,7 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestImageAttachmentAction.class).asEagerSingleton();
 
         // Currency
-        bind(RestCurrencyIndexAction.class).asEagerSingleton();
+        //bind(RestCurrencyIndexAction.class).asEagerSingleton();
 
     }
 }

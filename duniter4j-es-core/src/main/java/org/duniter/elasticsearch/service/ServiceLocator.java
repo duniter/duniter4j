@@ -24,24 +24,28 @@ package org.duniter.elasticsearch.service;
 
 
 import org.duniter.core.beans.Bean;
-import org.duniter.core.beans.BeanFactory;
 import org.duniter.core.client.dao.CurrencyDao;
 import org.duniter.core.client.dao.PeerDao;
-import org.duniter.core.client.dao.mem.MemoryCurrencyDaoImpl;
-import org.duniter.core.client.dao.mem.MemoryPeerDaoImpl;
 import org.duniter.core.client.service.DataContext;
 import org.duniter.core.client.service.HttpService;
 import org.duniter.core.client.service.HttpServiceImpl;
 import org.duniter.core.client.service.bma.*;
 import org.duniter.core.client.service.local.*;
-import org.duniter.core.client.service.local.NetworkService;
 import org.duniter.core.client.service.local.CurrencyService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.Ed25519CryptoServiceImpl;
 import org.duniter.core.service.MailService;
 import org.duniter.core.service.MailServiceImpl;
+import org.duniter.elasticsearch.beans.ESBeanFactory;
+import org.duniter.elasticsearch.dao.BlockDao;
+import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.dao.impl.BlockDaoImpl;
+import org.duniter.elasticsearch.dao.impl.CurrencyDaoImpl;
+import org.duniter.elasticsearch.client.Duniter4jClientImpl;
+import org.duniter.elasticsearch.dao.impl.PeerDaoImpl;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Singleton;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -54,15 +58,18 @@ public class ServiceLocator
         {
     private static final ESLogger logger = ESLoggerFactory.getLogger("duniter.service");
 
-    private static BeanFactory beanFactory = null;
+    private static ESBeanFactory beanFactory = null;
 
     @Inject
-    public ServiceLocator() {
-        super();
+    public ServiceLocator(Injector injector/*, PeerDao peerDao, CurrencyDao currencyDao*/) {
+        super(getOrCreateBeanFactory());
         if (logger.isDebugEnabled()) {
             logger.debug("Starting Duniter4j ServiceLocator...");
         }
-        setBeanFactory(getOrCreateBeanFactory());
+        beanFactory.setInjector(injector);
+/*
+        beanFactory.setBean(peerDao, PeerDao.class);
+        beanFactory.setBean(currencyDao, CurrencyDao.class);*/
 
         org.duniter.core.client.service.ServiceLocator.setInstance(this);
     }
@@ -80,39 +87,45 @@ public class ServiceLocator
 
     /* -- Internal methods -- */
 
-    protected static BeanFactory getOrCreateBeanFactory() {
+    protected static ESBeanFactory getOrCreateBeanFactory() {
         if (beanFactory != null) {
             return beanFactory;
         }
-        beanFactory = org.duniter.core.client.service.ServiceLocator.instance().getBeanFactory()
-                .bind(BlockchainRemoteService.class, BlockchainRemoteServiceImpl.class)
+        beanFactory = new ESBeanFactory();
+
+        beanFactory.bind(BlockchainRemoteService.class, BlockchainRemoteServiceImpl.class)
                 .bind(NetworkRemoteService.class, NetworkRemoteServiceImpl.class)
                 .bind(WotRemoteService.class, WotRemoteServiceImpl.class)
                 .bind(TransactionRemoteService.class, TransactionRemoteServiceImpl.class)
                 .bind(CryptoService.class, Ed25519CryptoServiceImpl.class)
+                .bind(org.duniter.core.client.service.local.PeerService.class, PeerServiceImpl.class)
                 .bind(MailService.class, MailServiceImpl.class)
-                .bind(PeerService.class, PeerServiceImpl.class)
                 .bind(CurrencyService.class, CurrencyServiceImpl.class)
                 .bind(NetworkService.class, NetworkServiceImpl.class)
                 .bind(HttpService.class, HttpServiceImpl.class)
-                .bind(CurrencyDao.class, MemoryCurrencyDaoImpl.class)
-                .bind(PeerDao.class, MemoryPeerDaoImpl.class)
+                // Dao
+                .bind(CurrencyDao.class, CurrencyDaoImpl.class)
+                .bind(PeerDao.class, PeerDaoImpl.class)
+                .bind(BlockDao.class, BlockDaoImpl.class)
+
                 .add(DataContext.class);
+
         return beanFactory;
     }
 
     public static class Provider<T extends Bean> implements org.elasticsearch.common.inject.Provider<T> {
 
         private final Class<T> clazz;
-        private final BeanFactory beanFactory;
 
         public Provider(Class<T> clazz) {
             this.clazz = clazz;
-            this.beanFactory = getOrCreateBeanFactory();
         }
 
         public T get() {
-            return beanFactory.getBean(clazz);
+            logger.debug("Loading class [" + clazz.getName() + "]...");
+            T result = getOrCreateBeanFactory().getBean(clazz);
+            logger.debug("...end of loading [" + clazz.getName() + "]");
+            return result;
         }
     }
 }

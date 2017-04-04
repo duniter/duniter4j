@@ -24,22 +24,18 @@ package org.duniter.core.client.model.local;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.duniter.core.client.model.Account;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 
 /**
  * Created by eis on 05/02/15.
  */
-public class Currency implements LocalEntity, Serializable {
+public class Currency implements LocalEntity<String>, Serializable {
 
-    private Peer peers[];
-
-    private Long id;
     private String currencyName;
     private Integer membersCount;
     private String firstBlockSignature;
-    private Account account;
-    private Long accountId;
     private Long lastUD;
     private BlockchainParameters parameters;
 
@@ -49,17 +45,16 @@ public class Currency implements LocalEntity, Serializable {
     public Currency(String currencyName,
                     String firstBlockSignature,
                     int membersCount,
-                    Peer[] peers,
                     BlockchainParameters parameters) {
         this.currencyName = currencyName;
         this.firstBlockSignature = firstBlockSignature;
         this.membersCount = membersCount;
-        this.peers = peers;
         this.parameters = parameters;
     }
 
-    public Long getId() {
-        return id;
+    @JsonIgnore
+    public String getId() {
+        return currencyName;
     }
 
     public String getCurrencyName()
@@ -75,16 +70,8 @@ public class Currency implements LocalEntity, Serializable {
         return firstBlockSignature;
     }
 
-    public Peer[] getPeers() {
-        return peers;
-    }
-
-    public void setPeers(Peer[] peers) {
-        this.peers = peers;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+    public void setId(String id) {
+        this.currencyName = id;
     }
 
     public void setCurrencyName(String currencyName) {
@@ -97,22 +84,6 @@ public class Currency implements LocalEntity, Serializable {
 
     public void setFirstBlockSignature(String firstBlockSignature) {
         this.firstBlockSignature = firstBlockSignature;
-    }
-
-    public Account getAccount() {
-        return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
-    }
-
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
     }
 
     public Long getLastUD() {

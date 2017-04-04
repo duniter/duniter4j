@@ -105,7 +105,6 @@ public class TestResource extends org.duniter.core.test.TestResource {
      * Convenience methods that could be override to initialize other configuration
      *
      * @param configFilename
-     * @param configArgs
      */
     protected void initConfiguration(String configFilename) {
         String[] configArgs = getConfigArgs();
@@ -159,7 +158,7 @@ public class TestResource extends org.duniter.core.test.TestResource {
                 .setHost(config.getNodeHost())
                 .setPort(config.getNodePort())
                 .build();
-        peer.setCurrencyId(fixtures.getDefaultCurrencyId());
+        peer.setCurrency(fixtures.getDefaultCurrency());
 
         ServiceLocator.instance().getPeerService().save(peer);
 

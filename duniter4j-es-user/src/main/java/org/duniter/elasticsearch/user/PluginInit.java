@@ -44,7 +44,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     private final PluginSettings pluginSettings;
     private final ThreadPool threadPool;
     private final Injector injector;
-    private final static ESLogger logger = Loggers.getLogger("node");
+    private final static ESLogger logger = Loggers.getLogger("duniter.user");
     private final String clusterName;
 
     @Inject
@@ -111,12 +111,12 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading all Duniter indices... [OK]");
+                logger.info("Reloading all Duniter User indices... [OK]");
             }
         }
         else {
             if (logger.isInfoEnabled()) {
-                logger.info("Checking Duniter indices...");
+                logger.info("Checking Duniter User indices...");
             }
             injector.getInstance(HistoryService.class).createIndexIfNotExists();
             injector.getInstance(UserService.class).createIndexIfNotExists();
@@ -125,7 +125,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(UserInvitationService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Checking Duniter indices... [OK]");
+                logger.info("Checking Duniter User indices... [OK]");
             }
         }
     }

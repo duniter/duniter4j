@@ -22,6 +22,7 @@ package org.duniter.elasticsearch.gchange.rest.registry;
  * #L%
  */
 
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryIndexDao;
 import org.duniter.elasticsearch.gchange.service.RegistryService;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.elasticsearch.common.inject.Inject;
@@ -32,7 +33,7 @@ public class RestRegistryCategoryAction {
     @Inject
     public RestRegistryCategoryAction(RestSecurityController securityController) {
         // Add security rule for category
-        securityController.allowIndexType(RestRequest.Method.GET, RegistryService.INDEX, RegistryService.RECORD_CATEGORY_TYPE);
+        securityController.allowIndexType(RestRequest.Method.GET, RegistryIndexDao.INDEX, RegistryIndexDao.CATEGORY_TYPE);
     }
 
 }

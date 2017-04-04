@@ -32,17 +32,18 @@ import java.util.*;
 public class MemoryCurrencyDaoImpl implements CurrencyDao {
 
 
-    private Map<Long, org.duniter.core.client.model.local.Currency> currencies = new HashMap<>();
+    private Map<String, org.duniter.core.client.model.local.Currency> currencies = new HashMap<>();
 
-    private Map<Long, Map<Integer, Long>> currencyUDsByBlock = new HashMap<>();
+    private Map<String, Map<Integer, Long>> currencyUDsByBlock = new HashMap<>();
+
+    public MemoryCurrencyDaoImpl() {
+        super();
+    }
 
     @Override
     public org.duniter.core.client.model.local.Currency create(final org.duniter.core.client.model.local.Currency entity) {
 
-        long id = getMaxId() + 1;
-        entity.setId(id);
-
-        currencies.put(id, entity);
+        currencies.put(entity.getId(), entity);
 
         return entity;
     }
@@ -66,42 +67,13 @@ public class MemoryCurrencyDaoImpl implements CurrencyDao {
     }
 
     @Override
-    public org.duniter.core.client.model.local.Currency getById(long currencyId) {
-        return currencies.get(currencyId);
+    public org.duniter.core.client.model.local.Currency getById(String id) {
+        return currencies.get(id);
     }
 
     @Override
-    public String getCurrencyNameById(long currencyId) {
-        org.duniter.core.client.model.local.Currency currency = getById(currencyId);
-        if (currency == null) {
-            return null;
-        }
-        return currency.getCurrencyName();
-    }
-
-    @Override
-    public Long getCurrencyIdByName(String currencyName) {
-        for(org.duniter.core.client.model.local.Currency currency: currencies.values()) {
-            if (currencyName.equalsIgnoreCase(currency.getCurrencyName())) {
-                return currency.getId();
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Set<Long> getCurrencyIds() {
-        return currencies.keySet();
-    }
-
-    @Override
-    public int getCurrencyCount() {
-        return currencies.size();
-    }
-
-    @Override
-    public long getLastUD(long currencyId) {
-        org.duniter.core.client.model.local.Currency currency = getById(currencyId);
+    public long getLastUD(String id) {
+        org.duniter.core.client.model.local.Currency currency = getById(id);
         if (currency == null) {
             return -1;
         }
@@ -109,31 +81,23 @@ public class MemoryCurrencyDaoImpl implements CurrencyDao {
     }
 
     @Override
-    public Map<Integer, Long> getAllUD(long currencyId) {
+    public Map<Integer, Long> getAllUD(String id) {
 
-        return currencyUDsByBlock.get(currencyId);
+        return currencyUDsByBlock.get(id);
     }
 
     @Override
-    public void insertUDs(Long currencyId,  Map<Integer, Long> newUDs) {
-        Map<Integer, Long> udsByBlock = currencyUDsByBlock.get(currencyId);
+    public void insertUDs(String id,  Map<Integer, Long> newUDs) {
+        Map<Integer, Long> udsByBlock = currencyUDsByBlock.get(id);
         if (udsByBlock == null) {
             udsByBlock = new HashMap<>();
-            currencyUDsByBlock.put(currencyId, udsByBlock);
+            currencyUDsByBlock.put(id, udsByBlock);
         }
         udsByBlock.putAll(newUDs);
     }
 
-    /* -- internal methods -- */
-
-    protected long getMaxId() {
-        long currencyId = -1;
-        for (Long anId : currencies.keySet()) {
-            if (anId > currencyId) {
-                currencyId = anId;
-            }
-        }
-
-        return currencyId;
+    @Override
+    public boolean isExists(String currencyId) {
+        return currencies.get(currencyId) != null;
     }
 }

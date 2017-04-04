@@ -22,6 +22,7 @@ package org.duniter.elasticsearch.rest.currency;
  * #L%
  */
 
+import org.duniter.core.exception.TechnicalException;
 import org.duniter.elasticsearch.rest.AbstractRestPostIndexAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.service.CurrencyService;
@@ -41,7 +42,9 @@ public class RestCurrencyIndexAction extends AbstractRestPostIndexAction {
                                    RestSecurityController securityController, CurrencyService currencyService) {
         super(settings, controller, client, securityController,
                 CurrencyService.INDEX, CurrencyService.RECORD_TYPE,
-                (json) -> currencyService.indexCurrencyFromJson(json));
+                (json) -> {
+                    throw new TechnicalException("Not implemented yet");/*currencyService.indexCurrencyFromJson(json)*/
+                });
     }
 
 }

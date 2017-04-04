@@ -37,39 +37,39 @@ import java.util.Set;
 
 public interface WotRemoteService extends Service {
 
-    List<Identity> findIdentities(Set<Long> currenciesIds, String uidOrPubKey);
+    List<Identity> findIdentities(Set<String> currenciesIds, String uidOrPubKey);
 
-    WotLookup.Uid find(long currencyId, String uidOrPubKey);
+    WotLookup.Uid find(String currencyId, String uidOrPubKey);
 
-    void getRequirments(long currencyId, String pubKey);
+    void getRequirments(String currencyId, String pubKey);
 
-    WotLookup.Uid findByUid(long currencyId, String uid);
+    WotLookup.Uid findByUid(String currencyId, String uid);
 
-    WotLookup.Uid findByUidAndPublicKey(long currencyId, String uid, String pubKey);
+    WotLookup.Uid findByUidAndPublicKey(String currencyId, String uid, String pubKey);
 
     WotLookup.Uid findByUidAndPublicKey(Peer peer, String uid, String pubKey);
 
-    Identity getIdentity(long currencyId, String uid, String pubKey);
+    Identity getIdentity(String currencyId, String uid, String pubKey);
 
-    Identity getIdentity(long currencyId, String pubKey);
+    Identity getIdentity(String currencyId, String pubKey);
 
     Identity getIdentity(Peer peer, String uid, String pubKey);
 
-    Collection<Certification> getCertifications(long currencyId, String uid, String pubkey, boolean isMember);
+    Collection<Certification> getCertifications(String currencyId, String uid, String pubkey, boolean isMember);
 
-    WotCertification getCertifiedBy(long currencyId, String uid);
+    WotCertification getCertifiedBy(String currencyId, String uid);
 
-    int countValidCertifiers(long currencyId, String pubkey);
+    int countValidCertifiers(String currencyId, String pubkey);
     
-    WotCertification getCertifiersOf(long currencyId, String uid);
+    WotCertification getCertifiersOf(String currencyId, String uid);
 
     String getSignedIdentity(String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid);
 
-    Map<String, String> getMembersUids(long currencyId);
+    Map<String, String> getMembersUids(String currencyId);
 
     Map<String, String> getMembersUids(Peer peer);
 
-    void sendIdentity(long currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid);
+    void sendIdentity(String currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid);
 
     void sendIdentity(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid);
 
@@ -79,7 +79,7 @@ public interface WotRemoteService extends Service {
 
     String sendCertification(Wallet wallet, Identity identity);
 
-    String sendCertification(long currencyId,
+    String sendCertification(String currencyId,
                                     byte[] pubKey, byte[] secKey,
                                   String uid, String timestamp,
                                   String userUid, String userPubKeyHash,

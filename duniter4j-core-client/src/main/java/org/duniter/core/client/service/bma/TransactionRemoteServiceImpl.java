@@ -136,7 +136,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 	}
 
-	public TxSource getSources(long currencyId, String pubKey) {
+	public TxSource getSources(String currencyId, String pubKey) {
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Get sources by pubKey: %s", pubKey));
 		}
@@ -160,7 +160,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		return result;
 	}
 
-    public long getCreditOrZero(long currencyId, String pubKey) {
+    public long getCreditOrZero(String currencyId, String pubKey) {
         Long credit = getCredit(currencyId, pubKey);
 
         if (credit == null) {
@@ -169,7 +169,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
         return credit.longValue();
     }
 
-    public Long getCredit(long currencyId, String pubKey) {
+    public Long getCredit(String currencyId, String pubKey) {
 		if (log.isDebugEnabled()) {
 			log.debug(String.format("Get credit by pubKey [%s] for currency [id=%s]", pubKey, currencyId));
 		}
@@ -216,7 +216,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
         return credit;
     }
 
-    public TxHistory getTxHistory(long currencyId, String pubKey, long fromBlockNumber, long toBlockNumber) {
+    public TxHistory getTxHistory(String currencyId, String pubKey, long fromBlockNumber, long toBlockNumber) {
 		Preconditions.checkNotNull(pubKey);
         Preconditions.checkArgument(fromBlockNumber >= 0);
         Preconditions.checkArgument(fromBlockNumber <= toBlockNumber);

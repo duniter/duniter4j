@@ -36,6 +36,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractService;
@@ -66,7 +67,9 @@ public abstract class AbstractSynchroService extends AbstractService {
     protected HttpService httpService;
 
     @Inject
-    public AbstractSynchroService(Client client, PluginSettings settings, CryptoService cryptoService,
+    public AbstractSynchroService(Duniter4jClient client,
+                                  PluginSettings settings,
+                                  CryptoService cryptoService,
                                   ThreadPool threadPool, final ServiceLocator serviceLocator) {
         super("duniter.network.p2p", client, settings,cryptoService);
         threadPool.scheduleOnStarted(() -> {
@@ -78,7 +81,7 @@ public abstract class AbstractSynchroService extends AbstractService {
 
     protected Peer getPeerFromAPI(String filterApiName) {
         // TODO : get peers from currency - use peering BMA API, and select peers with ESA (ES API)
-        Peer peer = new Peer(pluginSettings.getDataSyncHost(), pluginSettings.getDataSyncPort());
+        Peer peer = Peer.newBuilder().setHost(pluginSettings.getDataSyncHost()).setPort(pluginSettings.getDataSyncPort()).build();
         return peer;
     }
 

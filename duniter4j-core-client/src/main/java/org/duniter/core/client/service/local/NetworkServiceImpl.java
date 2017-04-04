@@ -48,8 +48,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -277,101 +279,140 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         final Comparator<Peer> peerComparator = peerComparator(sort);
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
 
-        // Manage new block event
-        blockchainRemoteService.addBlockListener(mainPeer, json -> {
+        /*Runnable initCacheRunnable = () -> {
             if (threadLock.isLocked()) return;
             synchronized (threadLock) {
                 threadLock.lock();
             }
             try {
-                BlockchainBlock block = readValue(json, BlockchainBlock.class);
-                String blockBuid = buid(block);
-                boolean isNewBlock = (blockBuid != null && !knownBlocks.contains(blockBuid));
-
-                // If new block + wait 5s for network propagation
-                if (isNewBlock && waitSafe(5000)) {
-                    List<Peer> updatedPeers = getPeers(mainPeer, filter, sort);
-
-                    knownPeers.clear();
-                    updatedPeers.stream().forEach(peer -> {
-                        String buid = buid(peer.getStats());
-                        if (!knownBlocks.contains(buid)) {
-                            knownBlocks.add(buid);
-                        }
-                        knownPeers.put(peer.toString(), peer);
-                    });
-
-                    result.clear();
-                    result.addAll(updatedPeers);
-                    listener.onChanged(result);
-                }
-            } catch(IOException e) {
-                log.error("Could not parse peer received by WS: " + e.getMessage(), e);
+                // TODO : load all peers from DAO, then fill list ?
+            }
+            catch(Exception e) {
+                log.error("Error while loading all peers: " + e.getMessage(), e);
             }
             finally {
                 synchronized (threadLock) {
                     threadLock.unlock();
                 }
             }
-        }, autoreconnect);
+        };*/
 
-        // Manage new peer event
-        networkRemoteService.addPeerListener(mainPeer, json -> {
+        Runnable getPeersRunnable = () -> {
             if (threadLock.isLocked()) return;
             synchronized (threadLock) {
                 threadLock.lock();
             }
-
             try {
-                NetworkPeers.Peer bmaPeer = readValue(json, NetworkPeers.Peer.class);
+                List<Peer> updatedPeers = getPeers(mainPeer, filter, sort);
+
+                knownPeers.clear();
+                updatedPeers.stream().forEach(peer -> {
+                    String buid = buid(peer.getStats());
+                    if (!knownBlocks.contains(buid)) {
+                        knownBlocks.add(buid);
+                    }
+                    knownPeers.put(peer.toString(), peer);
+                });
+
+                result.clear();
+                result.addAll(updatedPeers);
+                listener.onChanged(result);
+            }
+            catch(Exception e) {
+                log.error("Error while loading all peers: " + e.getMessage(), e);
+            }
+            finally {
+                synchronized (threadLock) {
+                    threadLock.unlock();
+                }
+            }
+        };
+
+        Consumer<NetworkPeers.Peer> refreshPeerConsumer = (bmaPeer) -> {
+            if (threadLock.isLocked()) return;
+            synchronized (threadLock) {
+                threadLock.lock();
+            }
+            try {
                 final List<Peer> newPeers = new ArrayList<>();
                 addEndpointsAsPeers(bmaPeer, newPeers, null);
 
                 CompletableFuture<List<CompletableFuture<Peer>>> jobs =
                         CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool)
-                    .thenApply(memberUids ->
-                        newPeers.stream().map(peer ->
-                            asyncRefreshPeer(peer, memberUids, pool))
-                            .collect(Collectors.toList())
-                    );
+                                .thenApply(memberUids ->
+                                        newPeers.stream().map(peer ->
+                                                asyncRefreshPeer(peer, memberUids, pool))
+                                                .collect(Collectors.toList())
+                                );
                 jobs.thenCompose(refreshedPeersFuture -> CompletableFutures.allOfToList(refreshedPeersFuture, refreshedPeer -> {
-                        boolean exists = knownPeers.containsKey(refreshedPeer.toString());
-                        boolean include = peerFilter.test(refreshedPeer);
-                        if (!include && exists) {
-                            Peer removedPeer = knownPeers.remove(refreshedPeer.toString());
-                            result.remove(removedPeer);
-                        }
-                        else if (include && exists) {
-                            result.remove(knownPeers.get(refreshedPeer.toString()));
-                        }
-                        return include;
-                    }))
-                    .thenApply(addedPeers -> {
-                        result.addAll(addedPeers);
-                        fillPeerStatsConsensus(result);
-                        result.sort(peerComparator);
+                    boolean exists = knownPeers.containsKey(refreshedPeer.toString());
+                    boolean include = peerFilter.test(refreshedPeer);
+                    if (!include && exists) {
+                        Peer removedPeer = knownPeers.remove(refreshedPeer.toString());
+                        result.remove(removedPeer);
+                    }
+                    else if (include && exists) {
+                        result.remove(knownPeers.get(refreshedPeer.toString()));
+                    }
+                    return include;
+                }))
+                        .thenApply(addedPeers -> {
+                            result.addAll(addedPeers);
+                            fillPeerStatsConsensus(result);
+                            result.sort(peerComparator);
 
-                        result.stream().forEach(peer -> {
-                            String buid = buid(peer.getStats());
-                            if (!knownBlocks.contains(buid)) {
-                                knownBlocks.add(buid);
-                            }
-                            knownPeers.put(peer.toString(), peer);
+                            result.stream().forEach(peer -> {
+                                String buid = buid(peer.getStats());
+                                if (!knownBlocks.contains(buid)) {
+                                    knownBlocks.add(buid);
+                                }
+                                knownPeers.put(peer.toString(), peer);
+                            });
+
+                            listener.onChanged(result);
+                            return result;
                         });
-
-                        listener.onChanged(result);
-                        return result;
-                    });
-
-            } catch(IOException e) {
-                log.error("Could not parse peer received by WS: " + e.getMessage(), e);
+            }
+            catch(Exception e) {
+                log.error("Error while refreshing a peer: " + e.getMessage(), e);
             }
             finally {
                 synchronized (threadLock) {
                     threadLock.unlock();
                 }
             }
+        };
 
+        // Load all peers
+        pool.submit(getPeersRunnable);
+
+        // Manage new block event
+        blockchainRemoteService.addBlockListener(mainPeer, json -> {
+
+            log.debug("Received new block event");
+            try {
+                BlockchainBlock block = readValue(json, BlockchainBlock.class);
+                String blockBuid = buid(block);
+                boolean isNewBlock = (blockBuid != null && !knownBlocks.contains(blockBuid));
+                // If new block + wait 5s for network propagation
+                if (!isNewBlock) return;
+            } catch(IOException e) {
+                log.error("Could not parse peer received by WS: " + e.getMessage(), e);
+            }
+
+            schedule(getPeersRunnable, pool, 5000);
+        }, autoreconnect);
+
+        // Manage new peer event
+        networkRemoteService.addPeerListener(mainPeer, json -> {
+
+            log.debug("Received new peer event");
+            try {
+                final NetworkPeers.Peer bmaPeer = readValue(json, NetworkPeers.Peer.class);
+                pool.submit(() -> refreshPeerConsumer.accept(bmaPeer));
+            } catch(IOException e) {
+                log.error("Could not parse peer received by WS: " + e.getMessage(), e);
+            }
         }, autoreconnect);
     }
 
@@ -624,12 +665,18 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return block.getNumber() + "-" + block.getHash();
     }
 
-    protected boolean waitSafe(long duration) {
-        try {
-            Thread.sleep(duration);
-            return true;
-        } catch (InterruptedException e) {
-            return false;
+    protected void schedule(Runnable command, ExecutorService pool, long delayInMs) {
+        if (pool instanceof ScheduledExecutorService) {
+            ((ScheduledExecutorService)pool).schedule(command, delayInMs, TimeUnit.MILLISECONDS);
+        }
+        else {
+            pool.submit(() -> {
+                try {
+                    Thread.sleep(delayInMs);
+                    command.run();
+                } catch (InterruptedException e) {
+                }
+            });
         }
     }
 }

@@ -15,10 +15,13 @@ logger:
   com.amazonaws.metrics.AwsSdkMetrics: ERROR
 
   org.apache.http: INFO
+  org.apache.http.client: ERROR
 
   org.duniter: INFO
 
+  org.duniter.core.beans: DEBUG
   org.duniter.elasticsearch: DEBUG
+  org.duniter.elasticsearch.service: DEBUG
   org.duniter.core.client.service: DEBUG
 
   duniter : DEBUG

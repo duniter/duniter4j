@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.gchange;
  */
 
 import com.google.common.collect.Lists;
+import org.duniter.elasticsearch.gchange.dao.DaoModule;
 import org.duniter.elasticsearch.gchange.rest.RestModule;
 import org.duniter.elasticsearch.gchange.service.ServiceModule;
 import org.elasticsearch.common.component.LifecycleComponent;
@@ -61,8 +62,9 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
             log.warn(description() + " has been disabled.");
             return modules;
         }
-        modules.add(new RestModule());
+        modules.add(new DaoModule());
         modules.add(new ServiceModule());
+        modules.add(new RestModule());
 
         return modules;
     }

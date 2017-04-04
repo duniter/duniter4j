@@ -33,7 +33,7 @@ public class Identity extends BasicIdentity {
 
     private Boolean isMember = null;
 
-    private Long currencyId;
+    private String currencyId;
 
     /**
      * The timestamp value of the signature date (a BLOCK_UID)
@@ -58,11 +58,11 @@ public class Identity extends BasicIdentity {
         this.isMember = isMember;
     }
 
-    public Long getCurrencyId() {
+    public String getCurrencyId() {
         return currencyId;
     }
 
-    public void setCurrencyId(Long currencyId) {
+    public void setCurrencyId(String currencyId) {
         this.currencyId = currencyId;
     }
 }

@@ -46,7 +46,7 @@ public interface NetworkRemoteService extends Service {
 
     List<Peer> findPeers(Peer peer, String status, EndpointApi endpointApi, Integer currentBlockNumber, String currentBlockHash);
 
-    WebsocketClientEndpoint addPeerListener(long currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
+    WebsocketClientEndpoint addPeerListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 
     WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 }

@@ -34,12 +34,12 @@ import org.duniter.core.util.crypto.KeyPair;
  * A wallet is a user account
  * Created by eis on 13/01/15.
  */
-public class Wallet extends KeyPair implements LocalEntity, Serializable {
+public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
 
 
     private Long id;
-    private Long currencyId;
     private Long accountId;
+    private String currency;
     private String name;
     private Long credit;
     private Identity identity;
@@ -52,10 +52,6 @@ public class Wallet extends KeyPair implements LocalEntity, Serializable {
      * Use for UI, when some properties has not been displayed yet
      */
     private boolean isDirty = false;
-
-    // TODO : voir si besoin de les garder ou pas
-    private String salt;
-    private String currency;
 
     public Wallet() {
         super(null, null);
@@ -96,14 +92,6 @@ public class Wallet extends KeyPair implements LocalEntity, Serializable {
         return identity.getPubkey();
     }
 
-    public String getSalt(){
-        return salt;
-    }
-
-    public void setSalt(String salt){
-        this.salt = salt;
-    }
-
     public String getCurrency() {
         return currency;
     }
@@ -120,12 +108,12 @@ public class Wallet extends KeyPair implements LocalEntity, Serializable {
         return identity.getTimestamp() != null;
     }
 
-    public Long getCurrencyId() {
-        return currencyId;
+    public String getCurrencyId() {
+        return currency;
     }
 
-    public void setCurrencyId(Long currencyId) {
-        this.currencyId = currencyId;
+    public void setCurrencyId(String currencyId) {
+        this.currency = currencyId;
     }
 
     public Long getAccountId() {
@@ -235,7 +223,7 @@ public class Wallet extends KeyPair implements LocalEntity, Serializable {
         if (o instanceof Wallet) {
             return ObjectUtils.equals(id, ((Wallet)o).id)
                     && ObjectUtils.equals(getPubKeyHash(), ((Wallet)o).getPubKeyHash())
-                    && ObjectUtils.equals(currencyId, ((Wallet)o).currencyId);
+                    && ObjectUtils.equals(currency, ((Wallet)o).currency);
         }
         return super.equals(o);
     }

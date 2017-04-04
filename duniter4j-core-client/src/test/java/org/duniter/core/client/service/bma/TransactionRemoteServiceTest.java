@@ -84,7 +84,7 @@ public class TransactionRemoteServiceTest {
 				CryptoUtils.decodeBase58(resource.getFixtures().getUserPublicKey()),
 				CryptoUtils.decodeBase58(resource.getFixtures().getUserSecretKey()));
 
-        wallet.setCurrencyId(resource.getFixtures().getDefaultCurrencyId());
+        wallet.setCurrencyId(resource.getFixtures().getDefaultCurrency());
 
 		return wallet;
 	}

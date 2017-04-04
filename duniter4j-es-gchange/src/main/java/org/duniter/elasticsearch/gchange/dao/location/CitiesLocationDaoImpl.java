@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.gchange.service;
+package org.duniter.elasticsearch.gchange.dao.location;
 
 /*
  * #%L
@@ -26,7 +26,7 @@ package org.duniter.elasticsearch.gchange.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.service.AbstractService;
+import org.duniter.elasticsearch.dao.AbstractDao;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -40,9 +40,9 @@ import java.io.IOException;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class CitiesRegistryService extends AbstractService {
+public class CitiesLocationDaoImpl extends AbstractDao {
 
-    private static final ESLogger log = ESLoggerFactory.getLogger(CitiesRegistryService.class.getName());
+    private static final ESLogger log = ESLoggerFactory.getLogger(CitiesLocationDaoImpl.class.getName());
 
     private static final String CITIES_BULK_FILENAME = "registry-cities-bulk-insert.json";
 
@@ -50,12 +50,11 @@ public class CitiesRegistryService extends AbstractService {
 
     private static final String CITIES_SOURCE_FILE2 = "/home/blavenie/git/ucoin-io/duniter4j/duniter4j-elasticsearch/src/main/misc/geoflar-communes-2015.geojson";
 
-    public static final String INDEX = "registry";
+    public static final String INDEX = "location";
     public static final String CITY_TYPE = "city";
 
-    @Inject
-    public CitiesRegistryService(Client client, PluginSettings settings) {
-        super(client, settings);
+    public CitiesLocationDaoImpl() {
+        super("gchange.location.cities");
     }
 
     /**
@@ -63,12 +62,12 @@ public class CitiesRegistryService extends AbstractService {
      * @throws JsonProcessingException
      */
     public void deleteIndex() throws JsonProcessingException {
-        deleteIndexIfExists(INDEX);
+        client.deleteIndexIfExists(INDEX);
     }
 
 
     public boolean existsIndex() {
-        return super.existsIndex(INDEX);
+        return client.existsIndex(INDEX);
     }
 
     /**
@@ -76,7 +75,7 @@ public class CitiesRegistryService extends AbstractService {
      */
     public void createIndexIfNotExists() {
         try {
-            if (!existsIndex(INDEX)) {
+            if (!client.existsIndex(INDEX)) {
                 createIndex();
             }
         }

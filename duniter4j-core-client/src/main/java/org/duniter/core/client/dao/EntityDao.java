@@ -28,13 +28,13 @@ import org.duniter.core.client.model.local.LocalEntity;
 /**
  * Created by blavenie on 29/12/15.
  */
-public interface EntityDao<B extends LocalEntity> extends Bean{
+public interface EntityDao<I, B extends LocalEntity<I>> extends Bean{
 
         B create(B entity);
 
         B update(B entity);
 
-        B getById(long id);
+        B getById(I id);
 
         void remove(B entity);
 

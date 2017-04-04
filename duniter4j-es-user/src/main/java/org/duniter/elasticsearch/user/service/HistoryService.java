@@ -29,6 +29,7 @@ import org.duniter.core.client.model.elasticsearch.DeleteRecord;
 import org.duniter.core.client.model.elasticsearch.MessageRecord;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.user.service.AbstractService;
 import org.duniter.elasticsearch.user.PluginSettings;
@@ -57,7 +58,7 @@ public class HistoryService extends AbstractService {
     public static final String DELETE_TYPE = "delete";
 
     @Inject
-    public HistoryService(Client client, PluginSettings settings, CryptoService cryptoService) {
+    public HistoryService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService) {
         super("gchange." + INDEX, client, settings, cryptoService);
     }
 
@@ -66,13 +67,13 @@ public class HistoryService extends AbstractService {
      * @throws JsonProcessingException
      */
     public HistoryService deleteIndex() {
-        deleteIndexIfExists(INDEX);
+        client.deleteIndexIfExists(INDEX);
         return this;
     }
 
 
     public boolean existsIndex() {
-        return super.existsIndex(INDEX);
+        return client.existsIndex(INDEX);
     }
 
     /**
@@ -80,7 +81,7 @@ public class HistoryService extends AbstractService {
      */
     public HistoryService createIndexIfNotExists() {
         try {
-            if (!existsIndex(INDEX)) {
+            if (!client.existsIndex(INDEX)) {
                 createIndex();
             }
         }
@@ -120,21 +121,21 @@ public class HistoryService extends AbstractService {
         String type = actualObj.get(DeleteRecord.PROPERTY_TYPE).asText();
         String id = actualObj.get(DeleteRecord.PROPERTY_ID).asText();
 
-        if (!existsIndex(index)) {
+        if (!client.existsIndex(index)) {
             throw new NotFoundException(String.format("Index [%s] not exists.", index));
         }
 
         // Special case for message: check if deletion issuer is the message recipient
         if (MessageService.INDEX.equals(index) && MessageService.INBOX_TYPE.equals(type)) {
-            checkSameDocumentField(index, type, id, MessageRecord.PROPERTY_RECIPIENT, issuer);
+            client.checkSameDocumentField(index, type, id, MessageRecord.PROPERTY_RECIPIENT, issuer);
         }
         // Special case for invitation: check if deletion issuer is the invitation recipient
         else if (UserInvitationService.INDEX.equals(index)) {
-            checkSameDocumentField(index, type, id, MessageRecord.PROPERTY_RECIPIENT, issuer);
+            client.checkSameDocumentField(index, type, id, MessageRecord.PROPERTY_RECIPIENT, issuer);
         }
         else {
             // Check document issuer
-            checkSameDocumentIssuer(index, type, id, issuer);
+            client.checkSameDocumentIssuer(index, type, id, issuer);
         }
 
         if (logger.isDebugEnabled()) {
@@ -177,7 +178,7 @@ public class HistoryService extends AbstractService {
     /* -- Internal methods -- */
 
 
-    public XContentBuilder createDeleteType() {
+    protected XContentBuilder createDeleteType() {
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(DELETE_TYPE)
                     .startObject("properties")

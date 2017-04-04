@@ -22,9 +22,11 @@ package org.duniter.elasticsearch.gchange.rest.registry;
  * #L%
  */
 
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryIndexDao;
+import org.duniter.elasticsearch.gchange.dao.registry.RegistryRecordDao;
+import org.duniter.elasticsearch.gchange.service.RegistryService;
 import org.duniter.elasticsearch.rest.AbstractRestPostUpdateAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.gchange.service.RegistryService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -36,7 +38,7 @@ public class RestRegistryRecordUpdateAction extends AbstractRestPostUpdateAction
     public RestRegistryRecordUpdateAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
                                           RegistryService service) {
         super(settings, controller, client, securityController,
-                RegistryService.INDEX, RegistryService.RECORD_TYPE,
+                RegistryIndexDao.INDEX, RegistryRecordDao.TYPE,
                 (id, json) -> service.updateRecordFromJson(id, json));
     }
 
