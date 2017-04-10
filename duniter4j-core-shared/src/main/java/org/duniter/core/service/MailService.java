@@ -24,6 +24,7 @@ package org.duniter.core.service;
 
 import org.duniter.core.beans.Bean;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.model.SmtpConfig;
 
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
@@ -33,22 +34,21 @@ import javax.mail.internet.ParseException;
  */
 public interface MailService extends Bean {
 
-    void sendTextEmail(String smtpHost,
-                       int smtpPort,
-                       String smtpUsername,
-                       String smtpPassword,
-                       String issuer,
-                       String recipients,
-                       String subject,
-                       String textContent);
+    void setSmtpConfig(SmtpConfig config);
 
-    void sendEmail(String smtpHost,
-                   int smtpPort,
-                   String smtpUsername,
-                   String smtpPassword,
-                   String issuer,
-                   String recipients,
+    void sendTextEmail(String subject,
+                       String textContent,
+                       String... recipients);
+
+    void sendHtmlEmail(
                    String subject,
-                   ContentType contentType,
-                   String content);
+                   String utf8HtmlContent,
+                   String... recipients);
+
+    void sendHtmlEmailWithText(
+            String subject,
+            String utf8textContent,
+            String utf8HtmlContent,
+            String... recipients);
+
 }

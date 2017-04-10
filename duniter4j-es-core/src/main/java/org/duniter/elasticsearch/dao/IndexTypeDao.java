@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Created by blavenie on 03/04/17.
  */
-public interface IndexTypeDao<T extends IndexTypeDao> {
+public interface IndexTypeDao<T extends IndexTypeDao> extends IndexDao<T> {
 
     T createIndexIfNotExists();
 

@@ -35,6 +35,8 @@ public class ServiceModule extends AbstractModule implements Module {
         bind(UserService.class).asEagerSingleton();
         bind(GroupService.class).asEagerSingleton();
 
+        bind(AdminService.class).asEagerSingleton();
+        bind(MailService.class).asEagerSingleton();
         bind(UserEventService.class).asEagerSingleton();
 
         bind(UserInvitationService.class).asEagerSingleton();

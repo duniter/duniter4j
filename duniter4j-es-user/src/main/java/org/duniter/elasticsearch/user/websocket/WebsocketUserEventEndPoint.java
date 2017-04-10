@@ -40,6 +40,7 @@ package org.duniter.elasticsearch.user.websocket;
 
 import org.duniter.core.client.model.bma.Constants;
 import org.duniter.core.util.StringUtils;
+import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.UserEventService;
 import org.duniter.elasticsearch.websocket.WebSocketServer;
@@ -57,11 +58,15 @@ import java.util.regex.Pattern;
 @ServerEndpoint(value = "/event/user/{pubkey}/{locale}")
 public class WebsocketUserEventEndPoint implements UserEventService.UserEventListener {
 
+    public static Locale defaultLocale;
+
     public static class Init {
 
         @Inject
-        public Init(WebSocketServer webSocketServer) {
+        public Init(WebSocketServer webSocketServer, PluginSettings pluginSettings) {
             webSocketServer.addEndPoint(WebsocketUserEventEndPoint.class);
+            defaultLocale = pluginSettings.getI18nLocale();
+            if (defaultLocale == null) defaultLocale = new Locale("en", "GB");
         }
     }
 
@@ -78,7 +83,7 @@ public class WebsocketUserEventEndPoint implements UserEventService.UserEventLis
     public void onOpen(Session session) {
         this.session = session;
         this.pubkey = session.getPathParameters() != null ? session.getPathParameters().get(PATH_PARAM_PUBKEY) : null;
-        this.locale = new Locale(session.getPathParameters() != null ? session.getPathParameters().get(PATH_PARAM_LOCALE) : "fr");
+        this.locale = session.getPathParameters() != null ? new Locale(session.getPathParameters().get(PATH_PARAM_LOCALE)) : defaultLocale;
 
         if (StringUtils.isBlank(pubkey) || !PUBKEY_PATTERN.matcher(pubkey).matches()) {
             try {

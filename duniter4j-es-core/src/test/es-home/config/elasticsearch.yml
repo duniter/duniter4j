@@ -125,8 +125,8 @@ duniter.blockchain.sync.enable: false
 #
 # Duniter node to synchronize
 #
-duniter.host: cgeek.fr
-duniter.port: 9330
+duniter.host: gtest.duniter.org
+duniter.port: 10900
 #
 # ---------------------------------- Duniter4j security -------------------------
 #
@@ -174,5 +174,5 @@ duniter.mail.admin: blavenie@EIS-DEV
 #
 #duniter.mail.subject.prefix: [Duniter4j ES]
 
-duniter.changes.listenSource: */block
+duniter.changes.listenSource: '*/block'
 duniter.ws.port: 9400

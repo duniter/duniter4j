@@ -176,3 +176,7 @@ duniter.mail.enable: false
 
 duniter.changes.listenSource: '*/block'
 duniter.ws.port: 9400
+
+duniter.subscription.enable: true
+
+duniter.subscription.email.cesium.url: 'https://g1.duniter.fr'

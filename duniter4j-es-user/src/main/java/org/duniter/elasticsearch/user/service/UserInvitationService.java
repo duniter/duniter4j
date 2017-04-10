@@ -71,7 +71,7 @@ public class UserInvitationService extends AbstractService {
     }
 
     /**
-     * Create index need for blockchain registry, if need
+     * Create index need for blockchain mail, if need
      */
     public UserInvitationService createIndexIfNotExists() {
         try {
@@ -87,7 +87,7 @@ public class UserInvitationService extends AbstractService {
     }
 
     /**
-     * Create index need for category registry
+     * Create index need for category mail
      * @throws JsonProcessingException
      */
     public UserInvitationService createIndex() throws JsonProcessingException {
@@ -126,7 +126,7 @@ public class UserInvitationService extends AbstractService {
         // Notify recipient
         userEventService.notifyUser(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.INVITATION_TO_CERTIFY.name())
                 .setRecipient(recipient)
-                .setMessage(I18n.n("duniter.invitation.cert.received"), issuer, ModelUtils.minifyPubkey(issuer))
+                .setMessage(I18n.n("duniter.user.event.INVITATION_TO_CERTIFY"), issuer, ModelUtils.minifyPubkey(issuer))
                 .setTime(time)
                 .setReference(INDEX, CERTIFICATION_TYPE, invitationId)
                 .build());

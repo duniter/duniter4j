@@ -64,7 +64,7 @@ public class GroupService extends AbstractService {
     }
 
     /**
-     * Create index need for blockchain registry, if need
+     * Create index need for blockchain mail, if need
      */
     public GroupService createIndexIfNotExists() {
         try {
@@ -79,7 +79,7 @@ public class GroupService extends AbstractService {
     }
 
     /**
-     * Create index for registry
+     * Create index for mail
      * @throws JsonProcessingException
      */
     public GroupService createIndex() throws JsonProcessingException {

@@ -23,18 +23,22 @@ package org.duniter.elasticsearch.service;
  */
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.elasticsearch.TestResource;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-@Ignore
 public class BlockchainServiceTest {
 
 	private static final Logger log = LoggerFactory.getLogger(BlockchainServiceTest.class);
@@ -43,114 +47,46 @@ public class BlockchainServiceTest {
 	public static final TestResource resource = TestResource.create();
 
     private BlockchainService service;
-    private BlockchainRemoteService blockchainRemoteService;
+    private BlockchainRemoteService remoteService;
     private Configuration config;
     private Peer peer;
+    private ObjectMapper objectMapper;
 
     @Before
     public void setUp() throws Exception {
-        //service = ServiceLocator.instance().getBlockIndexerService();
-        //blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
+        service = ServiceLocator.instance().getBean(BlockchainService.class);
+        remoteService = ServiceLocator.instance().getBlockchainRemoteService();
         config = Configuration.instance();
         peer = createTestPeer();
+        objectMapper = JacksonUtils.newObjectMapper();
 
-        initLocalNode();
+        // Init the currency
+        CurrencyService currencyService = ServiceLocator.instance().getBean(CurrencyService.class);
+        currencyService.createIndexIfNotExists()
+                .indexCurrencyFromPeer(peer);
     }
 
     @Test
-    public void createIndex() throws Exception {
-        String currencyName = resource.getFixtures().getCurrency();
-
-        // drop and recreate index
-        service.deleteIndex(currencyName);
-
-        service.createIndex(currencyName);
+    public void indexLastBlocks() {
+        service.indexLastBlocks(peer);
     }
 
-
     @Test
-	public void indexBlock() throws Exception {
-        // Read a block
-        BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);
+    public void indexBlock() {
+        BlockchainBlock current = remoteService.getCurrentBlock(peer);
+        service.indexCurrentBlock(current, true/*wait*/);
 
-        // Create a new non-existing block
-        service.indexBlock(currentBlock, true);
+        try {
+            String blockStr = objectMapper.writeValueAsString(current);
 
-        // Update a existing block
-        {
-            currentBlock.setMembersCount(1000000);
-
-            service.indexBlock(currentBlock, true);
+            service.indexBlockFromJson(peer, blockStr, true/*is rurrent*/, false/*detected fork*/, true/*wait*/);
         }
-	}
-
-    @Test
-    public void indexCurrentBlock() throws Exception {
-        // Create a block with a fake hash
-        BlockchainBlock aBlock = blockchainRemoteService.getBlock(peer, 8450);
-        service.indexCurrentBlock(aBlock, true);
-    }
-
-    @Test
-    // FIXME make this works
-    @Ignore
-    public void searchBlocks() throws Exception {
-        String currencyName = resource.getFixtures().getCurrency();
-
-        // Create a block with a fake hash
-        BlockchainBlock aBlock = blockchainRemoteService.getCurrentBlock(peer);
-        aBlock.setHash("myUnitTestHash");
-        service.saveBlock(aBlock, true, true);
-
-        Thread.sleep(5 * 1000); // wait 5s that ES process the block
-
-        // match multi words
-        String queryText = aBlock.getHash();
-        List<BlockchainBlock> blocks = service.findBlocksByHash(currencyName, queryText);
-        //assertResults(queryText, blocks);
-
-        Thread.sleep(5 * 1000); // wait 5s that ES process the block
-
-        BlockchainBlock loadBlock = service.getBlockById(currencyName, aBlock.getNumber());
-        Assert.assertNotNull(loadBlock);
-        Assert.assertEquals(aBlock.getHash(), loadBlock.getHash());
-    }
-
-    @Test
-    public void getMaxBlockNumber() throws Exception {
-        String currencyName = resource.getFixtures().getCurrency();
-
-        // match multi words
-        Integer maxBlockNumber = service.getMaxBlockNumber(currencyName);
-        Assert.assertNotNull(maxBlockNumber);
-    }
-
-
-    @Test
-    @Ignore
-    public void allInOne() throws Exception {
-
-        createIndex();
-        indexBlock();
-        searchBlocks();
+        catch(Exception e) {
+            Assert.fail(e.getMessage());
+        }
     }
 
 	/* -- internal methods */
-
-    protected void initLocalNode() throws Exception {
-        String currencyName = resource.getFixtures().getCurrency();
-
-        // Make sure the index exists
-        service.deleteIndex(currencyName);
-        service.createIndex(currencyName);
-
-        // Get the first block from peer
-        BlockchainBlock firstBlock = blockchainRemoteService.getBlock(peer, 0);
-
-        // Make sure the block has been indexed
-        service.indexBlock(firstBlock, true);
-
-    }
 
     protected void assertResults(String queryText, List<BlockchainBlock> result) {
         log.info(String.format("Results for a search on [%s]", queryText));

@@ -60,6 +60,10 @@ public class CryptoUtils extends Util {
 	public static byte[] decodeUTF8(String string) {
 		return string.getBytes(CHARSET_UTF8);
 	}
+
+	public static String encodeUTF8(byte[] bytes) {
+		return new String(bytes, CHARSET_UTF8);
+	}
 	
 	public static byte[] decodeAscii(String string) {
 		return string.getBytes(CHARSET_ASCII);

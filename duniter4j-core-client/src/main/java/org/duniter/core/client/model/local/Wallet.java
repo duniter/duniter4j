@@ -151,7 +151,7 @@ public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
     }
 
     public String toString() {
-        return name;
+        return name != null ? name : identity.getPubkey();
     }
 
     public String getUid() {

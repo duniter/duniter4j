@@ -324,6 +324,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         }
     }
 
+    public Locale getI18nLocale() {
+        return clientConfig.getI18nLocale();
+    }
+
     /**
      * Override the version default option, from the MANIFEST implementation version (if any)
      * @param applicationConfig

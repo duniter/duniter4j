@@ -28,6 +28,7 @@ import com.google.common.base.Joiner;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
+import org.duniter.core.client.model.local.LocalEntity;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
@@ -374,6 +375,19 @@ public class Duniter4jClientImpl implements Duniter4jClient {
             throw new TechnicalException(String.format("[%s/%s] Error while getting [%s]",
                     index, type,
                     docId), e);
+        }
+    }
+
+    @Override
+    public <C extends LocalEntity<String>> C readSourceOrNull(SearchHit searchHit, Class<? extends C> clazz) {
+        try {
+            C value = objectMapper.readValue(searchHit.getSourceRef().streamInput(), clazz);
+            value.setId(searchHit.getId());
+            return value;
+        }
+        catch(IOException e) {
+            logger.warn(String.format("Unable to deserialize source [%s/%s/%s] into [%s]: %s", searchHit.getIndex(), searchHit.getType(), searchHit.getId(), clazz.getName(), e.getMessage()));
+            return null;
         }
     }
 

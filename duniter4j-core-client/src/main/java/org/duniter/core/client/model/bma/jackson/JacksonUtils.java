@@ -22,7 +22,9 @@ package org.duniter.core.client.model.bma.jackson;
  * #L%
  */
 
+import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.NetworkPeering;
@@ -36,7 +38,7 @@ import java.util.List;
  */
 public abstract class JacksonUtils extends SimpleModule {
 
-    public static final String REGEX_ATTRIBUTE_REPLACE = "[,]?[\"\\s\\n\\r]*%s[\"]?[\\s\\n\\r]*:[\\s\\n\\r]*\"[^\"]+\"";
+    public static final String REGEX_ATTRIBUTE_REPLACE = "[,]?(?:\"%s\"|%s)[\\s\\n\\r]*:[\\s\\n\\r]*(?:\"[^\"]+\"|null)";
 
 
     public static ObjectMapper newObjectMapper() {
@@ -80,7 +82,8 @@ public abstract class JacksonUtils extends SimpleModule {
     }
 
     public static String removeAttribute(String jsonString, String attributeName) {
-        return jsonString.replaceAll(String.format(REGEX_ATTRIBUTE_REPLACE, attributeName), "");
+        String regex = String.format(REGEX_ATTRIBUTE_REPLACE, attributeName, attributeName);
+        return jsonString.replaceAll(regex, "");
     }
 
 }

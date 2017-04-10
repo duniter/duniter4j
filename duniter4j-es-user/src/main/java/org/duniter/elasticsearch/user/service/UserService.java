@@ -67,7 +67,7 @@ public class UserService extends AbstractService {
     }
 
     /**
-     * Create index need for blockchain registry, if need
+     * Create index need for blockchain mail, if need
      */
     public UserService createIndexIfNotExists() {
         try {
@@ -82,7 +82,7 @@ public class UserService extends AbstractService {
     }
 
     /**
-     * Create index for registry
+     * Create index for mail
      * @throws JsonProcessingException
      */
     public UserService createIndex() throws JsonProcessingException {

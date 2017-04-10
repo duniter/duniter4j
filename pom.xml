@@ -18,7 +18,7 @@
     <slf4j.version>1.7.5</slf4j.version>
     <guava.version>18.0</guava.version>
     <xml-apis.version>2.0.2</xml-apis.version>
-    <kalium.version>0.5.0</kalium.version>
+    <kalium.version>0.5.1-SNAPSHOT</kalium.version>
     <scrypt.version>1.4.0</scrypt.version>
     <elasticsearch.version>2.3.3</elasticsearch.version>
     <jna.version>4.1.0</jna.version>
@@ -107,7 +107,7 @@
     <module>duniter4j-client</module>
     <module>duniter4j-es-core</module>
     <module>duniter4j-es-user</module>
-    <module>duniter4j-es-gchange</module>
+    <module>duniter4j-es-subscription</module>
     <module>duniter4j-es-assembly</module>
   </modules>
 
@@ -149,6 +149,11 @@
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-lang3</artifactId>
         <version>3.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.antlr</groupId>
+        <artifactId>stringtemplate</artifactId>
+        <version>4.0.2</version>
       </dependency>
       <dependency>
         <groupId>commons-logging</groupId>

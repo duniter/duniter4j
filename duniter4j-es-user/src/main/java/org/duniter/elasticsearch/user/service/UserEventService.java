@@ -26,13 +26,14 @@ package org.duniter.elasticsearch.user.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
+import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.MailService;
+import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.crypto.CryptoUtils;
-import org.duniter.core.util.crypto.KeyPair;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
@@ -51,17 +52,17 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -96,9 +97,6 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
     private final MailService mailService;
     private final ThreadPool threadPool;
-    public final KeyPair nodeKeyPair;
-    public final String nodePubkey;
-    public final boolean mailEnable;
     public final boolean trace;
 
     @Inject
@@ -110,51 +108,10 @@ public class UserEventService extends AbstractService implements ChangeService.C
         super("duniter.user.event", client, pluginSettings, cryptoService);
         this.mailService = mailService;
         this.threadPool = threadPool;
-        this.nodeKeyPair = getNodeKeyPairOrNull(pluginSettings);
-        this.nodePubkey = getNodePubKey(nodeKeyPair);
-        this.mailEnable = pluginSettings.getMailEnable();
         this.trace = logger.isTraceEnabled();
-        if (!this.mailEnable && this.trace) {
-            logger.trace("Mail disable");
-        }
 
         ChangeService.registerListener(this);
 
-    }
-
-    /**
-     * Notify cluster admin
-     */
-    public void notifyAdmin(UserEvent event) {
-        Preconditions.checkNotNull(event);
-
-        UserProfile adminProfile;
-        if (StringUtils.isNotBlank(nodePubkey)) {
-            adminProfile = getUserProfile(nodePubkey, UserProfile.PROPERTY_EMAIL, UserProfile.PROPERTY_LOCALE);
-        }
-        else {
-            adminProfile = new UserProfile();
-        }
-
-        // Add new event to index
-        Locale locale = StringUtils.isNotBlank(adminProfile.getLocale()) ?
-                new Locale(adminProfile.getLocale()) :
-                I18n.getDefaultLocale();
-        if (StringUtils.isNotBlank(nodePubkey)) {
-            event.setRecipient(nodePubkey);
-            indexEvent(locale, event);
-        }
-
-        // Send email to admin
-        String adminEmail = StringUtils.isNotBlank(adminProfile.getEmail()) ?
-                adminProfile.getEmail() :
-                pluginSettings.getMailAdmin();
-        if (StringUtils.isNotBlank(adminEmail)) {
-            String subjectPrefix = pluginSettings.getMailSubjectPrefix();
-            sendEmail(adminEmail,
-                    I18n.l(locale, "duniter4j.event.subject."+event.getType().name(), subjectPrefix),
-                    event.getLocalizedMessage(locale));
-        }
     }
 
     /**
@@ -179,6 +136,8 @@ public class UserEventService extends AbstractService implements ChangeService.C
         Preconditions.checkNotNull(event.getType());
         Preconditions.checkNotNull(event.getCode());
 
+        String nodePubkey = pluginSettings.getNodePubkey();
+
         // Generate json
         String eventJson;
         if (StringUtils.isNotBlank(nodePubkey)) {
@@ -186,13 +145,18 @@ public class UserEventService extends AbstractService implements ChangeService.C
             signedEvent.setMessage(event.getLocalizedMessage(locale));
             // set issuer, hash, signature
             signedEvent.setIssuer(nodePubkey);
-            String hash = cryptoService.hash(toJson(signedEvent));
+
+            // Add hash
+            String hash = cryptoService.hash(toJson(signedEvent, true));
             signedEvent.setHash(hash);
-            String signature = cryptoService.sign(toJson(signedEvent), nodeKeyPair.getSecKey());
+
+            // Add signature
+            String signature = cryptoService.sign(toJson(signedEvent, true), pluginSettings.getNodeKeypair().getSecKey());
             signedEvent.setSignature(signature);
+
             eventJson = toJson(signedEvent);
         } else {
-            logger.debug("Could not generate hash for new user event (no keyring)");
+            logger.warn("Could not generate hash for new user event (no keyring)");
             // Node has not keyring: do NOT sign it
             eventJson = event.toJson(locale);
         }
@@ -254,7 +218,39 @@ public class UserEventService extends AbstractService implements ChangeService.C
                 .execute();
     }
 
+
+
+    public List<UserEvent> getUserEvents(String pubkey, Long lastTime, String[] includesCodes, String[] excludesCodes) {
+
+        BoolQueryBuilder query = QueryBuilders.boolQuery()
+                .must(QueryBuilders.termQuery(UserEvent.PROPERTY_RECIPIENT, pubkey));
+        if (lastTime != null) {
+            query.must(QueryBuilders.rangeQuery(UserEvent.PROPERTY_TIME).gt(lastTime));
+        }
+
+        if (CollectionUtils.isNotEmpty(includesCodes)) {
+            query.must(QueryBuilders.termsQuery(UserEvent.PROPERTY_CODE, includesCodes));
+        }
+        if (CollectionUtils.isNotEmpty(excludesCodes)) {
+            query.mustNot(QueryBuilders.termsQuery(UserEvent.PROPERTY_CODE, excludesCodes));
+        }
+
+        SearchResponse response = client.prepareSearch(INDEX)
+                .setTypes(EVENT_TYPE)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setFetchSource(true)
+                .setQuery(query)
+                .get();
+
+
+        return Arrays.asList(response.getHits().getHits()).stream()
+                .map(searchHit -> client.readSourceOrNull(searchHit, UserEvent.class))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     /* -- Internal methods -- */
+
 
     public static XContentBuilder createEventType() {
         try {
@@ -356,53 +352,11 @@ public class UserEventService extends AbstractService implements ChangeService.C
         }
     }
 
-
-    /**
-     * Send email
-     */
-    private void sendEmail(String recipients, String subject, String textContent) {
-        if (!this.mailEnable) return;
-
-        String smtpHost =  pluginSettings.getMailSmtpHost();
-        int smtpPort =  pluginSettings.getMailSmtpPort();
-        String smtpUsername =  pluginSettings.getMailSmtpUsername();
-        String smtpPassword =  pluginSettings.getMailSmtpPassword();
-        String from =  pluginSettings.getMailFrom();
-
-        try {
-            mailService.sendTextEmail(smtpHost, smtpPort, smtpUsername, smtpPassword, from, recipients, subject, textContent);
-        }
-        catch(TechnicalException e) {
-            logger.error(String.format("Could not send email: %s", e.getMessage())/*, e*/);
-        }
-    }
-
-    private KeyPair getNodeKeyPairOrNull(PluginSettings pluginSettings) {
-        KeyPair result;
-        if (StringUtils.isNotBlank(pluginSettings.getKeyringSalt()) &&
-                StringUtils.isNotBlank(pluginSettings.getKeyringPassword())) {
-            result = cryptoService.getKeyPair(pluginSettings.getKeyringSalt(),
-                    pluginSettings.getKeyringPassword());
-        }
-        else {
-            // Use a ramdom keypair
-            result = cryptoService.getRandomKeypair();
-            logger.warn(String.format("No keyring in config. salt/password (or keyring) is need to signed user event documents. Will use a generated key [%s]", getNodePubKey(result)));
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("    salt: " + pluginSettings.getKeyringSalt().replaceAll(".", "*")));
-                logger.debug(String.format("password: " + pluginSettings.getKeyringPassword().replaceAll(".", "*")));
-            }
-        }
-
+    private UserProfile getUserProfile(String pubkey, String... fieldnames) {
+        UserProfile result = client.getSourceByIdOrNull(UserService.INDEX, UserService.PROFILE_TYPE, pubkey, UserProfile.class, fieldnames);
+        if (result == null) result = new UserProfile();
         return result;
     }
-
-    private String getNodePubKey(KeyPair nodeKeyPair) {
-        if (nodeKeyPair == null) return null;
-        return CryptoUtils.encodeBase58(nodeKeyPair.getPubKey());
-    }
-
-
 
     private void doDeleteEventsByReference(final UserEvent.Reference reference) {
 
@@ -461,19 +415,23 @@ public class UserEventService extends AbstractService implements ChangeService.C
         }
     }
 
-    private UserProfile getUserProfile(String pubkey, String... fieldnames) {
-        UserProfile result = client.getSourceByIdOrNull(UserService.INDEX, UserService.PROFILE_TYPE, pubkey, UserProfile.class, fieldnames);
-        if (result == null) result = new UserProfile();
-        return result;
-    }
 
     private UserProfile getUserProfileOrNull(String pubkey, String... fieldnames) {
         return client.getSourceByIdOrNull(UserService.INDEX, UserService.PROFILE_TYPE, pubkey, UserProfile.class, fieldnames);
     }
 
     private String toJson(UserEvent userEvent) {
+        return toJson(userEvent, false);
+    }
+
+    private String toJson(UserEvent userEvent, boolean cleanHashAndSignature) {
         try {
-            return objectMapper.writeValueAsString(userEvent);
+            String json = objectMapper.writeValueAsString(userEvent);
+            if (cleanHashAndSignature) {
+                json = JacksonUtils.removeAttribute(json, Record.PROPERTY_SIGNATURE);
+                json = JacksonUtils.removeAttribute(json, Record.PROPERTY_HASH);
+            }
+            return json;
         } catch(JsonProcessingException e) {
             throw new TechnicalException("Unable to serialize UserEvent object", e);
         }

@@ -59,7 +59,7 @@ public class HistoryService extends AbstractService {
 
     @Inject
     public HistoryService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService) {
-        super("gchange." + INDEX, client, settings, cryptoService);
+        super("subscription." + INDEX, client, settings, cryptoService);
     }
 
     /**
@@ -77,7 +77,7 @@ public class HistoryService extends AbstractService {
     }
 
     /**
-     * Create index need for blockchain registry, if need
+     * Create index need for blockchain mail, if need
      */
     public HistoryService createIndexIfNotExists() {
         try {
@@ -93,7 +93,7 @@ public class HistoryService extends AbstractService {
     }
 
     /**
-     * Create index need for category registry
+     * Create index need for category mail
      * @throws JsonProcessingException
      */
     public HistoryService createIndex() throws JsonProcessingException {
@@ -117,9 +117,9 @@ public class HistoryService extends AbstractService {
         JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
         String issuer = actualObj.get(DeleteRecord.PROPERTY_ISSUER).asText();
 
-        String index = actualObj.get(DeleteRecord.PROPERTY_INDEX).asText();
-        String type = actualObj.get(DeleteRecord.PROPERTY_TYPE).asText();
-        String id = actualObj.get(DeleteRecord.PROPERTY_ID).asText();
+        String index = getMandatoryField(actualObj, DeleteRecord.PROPERTY_INDEX).asText();
+        String type = getMandatoryField(actualObj,DeleteRecord.PROPERTY_TYPE).asText();
+        String id = getMandatoryField(actualObj,DeleteRecord.PROPERTY_ID).asText();
 
         if (!client.existsIndex(index)) {
             throw new NotFoundException(String.format("Index [%s] not exists.", index));

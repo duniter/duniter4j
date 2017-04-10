@@ -50,7 +50,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     private final static ESLogger logger = Loggers.getLogger("duniter.core");
 
     @Inject
-    public PluginInit(Client client, Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
+    public PluginInit(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
         super(settings);
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
@@ -62,10 +62,9 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         threadPool.scheduleOnClusterHealthStatus(() -> {
             createIndices();
 
-            // Waiting cluster back to GREEN or YELLOW state, before synchronize
-            threadPool.scheduleOnClusterHealthStatus(() -> {
-                synchronize();
-            }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+            // Waiting cluster back to GREEN or YELLOW state, before doAfterStart
+            threadPool.scheduleOnClusterHealthStatus(this::doAfterStart, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+
         }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
     }
 
@@ -110,7 +109,9 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         }
     }
 
-    protected void synchronize() {
+    protected void doAfterStart() {
+
+        // Synchronize blockchain
         if (pluginSettings.enableBlockchainSync()) {
 
             Peer peer = pluginSettings.checkAndGetPeer();

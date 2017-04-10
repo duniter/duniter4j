@@ -24,10 +24,13 @@ package org.duniter.elasticsearch;
 
 
 import com.google.common.collect.Lists;
+import org.apache.commons.io.FileUtils;
+import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.service.ServiceLocator;
-import org.apache.commons.io.FileUtils;
+import org.elasticsearch.bootstrap.Elasticsearch;
 import org.junit.runner.Description;
+import org.nuiton.config.ApplicationConfig;
 import org.nuiton.i18n.I18n;
 import org.nuiton.i18n.init.DefaultI18nInitializer;
 import org.nuiton.i18n.init.UserI18nInitializer;
@@ -64,14 +67,15 @@ public class TestResource extends org.duniter.core.test.TestResource {
     protected void before(Description description) throws Throwable {
         super.before(description);
 
-        // Initialize configuration
-        initConfiguration(getConfigFileName());
+        // Prepare ES home
+        File esHomeDir = getResourceDirectory("es-home");
 
-        // Init i18n
-        initI18n();
+        System.setProperty("es.path.home", esHomeDir.getCanonicalPath());
 
-        // Initialize service locator
-        ServiceLocator.instance().init();
+        FileUtils.copyDirectory(new File("src/test/es-home"), esHomeDir);
+        FileUtils.copyDirectory(new File("target/classes"), new File(esHomeDir, "plugins/duniter4j-es-core"));
+
+        Elasticsearch.main(new String[]{"start"});
     }
 
     /**
@@ -81,61 +85,7 @@ public class TestResource extends org.duniter.core.test.TestResource {
      * @return the prefix to use to retrieve configuration files
      */
     protected String getConfigFilesPrefix() {
-        return "duniter4j-elasticsearch-test";
-    }
-    
-    protected String getI18nBundleName() {
-        return "duniter4j-elasticsearch-i18n";
-    }
-
-    /* -- -- */
-
-    /**
-     * Convenience methods that could be override to initialize other configuration
-     *
-     * @param configFilename
-     * @param configArgs
-     */
-    protected void initConfiguration(String configFilename) {
-        String[] configArgs = getConfigArgs();
-        //PluginSettings config = new PluginSettings(configFilename, configArgs);
-        //PluginSettings.setInstance(config);
-    }
-
-    protected void initI18n() throws IOException {
-        /*PluginSettings config ;//= PluginSettings.instance();
-
-        // --------------------------------------------------------------------//
-        // init i18n
-        // --------------------------------------------------------------------//
-        File i18nDirectory = new File(config.getDataDirectory(), "i18n");
-        if (i18nDirectory.exists()) {
-            // clean i18n cache
-            FileUtils.cleanDirectory(i18nDirectory);
-        }
-
-        FileUtils.forceMkdir(i18nDirectory);
-
-        if (log.isDebugEnabled()) {
-            log.debug("I18N directory: " + i18nDirectory);
-        }
-
-        Locale i18nLocale = config.getI18nLocale();
-
-        if (log.isInfoEnabled()) {
-            log.info(String.format("Starts i18n with locale [%s] at [%s]",
-                    i18nLocale, i18nDirectory));
-        }
-        I18n.init(new UserI18nInitializer(
-                        i18nDirectory, new DefaultI18nInitializer(getI18nBundleName())),
-                i18nLocale);*/
-    }
-
-    protected String[] getConfigArgs() {
-        List<String> configArgs = Lists.newArrayList();
-        configArgs.addAll(Lists.newArrayList(
-                "--option", ConfigurationOption.BASEDIR.getKey(), getResourceDirectory().getAbsolutePath()));
-        return configArgs.toArray(new String[configArgs.size()]);
+        return "duniter4j-es-core-test";
     }
 
 }

@@ -22,16 +22,20 @@ package org.duniter.core.client.model.elasticsearch;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.duniter.core.client.model.local.LocalEntity;
+
 /**
  * Created by blavenie on 01/03/16.
  */
-public class Record {
+public class Record implements LocalEntity<String> {
 
     public static final String PROPERTY_ISSUER="issuer";
     public static final String PROPERTY_HASH="hash";
     public static final String PROPERTY_SIGNATURE="signature";
     public static final String PROPERTY_TIME="time";
 
+    private String id;
     private String issuer;
     private String hash;
     private String signature;
@@ -41,10 +45,21 @@ public class Record {
     }
 
     public Record(Record another) {
+        this.id = another.getId();
         this.issuer = another.getIssuer();
         this.hash = another.getHash();
         this.signature = another.getSignature();
         this.time = another.getTime();
+    }
+
+    @JsonIgnore
+    public String getId() {
+        return id;
+    }
+
+    @JsonIgnore
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getIssuer() {

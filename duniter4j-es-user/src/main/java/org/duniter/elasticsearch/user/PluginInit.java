@@ -22,6 +22,9 @@ package org.duniter.elasticsearch.user;
  * #L%
  */
 
+import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.crypto.CryptoUtils;
+import org.duniter.core.util.crypto.KeyPair;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
@@ -61,18 +64,9 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         threadPool.scheduleOnClusterHealthStatus(() -> {
             createIndices();
 
-            // Waiting cluster back to GREEN or YELLOW state, before synchronize
-            threadPool.scheduleOnClusterHealthStatus(() -> {
-                synchronize();
+            // Waiting cluster back to GREEN or YELLOW state, before doAfterStart
+            threadPool.scheduleOnClusterHealthStatus(this::doAfterStart, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
 
-                // Notify admin
-                injector.getInstance(UserEventService.class)
-                        .notifyAdmin(new UserEvent(
-                                UserEvent.EventType.INFO,
-                                UserEventCodes.NODE_STARTED.name(),
-                                I18n.n("duniter.event.NODE_STARTED"),
-                                clusterName));
-            }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
         }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
     }
 
@@ -130,10 +124,20 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         }
     }
 
-    protected void synchronize() {
+    protected void doAfterStart() {
         if (pluginSettings.enableDataSync()) {
             // Synchronize
             injector.getInstance(SynchroService.class).synchronize();
         }
+
+        // Notify admin
+        injector.getInstance(AdminService.class)
+                .notifyAdmin(new UserEvent(
+                        UserEvent.EventType.INFO,
+                        UserEventCodes.NODE_STARTED.name(),
+                        I18n.n("duniter.user.event.NODE_STARTED"),
+                        clusterName));
     }
+
+
 }

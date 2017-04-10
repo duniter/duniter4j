@@ -30,8 +30,8 @@ import org.duniter.core.client.service.DataContext;
 import org.duniter.core.client.service.HttpService;
 import org.duniter.core.client.service.HttpServiceImpl;
 import org.duniter.core.client.service.bma.*;
-import org.duniter.core.client.service.local.*;
 import org.duniter.core.client.service.local.CurrencyService;
+import org.duniter.core.client.service.local.*;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.service.Ed25519CryptoServiceImpl;
@@ -39,10 +39,8 @@ import org.duniter.core.service.MailService;
 import org.duniter.core.service.MailServiceImpl;
 import org.duniter.elasticsearch.beans.ESBeanFactory;
 import org.duniter.elasticsearch.dao.BlockDao;
-import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.dao.impl.BlockDaoImpl;
 import org.duniter.elasticsearch.dao.impl.CurrencyDaoImpl;
-import org.duniter.elasticsearch.client.Duniter4jClientImpl;
 import org.duniter.elasticsearch.dao.impl.PeerDaoImpl;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
@@ -61,15 +59,12 @@ public class ServiceLocator
     private static ESBeanFactory beanFactory = null;
 
     @Inject
-    public ServiceLocator(Injector injector/*, PeerDao peerDao, CurrencyDao currencyDao*/) {
+    public ServiceLocator(Injector injector) {
         super(getOrCreateBeanFactory());
         if (logger.isDebugEnabled()) {
             logger.debug("Starting Duniter4j ServiceLocator...");
         }
         beanFactory.setInjector(injector);
-/*
-        beanFactory.setBean(peerDao, PeerDao.class);
-        beanFactory.setBean(currencyDao, CurrencyDao.class);*/
 
         org.duniter.core.client.service.ServiceLocator.setInstance(this);
     }
@@ -122,10 +117,7 @@ public class ServiceLocator
         }
 
         public T get() {
-            logger.debug("Loading class [" + clazz.getName() + "]...");
-            T result = getOrCreateBeanFactory().getBean(clazz);
-            logger.debug("...end of loading [" + clazz.getName() + "]");
-            return result;
+            return getOrCreateBeanFactory().getBean(clazz);
         }
     }
 }

@@ -20,14 +20,18 @@ logger:
   org.duniter: INFO
 
   org.duniter.core.beans: DEBUG
+  org.duniter.core.client.service: DEBUG
   org.duniter.elasticsearch: DEBUG
   org.duniter.elasticsearch.service: DEBUG
-  org.duniter.core.client.service: DEBUG
+  org.duniter.elasticsearch.user.service: DEBUG
+  org.duniter.elasticsearch.subscription.service: DEBUG
 
-  duniter : DEBUG
-  duniter.security : ERROR
-  duniter.user.event : INFO
+
+  duniter: DEBUG
+  duniter.security: ERROR
+  duniter.user.event: INFO
   duniter.network.p2p: INFO
+  duniter.mail: DEBUG
 
   security: DEBUG
 

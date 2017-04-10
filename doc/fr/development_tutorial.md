@@ -16,7 +16,7 @@ Le projet Duniter4j est composé de plusieurs sous-modules :
  - `duniter4j-es-*`: Les plugins ElasticSearch, qui implémentent : 
   * `duniter4j-es-core`: Indexation de BlockChain  Duniter (ESA ou ES API);
   * `duniter4j-es-user`: Indexation de données utilisateurs (profils, des messages privées, paramètres chiffrés) (ESUA ou ES USER API);
-  * `duniter4j-es-gchange`: Indexation d'annonces, registre des profesionnels (GChange API ). Note : cette partie sera pas la suite sortie dans un autre projet. 
+  * `duniter4j-es-subscription`: Indexation d'annonces, registre des profesionnels (GChange API ). Note : cette partie sera pas la suite sortie dans un autre projet. 
 
 ## Niveau I : récupérer le code source
 
@@ -394,10 +394,10 @@ Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, com
 
 - `/user/profile` : les profiles utilisateurs (nom complet, réseaux sociaux, avatar, etc.)   
 - `/message/inbox` : les messages privées envoyés    
-- `/market/record` : les annonces de la [place de maché](http://cesium.duniter.fr/#/app/market/lg) Ğchange;   
-  * `/market/record` : les commentaires sur les annonces
-- `/registry/record` : les référencement de l'[annuaire pro](http://cesium.duniter.fr/#/app/registry/lg) Ğchange;   
-  * `/market/comment` : les commentaires sur les référencements
+- `/mail/record` : les annonces de la [place de maché](http://cesium.duniter.fr/#/app/market/lg) Ğchange;   
+  * `/mail/record` : les commentaires sur les annonces
+- `/mail/record` : les référencement de l'[annuaire pro](http://cesium.duniter.fr/#/app/registry/lg) Ğchange;   
+  * `/mail/comment` : les commentaires sur les référencements
 
 > La document de l'API HTTP est disponible [ici](../API.md).
 

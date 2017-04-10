@@ -23,10 +23,17 @@ package org.duniter.elasticsearch.user;
  */
 
 
+import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.crypto.CryptoUtils;
+import org.duniter.core.util.crypto.KeyPair;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.settings.Settings;
+
+import java.util.Locale;
 
 /**
  * Access to configuration options
@@ -36,11 +43,19 @@ import org.elasticsearch.common.settings.Settings;
 public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
 
     private org.duniter.elasticsearch.PluginSettings delegate;
+    private CryptoService cryptoService;
+
+    private KeyPair nodeKeyPair;
+    private boolean isRandomNodeKeyPair;
+    private String nodePubkey;
 
     @Inject
-    public PluginSettings(Settings settings, org.duniter.elasticsearch.PluginSettings delegate) {
+    public PluginSettings(Settings settings,
+                          org.duniter.elasticsearch.PluginSettings delegate,
+                          CryptoService cryptoService) {
         super(settings);
         this.delegate = delegate;
+        this.cryptoService = cryptoService;
 
         // Add i18n bundle name
         delegate.addI18nBundleName(getI18nBundleName());
@@ -97,6 +112,14 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.get("duniter.mail.smtp.password");
     }
 
+    public boolean isMailSmtpStartTLS()  {
+        return settings.getAsBoolean("duniter.mail.smtp.starttle", false);
+    }
+
+    public boolean isMailSmtpUseSSL()  {
+        return settings.getAsBoolean("duniter.mail.smtp.ssl", false);
+    }
+
     public String getMailAdmin()  {
         return settings.get("duniter.mail.admin");
     }
@@ -106,7 +129,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public String getMailSubjectPrefix()  {
-        return settings.get("duniter.mail.subject.prefix", "[Duniter4j ES]");
+        return settings.get("duniter.mail.subject.prefix", "[Cesium+]");
     }
 
     /* -- delegate methods -- */
@@ -151,6 +174,25 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         delegate.addI18nBundleName(bundleName);
     }
 
+    public Locale getI18nLocale() {
+        return delegate.getI18nLocale();
+    }
+
+    public KeyPair getNodeKeypair() {
+        initNodeKeyring();
+        return this.nodeKeyPair;
+    }
+
+    public boolean isRandomNodeKeypair() {
+        initNodeKeyring();
+        return this.isRandomNodeKeyPair;
+    }
+
+    public String getNodePubkey() {
+        initNodeKeyring();
+        return this.nodePubkey;
+    }
+
 
     /* -- protected methods -- */
 
@@ -158,5 +200,26 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return "duniter4j-es-user-i18n";
     }
 
+    protected void initNodeKeyring() {
+        if (this.nodeKeyPair != null) return;
+        if (StringUtils.isNotBlank(getKeyringSalt()) &&
+                StringUtils.isNotBlank(getKeyringPassword())) {
+            this.nodeKeyPair = cryptoService.getKeyPair(getKeyringSalt(), getKeyringPassword());
+            this.nodePubkey = CryptoUtils.encodeBase58(this.nodeKeyPair.getPubKey());
+            this.isRandomNodeKeyPair = false;
+        }
+        else {
+            // Use a ramdom keypair
+            this.nodeKeyPair = cryptoService.getRandomKeypair();
+            this.nodePubkey = CryptoUtils.encodeBase58(this.nodeKeyPair.getPubKey());
+            this.isRandomNodeKeyPair = true;
+
+            logger.warn(String.format("No keyring in config. salt/password (or keyring) is need to signed user event documents. Will use a generated key [%s]", this.nodePubkey));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("    salt: " + getKeyringSalt().replaceAll(".", "*")));
+                logger.debug(String.format("password: " + getKeyringPassword().replaceAll(".", "*")));
+            }
+        }
+    }
 
 }

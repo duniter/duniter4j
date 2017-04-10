@@ -1,10 +1,12 @@
 package org.duniter.elasticsearch.client;
 
 import org.duniter.core.beans.Bean;
+import org.duniter.core.client.model.local.LocalEntity;
 import org.duniter.elasticsearch.dao.handler.StringReaderHandler;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.search.SearchHit;
 
 import java.io.File;
 import java.io.InputStream;
@@ -55,6 +57,8 @@ public interface Duniter4jClient extends Bean, Client {
      * @return
      */
     <T extends Object> T getSourceById(String index, String type, String docId, Class<T> classOfT, String... fieldNames);
+
+    <C extends LocalEntity<String>> C readSourceOrNull(SearchHit searchHit, Class<? extends C> clazz);
 
     void bulkFromClasspathFile(String classpathFile, String indexName, String indexType);
 

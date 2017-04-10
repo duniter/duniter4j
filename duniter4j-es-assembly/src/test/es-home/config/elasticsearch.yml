@@ -162,14 +162,20 @@ duniter.data.sync.port: 443
 #
 # SMTP server configuration (host and port)
 #
-duniter.mail.enable: false
-#duniter.mail.smtp.host: localhost
-#duniter.mail.smtp.port: 25
+duniter.mail.enable: true
+duniter.mail.smtp.host: smtp.gmail.com
+duniter.mail.smtp.port: 465
+duniter.mail.smtp.ssl: true
+duniter.mail.smtp.starttls: true
+duniter.mail.smtp.username: benoit.lavenier@e-is.pro
+duniter.mail.smtp.password: .2hainepourDieu
+
 #
 # Mail 'from' address
 #
 #duniter.mail.from: no-reply@domain.com
-#duniter.mail.from: root@EIS-DEV
+duniter.mail.from: benoit.lavenier@e-is.pro
+
 #
 # Mail: admin address
 #
@@ -182,3 +188,7 @@ duniter.mail.enable: false
 
 duniter.changes.listenSource: '*/block'
 duniter.ws.port: 9400
+
+# = 10s
+duniter.subscription.enable: true
+duniter.subscription.email.interval: 10000

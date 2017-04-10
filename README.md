@@ -29,7 +29,7 @@ duniter4j has four main components :
 sudo apt-get install openjdk-8-jre 
 ```
 
- - Install [libsodium](https://download.libsodium.org/doc/index.html) (Linux only)
+ - Install [libsodium](https://download.libsodium.org/doc/index.html) v1.0.11 (Linux only)
   
      - Linux: See [installation](https://download.libsodium.org/doc/installation/index.html). After installation, make sure the file 'libsodium.so' 
        exists on: /usr/local/lib or /opt/local/lib. If not, create a symbolic link.

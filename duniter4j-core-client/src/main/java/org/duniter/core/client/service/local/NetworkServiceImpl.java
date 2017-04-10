@@ -174,6 +174,9 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     return peersFuture.join().stream()
                             .map(peer -> {
                                 if (mainPeer.getUrl().equals(peer.getUrl())) {
+                                    mainPeer.setPubkey(peer.getPubkey());
+                                    mainPeer.setHash(peer.getHash());
+                                    mainPeer.setCurrency(peer.getCurrency());
                                     return asyncRefreshPeer(mainPeer, memberUids, pool);
                                 }
                                 return asyncRefreshPeer(peer, memberUids, pool);

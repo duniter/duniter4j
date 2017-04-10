@@ -32,7 +32,14 @@ import org.abstractj.kalium.NaCl;
 import org.abstractj.kalium.NaCl.Sodium;
 import org.abstractj.kalium.crypto.Util;
 
+import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
+
+import static org.abstractj.kalium.NaCl.Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_BOXZEROBYTES;
+import static org.abstractj.kalium.NaCl.Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_NONCEBYTES;
+import static org.abstractj.kalium.NaCl.Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_ZEROBYTES;
+import static org.abstractj.kalium.NaCl.sodium;
+import static org.abstractj.kalium.crypto.Util.*;
 
 
 /**
@@ -132,10 +139,69 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
 
     @Override
     public String hash(String message) {
-        byte[] hash = new byte[Sodium.SHA256BYTES];
+        byte[] hash = new byte[Sodium.CRYPTO_HASH_SHA256_BYTES];
         byte[] messageBinary = CryptoUtils.decodeUTF8(message);
         naCl.crypto_hash_sha256(hash, messageBinary, messageBinary.length);
         return bytesToHex(hash).toUpperCase();
+    }
+
+    @Override
+    public byte[] getBoxRandomNonce() {
+        byte[] nonce = new byte[Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_NONCEBYTES];
+        naCl.randombytes(nonce, nonce.length);
+
+        return nonce;
+    }
+
+    @Override
+    public String box(String message, byte[] nonce, String senderSignSk, String receiverSignPk) {
+        byte[] senderSignSkBinary = CryptoUtils.decodeBase58(senderSignSk);
+        byte[] receiverSignPkBinary = CryptoUtils.decodeBase58(receiverSignPk);
+        return box(message, nonce, senderSignSkBinary, receiverSignPkBinary);
+    }
+
+    @Override
+    public String box(String message, byte[] nonce, byte[] senderSignSk, byte[] receiverSignPk) {
+        checkLength(nonce, CRYPTO_BOX_CURVE25519XSALSA20POLY1305_NONCEBYTES);
+
+        byte[] messageBinary = prependZeros(CRYPTO_BOX_CURVE25519XSALSA20POLY1305_ZEROBYTES, CryptoUtils.decodeBase64(message));
+
+        byte[] senderBoxSk = new byte[Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_SECRETKEYBYTES];
+        naCl.crypto_sign_ed25519_sk_to_curve25519(senderBoxSk, senderSignSk);
+
+        byte[] receiverBoxPk = new byte[Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_PUBLICKEYBYTES];
+        naCl.crypto_sign_ed25519_pk_to_curve25519(receiverBoxPk, receiverSignPk);
+
+        byte[] cypherTextBinary = new byte[messageBinary.length];
+        isValid(sodium().crypto_box_curve25519xsalsa20poly1305(cypherTextBinary, messageBinary,
+                cypherTextBinary.length, nonce, senderBoxSk, receiverBoxPk), "Encryption failed");
+        return CryptoUtils.encodeBase64(removeZeros(CRYPTO_BOX_CURVE25519XSALSA20POLY1305_BOXZEROBYTES, cypherTextBinary));
+    }
+
+    @Override
+    public String openBox(String cypherText, String nonce, String senderSignPk, String receiverSignSk) {
+        return openBox(cypherText,
+                CryptoUtils.decodeBase58(nonce),
+                CryptoUtils.decodeBase58(senderSignPk),
+                CryptoUtils.decodeBase58(receiverSignSk));
+    }
+
+    @Override
+    public String openBox(String cypherText, byte[] nonce, byte[] senderSignPk, byte[] receiverSignSk) {
+        checkLength(nonce, CRYPTO_BOX_CURVE25519XSALSA20POLY1305_NONCEBYTES);
+        byte[] cypherTextBinary = prependZeros(CRYPTO_BOX_CURVE25519XSALSA20POLY1305_BOXZEROBYTES, CryptoUtils.decodeBase64(cypherText));
+
+        byte[] receiverBoxSk = new byte[Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_SECRETKEYBYTES];
+        naCl.crypto_sign_ed25519_sk_to_curve25519(receiverBoxSk, receiverSignSk);
+
+        byte[] senderBoxPk = new byte[Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_PUBLICKEYBYTES];
+        naCl.crypto_sign_ed25519_pk_to_curve25519(senderBoxPk, senderSignPk);
+
+        byte[] messageBinary = new byte[cypherTextBinary.length];
+        isValid(sodium().crypto_box_curve25519xsalsa20poly1305_open(
+                messageBinary, cypherTextBinary, cypherTextBinary.length, nonce, senderBoxPk, receiverBoxSk),
+                "Decryption failed. Ciphertext failed verification.");
+        return CryptoUtils.encodeUTF8(removeZeros(CRYPTO_BOX_CURVE25519XSALSA20POLY1305_ZEROBYTES, messageBinary));
     }
 
     /* -- Internal methods -- */

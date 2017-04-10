@@ -89,7 +89,7 @@ public class TxSource {
 		}
 
 		/**
-		 * Source sortType : <ul>
+		 * Source type : <ul>
 		 * <li><code>D</code> : Universal Dividend</li>
 		 * <li><code>T</code> : Transaction</li>
 		 * </ul>

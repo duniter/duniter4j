@@ -163,9 +163,9 @@
             </configuration>
           </execution>
 
-          <!-- unpack ES gchange plugin -->
+          <!-- unpack ES subscription plugin -->
           <execution>
-            <id>unpack-es-gchange-plugin</id>
+            <id>unpack-es-subscription-plugin</id>
             <goals>
               <goal>unpack</goal>
             </goals>
@@ -174,12 +174,12 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.duniter</groupId>
-                  <artifactId>duniter4j-es-gchange</artifactId>
+                  <artifactId>duniter4j-es-subscription</artifactId>
                   <version>${project.version}</version>
                   <type>zip</type>
                 </artifactItem>
               </artifactItems>
-              <outputDirectory>${project.build.directory}/elasticsearch-${elasticsearch.version}/plugins/duniter4j-es-gchange</outputDirectory>
+              <outputDirectory>${project.build.directory}/elasticsearch-${elasticsearch.version}/plugins/duniter4j-es-subscription</outputDirectory>
               <silent>true</silent>
               <skip>${assembly.skip}</skip>
             </configuration>
@@ -270,8 +270,8 @@
                           <fileset dir="../duniter4j-es-user/target" includes="duniter4j-*${project.version}.jar">
                           </fileset>
                         </copy>
-                        <copy todir="${run.es.home}/plugins/duniter4j-es-gchange" overwrite="true">
-                          <fileset dir="../duniter4j-es-gchange/target" includes="duniter4j-*${project.version}.jar">
+                        <copy todir="${run.es.home}/plugins/duniter4j-es-subscription" overwrite="true">
+                          <fileset dir="../duniter4j-es-subscription/target" includes="duniter4j-*${project.version}.jar">
                           </fileset>
                         </copy>
                       </then>

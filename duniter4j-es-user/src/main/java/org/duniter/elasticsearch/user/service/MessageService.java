@@ -84,7 +84,7 @@ public class MessageService extends AbstractService {
     }
 
     /**
-     * Create index need for blockchain registry, if need
+     * Create index need for blockchain mail, if need
      */
     public MessageService createIndexIfNotExists() {
         try {
@@ -100,7 +100,7 @@ public class MessageService extends AbstractService {
     }
 
     /**
-     * Create index need for category registry
+     * Create index need for category mail
      * @throws JsonProcessingException
      */
     public MessageService createIndex() throws JsonProcessingException {
@@ -227,6 +227,18 @@ public class MessageService extends AbstractService {
 
                     // content (encrypted)
                     .startObject("content")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // hash
+                    .startObject("hash")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // signature
+                    .startObject("signature")
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()

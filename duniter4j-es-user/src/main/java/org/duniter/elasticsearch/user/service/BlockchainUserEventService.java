@@ -63,6 +63,8 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     public final UserEventService userEventService;
 
+    public final AdminService adminService;
+
     public final ObjectMapper objectMapper;
 
 
@@ -72,9 +74,11 @@ public class BlockchainUserEventService extends AbstractService implements Chang
     public BlockchainUserEventService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
                                       BlockchainService blockchainService,
                                       UserService userService,
+                                      AdminService adminService,
                                       UserEventService userEventService) {
         super("duniter.user.event.blockchain", client, settings, cryptoService);
         this.userService = userService;
+        this.adminService = adminService;
         this.userEventService = userEventService;
         this.objectMapper = JacksonUtils.newObjectMapper();
         ChangeService.registerListener(this);
@@ -150,8 +154,8 @@ public class BlockchainUserEventService extends AbstractService implements Chang
                 // Send notify on reconnection
                 if (errorNotified) {
                     errorNotified = false;
-                    userEventService.notifyAdmin(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.NODE_BMA_UP.name())
-                            .setMessage(I18n.n("duniter.event.NODE_BMA_UP"),
+                    adminService.notifyAdmin(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.NODE_BMA_UP.name())
+                            .setMessage(I18n.n("duniter.user.event.NODE_BMA_UP"),
                                     pluginSettings.getNodeBmaHost(),
                                     String.valueOf(pluginSettings.getNodeBmaPort()),
                                     pluginSettings.getClusterName())
@@ -168,8 +172,8 @@ public class BlockchainUserEventService extends AbstractService implements Chang
                 boolean wait = now - lastTimeUp < 60;
                 if (!wait) {
                     errorNotified = true;
-                    userEventService.notifyAdmin(UserEvent.newBuilder(UserEvent.EventType.ERROR, UserEventCodes.NODE_BMA_DOWN.name())
-                            .setMessage(I18n.n("duniter.event.NODE_BMA_DOWN"),
+                    adminService.notifyAdmin(UserEvent.newBuilder(UserEvent.EventType.ERROR, UserEventCodes.NODE_BMA_DOWN.name())
+                            .setMessage(I18n.n("duniter.user.event.NODE_BMA_DOWN"),
                                     pluginSettings.getNodeBmaHost(),
                                     String.valueOf(pluginSettings.getNodeBmaPort()),
                                     pluginSettings.getClusterName(),
@@ -184,21 +188,21 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         // Joiners
         if (CollectionUtils.isNotEmpty(block.getJoiners())) {
             for (BlockchainBlock.Joiner joiner: block.getJoiners()) {
-                notifyUserEvent(block, joiner.getPublicKey(), UserEventCodes.MEMBER_JOIN, I18n.n("duniter.user.event.ms.join"), block.getCurrency());
+                notifyUserEvent(block, joiner.getPublicKey(), UserEventCodes.MEMBER_JOIN, I18n.n("duniter.user.event.MEMBER_JOIN"), block.getCurrency());
             }
         }
 
         // Leavers
         if (CollectionUtils.isNotEmpty(block.getLeavers())) {
             for (BlockchainBlock.Joiner leaver: block.getJoiners()) {
-                notifyUserEvent(block, leaver.getPublicKey(), UserEventCodes.MEMBER_LEAVE, I18n.n("duniter.user.event.ms.leave"), block.getCurrency());
+                notifyUserEvent(block, leaver.getPublicKey(), UserEventCodes.MEMBER_LEAVE, I18n.n("duniter.user.event.MEMBER_LEAVE"), block.getCurrency());
             }
         }
 
         // Actives
         if (CollectionUtils.isNotEmpty(block.getActives())) {
             for (BlockchainBlock.Joiner active: block.getActives()) {
-                notifyUserEvent(block, active.getPublicKey(), UserEventCodes.MEMBER_ACTIVE, I18n.n("duniter.user.event.ms.active"), block.getCurrency());
+                notifyUserEvent(block, active.getPublicKey(), UserEventCodes.MEMBER_ACTIVE, I18n.n("duniter.user.event.MEMBER_ACTIVE"), block.getCurrency());
             }
         }
 
@@ -239,7 +243,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
             if (parts.length >= 3 && parts[2].startsWith("SIG(")) {
                 String receiver = parts[2].substring(4, parts[2].length() - 1);
                 if (!senders.contains(receiver) && !receivers.contains(receiver)) {
-                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.tx.received"), sendersPubkeys, senderNames);
+                    notifyUserEvent(block, receiver, UserEventCodes.TX_RECEIVED, I18n.n("duniter.user.event.TX_RECEIVED"), sendersPubkeys, senderNames);
                     receivers.add(receiver);
                 }
             }
@@ -250,7 +254,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
             String receiverNames = userService.joinNamesFromPubkeys(receivers, DEFAULT_PUBKEYS_SEPARATOR, true);
             String receiverPubkeys = ModelUtils.joinPubkeys(receivers, DEFAULT_PUBKEYS_SEPARATOR, false);
             for (String sender : senders) {
-                notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.tx.sent"), receiverPubkeys, receiverNames);
+                notifyUserEvent(block, sender, UserEventCodes.TX_SENT, I18n.n("duniter.user.event.TX_SENT"), receiverPubkeys, receiverNames);
             }
         }
 
@@ -266,14 +270,14 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         if (senderName == null) {
             senderName = ModelUtils.minifyPubkey(sender);
         }
-        notifyUserEvent(block, receiver, UserEventCodes.CERT_RECEIVED, I18n.n("duniter.user.event.cert.received"), sender, senderName);
+        notifyUserEvent(block, receiver, UserEventCodes.CERT_RECEIVED, I18n.n("duniter.user.event.CERT_RECEIVED"), sender, senderName);
 
         // Sent
         String receiverName = userService.getProfileTitle(receiver);
         if (receiverName == null) {
             receiverName = ModelUtils.minifyPubkey(receiver);
         }
-        notifyUserEvent(block, sender, UserEventCodes.CERT_SENT, I18n.n("duniter.user.event.cert.sent"), receiver, receiverName);
+        notifyUserEvent(block, sender, UserEventCodes.CERT_SENT, I18n.n("duniter.user.event.CERT_SENT"), receiver, receiverName);
     }
 
     private void notifyUserEvent(BlockchainBlock block, String pubkey, UserEventCodes code, String message, String... params) {
