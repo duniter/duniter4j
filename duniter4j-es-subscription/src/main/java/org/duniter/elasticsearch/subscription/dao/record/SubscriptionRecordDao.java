@@ -1,7 +1,7 @@
 package org.duniter.elasticsearch.subscription.dao.record;
 
 import org.duniter.elasticsearch.subscription.dao.SubscriptionIndexTypeDao;
-import org.duniter.elasticsearch.subscription.model.Subscription;
+import org.duniter.elasticsearch.subscription.model.SubscriptionRecord;
 
 import java.util.List;
 
@@ -12,5 +12,5 @@ public interface SubscriptionRecordDao<T extends SubscriptionIndexTypeDao> exten
 
     String TYPE = "record";
 
-    List<Subscription> getSubscriptions(int from, int size, String recipient, String... types);
+    List<SubscriptionRecord> getSubscriptions(int from, int size, String recipient, String... types);
 }

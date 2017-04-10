@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.dao;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.Preconditions;
 import org.duniter.elasticsearch.dao.handler.StringReaderHandler;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
@@ -174,5 +175,23 @@ public abstract class AbstractIndexTypeDao<T extends IndexTypeDao> extends Abstr
     @Override
     public boolean existsIndex() {
         return client.existsIndex(index);
+    }
+
+    public void create(String json, boolean wait) {
+        Preconditions.checkNotNull(json);
+
+        // Execute
+        client.safeExecuteRequest(client.prepareIndex(getIndex(), getType())
+                .setRefresh(false) // let's see if this works
+                .setSource(json), wait);
+    }
+
+    public void update(String id, String json, boolean wait) {
+        Preconditions.checkNotNull(json);
+
+        // Execute
+        client.safeExecuteRequest(client.prepareUpdate(getIndex(), getType(), id)
+                .setRefresh(false) // let's see if this works
+                .setDoc(json), wait);
     }
 }

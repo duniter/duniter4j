@@ -32,7 +32,11 @@ public interface SubscriptionIndexTypeDao<T extends SubscriptionIndexTypeDao> ex
 
     String create(final String json);
 
+    void create(final String json, boolean wait);
+
     void update(final String id, final String json);
+
+    void update(final String id, final String json, boolean wait);
 
     void checkSameDocumentIssuer(String id, String expectedIssuer);
 

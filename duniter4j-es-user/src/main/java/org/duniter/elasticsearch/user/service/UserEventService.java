@@ -59,6 +59,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
 import java.util.*;
@@ -240,6 +241,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
                 .setFetchSource(true)
                 .setQuery(query)
+                .addSort(UserEvent.PROPERTY_TIME, SortOrder.DESC)
                 .get();
 
 

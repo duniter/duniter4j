@@ -28,26 +28,19 @@ import org.duniter.core.client.model.elasticsearch.Record;
 /**
  * Created by blavenie on 01/12/16.
  */
-public class Subscription<T> extends Record{
+public class SubscriptionExecution extends Record {
 
     public static final String PROPERTY_RECIPIENT = "recipient";
 
-    public static final String PROPERTY_NONCE = "nonce";
+    public static final String PROPERTY_RECORD_TYPE = "recordType";
 
-    public static final String PROPERTY_RECIPIENT_CONTENT = "recipientContent";
-
-    public static final String PROPERTY_ISSUER_CONTENT = "issuerContent";
-
-    public static final String PROPERTY_CONTENT = "content";
-
-    public static final String PROPERTY_TYPE = "type";
+    public static final String PROPERTY_RECORD_ID = "recordId";
 
     private String recipient;
-    private String nonce;
-    private String recipientContent;
-    private String issuerContent;
-    private String type;
-    private T content;
+    private String recordType;
+    private String recordId;
+
+    private SubscriptionRecord record;
 
     public String getRecipient() {
         return recipient;
@@ -57,45 +50,29 @@ public class Subscription<T> extends Record{
         this.recipient = recipient;
     }
 
-    public String getNonce() {
-        return nonce;
+    public String getRecordType() {
+        return recordType;
     }
 
-    public void setNonce(String nonce) {
-        this.nonce = nonce;
+    public void setRecordType(String recordType) {
+        this.recordType = recordType;
     }
 
-    public String getRecipientContent() {
-        return recipientContent;
+    public String getRecordId() {
+        return recordId;
     }
 
-    public void setRecipientContent(String recipientContent) {
-        this.recipientContent = recipientContent;
-    }
-
-    public String getIssuerContent() {
-        return issuerContent;
-    }
-
-    public void setIssuerContent(String issuerContent) {
-        this.issuerContent = issuerContent;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
+    public void setRecordId(String recordId) {
+        this.recordId = recordId;
     }
 
     @JsonIgnore
-    public T getContent() {
-        return content;
+    public SubscriptionRecord getRecord() {
+        return record;
     }
 
     @JsonIgnore
-    public void setContent(T content) {
-        this.content = content;
+    public void setRecord(SubscriptionRecord record) {
+        this.record = record;
     }
 }

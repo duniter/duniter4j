@@ -30,18 +30,14 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.json.JsonSyntaxException;
-import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.dao.AbstractDao;
 import org.duniter.elasticsearch.dao.BlockDao;
-import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
-import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -88,7 +84,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
                     .setSource(json);
 
             // Execute
-            safeExecute(request, wait);
+            client.safeExecuteRequest(request, wait);
         }
         catch(JsonProcessingException e) {
             throw new TechnicalException(e);
@@ -114,7 +110,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
                 .setSource(json);
 
         // Execute
-        safeExecute(request, wait);
+        client.safeExecuteRequest(request, wait);
     }
 
     public boolean isExists(String currencyName, String id) {
@@ -138,7 +134,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
                     .setDoc(json);
 
             // Execute
-            safeExecute(request, wait);
+            client.safeExecuteRequest(request, wait);
         }
         catch(JsonProcessingException e) {
             throw new TechnicalException(e);
@@ -162,7 +158,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
                 .setDoc(json);
 
         // Execute
-        safeExecute(request, wait);
+        client.safeExecuteRequest(request, wait);
     }
 
     public List<BlockchainBlock> findBlocksByHash(String currencyName, String query) {
@@ -360,29 +356,5 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         });
 
         return result;
-    }
-
-    protected void safeExecute(ActionRequestBuilder<?, ?, ?> request, boolean wait) {
-        // Execute in a pool
-        if (!wait) {
-            boolean acceptedInPool = false;
-            while(!acceptedInPool)
-                try {
-                    request.execute();
-                    acceptedInPool = true;
-                }
-                catch(EsRejectedExecutionException e) {
-                    // not accepted, so wait
-                    try {
-                        Thread.sleep(1000); // 1s
-                    }
-                    catch(InterruptedException e2) {
-                        // silent
-                    }
-                }
-
-        } else {
-            request.execute().actionGet();
-        }
     }
 }

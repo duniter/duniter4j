@@ -24,20 +24,17 @@ package org.duniter.elasticsearch.subscription.service;
 
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.exception.TechnicalException;
-import org.duniter.core.test.TestResource;
 import org.duniter.elasticsearch.subscription.util.stringtemplate.DateRenderer;
-import org.duniter.elasticsearch.subscription.util.stringtemplate.I18nRenderer;
+import org.duniter.elasticsearch.subscription.util.stringtemplate.StringRenderer;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupDir;
-import org.stringtemplate.v4.StringRenderer;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.util.Date;
+import java.util.Locale;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -47,10 +44,7 @@ import static org.junit.Assert.assertNotNull;
 public class SubscriptionTemplateTest {
     private static final Logger log = LoggerFactory.getLogger(SubscriptionTemplateTest.class);
 
-    private static final boolean verbose = true;
-
-    //@ClassRule
-    public static final TestResource resource = TestResource.create();
+    private static final boolean verbose = false;
 
     @Test
     public void testHtmlEmail() throws Exception{
@@ -60,36 +54,22 @@ public class SubscriptionTemplateTest {
 
             group.registerRenderer(Date.class, new DateRenderer());
             group.registerRenderer(String.class, new StringRenderer());
-            group.registerRenderer(String.class, new I18nRenderer());
 
-            ST contentEmail = group.getInstanceOf("html_email_content");
-            contentEmail.add("issuer", "MyIssuerName");
-            contentEmail.add("url", "https://g1.duniter.fr");
-            contentEmail.add("senderPubkey", "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU");
-            contentEmail.add("senderName", ModelUtils.minifyPubkey("G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU"));
-            contentEmail.addAggr("events.{description, time}", new Object[]{"My event description", new Date()});
-            assertNotNull(contentEmail);
+            ST tpl = group.getInstanceOf("html_email_content");
+            tpl.add("issuerName", "MyIssuerName");
+            tpl.add("issuerPubkey", "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of");
+            tpl.add("url", "https://g1.duniter.fr");
+            tpl.add("senderPubkey", "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU");
+            tpl.add("senderName", ModelUtils.minifyPubkey("G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU"));
+            tpl.addAggr("events.{description, time}", new Object[]{"My event description", new Date()});
+            tpl.addAggr("events.{description, time}", new Object[]{"My event description 2", new Date()});
+            assertNotNull(tpl);
 
-            ST css_logo = group.getInstanceOf("css_logo");
-            assertNotNull(css_logo);
-
-            ST htmlTpl = group.getInstanceOf("html");
-            assertNotNull(htmlTpl);
-            htmlTpl.add("content", contentEmail.render());
-            htmlTpl.add("useCss", "true");
-            String html = htmlTpl.render();
+            String email = tpl.render(new Locale("en", "GB"));
 
             if (verbose) {
-                System.out.println(html);
+                System.out.println(email);
             }
-
-            //FileWriter fw = new FileWriter(new File(resource.getResourceDirectory("out"), "page.html"));
-            FileWriter fw = new FileWriter(new File("/home/blavenie/git/duniter4j/duniter4j-es-subscription/src/test/resources/test2.html"));
-            fw.write(html);
-            fw.flush();
-            fw.close();
-
-
         }
         catch (Exception e) {
             throw new TechnicalException(e);
@@ -104,17 +84,17 @@ public class SubscriptionTemplateTest {
 
             group.registerRenderer(Date.class, new DateRenderer());
             group.registerRenderer(String.class, new StringRenderer());
-            group.registerRenderer(String.class, new I18nRenderer());
 
             ST tpl = group.getInstanceOf("text_email");
-            tpl.add("issuer", "MyIssuerName");
+            tpl.add("issuerPubkey", "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of");
+            tpl.add("issuerName", "kimamila");
             tpl.add("url", "https://g1.duniter.fr");
             tpl.add("senderPubkey", "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU");
             tpl.add("senderName", ModelUtils.minifyPubkey("G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU"));
             tpl.addAggr("events.{description, time}", new Object[]{"My event description", new Date()});
             assertNotNull(tpl);
 
-            String text = tpl.render();
+            String text = tpl.render(new Locale("en", "GB"));
 
             if (verbose) {
                 System.out.println(text);

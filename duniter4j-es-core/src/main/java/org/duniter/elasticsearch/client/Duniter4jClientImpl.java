@@ -94,6 +94,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
@@ -152,10 +153,9 @@ public class Duniter4jClientImpl implements Duniter4jClient {
     @Override
     public void updateDocumentFromJson(String index, String type, String id, String json) {
         // Execute indexBlocksFromNode
-        client.prepareUpdate(index, type, id)
+        safeExecuteRequest(client.prepareUpdate(index, type, id)
                 .setRefresh(true)
-                .setDoc(json)
-                .execute().actionGet();
+                .setDoc(json), true);
     }
 
     @Override
@@ -962,5 +962,29 @@ public class Duniter4jClientImpl implements Duniter4jClient {
 
     public void close() {
         client.close();
+    }
+
+    public void safeExecuteRequest(ActionRequestBuilder<?, ?, ?> request, boolean wait) {
+        // Execute in a pool
+        if (!wait) {
+            boolean acceptedInPool = false;
+            while(!acceptedInPool)
+                try {
+                    request.execute();
+                    acceptedInPool = true;
+                }
+                catch(EsRejectedExecutionException e) {
+                    // not accepted, so wait
+                    try {
+                        Thread.sleep(1000); // 1s
+                    }
+                    catch(InterruptedException e2) {
+                        // silent
+                    }
+                }
+
+        } else {
+            request.execute().actionGet();
+        }
     }
 }

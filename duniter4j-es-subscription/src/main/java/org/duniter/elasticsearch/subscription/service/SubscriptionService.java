@@ -37,11 +37,14 @@ import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.subscription.PluginSettings;
+import org.duniter.elasticsearch.subscription.dao.execution.SubscriptionExecutionDao;
 import org.duniter.elasticsearch.subscription.dao.record.SubscriptionRecordDao;
-import org.duniter.elasticsearch.subscription.model.Subscription;
+import org.duniter.elasticsearch.subscription.model.SubscriptionExecution;
+import org.duniter.elasticsearch.subscription.model.SubscriptionRecord;
 import org.duniter.elasticsearch.subscription.model.email.EmailSubscription;
+import org.duniter.elasticsearch.subscription.util.DateUtils;
 import org.duniter.elasticsearch.subscription.util.stringtemplate.DateRenderer;
-import org.duniter.elasticsearch.subscription.util.stringtemplate.I18nRenderer;
+import org.duniter.elasticsearch.subscription.util.stringtemplate.StringRenderer;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.AdminService;
@@ -49,11 +52,13 @@ import org.duniter.elasticsearch.user.service.MailService;
 import org.duniter.elasticsearch.user.service.UserEventService;
 import org.duniter.elasticsearch.user.service.UserService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.unit.TimeValue;
 import org.nuiton.i18n.I18n;
-import org.stringtemplate.v4.*;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupDir;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -62,6 +67,7 @@ import java.util.stream.Collectors;
 public class SubscriptionService extends AbstractService {
 
     private SubscriptionRecordDao subscriptionRecordDao;
+    private SubscriptionExecutionDao subscriptionExecutionDao;
     private ThreadPool threadPool;
     private MailService mailService;
     private AdminService adminService;
@@ -74,6 +80,7 @@ public class SubscriptionService extends AbstractService {
                                PluginSettings settings,
                                CryptoService cryptoService,
                                SubscriptionRecordDao subscriptionRecordDao,
+                               SubscriptionExecutionDao subscriptionExecutionDao,
                                ThreadPool threadPool,
                                MailService mailService,
                                AdminService adminService,
@@ -81,6 +88,7 @@ public class SubscriptionService extends AbstractService {
                                UserEventService userEventService) {
         super("subscription.service", client, settings, cryptoService);
         this.subscriptionRecordDao = subscriptionRecordDao;
+        this.subscriptionExecutionDao = subscriptionExecutionDao;
         this.threadPool = threadPool;
         this.mailService = mailService;
         this.adminService = adminService;
@@ -123,14 +131,26 @@ public class SubscriptionService extends AbstractService {
             return this;
         }
 
-        threadPool.scheduleWithFixedDelay(
-                this::executeEmailSubscriptions,
-                new TimeValue(pluginSettings.getExecuteEmailSubscriptionsInterval()));
+
+        // Startup Start
+        threadPool.schedule(() -> executeEmailSubscriptions(EmailSubscription.Frequency.daily));
+
+        // Daily execution
+        threadPool.scheduler().scheduleAtFixedRate(
+                () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
+                DateUtils.delayBeforeHour(pluginSettings.getEmailSubscriptionsExecuteHour()),
+                1, TimeUnit.DAYS);
+
+        // Weekly execution
+        threadPool.scheduler().scheduleAtFixedRate(
+                () -> executeEmailSubscriptions(EmailSubscription.Frequency.weekly),
+                DateUtils.delayBeforeDayAndHour(pluginSettings.getEmailSubscriptionsExecuteDayOfWeek(), pluginSettings.getEmailSubscriptionsExecuteHour()),
+                7, TimeUnit.DAYS);
 
         return this;
     }
 
-    public void executeEmailSubscriptions() {
+    public void executeEmailSubscriptions(final EmailSubscription.Frequency frequency) {
 
         final String senderPubkey = pluginSettings.getNodePubkey();
 
@@ -139,11 +159,11 @@ public class SubscriptionService extends AbstractService {
 
         boolean hasMore = true;
         while (hasMore) {
-            List<Subscription> subscriptions = subscriptionRecordDao.getSubscriptions(from, size, senderPubkey, EmailSubscription.TYPE);
+            List<SubscriptionRecord> subscriptions = subscriptionRecordDao.getSubscriptions(from, size, senderPubkey, EmailSubscription.TYPE);
 
             // Get profiles titles, for issuers and the sender
             Set<String> issuers =  subscriptions.stream()
-                    .map(Subscription::getIssuer)
+                    .map(SubscriptionRecord::getIssuer)
                     .distinct()
                     .collect(Collectors.toSet());
             final Map<String, String> profileTitles = userService.getProfileTitles(
@@ -151,12 +171,12 @@ public class SubscriptionService extends AbstractService {
             final String senderName = (profileTitles != null && profileTitles.containsKey(senderPubkey)) ? profileTitles.get(senderPubkey) :
                 ModelUtils.minifyPubkey(senderPubkey);
 
-            subscriptions.stream()
+            subscriptions.parallelStream()
                     .map(record -> decryptEmailSubscription((EmailSubscription)record))
-                    .filter(Objects::nonNull)
+                    .filter(record -> (record != null && record.getContent().getFrequency() == frequency))
                     .map(record -> processEmailSubscription(record, senderPubkey, senderName, profileTitles))
                     .filter(Objects::nonNull)
-                    .forEach(this::saveSubscription);
+                    .forEach(this::saveExecution);
 
             hasMore = CollectionUtils.size(subscriptions) >= size;
             from += size;
@@ -199,7 +219,7 @@ public class SubscriptionService extends AbstractService {
         return subscription;
     }
 
-    protected EmailSubscription processEmailSubscription(final EmailSubscription subscription,
+    protected SubscriptionExecution processEmailSubscription(final EmailSubscription subscription,
                                                          final String senderPubkey,
                                                          final String senderName,
                                                          final Map<String, String> profileTitles) {
@@ -207,26 +227,44 @@ public class SubscriptionService extends AbstractService {
 
         logger.info(String.format("Processing email subscription [%s]", subscription.getId()));
 
-        Long lastTime = 0l; // TODO get it from subscription ?
+        SubscriptionExecution lastExecution = subscriptionExecutionDao.getLastExecution(subscription);
+        Long lastExecutionTime;
+
+        if (lastExecution != null) {
+            lastExecutionTime = lastExecution.getTime();
+        }
+        // If first email execution: only send event from the last 7 days.
+        else  {
+            Calendar defaultDateLimit = new GregorianCalendar();
+            defaultDateLimit.setTimeInMillis(System.currentTimeMillis());
+            defaultDateLimit.add(Calendar.DAY_OF_YEAR, - 7);
+            defaultDateLimit.set(Calendar.HOUR_OF_DAY, 0);
+            defaultDateLimit.set(Calendar.MINUTE, 0);
+            defaultDateLimit.set(Calendar.SECOND, 0);
+            defaultDateLimit.set(Calendar.MILLISECOND, 0);
+            lastExecutionTime = defaultDateLimit.getTimeInMillis() / 1000;
+        }
 
         // Get last user events
         String[] includes = subscription.getContent() == null ? null : subscription.getContent().getIncludes();
         String[] excludes = subscription.getContent() == null ? null : subscription.getContent().getExcludes();
-        List<UserEvent> userEvents = userEventService.getUserEvents(subscription.getIssuer(), lastTime, includes, excludes);
+        List<UserEvent> userEvents = userEventService.getUserEvents(subscription.getIssuer(), lastExecutionTime, includes, excludes);
 
+        if (CollectionUtils.isEmpty(userEvents)) return null; // no events: stop here
 
-        STGroup templates = new STGroupDir("templates", '$', '$');
-        templates.registerRenderer(Date.class, new DateRenderer());
-        //templates.registerRenderer(String.class, new StringRenderer());
-        //templates.registerRenderer(Number.class, new NumberRenderer());
-        templates.registerRenderer(String.class, new I18nRenderer());
+        // Get user locale
         String[] localParts = subscription.getContent() != null && subscription.getContent().getLocale() != null ?
                 subscription.getContent().getLocale().split("-") : new String[]{"en", "GB"};
-
         Locale issuerLocale = localParts.length >= 2 ? new Locale(localParts[0].toLowerCase(), localParts[1].toUpperCase()) : new Locale(localParts[0].toLowerCase());
 
-        // Compute text
-        String text = fillTemplate(
+        // Configure templates engine
+        STGroup templates = new STGroupDir("templates", '$', '$');
+        templates.registerRenderer(Date.class, new DateRenderer());
+        templates.registerRenderer(String.class, new StringRenderer());
+        //templates.registerRenderer(Number.class, new NumberRenderer());
+
+        // Compute text content
+        final String text = fillTemplate(
                 templates.getInstanceOf("text_email"),
                 subscription,
                 senderPubkey,
@@ -237,7 +275,7 @@ public class SubscriptionService extends AbstractService {
                 .render(issuerLocale);
 
         // Compute HTML content
-        String html = fillTemplate(
+        final String html = fillTemplate(
                 templates.getInstanceOf("html_email_content"),
                 subscription,
                 senderPubkey,
@@ -247,22 +285,38 @@ public class SubscriptionService extends AbstractService {
                 pluginSettings.getCesiumUrl())
                 .render(issuerLocale);
 
-        mailService.sendHtmlEmailWithText(
+
+
+        // Schedule email sending
+        threadPool.schedule(() -> mailService.sendHtmlEmailWithText(
                 emailSubjectPrefix + I18n.t("duniter4j.es.subscription.email.subject", userEvents.size()),
                 text,
                 "<body>" + html + "</body>",
-                subscription.getContent().getEmail());
-        return subscription;
+                subscription.getContent().getEmail()));
+
+
+        // Compute last time (should be the first one, as events are sorted in DESC order)
+        Long lastEventTime = userEvents.get(0).getTime();
+        if (lastExecution == null) {
+            lastExecution = new SubscriptionExecution();
+            lastExecution.setRecipient(subscription.getIssuer());
+            lastExecution.setRecordType(subscription.getType());
+            lastExecution.setRecordId(subscription.getId());
+        }
+        lastExecution.setTime(lastEventTime);
+
+
+        return lastExecution;
     }
 
 
     public static ST fillTemplate(ST template,
-                                      EmailSubscription subscription,
-                                      String senderPubkey,
-                                      String senderName,
-                                      Map<String, String> issuerProfilNames,
-                                      List<UserEvent> userEvents,
-                                      String cesiumSiteUrl) {
+                                  EmailSubscription subscription,
+                                  String senderPubkey,
+                                  String senderName,
+                                  Map<String, String> issuerProfilNames,
+                                  List<UserEvent> userEvents,
+                                  String cesiumSiteUrl) {
         String issuerName = issuerProfilNames != null && issuerProfilNames.containsKey(subscription.getIssuer()) ?
                 issuerProfilNames.get(subscription.getIssuer()) :
                 ModelUtils.minifyPubkey(subscription.getIssuer());
@@ -271,7 +325,8 @@ public class SubscriptionService extends AbstractService {
         try {
             // Compute body
             template.add("url", cesiumSiteUrl);
-            template.add("issuer", issuerName);
+            template.add("issuerPubkey", subscription.getIssuer());
+            template.add("issuerName", issuerName);
             template.add("senderPubkey", senderPubkey);
             template.add("senderName", senderName);
             userEvents.forEach(userEvent -> {
@@ -282,7 +337,6 @@ public class SubscriptionService extends AbstractService {
                     description,
                     new Date(userEvent.getTime() * 1000)
                 });
-
             });
 
             return template;
@@ -293,66 +347,46 @@ public class SubscriptionService extends AbstractService {
         }
     }
 
+    protected void saveExecution(SubscriptionExecution execution) {
+        Preconditions.checkNotNull(execution);
+        Preconditions.checkNotNull(execution.getRecipient());
+        Preconditions.checkNotNull(execution.getRecordType());
+        Preconditions.checkNotNull(execution.getRecordId());
 
-    public static String computeTextEmail(STGroup templates,
-                                          Locale issuerLocale,
-                                          EmailSubscription subscription,
-                                          String senderPubkey,
-                                          String senderName,
-                                          Map<String, String> issuerProfilNames,
-                                          List<UserEvent> userEvents,
-                                          String cesiumSiteUrl) {
-        String issuerName = issuerProfilNames != null && issuerProfilNames.containsKey(subscription.getIssuer()) ?
-                issuerProfilNames.get(subscription.getIssuer()) :
-                ModelUtils.minifyPubkey(subscription.getIssuer());
+        // Update issuer
+        execution.setIssuer(pluginSettings.getNodePubkey());
 
-        try {
-            // Compute text content
-            ST tpl = templates.getInstanceOf("text_email");
-            tpl.add("url", cesiumSiteUrl);
-            tpl.add("issuer", issuerName);
-            tpl.add("url", cesiumSiteUrl);
-            tpl.add("senderPubkey", senderPubkey);
-            tpl.add("senderName", senderName);
-            userEvents.forEach(userEvent -> {
-                String description = userEvent.getParams() != null ?
-                        I18n.t("duniter.user.event." + userEvent.getCode().toUpperCase(), userEvent.getParams()) :
-                        I18n.t("duniter.user.event." + userEvent.getCode().toUpperCase());
-                tpl.addAggr("events.{description, time}", new Object[]{
-                        description,
-                        new Date(userEvent.getTime() * 1000)
-                });
+        // Fill hash + signature
+        String json = toJson(execution, true/*skip hash and signature*/);
+        execution.setHash(cryptoService.hash(json));
+        execution.setSignature(cryptoService.sign(json, pluginSettings.getNodeKeypair().getSecKey()));
 
-            });
+        if (execution.getId() == null) {
 
-            return tpl.render();
+            subscriptionExecutionDao.create(json, false/*not wait*/);
         }
-        catch (Exception e) {
-            throw new TechnicalException(e);
+        else {
+            subscriptionExecutionDao.update(execution.getId(), json, false/*not wait*/);
         }
     }
 
-    protected EmailSubscription saveSubscription(EmailSubscription subscription) {
-        Preconditions.checkNotNull(subscription);
-
-        //mailService.sendEmail();
-        return subscription;
+    private String toJson(Record record) {
+        return toJson(record, false);
     }
 
-    private String toJson(EmailSubscription subscription) {
-        return toJson(subscription, false);
-    }
-
-    private String toJson(EmailSubscription subscription, boolean cleanHashAndSignature) {
+    private String toJson(Record record, boolean cleanHashAndSignature) {
+        Preconditions.checkNotNull(record);
         try {
-            String json = objectMapper.writeValueAsString(subscription);
+            String json = objectMapper.writeValueAsString(record);
             if (cleanHashAndSignature) {
                 json = JacksonUtils.removeAttribute(json, Record.PROPERTY_SIGNATURE);
                 json = JacksonUtils.removeAttribute(json, Record.PROPERTY_HASH);
             }
             return json;
         } catch(JsonProcessingException e) {
-            throw new TechnicalException("Unable to serialize UserEvent object", e);
+            throw new TechnicalException("Unable to serialize object " + record.getClass().getName(), e);
         }
     }
+
+
 }

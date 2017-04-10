@@ -5,7 +5,7 @@ import org.duniter.core.util.CollectionUtils;
 import org.duniter.elasticsearch.subscription.PluginSettings;
 import org.duniter.elasticsearch.subscription.dao.AbstractSubscriptionIndexTypeDao;
 import org.duniter.elasticsearch.subscription.dao.SubscriptionIndexDao;
-import org.duniter.elasticsearch.subscription.model.Subscription;
+import org.duniter.elasticsearch.subscription.model.SubscriptionRecord;
 import org.duniter.elasticsearch.subscription.model.email.EmailSubscription;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -13,7 +13,6 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
@@ -36,12 +35,12 @@ public class SubscriptionRecordDaoImpl extends AbstractSubscriptionIndexTypeDao<
     }
 
     @Override
-    public List<Subscription> getSubscriptions(int from, int size, String recipient, String... types) {
+    public List<SubscriptionRecord> getSubscriptions(int from, int size, String recipient, String... types) {
 
         BoolQueryBuilder query = QueryBuilders.boolQuery()
-                .must(QueryBuilders.termQuery(Subscription.PROPERTY_RECIPIENT, recipient));
+                .must(QueryBuilders.termQuery(SubscriptionRecord.PROPERTY_RECIPIENT, recipient));
         if (CollectionUtils.isNotEmpty(types)) {
-            query.must(QueryBuilders.termsQuery(Subscription.PROPERTY_TYPE, types));
+            query.must(QueryBuilders.termsQuery(SubscriptionRecord.PROPERTY_TYPE, types));
         }
 
         SearchResponse response = client.prepareSearch(SubscriptionIndexDao.INDEX)
@@ -123,9 +122,9 @@ public class SubscriptionRecordDaoImpl extends AbstractSubscriptionIndexTypeDao<
         }
     }
 
-    protected Subscription toSubscription(SearchHit searchHit) {
+    protected SubscriptionRecord toSubscription(SearchHit searchHit) {
 
-        Subscription record = null;
+        SubscriptionRecord record = null;
 
         if (SubscriptionRecordDao.TYPE.equals(searchHit.getType())) {
             record = client.readSourceOrNull(searchHit, EmailSubscription.class);

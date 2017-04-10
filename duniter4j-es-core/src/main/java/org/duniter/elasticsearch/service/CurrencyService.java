@@ -230,6 +230,8 @@ public class CurrencyService extends AbstractService {
         saveCurrency(currency, pubkey);
     }
 
+
+
     /* -- Internal methods -- */
 
 

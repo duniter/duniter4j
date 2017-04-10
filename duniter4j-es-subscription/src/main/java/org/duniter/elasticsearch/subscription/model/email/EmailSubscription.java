@@ -22,12 +22,12 @@ package org.duniter.elasticsearch.subscription.model.email;
  * #L%
  */
 
-import org.duniter.elasticsearch.subscription.model.Subscription;
+import org.duniter.elasticsearch.subscription.model.SubscriptionRecord;
 
 /**
  * Created by blavenie on 01/12/16.
  */
-public class EmailSubscription extends Subscription<EmailSubscription.Content> {
+public class EmailSubscription extends SubscriptionRecord<EmailSubscription.Content> {
 
     public static final String TYPE = "email";
 
@@ -35,9 +35,15 @@ public class EmailSubscription extends Subscription<EmailSubscription.Content> {
         return new EmailSubscription.Content();
     }
 
+    public enum Frequency {
+        daily,
+        weekly
+    }
+
     public static class Content {
 
         public static final String PROPERTY_EMAIL = "email";
+        public static final String PROPERTY_FREQUENCY = "frequency";
         public static final String PROPERTY_LOCALE = "locale";
         public static final String PROPERTY_INCLUDES = "includes";
         public static final String PROPERTY_EXCLUDES = "excludes";
@@ -46,6 +52,7 @@ public class EmailSubscription extends Subscription<EmailSubscription.Content> {
         private String[] includes;
         private String[] excludes;
         private String locale;
+        private Frequency frequency;
 
         public String getEmail() {
             return email;
@@ -77,6 +84,14 @@ public class EmailSubscription extends Subscription<EmailSubscription.Content> {
 
         public void setLocale(String locale) {
             this.locale = locale;
+        }
+
+        public Frequency getFrequency() {
+            return frequency;
+        }
+
+        public void setFrequency(Frequency frequency) {
+            this.frequency = frequency;
         }
     }
 

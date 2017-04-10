@@ -4,6 +4,7 @@ import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.local.LocalEntity;
 import org.duniter.elasticsearch.dao.handler.StringReaderHandler;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.search.SearchHit;
@@ -73,4 +74,6 @@ public interface Duniter4jClient extends Bean, Client {
     void bulkFromStream(InputStream is, String indexName, String indexType, StringReaderHandler handler);
 
     void flushDeleteBulk(final String index, final String type, BulkRequestBuilder bulkRequest);
+
+    void safeExecuteRequest(ActionRequestBuilder<?, ?, ?> request, boolean wait);
 }

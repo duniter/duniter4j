@@ -39,6 +39,7 @@ import org.duniter.elasticsearch.dao.handler.StringReaderHandler;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequestBuilder;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
@@ -58,6 +59,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
@@ -100,6 +102,5 @@ public abstract class AbstractDao implements Bean {
     }
 
     /* -- protected methods  -- */
-
 
 }

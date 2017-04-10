@@ -102,7 +102,7 @@ public class SubscriptionServiceTest {
         // wait 10s
         Thread.sleep(10000);
 
-        service.executeEmailSubscriptions();
+        service.executeEmailSubscriptions(EmailSubscription.Frequency.daily);
 
         // wait 10s
         Thread.sleep(10000);

@@ -84,11 +84,19 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     /**
-     * Time interval (millisecond) to send email ? (default: 3600000 = 1h)
+     * Day of the week to trigger weekly email subscription (default: 1)
      * @return
      */
-    public long getExecuteEmailSubscriptionsInterval() {
-        return settings.getAsLong("duniter.subscription.email.interval", 36000000l) /*1hour*/;
+    public int getEmailSubscriptionsExecuteDayOfWeek() {
+        return settings.getAsInt("duniter.subscription.email.dayOfWeek", 1);
+    }
+
+    /**
+     * Hour in day to trigger daily email subscription (default: 4 AM)
+     * @return
+     */
+    public int getEmailSubscriptionsExecuteHour() {
+        return settings.getAsInt("duniter.subscription.email.hourOfDay", 4) /*4 hour in the morning*/;
     }
 
     /* -- delegate methods -- */

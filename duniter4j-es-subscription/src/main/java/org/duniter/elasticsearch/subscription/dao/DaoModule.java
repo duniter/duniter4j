@@ -22,6 +22,8 @@ package org.duniter.elasticsearch.subscription.dao;
  * #L%
  */
 
+import org.duniter.elasticsearch.subscription.dao.execution.SubscriptionExecutionDao;
+import org.duniter.elasticsearch.subscription.dao.execution.SubscriptionExecutionDaoImpl;
 import org.duniter.elasticsearch.subscription.dao.record.SubscriptionRecordDao;
 import org.duniter.elasticsearch.subscription.dao.record.SubscriptionRecordDaoImpl;
 import org.elasticsearch.common.inject.AbstractModule;
@@ -36,6 +38,7 @@ public class DaoModule extends AbstractModule implements Module {
 
         // Subscription types
         bind(SubscriptionRecordDao.class).to(SubscriptionRecordDaoImpl.class).asEagerSingleton();
+        bind(SubscriptionExecutionDao.class).to(SubscriptionExecutionDaoImpl.class).asEagerSingleton();
     }
 
 }
