@@ -140,7 +140,7 @@ public class MessageService extends AbstractService {
         // Notify recipient
         userEventService.notifyUser(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.MESSAGE_RECEIVED.name())
                 .setRecipient(recipient)
-                .setMessage(I18n.n("duniter.user.event.message.received"), issuer, ModelUtils.minifyPubkey(issuer))
+                .setMessage(I18n.n("duniter.user.event.MESSAGE_RECEIVED"), issuer, ModelUtils.minifyPubkey(issuer))
                 .setTime(time)
                 .setReference(INDEX, INBOX_TYPE, messageId)
                 .build());

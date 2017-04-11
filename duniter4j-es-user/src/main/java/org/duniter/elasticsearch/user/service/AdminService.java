@@ -40,6 +40,13 @@ import java.util.Locale;
  */
 public class AdminService extends AbstractService {
 
+    static {
+        // Reserve i18n
+        I18n.n("duniter.admin.event.subject.INFO");
+        I18n.n("duniter.admin.event.subject.WARN");
+        I18n.n("duniter.admin.event.subject.ERROR");
+    }
+
     private final UserEventService userEventService;
     private final MailService mailService;
 
@@ -86,7 +93,7 @@ public class AdminService extends AbstractService {
         if (StringUtils.isNotBlank(adminEmail)) {
             String subjectPrefix = pluginSettings.getMailSubjectPrefix();
             mailService.sendTextEmail(
-                    I18n.l(locale, "duniter4j.event.subject."+event.getType().name(), subjectPrefix),
+                    I18n.l(locale, "duniter.admin.event.subject."+event.getType().name(), subjectPrefix),
                     event.getLocalizedMessage(locale),
                     adminEmail);
         }
