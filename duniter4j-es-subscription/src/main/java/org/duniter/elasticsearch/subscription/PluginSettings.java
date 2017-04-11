@@ -84,19 +84,19 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     /**
-     * Day of the week to trigger weekly email subscription (default: 1)
+     * Day of the week to trigger weekly email subscription (default: 2 = monday)
      * @return
      */
     public int getEmailSubscriptionsExecuteDayOfWeek() {
-        return settings.getAsInt("duniter.subscription.email.dayOfWeek", 1);
+        return settings.getAsInt("duniter.subscription.email.dayOfWeek", 2);
     }
 
     /**
-     * Hour in day to trigger daily email subscription (default: 4 AM)
+     * Hour in day to trigger daily email subscription (default: 3 AM)
      * @return
      */
     public int getEmailSubscriptionsExecuteHour() {
-        return settings.getAsInt("duniter.subscription.email.hourOfDay", 4) /*4 hour in the morning*/;
+        return settings.getAsInt("duniter.subscription.email.hourOfDay", 3);
     }
 
     /* -- delegate methods -- */

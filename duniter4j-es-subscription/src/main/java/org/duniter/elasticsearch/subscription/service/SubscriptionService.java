@@ -131,10 +131,6 @@ public class SubscriptionService extends AbstractService {
             return this;
         }
 
-
-        // Startup Start
-        threadPool.schedule(() -> executeEmailSubscriptions(EmailSubscription.Frequency.daily));
-
         // Daily execution
         threadPool.scheduler().scheduleAtFixedRate(
                 () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
@@ -152,12 +148,15 @@ public class SubscriptionService extends AbstractService {
 
     public void executeEmailSubscriptions(final EmailSubscription.Frequency frequency) {
 
+        long now = System.currentTimeMillis();
+        logger.info(String.format("Executing %s email subscription...", frequency.name()));
+
         final String senderPubkey = pluginSettings.getNodePubkey();
 
         int from = 0;
         int size = 10;
-
         boolean hasMore = true;
+        long executionCount=0;
         while (hasMore) {
             List<SubscriptionRecord> subscriptions = subscriptionRecordDao.getSubscriptions(from, size, senderPubkey, EmailSubscription.TYPE);
 
@@ -171,16 +170,21 @@ public class SubscriptionService extends AbstractService {
             final String senderName = (profileTitles != null && profileTitles.containsKey(senderPubkey)) ? profileTitles.get(senderPubkey) :
                 ModelUtils.minifyPubkey(senderPubkey);
 
-            subscriptions.parallelStream()
+            executionCount += subscriptions.stream()
                     .map(record -> decryptEmailSubscription((EmailSubscription)record))
                     .filter(record -> (record != null && record.getContent().getFrequency() == frequency))
                     .map(record -> processEmailSubscription(record, senderPubkey, senderName, profileTitles))
                     .filter(Objects::nonNull)
-                    .forEach(this::saveExecution);
+                    .map(this::saveExecution)
+                    .count();
 
             hasMore = CollectionUtils.size(subscriptions) >= size;
             from += size;
         }
+
+        logger.info(String.format("Executing %s email subscription... [OK] (%s executions in %s ms)",
+                frequency.name(), executionCount, System.currentTimeMillis()-now));
+
     }
 
     /* -- protected methods -- */
@@ -347,7 +351,7 @@ public class SubscriptionService extends AbstractService {
         }
     }
 
-    protected void saveExecution(SubscriptionExecution execution) {
+    protected SubscriptionExecution saveExecution(SubscriptionExecution execution) {
         Preconditions.checkNotNull(execution);
         Preconditions.checkNotNull(execution.getRecipient());
         Preconditions.checkNotNull(execution.getRecordType());
@@ -368,6 +372,7 @@ public class SubscriptionService extends AbstractService {
         else {
             subscriptionExecutionDao.update(execution.getId(), json, false/*not wait*/);
         }
+        return execution;
     }
 
     private String toJson(Record record) {
