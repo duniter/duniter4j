@@ -40,6 +40,8 @@ import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 public class BlockchainRemoteServiceTest {
 
     private static final Logger log = LoggerFactory.getLogger(BlockchainRemoteServiceTest.class);
@@ -144,7 +146,7 @@ public class BlockchainRemoteServiceTest {
 
         isWebSocketNewBlockReceived = false;
 
-        /*service.addBlockListener(createTestPeer(), (message) -> {
+        service.addBlockListener(createTestPeer(), (message) -> {
             try {
                 BlockchainBlock block = JacksonUtils.newObjectMapper().readValue(message, BlockchainBlock.class);
                 log.debug("Received block #" + block.getNumber());
@@ -153,7 +155,7 @@ public class BlockchainRemoteServiceTest {
             catch (IOException e) {
                 Assert.fail(e.getMessage());
             }
-        });*/
+        }, false/*autoReconnect*/);
 
         int count = 0;
         while(!isWebSocketNewBlockReceived) {

@@ -22,6 +22,7 @@ package org.duniter.core.client.service;
  * #L%
  */
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import org.apache.http.HttpResponse;
@@ -45,6 +46,7 @@ import org.duniter.core.client.model.bma.Constants;
 import org.duniter.core.client.model.bma.Error;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.service.bma.BmaTechnicalException;
 import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.StringUtils;
@@ -325,7 +327,14 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                     retry = true;
                     break;
                 default:
-                    throw new TechnicalException(I18n.t("duniter4j.client.status", request.toString(), response.getStatusLine().toString()));
+                    String defaultMessage = I18n.t("duniter4j.client.status", request.toString(), response.getStatusLine().toString());
+                    if (response.getEntity() != null && response.getEntity().getContentType().toString().contains("application/json")) {
+                        JsonNode node = objectMapper.readTree(response.getEntity().getContent());
+                        if (node.hasNonNull("ucode")) {
+                            throw new BmaTechnicalException(node.get("ucode").asInt(), node.get("message").asText(defaultMessage));
+                        }
+                    }
+                    throw new TechnicalException(defaultMessage);
             }
         }
         catch (ConnectException e) {

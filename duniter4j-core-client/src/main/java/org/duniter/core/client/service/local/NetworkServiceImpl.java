@@ -139,7 +139,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 .thenApply(this::fillPeerStatsConsensus)
                 .thenApply(peers -> peers.stream()
                         // Filter on currency
-                        .filter(peer -> ObjectUtils.equals(mainPeer.getCurrency(), peer.getCurrency()))
+                        .filter(peer -> mainPeer.getCurrency() == null || ObjectUtils.equals(mainPeer.getCurrency(), peer.getCurrency()))
                         // filter, then sort
                         .filter(peerFilter(filter))
                         .sorted(peerComparator(sort))

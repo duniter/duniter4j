@@ -129,19 +129,19 @@ duniter.blockchain.sync.enable: true
 duniter.host: g1.duniter.org
 duniter.port: 443
 duniter.useSsl: true
-
+duniter4j.network.timeout: 10000
 #
 # ---------------------------------- Duniter4j security module -------------------
 #
 # Allow admin actions
 #
-duniter.keyring.salt: abc
-duniter.keyring.password: def
+duniter.keyring.salt: 'abc'
+duniter.keyring.password: 'def'
 
 # Enable security, to disable HTTP access to the default ES admin API
 #
-duniter.security.enable: false
-#duniter.security.enable: true
+#duniter.security.enable: false
+duniter.security.enable: true
 #
 # Security token prefix (default: 'duniter-')
 #
@@ -184,13 +184,14 @@ duniter.mail.smtp.port: 25
 # Mail: 'from' address
 #
 #duniter.mail.from: no-reply@domain.com
-duniter.mail.from: no-reply@duniter.fr
+duniter.mail.from: 'no-reply@duniter.fr'
 
 #
 # Mail: admin address
 #
 #duniter.mail.admin: user@domain.com
-duniter.mail.admin: blavenie@EIS-DEV
+#duniter.mail.admin: blavenie@EIS-DEV
+duniter.mail.admin: 'benoit.lavenier@e-is.pro'
 #
 # Mail: subject prefix
 #
@@ -215,7 +216,7 @@ duniter.subscription.enable: true
 #
 # Email subscription: Hour in day to trigger daily email subscription (default: 3 AM)
 #
-#duniter.subscription.email.hourOfDay: 3
+duniter.subscription.email.hourOfDay: 3
 #
 # Email subscription: URL to a Cesium site, for links in the email content (default: https://g1.duniter.fr)
 #

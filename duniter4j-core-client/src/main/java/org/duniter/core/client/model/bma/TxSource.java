@@ -23,10 +23,7 @@ package org.duniter.core.client.model.bma;
  */
 
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-
 import java.io.Serializable;
-import java.util.List;
 
 public class TxSource {
 
@@ -71,6 +68,7 @@ public class TxSource {
 		private String identifier;
 		private String noffset;
 		private long amount;
+		private String conditions;
 		private int base;
 
 		public Source() {
@@ -84,6 +82,7 @@ public class TxSource {
 			clone.identifier = identifier;
 			clone.noffset = noffset;
 			clone.amount = amount;
+			clone.conditions = conditions;
 			clone.base = base;
 			return clone;
 		}
@@ -127,6 +126,15 @@ public class TxSource {
 			this.amount = amount;
 		}
 
+
+		public String getConditions() {
+			return conditions;
+		}
+
+		public void setConditions(String conditions) {
+			this.conditions = conditions;
+		}
+
 		public int getBase() {
 			return base;
 		}
@@ -134,6 +142,7 @@ public class TxSource {
 		public void setBase(int base) {
 			this.base = base;
 		}
+
 	}
 
 

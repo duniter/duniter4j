@@ -34,6 +34,8 @@ import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 public class TransactionRemoteServiceTest {
 
 	private static final Logger log = LoggerFactory.getLogger(TransactionRemoteServiceTest.class);
@@ -46,10 +48,18 @@ public class TransactionRemoteServiceTest {
 	@Before
 	public void setUp() {
 		service = ServiceLocator.instance().getTransactionRemoteService();
+
+		// Make sure fixtures has not been changed
+		Assume.assumeTrue(
+				"Invalid currencies in test fixtures",
+				Objects.equals(resource.getFixtures().getDefaultCurrency(), resource.getFixtures().getCurrency()));
 	}
 
 	@Test
 	public void transfer() throws Exception {
+
+		// only works on a Duniter v1.x currency:
+		//Assume.assumeTrue();
 
 		service.transfer(
 				createTestWallet(),
