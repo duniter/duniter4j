@@ -128,6 +128,7 @@ duniter.blockchain.sync.enable: true
 duniter.host: gtest.duniter.org
 duniter.port: 10900
 #duniter.useSsl: true
+#duniter4j.network.timeout
 #
 # ---------------------------------- Duniter4j security -------------------------
 #

@@ -27,14 +27,17 @@ import com.google.common.base.Joiner;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
@@ -70,6 +73,8 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     public static final String URL_PEER_ALIVE = "/blockchain/parameters";
 
+    private PoolingHttpClientConnectionManager connectionManager;
+
     protected ObjectMapper objectMapper;
     protected Peer defaultPeer;
     private boolean debug;
@@ -99,16 +104,18 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     protected void initCaches() {
         Configuration config = Configuration.instance();
         int cacheTimeInMillis = config.getNetworkCacheTimeInMillis();
-        int defaultTimeout = config.getNetworkTimeout();
+        final int defaultTimeout = config.getNetworkTimeout();
 
-        requestConfigCache = new SimpleCache<Integer, RequestConfig>(cacheTimeInMillis) {
+        requestConfigCache = new SimpleCache<Integer, RequestConfig>(cacheTimeInMillis*100) {
             @Override
             public RequestConfig load(Integer timeout) {
+                // Use config default timeout, if 0
+                if (timeout <= 0) timeout = defaultTimeout;
                 return createRequestConfig(timeout);
             }
         };
 
-        httpClientCache = new SimpleCache<Integer, HttpClient>(cacheTimeInMillis) {
+        httpClientCache = new SimpleCache<Integer, HttpClient>(cacheTimeInMillis*100) {
             @Override
             public HttpClient load(Integer timeout) {
                 return createHttpClient(timeout);
@@ -158,6 +165,8 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
             }
             wsEndPoints.clear();
         }
+
+        connectionManager.close();
     }
 
     public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass)  {
@@ -220,20 +229,40 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         }
     }
 
+    protected PoolingHttpClientConnectionManager createConnectionManager(
+            int maxTotalConnections,
+            int maxConnectionsPerRoute,
+            int timeout) {
+        PoolingHttpClientConnectionManager connectionManager
+                = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(maxTotalConnections);
+        connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
+        connectionManager.setDefaultSocketConfig(SocketConfig.custom()
+                .setSoTimeout(timeout).build());
+        return connectionManager;
+    }
+
     protected HttpClient createHttpClient(int timeout) {
-        CloseableHttpClient httpClient = HttpClients.custom().setDefaultRequestConfig(requestConfigCache.get(timeout))
-                // .setDefaultCredentialsProvider(getCredentialsProvider())
+        if (connectionManager == null) {
+            Configuration config = Configuration.instance();
+            connectionManager = createConnectionManager(
+                    config.getNetworkMaxTotalConnections(),
+                    config.getNetworkMaxConnectionsPerRoute(),
+                    config.getNetworkTimeout());
+        }
+
+        return HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(requestConfigCache.get(timeout))
                 .build();
-        return httpClient;
     }
 
     protected RequestConfig createRequestConfig(int timeout) {
-        // build request config for timeout
-        if (timeout <= 0) {
-            // Use config default timeout
-            timeout = Configuration.instance().getNetworkTimeout();
-        }
-        return RequestConfig.custom().setSocketTimeout(timeout).setConnectTimeout(timeout).build();
+        return RequestConfig.custom()
+                .setSocketTimeout(timeout).setConnectTimeout(timeout)
+                .setMaxRedirects(1)
+                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+                .build();
     }
 
     protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass)  {
@@ -481,4 +510,5 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     public <T> T readValue(InputStream json, Class<T> clazz) throws IOException {
         return objectMapper.readValue(json, clazz);
     }
+
 }

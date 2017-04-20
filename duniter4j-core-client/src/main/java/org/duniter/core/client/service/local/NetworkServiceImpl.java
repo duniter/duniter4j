@@ -127,9 +127,14 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     @Override
     public List<Peer> getPeers(final Peer mainPeer, Filter filter, Sort sort) {
+        return getPeers(mainPeer, filter, sort, null);
+    }
+
+    @Override
+    public List<Peer> getPeers(final Peer mainPeer, Filter filter, Sort sort, ExecutorService executor) {
 
         try {
-            return asyncGetPeers(mainPeer, null)
+            return asyncGetPeers(mainPeer, executor)
                 .thenCompose(CompletableFutures::allOfToList)
                 .thenApply(this::fillPeerStatsConsensus)
                 .thenApply(peers -> peers.stream()
@@ -290,31 +295,16 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         final Comparator<Peer> peerComparator = peerComparator(sort);
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
 
-        /*Runnable initCacheRunnable = () -> {
-            if (threadLock.isLocked()) return;
-            synchronized (threadLock) {
-                threadLock.lock();
-            }
-            try {
-                // TODO : load all peers from DAO, then fill list ?
-            }
-            catch(Exception e) {
-                log.error("Error while loading all peers: " + e.getMessage(), e);
-            }
-            finally {
-                synchronized (threadLock) {
-                    threadLock.unlock();
-                }
-            }
-        };*/
-
         Runnable getPeersRunnable = () -> {
-            if (threadLock.isLocked()) return;
+            if (threadLock.isLocked()) {
+                log.error("Rejected getPeersRunnable() call. Another refresh is already running...");
+                return;
+            }
             synchronized (threadLock) {
                 threadLock.lock();
             }
             try {
-                List<Peer> updatedPeers = getPeers(mainPeer, filter, sort);
+                List<Peer> updatedPeers = getPeers(mainPeer, filter, sort, pool);
 
                 knownPeers.clear();
                 updatedPeers.stream().forEach(peer -> {
@@ -340,7 +330,10 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         };
 
         Consumer<NetworkPeers.Peer> refreshPeerConsumer = (bmaPeer) -> {
-            if (threadLock.isLocked()) return;
+            if (threadLock.isLocked()) {
+                log.error("Rejected refreshPeerConsumer() call. Another refresh is already running...");
+                return;
+            }
             synchronized (threadLock) {
                 threadLock.lock();
             }
@@ -411,7 +404,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 log.error("Could not parse peer received by WS: " + e.getMessage(), e);
             }
 
-            schedule(getPeersRunnable, pool, 5000);
+            schedule(getPeersRunnable, pool, 3000/*waiting block propagation*/);
         }, autoreconnect);
 
         // Manage new peer event

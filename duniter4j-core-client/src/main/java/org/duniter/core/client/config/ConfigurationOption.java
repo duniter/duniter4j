@@ -164,13 +164,28 @@ public enum ConfigurationOption implements ConfigOptionDef {
     NETWORK_TIMEOUT(
             "duniter4j.network.timeout",
             n("duniter4j.config.option.network.timeout.description"),
-            "20000", // = 2 s
+            "5000", // = 5 s
             Integer.class,
             false),
 
+    NETWORK_MAX_CONNECTIONS(
+            "duniter4j.network.maxConnections",
+            n("duniter4j.config.option.network.maxConnections.description"),
+            "100",
+            Integer.class,
+            false),
+
+    NETWORK_MAX_CONNECTIONS_PER_ROUTE(
+            "duniter4j.network.maxConnectionsPerHost",
+            n("duniter4j.config.option.network.maxConnectionsPerHost.description"),
+            "5",
+            Integer.class,
+            false),
+
+
     NETWORK_CACHE_TIME_IN_MILLIS (
-            "ucoin.network.cacheTimeInMillis",
-            "ucoin.config.option.network.cacheTimeInMillis.description",
+            "duniter4j.network.cacheTimeInMillis",
+            "duniter4j.config.option.network.cacheTimeInMillis.description",
             "10000",  // = 10 s
             Integer.class,
             false),

@@ -57,6 +57,8 @@ import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupDir;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -131,18 +133,28 @@ public class SubscriptionService extends AbstractService {
             return this;
         }
 
-        // Daily execution
-        threadPool.scheduler().scheduleAtFixedRate(
-                () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
-                DateUtils.delayBeforeHour(pluginSettings.getEmailSubscriptionsExecuteHour()),
-                1, TimeUnit.DAYS);
+        // Email subscriptions
+        {
+            if (logger.isInfoEnabled()) {
+                Calendar cal = new GregorianCalendar();
+                cal.setTimeInMillis(0);
+                cal.set(Calendar.DAY_OF_WEEK, pluginSettings.getEmailSubscriptionsExecuteDayOfWeek());
+                String dayOfWeek = new SimpleDateFormat("EEE").format(cal.getTime());
+                logger.warn(I18n.t("duniter4j.es.subscription.email.start", pluginSettings.getEmailSubscriptionsExecuteHour(), dayOfWeek));
+            }
 
-        // Weekly execution
-        threadPool.scheduler().scheduleAtFixedRate(
-                () -> executeEmailSubscriptions(EmailSubscription.Frequency.weekly),
-                DateUtils.delayBeforeDayAndHour(pluginSettings.getEmailSubscriptionsExecuteDayOfWeek(), pluginSettings.getEmailSubscriptionsExecuteHour()),
-                7, TimeUnit.DAYS);
+            // Daily execution
+            threadPool.scheduler().scheduleAtFixedRate(
+                    () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
+                    DateUtils.delayBeforeHour(pluginSettings.getEmailSubscriptionsExecuteHour()),
+                    DateUtils.DAY_DURATION_IN_MILLIS, TimeUnit.MILLISECONDS);
 
+            // Weekly execution
+            threadPool.scheduler().scheduleAtFixedRate(
+                    () -> executeEmailSubscriptions(EmailSubscription.Frequency.weekly),
+                    DateUtils.delayBeforeDayAndHour(pluginSettings.getEmailSubscriptionsExecuteDayOfWeek(), pluginSettings.getEmailSubscriptionsExecuteHour()),
+                    7 * DateUtils.DAY_DURATION_IN_MILLIS, TimeUnit.MILLISECONDS);
+        }
         return this;
     }
 

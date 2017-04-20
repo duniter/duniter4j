@@ -9,10 +9,13 @@ import java.util.GregorianCalendar;
  */
 public class DateUtils {
 
+    public static final long DAY_DURATION_IN_MILLIS = 24 * 60 * 60 * 1000;
+
+
     public static Date nextHour(int hour) {
         Calendar cal = new GregorianCalendar();
         cal.setTimeInMillis(System.currentTimeMillis());
-        if (cal.get(Calendar.HOUR_OF_DAY) > hour) {
+        if (cal.get(Calendar.HOUR_OF_DAY) >= hour) {
             // Too late for today: add 1 day (will wait tomorrow)
             cal.add(Calendar.DAY_OF_YEAR, 1);
         }
@@ -26,7 +29,7 @@ public class DateUtils {
     public static Date nextDayAndHour(int dayOfTheWeek, int hour) {
         Calendar cal = new GregorianCalendar();
         cal.setTimeInMillis(System.currentTimeMillis());
-        if (cal.get(Calendar.DAY_OF_WEEK) > dayOfTheWeek || (cal.get(Calendar.DAY_OF_WEEK) == dayOfTheWeek && cal.get(Calendar.HOUR_OF_DAY) > hour)) {
+        if (cal.get(Calendar.DAY_OF_WEEK) > dayOfTheWeek || (cal.get(Calendar.DAY_OF_WEEK) == dayOfTheWeek && cal.get(Calendar.HOUR_OF_DAY) >= hour)) {
             // Too late for this week: will wait for next week
             cal.add(Calendar.WEEK_OF_YEAR, 1);
         }
@@ -45,5 +48,7 @@ public class DateUtils {
     public static long delayBeforeDayAndHour(int dayOfTheWeek, int hour) {
         return nextDayAndHour(dayOfTheWeek, hour).getTime() - System.currentTimeMillis();
     }
+
+
 }
 

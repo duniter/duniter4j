@@ -176,7 +176,9 @@ public class PeerService extends AbstractService {
 
         networkService.addPeersChangeListener(mainPeer, peers -> {
             if (CollectionUtils.isNotEmpty(peers)) {
-                logger.info(String.format("[%s] Updating peers endpoints (%s endpoints found)", currencyName, peers.size()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("[%s] Updating peers endpoints (%s endpoints found)", currencyName, peers.size()));
+                }
                 peers.stream().forEach(peer -> savePeer(peer));
             }
         }, filterDef, sortDef, true /*autoreconnect*/, threadPool.scheduler());
@@ -212,7 +214,9 @@ public class PeerService extends AbstractService {
 
         // Update existing peer
         else {
-            logger.trace(String.format("Update peer [%s]", peer));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Update peer [%s]", peer));
+            }
             peerDao.update(peer);
         }
         return peer;

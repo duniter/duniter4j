@@ -106,6 +106,8 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_HOST.getKey(), getNodeBmaHost());
         applicationConfig.setDefaultOption(ConfigurationOption.NODE_PORT.getKey(), String.valueOf(getNodeBmaPort()));
         applicationConfig.setDefaultOption(ConfigurationOption.NETWORK_TIMEOUT.getKey(), String.valueOf(getNetworkTimeout()));
+        applicationConfig.setDefaultOption(ConfigurationOption.NETWORK_MAX_CONNECTIONS.getKey(), String.valueOf(getNetworkMaxConnections()));
+        applicationConfig.setDefaultOption(ConfigurationOption.NETWORK_MAX_CONNECTIONS_PER_ROUTE.getKey(), String.valueOf(getNetworkMaxConnectionsPerRoute()));
 
         try {
             applicationConfig.parse(new String[]{});
@@ -199,7 +201,15 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public int getNetworkTimeout()  {
-        return settings.getAsInt("duniter.network.timeout", 100000 /*10s*/);
+        return settings.getAsInt("duniter.network.timeout", 5000 /*5s*/);
+    }
+
+    public int getNetworkMaxConnections()  {
+        return settings.getAsInt("duniter.network.maxConnections", 100);
+    }
+
+    public int getNetworkMaxConnectionsPerRoute()  {
+        return settings.getAsInt("duniter.network.maxConnectionsPerRoute", 5);
     }
 
     public boolean isDevMode() {

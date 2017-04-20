@@ -8,6 +8,7 @@ public class SmtpConfig {
     private String smtpUsername;
     private String smtpPassword;
     private String senderAddress;
+    private String senderName;
     private boolean useSsl;
     private boolean startTLS;
 
@@ -49,6 +50,14 @@ public class SmtpConfig {
 
     public void setSenderAddress(String senderAddress) {
         this.senderAddress = senderAddress;
+    }
+
+    public String getSenderName() {
+        return senderName;
+    }
+
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
     }
 
     public boolean isUseSsl() {

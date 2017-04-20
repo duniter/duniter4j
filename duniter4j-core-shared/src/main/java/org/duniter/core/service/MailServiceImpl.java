@@ -26,6 +26,7 @@ import com.google.common.base.Joiner;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.model.SmtpConfig;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 
 import javax.activation.CommandMap;
@@ -33,6 +34,8 @@ import javax.activation.MailcapCommandMap;
 import javax.mail.*;
 import javax.mail.internet.*;
 import java.io.Closeable;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -158,7 +161,8 @@ public class MailServiceImpl implements MailService, Closeable {
         // send email to recipients
         try {
             Message message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(smtpConfig.getSenderAddress()));
+
+            message.setFrom(getSenderAddress(smtpConfig));
 
             Address[] recipientsAddresses = Arrays.asList(recipients).stream().map(recipient -> {
                 try {
@@ -190,6 +194,7 @@ public class MailServiceImpl implements MailService, Closeable {
         return getSmtpServerAsString(smtpConfig.getSmtpHost(), smtpConfig.getSmtpPort(), smtpConfig.getSmtpUsername());
     }
 
+
     private String getSmtpServerAsString(String smtpHost, int smtpPort, String smtpUsername) {
         StringBuilder buffer = new StringBuilder();
         if (StringUtils.isNotBlank(smtpUsername)) {
@@ -200,6 +205,19 @@ public class MailServiceImpl implements MailService, Closeable {
                 .append(smtpPort)
                 .toString();
 
+    }
+
+    private InternetAddress getSenderAddress(SmtpConfig smtpConfig) {
+        Preconditions.checkNotNull(smtpConfig);
+        try {
+            if (StringUtils.isNotBlank(smtpConfig.getSenderAddress())) {
+                return new InternetAddress(smtpConfig.getSenderAddress(), smtpConfig.getSenderName());
+            }
+            return new InternetAddress(smtpConfig.getSenderAddress());
+        }
+        catch(UnsupportedEncodingException | AddressException e) {
+            throw new TechnicalException(e);
+        }
     }
 
     private void connect(String smtpHost, int smtpPort,
@@ -248,7 +266,10 @@ public class MailServiceImpl implements MailService, Closeable {
         props.put("mail.smtp.host", config.getSmtpHost());
         props.put("mail.smtp.port", config.getSmtpPort());
         if (StringUtils.isNotBlank(config.getSenderAddress())) {
-            props.put("mail.from", config.getSenderAddress());
+            props.put("mail.from.alias", config.getSenderAddress());
+            if (StringUtils.isNotBlank(config.getSenderName())) {
+                props.put("mail.from.alias", config.getSenderName());
+            }
         }
         if (config.isUseSsl()) {
             props.put("mail.smtp.socketFactory.port", config.getSmtpPort());

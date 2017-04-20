@@ -250,6 +250,14 @@ public class Configuration  {
         return applicationConfig.getOptionAsInt(ConfigurationOption.NETWORK_TIMEOUT.getKey());
     }
 
+    public int getNetworkMaxTotalConnections() {
+        return applicationConfig.getOptionAsInt(ConfigurationOption.NETWORK_MAX_CONNECTIONS.getKey());
+    }
+
+    public int getNetworkMaxConnectionsPerRoute() {
+        return applicationConfig.getOptionAsInt(ConfigurationOption.NETWORK_MAX_CONNECTIONS_PER_ROUTE.getKey());
+    }
+
     public int getNetworkCacheTimeInMillis() {
         return Integer.parseInt(ConfigurationOption.NETWORK_CACHE_TIME_IN_MILLIS.getDefaultValue());
     }
