@@ -3,7 +3,7 @@
 
   <groupId>org.duniter</groupId>
   <artifactId>duniter4j</artifactId>
-  <version>0.10.0</version>
+  <version>0.10.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Duniter4j : a Duniter Java Client API</name>
 
@@ -115,7 +115,7 @@
     <url>https://github.com/duniter/duniter4j.git</url>
     <connection>scm:git:https://github.com/duniter/duniter4j.git</connection>
     <developerConnection>scm:git:https://github.com/duniter/duniter4j.git</developerConnection>
-    <tag>duniter4j-0.10.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
@@ -225,7 +225,7 @@
       <dependency>
         <groupId>org.abstractj.kalium</groupId>
         <artifactId>kalium</artifactId>
-        <version>${kalium.version}</version>
+        <version>0.5.1</version>
       </dependency>
       <!-- scrypt lib -->
       <dependency>
