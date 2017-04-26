@@ -23,12 +23,12 @@ package org.duniter.elasticsearch.dao.impl;
  */
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.dao.AbstractDao;
+import org.duniter.elasticsearch.dao.PeerDao;
 import org.duniter.elasticsearch.dao.TypeDao;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
@@ -41,10 +41,7 @@ import java.util.List;
 /**
  * Created by blavenie on 29/12/15.
  */
-public class PeerDaoImpl extends AbstractDao implements PeerDao, TypeDao<PeerDaoImpl> {
-
-
-    public static final String PEER_TYPE = "peer";
+public class PeerDaoImpl extends AbstractDao implements PeerDao {
 
     public PeerDaoImpl(){
         super("duniter.dao.peer");
@@ -52,7 +49,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao, TypeDao<PeerDao
 
     @Override
     public String getType() {
-        return PEER_TYPE;
+        return TYPE;
     }
 
     @Override
@@ -70,7 +67,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao, TypeDao<PeerDao
             String json = objectMapper.writeValueAsString(peer);
 
             // Preparing indexBlocksFromNode
-            IndexRequestBuilder indexRequest = client.prepareIndex(peer.getCurrency(), PEER_TYPE)
+            IndexRequestBuilder indexRequest = client.prepareIndex(peer.getCurrency(), TYPE)
                     .setId(peer.getId())
                     .setSource(json);
 
@@ -99,7 +96,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao, TypeDao<PeerDao
             String json = objectMapper.writeValueAsString(peer);
 
             // Preparing indexBlocksFromNode
-            UpdateRequestBuilder updateRequest = client.prepareUpdate(peer.getCurrency(), PEER_TYPE, peer.getId())
+            UpdateRequestBuilder updateRequest = client.prepareUpdate(peer.getCurrency(), TYPE, peer.getId())
                     .setDoc(json);
 
             // Execute indexBlocksFromNode
@@ -125,7 +122,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao, TypeDao<PeerDao
         Preconditions.checkArgument(StringUtils.isNotBlank(peer.getCurrency()));
 
         // Delete the document
-        client.prepareDelete(peer.getCurrency(), PEER_TYPE, peer.getId()).execute().actionGet();
+        client.prepareDelete(peer.getCurrency(), TYPE, peer.getId()).execute().actionGet();
     }
 
     @Override
@@ -135,7 +132,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao, TypeDao<PeerDao
 
     @Override
     public boolean isExists(String currencyId, String peerId) {
-        return client.isDocumentExists(currencyId, PEER_TYPE, peerId);
+        return client.isDocumentExists(currencyId, TYPE, peerId);
     }
 
     @Override
@@ -143,7 +140,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao, TypeDao<PeerDao
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder()
                     .startObject()
-                    .startObject(PEER_TYPE)
+                    .startObject(TYPE)
                     .startObject("properties")
 
                     // currency

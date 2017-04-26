@@ -266,7 +266,7 @@ public class MailServiceImpl implements MailService, Closeable {
         props.put("mail.smtp.host", config.getSmtpHost());
         props.put("mail.smtp.port", config.getSmtpPort());
         if (StringUtils.isNotBlank(config.getSenderAddress())) {
-            props.put("mail.from.alias", config.getSenderAddress());
+            props.put("mail.from", config.getSenderAddress());
             if (StringUtils.isNotBlank(config.getSenderName())) {
                 props.put("mail.from.alias", config.getSenderName());
             }

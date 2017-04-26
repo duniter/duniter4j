@@ -24,18 +24,18 @@ package org.duniter.elasticsearch.dao;
 
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.elasticsearch.model.BlockchainBlockStat;
 
 import java.util.List;
 
 /**
  * Created by blavenie on 03/04/17.
  */
-public interface BlockDao extends Bean, TypeDao<BlockDao> {
+public interface BlockStatDao extends Bean, TypeDao<BlockStatDao> {
 
-    String TYPE = "block";
+    String TYPE = "blockStat";
 
-
-    void create(BlockchainBlock block, boolean wait);
+    void create(BlockchainBlockStat block, boolean wait);
 
     /**
      *
@@ -47,7 +47,7 @@ public interface BlockDao extends Bean, TypeDao<BlockDao> {
 
     boolean isExists(String currencyName, String id);
 
-    void update(BlockchainBlock block, boolean wait);
+    void update(BlockchainBlockStat block, boolean wait);
 
     /**
      *
@@ -57,11 +57,8 @@ public interface BlockDao extends Bean, TypeDao<BlockDao> {
      */
     void update(String currencyName, String id, byte[] json, boolean wait);
 
-    List<BlockchainBlock> findBlocksByHash(String currencyName, String query);
+    void delete(String currency, String id, boolean wait);
 
-    int getMaxBlockNumber(String currencyName);
+    BlockchainBlockStat getById(String currencyName, String id);
 
-    BlockchainBlock getBlockById(String currencyName, String id);
-
-    void deleteRange(final String currencyName, final int fromNumber, final int toNumber);
 }

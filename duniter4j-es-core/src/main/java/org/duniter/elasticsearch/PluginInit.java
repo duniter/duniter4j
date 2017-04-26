@@ -24,12 +24,15 @@ package org.duniter.elasticsearch;
 
 import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.elasticsearch.dao.BlockDao;
+import org.duniter.elasticsearch.dao.BlockStatDao;
+import org.duniter.elasticsearch.dao.PeerDao;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.service.BlockchainService;
+import org.duniter.elasticsearch.service.BlockchainStatsService;
 import org.duniter.elasticsearch.service.CurrencyService;
 import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -120,20 +123,31 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             Currency currency = injector.getInstance(CurrencyService.class)
                     .indexCurrencyFromPeer(peer, true);
 
-            // Add access to currency/block index
-            injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
-                    currency.getCurrencyName(),
-                    BlockchainService.BLOCK_TYPE);
-            injector.getInstance(RestSecurityController.class).allowPostSearchIndexType(
-                    currency.getCurrencyName(),
-                    BlockchainService.BLOCK_TYPE);
-            // Add access to currency/peer index
-            injector.getInstance(RestSecurityController.class).allowIndexType(RestRequest.Method.GET,
-                    currency.getCurrencyName(),
-                    BlockchainService.PEER_TYPE);
-            injector.getInstance(RestSecurityController.class).allowPostSearchIndexType(
-                    currency.getCurrencyName(),
-                    BlockchainService.PEER_TYPE);
+            injector.getInstance(RestSecurityController.class)
+
+                    // Add access to <currency>/block index
+                    .allowIndexType(RestRequest.Method.GET,
+                            currency.getCurrencyName(),
+                            BlockDao.TYPE)
+                    .allowPostSearchIndexType(
+                            currency.getCurrencyName(),
+                            BlockDao.TYPE)
+
+                    // Add access to <currency>/blockStat index
+                    .allowIndexType(RestRequest.Method.GET,
+                            currency.getCurrencyName(),
+                            BlockStatDao.TYPE)
+                    .allowPostSearchIndexType(
+                            currency.getCurrencyName(),
+                            BlockStatDao.TYPE)
+
+                    // Add access to <currency>/peer index
+                    .allowIndexType(RestRequest.Method.GET,
+                            currency.getCurrencyName(),
+                            PeerDao.TYPE)
+                    .allowPostSearchIndexType(
+                            currency.getCurrencyName(),
+                            PeerDao.TYPE);
 
             // Index blocks (and listen if new block appear)
             injector.getInstance(BlockchainService.class)

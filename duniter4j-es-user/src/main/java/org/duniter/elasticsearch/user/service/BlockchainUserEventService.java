@@ -23,12 +23,10 @@ package org.duniter.elasticsearch.user.service;
  */
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
-import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
@@ -38,6 +36,7 @@ import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.service.changes.ChangeSource;
+import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
@@ -49,6 +48,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -59,33 +59,31 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     private static final List<ChangeSource> CHANGE_LISTEN_SOURCES = ImmutableList.of(new ChangeSource("*", BlockchainService.BLOCK_TYPE));
 
-    public final UserService userService;
+    private final UserService userService;
 
-    public final UserEventService userEventService;
+    private final UserEventService userEventService;
 
-    public final AdminService adminService;
+    private final AdminService adminService;
 
-    public final ObjectMapper objectMapper;
-
-
-    public final boolean enable;
+    private final boolean enable;
+    private final ThreadPool threadPool;
 
     @Inject
     public BlockchainUserEventService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
                                       BlockchainService blockchainService,
                                       UserService userService,
                                       AdminService adminService,
-                                      UserEventService userEventService) {
+                                      UserEventService userEventService,
+                                      ThreadPool threadPool) {
         super("duniter.user.event.blockchain", client, settings, cryptoService);
         this.userService = userService;
         this.adminService = adminService;
         this.userEventService = userEventService;
-        this.objectMapper = JacksonUtils.newObjectMapper();
-        ChangeService.registerListener(this);
-
+        this.threadPool = threadPool;
         this.enable = pluginSettings.enableBlockchainSync();
 
         if (this.enable) {
+            ChangeService.registerListener(this);
             blockchainService.registerConnectionListener(createConnectionListeners());
         }
     }
@@ -221,14 +219,13 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         }
     }
 
-    private void processUpdateBlock(BlockchainBlock block) {
+    private void processUpdateBlock(final BlockchainBlock block) {
 
         // Delete events that reference this block
-        userEventService.deleteEventsByReference(new UserEvent.Reference(block.getCurrency(), BlockchainService.BLOCK_TYPE, String.valueOf(block.getNumber())))
-                    .actionGet();
-
-        processCreateBlock(block);
-
+        CompletableFuture.runAsync(() -> userEventService.deleteEventsByReference(new UserEvent.Reference(block.getCurrency(), BlockchainService.BLOCK_TYPE, String.valueOf(block.getNumber())))
+                .actionGet(), threadPool.scheduler())
+                // Then process the block
+                .thenAccept(aVoid -> processCreateBlock(block));
     }
 
     private void processTx(BlockchainBlock block, BlockchainBlock.Transaction tx) {

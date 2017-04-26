@@ -143,6 +143,14 @@ public class SubscriptionService extends AbstractService {
                 logger.warn(I18n.t("duniter4j.es.subscription.email.start", pluginSettings.getEmailSubscriptionsExecuteHour(), dayOfWeek));
             }
 
+
+            // TODO: remove this (DEV lon)
+            /*long devDuration = 10 * 60 * 1000;
+            threadPool.scheduler().scheduleAtFixedRate(
+                    () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
+                    1000 * 2,
+                    devDuration, TimeUnit.MILLISECONDS);*/
+
             // Daily execution
             threadPool.scheduler().scheduleAtFixedRate(
                     () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),

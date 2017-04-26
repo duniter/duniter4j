@@ -40,6 +40,7 @@ import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
+import org.elasticsearch.script.ScriptModule;
 
 public class ServiceModule extends AbstractModule implements Module {
 
@@ -54,6 +55,7 @@ public class ServiceModule extends AbstractModule implements Module {
 
         // blockchain indexation services
         bind(BlockchainService.class).asEagerSingleton();
+        bind(BlockchainStatsService.class).asEagerSingleton();
         bind(PeerService.class).asEagerSingleton();
 
         // Duniter Client API beans
@@ -72,6 +74,8 @@ public class ServiceModule extends AbstractModule implements Module {
         bindWithLocator(CryptoService.class);
         bindWithLocator(MailService.class);
     }
+
+
 
     /* protected methods */
 

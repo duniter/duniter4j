@@ -56,7 +56,6 @@ import java.util.Map;
  */
 public class BlockDaoImpl extends AbstractDao implements BlockDao {
 
-    public static final String BLOCK_TYPE = "block";
 
     public BlockDaoImpl(){
         super("duniter.dao.block");
@@ -64,7 +63,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
 
     @Override
     public String getType() {
-        return BLOCK_TYPE;
+        return TYPE;
     }
 
     public void create(BlockchainBlock block, boolean wait) {
@@ -79,7 +78,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
             String json = objectMapper.writeValueAsString(block);
 
             // Preparing
-            IndexRequestBuilder request = client.prepareIndex(block.getCurrency(), BLOCK_TYPE)
+            IndexRequestBuilder request = client.prepareIndex(block.getCurrency(), TYPE)
                     .setId(block.getNumber().toString())
                     .setSource(json);
 
@@ -104,7 +103,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         Preconditions.checkArgument(json.length > 0);
 
         // Preparing indexBlocksFromNode
-        IndexRequestBuilder request = client.prepareIndex(currencyName, BLOCK_TYPE)
+        IndexRequestBuilder request = client.prepareIndex(currencyName, TYPE)
                 .setId(id)
                 .setRefresh(true)
                 .setSource(json);
@@ -114,7 +113,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
     }
 
     public boolean isExists(String currencyName, String id) {
-        return client.isDocumentExists(currencyName, BLOCK_TYPE, id);
+        return client.isDocumentExists(currencyName, TYPE, id);
     }
 
     public void update(BlockchainBlock block, boolean wait) {
@@ -129,7 +128,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
             String json = objectMapper.writeValueAsString(block);
 
             // Preparing
-            UpdateRequestBuilder request = client.prepareUpdate(block.getCurrency(), BLOCK_TYPE, block.getNumber().toString())
+            UpdateRequestBuilder request = client.prepareUpdate(block.getCurrency(), TYPE, block.getNumber().toString())
                     .setRefresh(true)
                     .setDoc(json);
 
@@ -153,7 +152,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         Preconditions.checkArgument(json.length > 0);
 
         // Preparing indexBlocksFromNode
-        UpdateRequestBuilder request = client.prepareUpdate(currencyName, BLOCK_TYPE, id)
+        UpdateRequestBuilder request = client.prepareUpdate(currencyName, TYPE, id)
                 .setRefresh(true)
                 .setDoc(json);
 
@@ -167,7 +166,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         // Prepare request
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(currencyName)
-                .setTypes(BLOCK_TYPE)
+                .setTypes(TYPE)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // If only one term, search as prefix
@@ -201,7 +200,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         // Prepare request
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(currencyName)
-                .setTypes(BLOCK_TYPE)
+                .setTypes(TYPE)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // Get max(number)
@@ -226,17 +225,43 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder()
                     .startObject()
-                    .startObject(BLOCK_TYPE)
+                    .startObject(TYPE)
                     .startObject("properties")
 
-                    // block number
+                    // currency
+                    .startObject("currency")
+                    .field("type", "string")
+                    .endObject()
+
+                    // version
+                    .startObject("version")
+                    .field("type", "integer")
+                    .endObject()
+
+                    // time
+                    .startObject("time")
+                    .field("type", "long")
+                    .endObject()
+
+                    // medianTime
+                    .startObject("medianTime")
+                    .field("type", "long")
+                    .endObject()
+
+                    // number
                     .startObject("number")
                     .field("type", "integer")
+                    .endObject()
+
+                    // nonce
+                    .startObject("nonce")
+                    .field("type", "long")
                     .endObject()
 
                     // hash
                     .startObject("hash")
                     .field("type", "string")
+                    .field("index", "not_analyzed")
                     .endObject()
 
                     // issuer
@@ -250,14 +275,9 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
                     .field("type", "string")
                     .endObject()
 
-                    // membercount
-                    .startObject("memberCount")
+                    // membersCount
+                    .startObject("membersCount")
                     .field("type", "integer")
-                    .endObject()
-
-                    // membersChanges
-                    .startObject("membersChanges")
-                    .field("type", "string")
                     .endObject()
 
                     // unitbase
@@ -265,7 +285,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
                     .field("type", "integer")
                     .endObject()
 
-                    // membersChanges
+                    // monetaryMass
                     .startObject("monetaryMass")
                     .field("type", "long")
                     .endObject()
@@ -290,7 +310,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
     }
 
     public BlockchainBlock getBlockById(String currencyName, String id) {
-        return client.getSourceById(currencyName, BLOCK_TYPE, id, BlockchainBlock.class);
+        return client.getSourceById(currencyName, TYPE, id, BlockchainBlock.class);
     }
 
     /**
@@ -306,18 +326,18 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         for (int number=fromNumber; number<=toNumber; number++) {
 
             bulkRequest.add(
-                    client.prepareDelete(currencyName, BLOCK_TYPE, String.valueOf(number))
+                    client.prepareDelete(currencyName, TYPE, String.valueOf(number))
             );
 
             // Flush the bulk if not empty
             if ((fromNumber - number % bulkSize) == 0) {
-                client.flushDeleteBulk(currencyName, BLOCK_TYPE, bulkRequest);
+                client.flushDeleteBulk(currencyName, TYPE, bulkRequest);
                 bulkRequest = client.prepareBulk();
             }
         }
 
         // last flush
-        client.flushDeleteBulk(currencyName, BLOCK_TYPE, bulkRequest);
+        client.flushDeleteBulk(currencyName, TYPE, bulkRequest);
     }
 
     /* -- Internal methods -- */

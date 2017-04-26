@@ -63,13 +63,13 @@ public class SynchroService extends AbstractSynchroService {
         SynchroResult result = new SynchroResult();
         long time = System.currentTimeMillis();
 
-        importMailChanges(result, peer, sinceTime);
+        importSubscriptionsChanges(result, peer, sinceTime);
 
         long duration = System.currentTimeMillis() - time;
         logger.info(String.format("[%s] Synchronizing subscription data since %s [OK] %s (in %s ms)", peer.toString(), sinceTime, result.toString(), duration));
     }
 
-    protected void importMailChanges(SynchroResult result, Peer peer, long sinceTime) {
+    protected void importSubscriptionsChanges(SynchroResult result, Peer peer, long sinceTime) {
         importChanges(result, peer, SubscriptionIndexDao.INDEX, SubscriptionRecordDao.TYPE,  sinceTime);
     }
 }

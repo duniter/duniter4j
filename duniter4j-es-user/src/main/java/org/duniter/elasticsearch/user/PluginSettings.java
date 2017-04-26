@@ -113,7 +113,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean isMailSmtpStartTLS()  {
-        return settings.getAsBoolean("duniter.mail.smtp.starttle", false);
+        return settings.getAsBoolean("duniter.mail.smtp.starttls", false);
     }
 
     public boolean isMailSmtpUseSSL()  {

@@ -23,7 +23,6 @@ package org.duniter.elasticsearch.service;
  */
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -31,9 +30,6 @@ import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.util.ObjectUtils;
-import org.duniter.core.util.json.JsonAttributeParser;
-import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
 import org.duniter.core.client.service.exception.BlockNotFoundException;
@@ -42,12 +38,16 @@ import org.duniter.core.model.NullProgressionModel;
 import org.duniter.core.model.ProgressionModel;
 import org.duniter.core.model.ProgressionModelImpl;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.json.JsonAttributeParser;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.dao.BlockDao;
+import org.duniter.elasticsearch.dao.BlockStatDao;
+import org.duniter.elasticsearch.dao.PeerDao;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -65,8 +65,8 @@ import java.util.*;
  */
 public class BlockchainService extends AbstractService {
 
-    public static final String BLOCK_TYPE = "block";
-    public static final String PEER_TYPE = "peer";
+    public static final String BLOCK_TYPE = BlockDao.TYPE;
+    public static final String PEER_TYPE = PeerDao.TYPE;
     public static final String CURRENT_BLOCK_ID = "current";
 
     private static final int SYNC_MISSING_BLOCK_MAX_RETRY = 5;

@@ -25,6 +25,7 @@ package org.duniter.elasticsearch;
 import com.google.common.collect.Lists;
 import org.duniter.elasticsearch.dao.DaoModule;
 import org.duniter.elasticsearch.rest.RestModule;
+import org.duniter.elasticsearch.script.BlockchainTxCountScriptFactory;
 import org.duniter.elasticsearch.security.SecurityModule;
 import org.duniter.elasticsearch.service.ServiceModule;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -59,6 +60,13 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
         return "Duniter ElasticSearch Plugin";
     }
 
+    @Inject
+    public void onModule(org.elasticsearch.script.ScriptModule scriptModule) {
+        // TODO: in ES v5+, see example here :
+        // https://github.com/imotov/elasticsearch-native-script-example/blob/60a390f77f2fb25cb89d76de5071c52207a57b5f/src/main/java/org/elasticsearch/examples/nativescript/plugin/NativeScriptExamplesPlugin.java
+        scriptModule.registerScript("txcount", BlockchainTxCountScriptFactory.class);
+    }
+
     @Override
     public Collection<Module> nodeModules() {
         Collection<Module> modules = Lists.newArrayList();
@@ -71,9 +79,10 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
         modules.add(new WebSocketModule());
         modules.add(new RestModule());
 
+
         modules.add(new DaoModule());
         modules.add(new ServiceModule());
-
+        //modules.add(new ScriptModule());
         return modules;
     }
 

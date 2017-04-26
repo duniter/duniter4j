@@ -24,7 +24,6 @@ package org.duniter.elasticsearch.dao.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
-import org.duniter.core.client.dao.CurrencyDao;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
@@ -38,7 +37,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by blavenie on 29/12/15.
@@ -46,9 +46,6 @@ import java.util.*;
 public class CurrencyDaoImpl extends AbstractIndexTypeDao<CurrencyExtendDao> implements CurrencyExtendDao {
 
     protected static final String REGEX_WORD_SEPARATOR = "[-\\t@# _]+";
-
-    public static final String INDEX = "currency";
-    public static final String RECORD_TYPE = "record";
 
     public CurrencyDaoImpl(){
         super(INDEX, RECORD_TYPE);
@@ -65,8 +62,6 @@ public class CurrencyDaoImpl extends AbstractIndexTypeDao<CurrencyExtendDao> imp
 
             // Serialize into JSON
             byte[] json = objectMapper.writeValueAsBytes(currency);
-
-            System.out.println(objectMapper.writeValueAsString(currency));
 
             // Preparing indexBlocksFromNode
             IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_TYPE)
@@ -158,7 +153,8 @@ public class CurrencyDaoImpl extends AbstractIndexTypeDao<CurrencyExtendDao> imp
     @Override
     public XContentBuilder createTypeMapping() {
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
+            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject()
+                    .startObject(RECORD_TYPE)
                     .startObject("properties")
 
                     // currency

@@ -64,8 +64,8 @@ import java.util.Objects;
  */
 public class CurrencyService extends AbstractService {
 
-    public static final String INDEX = "currency";
-    public static final String RECORD_TYPE = "record";
+    public static final String INDEX = CurrencyExtendDao.INDEX;
+    public static final String RECORD_TYPE = CurrencyExtendDao.RECORD_TYPE;
 
     private BlockchainRemoteService blockchainRemoteService;
     private CurrencyExtendDao currencyDao;
@@ -305,6 +305,10 @@ public class CurrencyService extends AbstractService {
                     // Add block type
                     BlockDao blockDao = ServiceLocator.instance().getBean(BlockDao.class);
                     createIndexRequestBuilder.addMapping(blockDao.getType(), blockDao.createTypeMapping());
+
+                    // Add blockStat type
+                    BlockStatDao blockStatDao = injector.getInstance(BlockStatDao.class);
+                    createIndexRequestBuilder.addMapping(blockStatDao.getType(), blockStatDao.createTypeMapping());
 
                     createIndexRequestBuilder.execute().actionGet();
                 }
