@@ -32,6 +32,7 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.service.AbstractBlockchainListenerService;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
@@ -40,6 +41,7 @@ import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
+import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.common.inject.Inject;
 import org.nuiton.i18n.I18n;
 
@@ -53,11 +55,9 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class BlockchainUserEventService extends AbstractService implements ChangeService.ChangeListener {
+public class BlockchainUserEventService extends AbstractBlockchainListenerService  {
 
     public static final String DEFAULT_PUBKEYS_SEPARATOR = ", ";
-
-    private static final List<ChangeSource> CHANGE_LISTEN_SOURCES = ImmutableList.of(new ChangeSource("*", BlockchainService.BLOCK_TYPE));
 
     private final UserService userService;
 
@@ -65,77 +65,42 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
     private final AdminService adminService;
 
-    private final boolean enable;
-    private final ThreadPool threadPool;
-
     @Inject
     public BlockchainUserEventService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
+                                      ThreadPool threadPool,
                                       BlockchainService blockchainService,
                                       UserService userService,
                                       AdminService adminService,
-                                      UserEventService userEventService,
-                                      ThreadPool threadPool) {
-        super("duniter.user.event.blockchain", client, settings, cryptoService);
+                                      UserEventService userEventService) {
+        super("duniter.user.event.blockchain", client, settings.getDelegate(), cryptoService, threadPool);
         this.userService = userService;
         this.adminService = adminService;
         this.userEventService = userEventService;
-        this.threadPool = threadPool;
-        this.enable = pluginSettings.enableBlockchainSync();
-
         if (this.enable) {
-            ChangeService.registerListener(this);
             blockchainService.registerConnectionListener(createConnectionListeners());
         }
     }
 
-    @Override
-    public String getId() {
-        return "duniter.user.event.blockchain";
-    }
 
     @Override
-    public void onChange(ChangeEvent change) {
-
-        // Skip _id=current
-        if(change.getId() == "current") return;
-
+    protected void processCreateBlock(final ChangeEvent change) {
         try {
-
-            switch (change.getOperation()) {
-                // on create
-                case CREATE: // create
-                    if (change.getSource() != null) {
-                        BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
-                        processCreateBlock(block);
-                    }
-                    break;
-
-                // on update
-                case INDEX:
-                    if (change.getSource() != null) {
-                        BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
-                        processUpdateBlock(block);
-                    }
-                    break;
-
-                // on DELETE : remove user event on block (using link
-                case DELETE:
-                    processBlockDelete(change);
-
-                    break;
-            }
-
-        }
-        catch(IOException e) {
+            BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
+            processCreateBlock(block);
+        } catch (IOException e) {
             throw new TechnicalException(String.format("Unable to parse received block %s", change.getId()), e);
         }
-
-        //logger.info("receiveing block change: " + change.toJson());
     }
 
     @Override
-    public Collection<ChangeSource> getChangeSources() {
-        return CHANGE_LISTEN_SOURCES;
+    protected void processBlockDelete(ChangeEvent change, boolean wait) {
+        if (change.getId() == null) return;
+
+        // Delete events that reference this block
+        ActionFuture<?> actionFuture = userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
+        if (wait) {
+            actionFuture.actionGet();
+        }
     }
 
     /* -- internal method -- */
@@ -182,6 +147,7 @@ public class BlockchainUserEventService extends AbstractService implements Chang
         };
     }
 
+
     private void processCreateBlock(BlockchainBlock block) {
         // Joiners
         if (CollectionUtils.isNotEmpty(block.getJoiners())) {
@@ -217,15 +183,6 @@ public class BlockchainUserEventService extends AbstractService implements Chang
                 processCertification(block, cert);
             }
         }
-    }
-
-    private void processUpdateBlock(final BlockchainBlock block) {
-
-        // Delete events that reference this block
-        CompletableFuture.runAsync(() -> userEventService.deleteEventsByReference(new UserEvent.Reference(block.getCurrency(), BlockchainService.BLOCK_TYPE, String.valueOf(block.getNumber())))
-                .actionGet(), threadPool.scheduler())
-                // Then process the block
-                .thenAccept(aVoid -> processCreateBlock(block));
     }
 
     private void processTx(BlockchainBlock block, BlockchainBlock.Transaction tx) {
@@ -288,14 +245,6 @@ public class BlockchainUserEventService extends AbstractService implements Chang
 
         userEventService.notifyUser(event);
     }
-
-    private void processBlockDelete(ChangeEvent change) {
-        if (change.getId() == null) return;
-
-        // Delete events that reference this block
-        userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
-    }
-
 
 
 }

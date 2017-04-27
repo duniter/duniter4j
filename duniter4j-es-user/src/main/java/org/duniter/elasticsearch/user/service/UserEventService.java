@@ -196,8 +196,6 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
     public ActionFuture<?> deleteEventsByReference(final UserEvent.Reference reference) {
         Preconditions.checkNotNull(reference);
-        Preconditions.checkNotNull(reference.getIndex());
-        Preconditions.checkNotNull(reference.getType());
 
         return threadPool.schedule(() -> doDeleteEventsByReference(reference));
     }
@@ -370,9 +368,13 @@ public class UserEventService extends AbstractService implements ChangeService.C
                 .setSearchType(SearchType.QUERY_AND_FETCH);
 
         // Query = filter on reference
-        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
-                .filter(QueryBuilders.termQuery(UserEvent.PROPERTY_REFERENCE + "." + UserEvent.Reference.PROPERTY_INDEX, reference.getIndex()))
-                .filter(QueryBuilders.termQuery(UserEvent.PROPERTY_REFERENCE + "." + UserEvent.Reference.PROPERTY_TYPE, reference.getType()));
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        if (StringUtils.isNotBlank(reference.getIndex())) {
+            boolQuery.filter(QueryBuilders.termQuery(UserEvent.PROPERTY_REFERENCE + "." + UserEvent.Reference.PROPERTY_INDEX, reference.getIndex()));
+        }
+        if (StringUtils.isNotBlank(reference.getType())) {
+            boolQuery.filter(QueryBuilders.termQuery(UserEvent.PROPERTY_REFERENCE + "." + UserEvent.Reference.PROPERTY_TYPE, reference.getType()));
+        }
         if (StringUtils.isNotBlank(reference.getId())) {
             boolQuery.filter(QueryBuilders.termQuery(UserEvent.PROPERTY_REFERENCE + "." + UserEvent.Reference.PROPERTY_ID, reference.getId()));
         }
@@ -385,33 +387,51 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
         searchRequest.setQuery(QueryBuilders.nestedQuery(UserEvent.PROPERTY_REFERENCE, QueryBuilders.constantScoreQuery(boolQuery)));
 
-        // Execute query
+        // Execute query, while there is some data
         try {
-            SearchResponse response = searchRequest.execute().actionGet();
-
             int bulkSize = pluginSettings.getIndexBulkSize();
             BulkRequestBuilder bulkRequest = client.prepareBulk();
 
-            // Read query result
-            long counter = 0;
-            SearchHit[] searchHits = response.getHits().getHits();
-            for (SearchHit searchHit : searchHits) {
-                bulkRequest.add(
-                        client.prepareDelete(INDEX, EVENT_TYPE, searchHit.getId())
-                );
-                counter++;
+            int counter = 0;
+            boolean loop = true;
+            searchRequest.setSize(bulkSize);
+            SearchResponse response = searchRequest.execute().actionGet();
+            do {
 
-                // Flush the bulk if not empty
-                if ((counter % bulkSize) == 0) {
-                    client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
-                    bulkRequest = client.prepareBulk();
+                // Read response
+                SearchHit[] searchHits = response.getHits().getHits();
+                for (SearchHit searchHit : searchHits) {
+
+                    // Add deletion to bulk
+                    bulkRequest.add(
+                            client.prepareDelete(INDEX, EVENT_TYPE, searchHit.getId())
+                    );
+                    counter++;
+
+                    // Flush the bulk if not empty
+                    if ((counter % bulkSize) == 0) {
+                        client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
+                        bulkRequest = client.prepareBulk();
+                    }
                 }
-            }
+
+                // Prepare next iteration
+                if (counter == 0 || counter >= response.getHits().getTotalHits()) {
+                    loop = false;
+                }
+                // Prepare next iteration
+                else {
+                    searchRequest.setFrom(counter);
+                    response = searchRequest.execute().actionGet();
+                }
+            } while(loop);
 
             // last flush
-            client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
-        }
-        catch(SearchPhaseExecutionException e) {
+            if ((counter % bulkSize) != 0) {
+                client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
+            }
+
+        } catch (SearchPhaseExecutionException e) {
             // Failed or no item on index
             logger.error(String.format("Error while deleting by reference: %s. Skipping deletions.", e.getMessage()), e);
         }

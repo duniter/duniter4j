@@ -22,10 +22,8 @@ package org.duniter.elasticsearch.user;
  * #L%
  */
 
-import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.crypto.CryptoUtils;
-import org.duniter.core.util.crypto.KeyPair;
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.*;
@@ -82,11 +80,10 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
     protected void createIndices() {
 
-        boolean reloadIndices = pluginSettings.reloadIndices();
-
-        if (reloadIndices) {
+        // Reload all indices
+        if (pluginSettings.reloadAllIndices()) {
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading all User indices...");
+                logger.info("Reloading [user-plugin] indices...");
             }
             injector.getInstance(HistoryService.class)
                     .deleteIndex()
@@ -105,12 +102,13 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading all Duniter User indices... [OK]");
+                logger.info("Reloading [user-plugin] indices. [OK]");
             }
         }
+
         else {
             if (logger.isInfoEnabled()) {
-                logger.info("Checking Duniter User indices...");
+                logger.info("Checking [user-plugin] indices...");
             }
             injector.getInstance(HistoryService.class).createIndexIfNotExists();
             injector.getInstance(UserService.class).createIndexIfNotExists();
@@ -119,9 +117,23 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(UserInvitationService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Checking Duniter User indices... [OK]");
+                logger.info("Checking [user-plugin] indices. [OK]");
+            }
+
+            // Reload blockchain indices : user/event
+            if (pluginSettings.reloadBlockchainIndices()) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Deleting existing user event, referencing a block...");
+                }
+                // Delete events that reference a block
+                injector.getInstance(UserEventService.class)
+                        .deleteEventsByReference(new UserEvent.Reference(null/*all*/, BlockchainService.BLOCK_TYPE, null/*all*/));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Deleting existing user event, referencing a block. [OK]");
+                }
             }
         }
+
     }
 
     protected void doAfterStart() {

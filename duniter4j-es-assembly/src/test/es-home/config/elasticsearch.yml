@@ -112,7 +112,7 @@ security.manager.enabled: false
 #
 # duniter.enabled: false
 #
-# Reset and reload all Duniter4j data at startup - DO SET to true in production
+# Reset all data and re-create all Duniter4j inidices, at startup - DO SET to true in production
 #
 # duniter.indices.reload: true
 #
@@ -122,13 +122,17 @@ duniter.string.analyzer: french
 #
 # Enabling node blockchain synchronization
 #
-duniter.blockchain.sync.enable: true
+duniter.blockchain.enable: true
+#
+# Force to reset and reload the blockchain, at startup - DO SET to true in production
+#
+#duniter.blockchain.reload: true
 #
 # Duniter node to synchronize
 #
 duniter.host: g1.duniter.org
-duniter.port: 443
-duniter.useSsl: true
+duniter.port: 10901
+#duniter.useSsl: true
 duniter4j.network.timeout: 10000
 #
 # ---------------------------------- Duniter4j security module -------------------

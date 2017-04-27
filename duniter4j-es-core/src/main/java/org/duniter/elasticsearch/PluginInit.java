@@ -29,7 +29,6 @@ import org.duniter.elasticsearch.dao.BlockStatDao;
 import org.duniter.elasticsearch.dao.PeerDao;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.service.BlockchainService;
-import org.duniter.elasticsearch.service.BlockchainStatsService;
 import org.duniter.elasticsearch.service.CurrencyService;
 import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -83,11 +82,10 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
     protected void createIndices() {
 
-        boolean reloadIndices = pluginSettings.reloadIndices();
-
-        if (reloadIndices) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Reloading all Duniter core indices...");
+        // Reload All indices
+        if (pluginSettings.reloadAllIndices() || pluginSettings.reloadBlockchainIndices()) {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Reloading [core-plugin] indices...");
             }
 
             injector.getInstance(CurrencyService.class)
@@ -95,19 +93,21 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading all Duniter indices... [OK]");
+                logger.info("Reloading [core-plugin] indices. [OK]");
             }
         }
+
         else {
+
             if (logger.isInfoEnabled()) {
-                logger.info("Checking Duniter core indices...");
+                logger.info("Checking if [core-plugin] indices exists...");
             }
 
             injector.getInstance(CurrencyService.class)
                     .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Checking Duniter core indices... [OK]");
+                logger.info("Checking if [core-plugin] indices exists. [OK]");
             }
         }
     }
@@ -115,7 +115,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     protected void doAfterStart() {
 
         // Synchronize blockchain
-        if (pluginSettings.enableBlockchainSync()) {
+        if (pluginSettings.enableBlockchain()) {
 
             Peer peer = pluginSettings.checkAndGetPeer();
 

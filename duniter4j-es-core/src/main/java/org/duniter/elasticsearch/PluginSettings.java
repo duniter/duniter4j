@@ -188,12 +188,16 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.get("duniter.string.analyzer", "english");
     }
 
-    public boolean reloadIndices() {
+    public boolean reloadAllIndices() {
         return settings.getAsBoolean("duniter.indices.reload", false);
     }
 
-    public boolean enableBlockchainSync()  {
-        return settings.getAsBoolean("duniter.blockchain.sync.enable", false);
+    public boolean enableBlockchain()  {
+        return settings.getAsBoolean("duniter.blockchain.enable", false);
+    }
+
+    public boolean reloadBlockchainIndices()  {
+        return settings.getAsBoolean("duniter.blockchain.indices.reload", false);
     }
 
     public File getTempDirectory() {

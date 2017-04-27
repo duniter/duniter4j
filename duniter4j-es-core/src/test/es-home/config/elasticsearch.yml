@@ -121,7 +121,7 @@ duniter.string.analyzer: french
 #
 # Enabling node blockchain synchronization
 #
-duniter.blockchain.sync.enable: false
+duniter.blockchain.enable: false
 #
 # Duniter node to synchronize
 #

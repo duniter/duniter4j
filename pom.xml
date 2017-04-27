@@ -48,7 +48,7 @@
     <!-- release config -->
     <autoVersionSubmodules>true</autoVersionSubmodules>
     <goals>deploy</goals>
-    <arguments />
+    <arguments>-DperformFullRelease</arguments>
     <preparationGoals>verify</preparationGoals>
     <projectInfoReportsPluginVersion>2.7</projectInfoReportsPluginVersion>
 

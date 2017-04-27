@@ -23,20 +23,16 @@ package org.duniter.elasticsearch.service;
  */
 
 
-import com.google.common.collect.ImmutableList;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.util.BlockchainBlockUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
-import org.duniter.core.util.Preconditions;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.dao.BlockStatDao;
 import org.duniter.elasticsearch.model.BlockchainBlockStat;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
-import org.duniter.elasticsearch.service.changes.ChangeService;
-import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -44,82 +40,36 @@ import org.elasticsearch.common.metrics.CounterMetric;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Created by Benoit on 26/04/2017.
  */
-public class BlockchainStatsService extends AbstractService implements ChangeService.ChangeListener {
+public class BlockchainStatsService extends AbstractBlockchainListenerService {
 
-    private static final List<ChangeSource> CHANGE_LISTEN_SOURCES = ImmutableList.of(new ChangeSource("*", BlockchainService.BLOCK_TYPE));
-
-    private final boolean enable;
     private final BlockStatDao blockStatDao;
-    private final ThreadPool threadPool;
 
     @Inject
     public BlockchainStatsService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
                                   BlockStatDao blockStatDao,
                                   ThreadPool threadPool) {
-        super("duniter.blockchain.stats", client, settings, cryptoService);
-        this.enable = pluginSettings.enableBlockchainSync();
+        super("duniter.blockchain.stats", client, settings, cryptoService, threadPool);
         this.blockStatDao = blockStatDao;
-        this.threadPool = threadPool;
-
-        if (this.enable) {
-            ChangeService.registerListener(this);
-        }
     }
 
-    @Override
-    public String getId() {
-        return "duniter.blockchain.stats";
-    }
-
-    @Override
-    public void onChange(ChangeEvent change) {
-
-        // Skip _id=current
-        if(change.getId() == "current") return;
-
+    protected void processCreateBlock(final ChangeEvent change) {
         try {
-
-            switch (change.getOperation()) {
-                // on create
-                case CREATE: // create
-                    if (change.getSource() != null) {
-                        BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
-                        processCreateBlock(block);
-                    }
-                    break;
-
-                // on update
-                case INDEX:
-                    if (change.getSource() != null) {
-                        BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
-                        processUpdateBlock(block);
-                    }
-                    break;
-
-                // on DELETE : remove user event on block (using link
-                case DELETE:
-                    processBlockDelete(change);
-
-                    break;
-            }
-
-        }
-        catch(IOException e) {
+            BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
+            processCreateBlock(block);
+        } catch (IOException e) {
             throw new TechnicalException(String.format("Unable to parse received block %s", change.getId()), e);
         }
-
     }
 
-    @Override
-    public Collection<ChangeSource> getChangeSources() {
-        return CHANGE_LISTEN_SOURCES;
+    protected void processBlockDelete(ChangeEvent change, boolean wait) {
+        if (change.getId() == null) return;
+
+        // Delete existing stat
+        blockStatDao.delete(change.getIndex(), change.getId(), wait);
     }
 
     /* -- internal method -- */
@@ -157,24 +107,7 @@ public class BlockchainStatsService extends AbstractService implements ChangeSer
         blockStatDao.create(stat, false/*wait*/);
     }
 
-    private void processUpdateBlock(final BlockchainBlock block) {
-        Preconditions.checkNotNull(block);
-        Preconditions.checkNotNull(block.getNumber());
-
-        // Delete existing stat
-        CompletableFuture.runAsync(() -> blockStatDao.delete(block.getCurrency(), block.getNumber().toString(), true /*wait*/), threadPool.scheduler())
-                // Then process block
-                .thenAccept(aVoid -> processCreateBlock(block));
-    }
-
-    private void processBlockDelete(ChangeEvent change) {
-        if (change.getId() == null) return;
-
-        // Delete existing stat
-        blockStatDao.delete(change.getIndex(), change.getId(), false /*wait*/);
-    }
-
-    protected BlockchainBlockStat newBlockStat(BlockchainBlock block) {
+    private BlockchainBlockStat newBlockStat(BlockchainBlock block) {
         BlockchainBlockStat stat = new BlockchainBlockStat();
 
         stat.setNumber(block.getNumber());

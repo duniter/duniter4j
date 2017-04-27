@@ -111,10 +111,10 @@ security.manager.enabled: false
 #
 # duniter.enabled: false
 #
-# Reset and reload all Duniter4j data at startup - DO SET to true in production
+# Reset and reload all Duniter4j data at startup - DO NOT SET to true in production
 #
 # duniter.indices.reload: true
-#:
+#
 # Default string analyzer
 #
 duniter.string.analyzer: french
@@ -123,12 +123,12 @@ duniter.string.analyzer: french
 #
 duniter.blockchain.sync.enable: true
 #
-# Duniter node to synchronize
+# Duniter node address
 #
 duniter.host: gtest.duniter.org
 duniter.port: 10900
 #duniter.useSsl: true
-#duniter4j.network.timeout
+#duniter.network.timeout: 5000
 #
 # ---------------------------------- Duniter4j security -------------------------
 #
@@ -154,8 +154,8 @@ duniter.security.enable: true
 # Should synchronize data using P2P
 #
 duniter.data.sync.enable: true
-duniter.data.sync.host: data.gtest.duniter.fr
-duniter.data.sync.port: 80
+duniter.data.sync.host: g1.data.duniter.fr
+duniter.data.sync.port: 443
 
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
@@ -213,4 +213,4 @@ duniter.subscription.enable: true
 #
 # Email subscription: URL to a Cesium site (for link in the email content)
 #
-#duniter.subscription.email.cesium.url: 'https://g1.duniter.fr'
+#duniter.subscription.email.cesium.url: 'http://domain.com/cesium'

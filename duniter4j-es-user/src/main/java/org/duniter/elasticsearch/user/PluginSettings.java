@@ -28,9 +28,7 @@ import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.core.util.crypto.KeyPair;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
-import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.settings.Settings;
 
 import java.util.Locale;
@@ -85,7 +83,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean reloadIndices() {
-        return delegate.reloadIndices();
+        return delegate.reloadAllIndices();
     }
 
     public boolean enableDataSync() {
@@ -151,7 +149,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean enableBlockchainSync() {
-        return delegate.enableBlockchainSync();
+        return delegate.enableBlockchain();
     }
 
     public String getKeyringSalt() {
