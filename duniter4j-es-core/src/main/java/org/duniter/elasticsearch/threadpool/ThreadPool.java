@@ -22,8 +22,8 @@ package org.duniter.elasticsearch.threadpool;
  * #L%
  */
 
-import org.duniter.core.util.Preconditions;
 import com.google.common.collect.Lists;
+import org.duniter.core.util.Preconditions;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsResponse;
 import org.elasticsearch.client.Client;
@@ -37,14 +37,15 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsAbortPolicy;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.common.util.concurrent.LoggingRunnable;
 import org.elasticsearch.transport.TransportService;
 import org.nuiton.i18n.I18n;
 
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Manage thread pool, to execute tasks asynchronously.
@@ -54,7 +55,7 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
 
     private ScheduledThreadPoolExecutor scheduler = null;
     private final Injector injector;
-    private final ESLogger logger = Loggers.getLogger("threadpool");
+    private final ESLogger logger = Loggers.getLogger("duniter.threadpool");
 
     private final org.elasticsearch.threadpool.ThreadPool delegate;
 
@@ -72,7 +73,14 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
         this.delegate = esThreadPool;
 
         int availableProcessors = EsExecutors.boundedNumberOfProcessors(settings);
-        this.scheduler = new ScheduledThreadPoolExecutor(availableProcessors, EsExecutors.daemonThreadFactory(settings, "duniter-scheduler"), new EsAbortPolicy());
+        this.scheduler = new LoggingScheduledThreadPoolExecutor(logger, availableProcessors,
+                EsExecutors.daemonThreadFactory(settings, "duniter-scheduler"),
+                new RetryPolicy(1, TimeUnit.SECONDS));
+        /*this.scheduler = new ScheduledThreadPoolExecutor(availableProcessors,
+                EsExecutors.daemonThreadFactory(settings, "duniter-scheduler"),
+                new RetryPolicy(1, TimeUnit.SECONDS)) {
+
+        };*/
         this.scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         this.scheduler.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
         this.scheduler.setRemoveOnCancelPolicy(true);
@@ -146,7 +154,7 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
      */
     public ScheduledActionFuture<?> schedule(Runnable command, String name, TimeValue delay) {
         if (name == null) {
-            return new ScheduledActionFuture<>(scheduler.schedule(new LoggingRunnable(logger, command), delay.millis(), TimeUnit.MILLISECONDS));
+            return new ScheduledActionFuture<>(scheduler.schedule(command, delay.millis(), TimeUnit.MILLISECONDS));
         }
         return new ScheduledActionFuture<>(delegate.schedule(delay,
                 name,
@@ -168,11 +176,24 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
      * Schedules a periodic rest that always runs on the scheduler thread.
      *
      * @param command the rest to take
-     * @param interval the delay interval
+     * @param initialDelay the initial delay
+     * @param period the period
+     * @param timeUnit the time unit
      * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
      */
-    public ScheduledActionFuture<?> scheduleWithFixedDelay(Runnable command, TimeValue interval) {
-        return new ScheduledActionFuture<>(delegate.scheduleWithFixedDelay(command, interval));
+    public ScheduledActionFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit timeUnit) {
+        return new ScheduledActionFuture<>(scheduler.scheduleAtFixedRate(command, initialDelay, period, timeUnit));
+    }
+
+    /**
+     * Schedules a periodic rest that always runs on the scheduler thread.
+     *
+     * @param command the rest to take
+     * @param initialDelay the initial delay
+     * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
+     */
+    public ScheduledActionFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit timeUnit) {
+        return new ScheduledActionFuture<>(scheduler.scheduleWithFixedDelay(command, initialDelay, delay, timeUnit));
     }
 
 
@@ -235,5 +256,8 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
 
     public ScheduledExecutorService scheduler() {
         return delegate.scheduler();
+        //return scheduler;
     }
+
+
 }

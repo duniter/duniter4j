@@ -25,7 +25,9 @@ package org.duniter.elasticsearch.dao;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by blavenie on 03/04/17.
@@ -64,4 +66,6 @@ public interface BlockDao extends Bean, TypeDao<BlockDao> {
     BlockchainBlock getBlockById(String currencyName, String id);
 
     void deleteRange(final String currencyName, final int fromNumber, final int toNumber);
+
+    List<BlockchainBlock> getBlocksByIds(String currencyName, Collection<String> ids);
 }

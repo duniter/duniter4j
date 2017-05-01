@@ -33,7 +33,7 @@ import java.util.List;
  */
 public interface BlockStatDao extends Bean, TypeDao<BlockStatDao> {
 
-    String TYPE = "blockStat";
+    String TYPE = "blockstat";
 
     void create(BlockchainBlockStat block, boolean wait);
 
@@ -58,6 +58,8 @@ public interface BlockStatDao extends Bean, TypeDao<BlockStatDao> {
     void update(String currencyName, String id, byte[] json, boolean wait);
 
     void delete(String currency, String id, boolean wait);
+
+    void delete(String currency, String id, String hash, boolean wait);
 
     BlockchainBlockStat getById(String currencyName, String id);
 

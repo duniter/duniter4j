@@ -48,8 +48,10 @@ import org.elasticsearch.search.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -167,6 +169,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         SearchRequestBuilder searchRequest = client
                 .prepareSearch(currencyName)
                 .setTypes(TYPE)
+                .setFetchSource(true)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 
         // If only one term, search as prefix
@@ -194,6 +197,28 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
 
         // Read query result
         return toBlocks(searchResponse, true);
+    }
+
+    public List<BlockchainBlock> getBlocksByIds(String currencyName, Collection<String> ids) {
+        // Prepare request
+        SearchRequestBuilder searchRequest = client
+                .prepareSearch(currencyName)
+                .setTypes(TYPE)
+                .setSize(ids.size())
+                .setFetchSource(true)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+
+        // If only one term, search as prefix
+        searchRequest.setQuery(QueryBuilders.idsQuery(TYPE).addIds(ids));
+
+        // Sort as id
+        searchRequest.addSort("_id", SortOrder.ASC);
+
+        // Execute query
+        SearchResponse searchResponse = searchRequest.execute().actionGet();
+
+        // Read query result
+        return toBlocks(searchResponse, false);
     }
 
     public int getMaxBlockNumber(String currencyName) {
@@ -345,6 +370,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
     protected List<BlockchainBlock> toBlocks(SearchResponse response, boolean withHighlight) {
         // Read query result
         List<BlockchainBlock> result = Lists.newArrayList();
+
         response.getHits().forEach(searchHit -> {
             BlockchainBlock block;
             if (searchHit.source() != null) {

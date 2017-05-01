@@ -46,8 +46,6 @@ import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.dao.BlockDao;
-import org.duniter.elasticsearch.dao.BlockStatDao;
-import org.duniter.elasticsearch.dao.PeerDao;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -66,7 +64,6 @@ import java.util.*;
 public class BlockchainService extends AbstractService {
 
     public static final String BLOCK_TYPE = BlockDao.TYPE;
-    public static final String PEER_TYPE = PeerDao.TYPE;
     public static final String CURRENT_BLOCK_ID = "current";
 
     private static final int SYNC_MISSING_BLOCK_MAX_RETRY = 5;
@@ -74,8 +71,6 @@ public class BlockchainService extends AbstractService {
     private final ProgressionModel nullProgressionModel = new NullProgressionModel();
 
     private BlockchainRemoteService blockchainRemoteService;
-    private CurrencyService currencyService;
-    private ThreadPool threadPool;
     private List<WebsocketClientEndpoint.ConnectionListener> connectionListeners = new ArrayList<>();
     private final WebsocketClientEndpoint.ConnectionListener dispatchConnectionListener;
 
@@ -93,7 +88,6 @@ public class BlockchainService extends AbstractService {
                              BlockDao blockDao,
                              final ServiceLocator serviceLocator){
         super("duniter.blockchain", client, settings);
-        this.threadPool = threadPool;
         this.client = client;
         this.blockDao = blockDao;
         threadPool.scheduleOnStarted(() -> {
@@ -113,11 +107,6 @@ public class BlockchainService extends AbstractService {
                 }
             }
         };
-    }
-
-    @Inject
-    public void setCurrencyService(CurrencyService currencyService) {
-        this.currencyService = currencyService;
     }
 
 
@@ -363,8 +352,6 @@ public class BlockchainService extends AbstractService {
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         try {
             String json = objectMapper.writeValueAsString(currentBlock);
-
-
             indexCurrentBlockFromJson(currentBlock.getCurrency(), json, wait);
         } catch(IOException e) {
             throw new TechnicalException(e);

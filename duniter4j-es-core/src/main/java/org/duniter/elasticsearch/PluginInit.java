@@ -149,15 +149,21 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                             currency.getCurrencyName(),
                             PeerDao.TYPE);
 
-            // Index blocks (and listen if new block appear)
-            injector.getInstance(BlockchainService.class)
-                    .indexLastBlocks(peer)
-                    .listenAndIndexNewBlock(peer);
+            // Wait end of currency index creation, then index blocks
+            threadPool.scheduleOnClusterHealthStatus(() -> {
 
-            // Index peers (and listen if new peer appear)
-            injector.getInstance(PeerService.class)
-                    //.indexAllPeers(peer)
-                    .listenAndIndexPeers(peer);
+                // Index blocks (and listen if new block appear)
+                injector.getInstance(BlockchainService.class)
+                        .indexLastBlocks(peer)
+                        .listenAndIndexNewBlock(peer);
+
+                // Index peers (and listen if new peer appear)
+                injector.getInstance(PeerService.class)
+                        .listenAndIndexPeers(peer);
+
+            }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+
+
         }
     }
 }

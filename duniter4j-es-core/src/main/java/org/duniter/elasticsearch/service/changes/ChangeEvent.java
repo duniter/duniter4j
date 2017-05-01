@@ -73,6 +73,16 @@ public class ChangeEvent {
         this.source = source;
     }
 
+    protected ChangeEvent(ChangeEvent event, boolean copySource) {
+        this.id = event.getId();
+        this.index = event.getIndex();
+        this.type = event.getType();
+        this.timestamp = event.getTimestamp();
+        this.operation = event.getOperation();
+        this.version = event.getVersion();
+        this.source = copySource ? event.getSource() : null;
+    }
+
     public String getId() {
         return id;
     }
@@ -100,7 +110,6 @@ public class ChangeEvent {
     public BytesReference getSource() {
         return source;
     }
-
 
     public String toJson() {
         try {
@@ -148,5 +157,7 @@ public class ChangeEvent {
         }
     }
 
-
+    public ChangeEvent clone(ChangeEvent event, boolean withSource) {
+        return new ChangeEvent(this, withSource);
+    }
 }

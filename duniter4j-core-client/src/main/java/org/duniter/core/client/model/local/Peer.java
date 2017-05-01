@@ -221,12 +221,16 @@ public class Peer implements LocalEntity<String>, Serializable {
         // else (if define) use ipv4 (if NOT local IP)
         // else (if define) use dns
         // else (if define) use ipv6
-        this.host = ((port == 443 || useSsl) && dns != null) ? dns :
+        host = ((port == 443 || useSsl) && dns != null) ? dns :
                 (ipv4 != null && InetAddressUtils.isNotLocalIPv4Address(ipv4) ? ipv4 :
                     (dns != null ? dns :
                         (ipv6 != null ? "[" + ipv6 + "]" : "")));
+        // Use local IPv4 if no other host found
+        if (StringUtils.isBlank(host) && ipv4 != null && InetAddressUtils.isIPv4Address(ipv4)) {
+            host = ipv4;
+        }
         String protocol = (port == 443 || useSsl) ? "https" : "http";
-        this.url = protocol + "://" + this.host + (port != 80 ? (":" + port) : "");
+        this.url = protocol + "://" + host + (port != 80 ? (":" + port) : "");
     }
 
     @JsonIgnore

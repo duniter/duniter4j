@@ -23,9 +23,9 @@ package org.duniter.elasticsearch.service;
  */
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.util.BlockchainBlockUtils;
-import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.elasticsearch.PluginSettings;
@@ -34,49 +34,64 @@ import org.duniter.elasticsearch.dao.BlockStatDao;
 import org.duniter.elasticsearch.model.BlockchainBlockStat;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.metrics.CounterMetric;
+import org.elasticsearch.common.unit.TimeValue;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Benoit on 26/04/2017.
  */
 public class BlockchainStatsService extends AbstractBlockchainListenerService {
 
-    private final BlockStatDao blockStatDao;
-
     @Inject
     public BlockchainStatsService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
-                                  BlockStatDao blockStatDao,
                                   ThreadPool threadPool) {
-        super("duniter.blockchain.stats", client, settings, cryptoService, threadPool);
-        this.blockStatDao = blockStatDao;
+        super("duniter.blockchain.stats", client, settings, cryptoService, threadPool,
+                new TimeValue(500, TimeUnit.MILLISECONDS));
     }
 
-    protected void processCreateBlock(final ChangeEvent change) {
+    @Override
+    protected void processBlockIndex(ChangeEvent change) {
+
+        BlockchainBlock block = readBlock(change);
+        BlockchainBlockStat stat = toBlockStat(block);
+
+        // Add a delete to bulk
+        bulkRequest.add(client.prepareDelete(block.getCurrency(), BlockStatDao.TYPE, String.valueOf(block.getNumber()))
+                .setRefresh(false));
+        flushBulkRequestOrSchedule();
+
+        // Add a insert to bulk
         try {
-            BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
-            processCreateBlock(block);
-        } catch (IOException e) {
-            throw new TechnicalException(String.format("Unable to parse received block %s", change.getId()), e);
+            bulkRequest.add(client.prepareIndex(block.getCurrency(), BlockStatDao.TYPE, String.valueOf(block.getNumber()))
+                    .setRefresh(false) // recommended for heavy indexing
+                    .setSource(objectMapper.writeValueAsString(stat)));
+            flushBulkRequestOrSchedule();
+        }
+        catch(JsonProcessingException e) {
+            logger.error("Could not serialize BlockchainBlockStat into JSON: " + e.getMessage(), e);
         }
     }
 
-    protected void processBlockDelete(ChangeEvent change, boolean wait) {
-        if (change.getId() == null) return;
-
-        // Delete existing stat
-        blockStatDao.delete(change.getIndex(), change.getId(), wait);
+    protected void processBlockDelete(ChangeEvent change) {
+        // Add delete to bulk
+        bulkRequest.add(client.prepareDelete(change.getIndex(), BlockStatDao.TYPE, change.getId())
+                .setRefresh(false));
+        flushBulkRequestOrSchedule();
     }
 
-    /* -- internal method -- */
+    protected void beforeFlush() {
+        // Nothing to do
+    }
 
-    private void processCreateBlock(BlockchainBlock block) {
+    protected BlockchainBlockStat toBlockStat(BlockchainBlock block) {
 
-        BlockchainBlockStat stat = newBlockStat(block);
+        BlockchainBlockStat result = newBlockStat(block);
 
         // Tx
         if (CollectionUtils.isNotEmpty(block.getTransactions())) {
@@ -92,20 +107,20 @@ public class BlockchainStatsService extends AbstractBlockchainListenerService {
                         txAmountCounter.inc(txAmount);
                     }
                 });
-
-            stat.setTxAmount(BigInteger.valueOf(txAmountCounter.count()));
-            stat.setTxChangeCount((int)txChangeCounter.count());
-            stat.setTxCount(block.getTransactions().length);
+            result.setTxAmount(BigInteger.valueOf(txAmountCounter.count()));
+            result.setTxChangeCount((int)txChangeCounter.count());
+            result.setTxCount(block.getTransactions().length);
         }
         else {
-            stat.setTxAmount(BigInteger.valueOf(0));
-            stat.setTxChangeCount(0);
-            stat.setTxCount(0);
+            result.setTxAmount(BigInteger.valueOf(0));
+            result.setTxChangeCount(0);
+            result.setTxCount(0);
         }
 
-        // Add to index
-        blockStatDao.create(stat, false/*wait*/);
+        return result;
     }
+
+    /* -- internal method -- */
 
     private BlockchainBlockStat newBlockStat(BlockchainBlock block) {
         BlockchainBlockStat stat = new BlockchainBlockStat();

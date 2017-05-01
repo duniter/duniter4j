@@ -23,8 +23,10 @@ package org.duniter.elasticsearch.user.service;
  */
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.exception.TechnicalException;
@@ -32,6 +34,8 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.dao.BlockStatDao;
+import org.duniter.elasticsearch.model.BlockchainBlockStat;
 import org.duniter.elasticsearch.service.AbstractBlockchainListenerService;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
@@ -42,15 +46,17 @@ import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -60,10 +66,9 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
     public static final String DEFAULT_PUBKEYS_SEPARATOR = ", ";
 
     private final UserService userService;
-
     private final UserEventService userEventService;
-
     private final AdminService adminService;
+    private Queue<UserEvent.Reference> referencesToDelete = ConcurrentCollections.newBlockingQueue();
 
     @Inject
     public BlockchainUserEventService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
@@ -72,10 +77,12 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
                                       UserService userService,
                                       AdminService adminService,
                                       UserEventService userEventService) {
-        super("duniter.user.event.blockchain", client, settings.getDelegate(), cryptoService, threadPool);
+        super("duniter.user.event.blockchain", client, settings.getDelegate(), cryptoService, threadPool,
+                new TimeValue(500, TimeUnit.MILLISECONDS));
         this.userService = userService;
         this.adminService = adminService;
         this.userEventService = userEventService;
+
         if (this.enable) {
             blockchainService.registerConnectionListener(createConnectionListeners());
         }
@@ -83,23 +90,76 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
 
 
     @Override
-    protected void processCreateBlock(final ChangeEvent change) {
-        try {
-            BlockchainBlock block = objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
-            processCreateBlock(block);
-        } catch (IOException e) {
-            throw new TechnicalException(String.format("Unable to parse received block %s", change.getId()), e);
+    protected void processBlockIndex(ChangeEvent change) {
+
+        BlockchainBlock block = readBlock(change);
+
+        // First: Delete old events on same block
+        {
+            UserEvent.Reference reference = new UserEvent.Reference(change.getIndex(), BlockchainService.BLOCK_TYPE, change.getId());
+            this.bulkRequest = userEventService.addDeleteEventsByReferenceToBulk(reference, this.bulkRequest, this.bulkSize, false);
+            flushBulkRequestOrSchedule();
+        }
+
+        // Joiners
+        if (CollectionUtils.isNotEmpty(block.getJoiners())) {
+            for (BlockchainBlock.Joiner joiner: block.getJoiners()) {
+                notifyUserEvent(block, joiner.getPublicKey(), UserEventCodes.MEMBER_JOIN, I18n.n("duniter.user.event.MEMBER_JOIN"), block.getCurrency());
+            }
+        }
+
+        // Leavers
+        if (CollectionUtils.isNotEmpty(block.getLeavers())) {
+            for (BlockchainBlock.Joiner leaver: block.getJoiners()) {
+                notifyUserEvent(block, leaver.getPublicKey(), UserEventCodes.MEMBER_LEAVE, I18n.n("duniter.user.event.MEMBER_LEAVE"), block.getCurrency());
+            }
+        }
+
+        // Actives
+        if (CollectionUtils.isNotEmpty(block.getActives())) {
+            for (BlockchainBlock.Joiner active: block.getActives()) {
+                notifyUserEvent(block, active.getPublicKey(), UserEventCodes.MEMBER_ACTIVE, I18n.n("duniter.user.event.MEMBER_ACTIVE"), block.getCurrency());
+            }
+        }
+
+        // Tx
+        if (CollectionUtils.isNotEmpty(block.getTransactions())) {
+            for (BlockchainBlock.Transaction tx: block.getTransactions()) {
+                processTx(block, tx);
+            }
+        }
+
+        // Certifications
+        if (CollectionUtils.isNotEmpty(block.getCertifications())) {
+            for (BlockchainBlock.Certification cert: block.getCertifications()) {
+                processCertification(block, cert);
+            }
         }
     }
 
     @Override
-    protected void processBlockDelete(ChangeEvent change, boolean wait) {
-        if (change.getId() == null) return;
+    protected void processBlockDelete(ChangeEvent change) {
 
-        // Delete events that reference this block
-        ActionFuture<?> actionFuture = userEventService.deleteEventsByReference(new UserEvent.Reference(change.getIndex(), change.getType(), change.getId()));
-        if (wait) {
-            actionFuture.actionGet();
+        UserEvent.Reference reference = new UserEvent.Reference(change.getIndex(), BlockchainService.BLOCK_TYPE, change.getId());
+
+        if (change.getSource() != null) {
+            BlockchainBlock block = readBlock(change);
+            reference.setHash(block.getHash());
+        }
+
+        // Add to queue
+        referencesToDelete.add(reference);
+
+        flushBulkRequestOrSchedule();
+    }
+
+
+    protected void beforeFlush() {
+
+        UserEvent.Reference reference = referencesToDelete.poll();
+        while (reference != null) {
+            this.bulkRequest = userEventService.addDeleteEventsByReferenceToBulk(reference, this.bulkRequest, this.bulkSize, false);
+            reference = referencesToDelete.poll();
         }
     }
 
@@ -148,42 +208,7 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
     }
 
 
-    private void processCreateBlock(BlockchainBlock block) {
-        // Joiners
-        if (CollectionUtils.isNotEmpty(block.getJoiners())) {
-            for (BlockchainBlock.Joiner joiner: block.getJoiners()) {
-                notifyUserEvent(block, joiner.getPublicKey(), UserEventCodes.MEMBER_JOIN, I18n.n("duniter.user.event.MEMBER_JOIN"), block.getCurrency());
-            }
-        }
 
-        // Leavers
-        if (CollectionUtils.isNotEmpty(block.getLeavers())) {
-            for (BlockchainBlock.Joiner leaver: block.getJoiners()) {
-                notifyUserEvent(block, leaver.getPublicKey(), UserEventCodes.MEMBER_LEAVE, I18n.n("duniter.user.event.MEMBER_LEAVE"), block.getCurrency());
-            }
-        }
-
-        // Actives
-        if (CollectionUtils.isNotEmpty(block.getActives())) {
-            for (BlockchainBlock.Joiner active: block.getActives()) {
-                notifyUserEvent(block, active.getPublicKey(), UserEventCodes.MEMBER_ACTIVE, I18n.n("duniter.user.event.MEMBER_ACTIVE"), block.getCurrency());
-            }
-        }
-
-        // Tx
-        if (CollectionUtils.isNotEmpty(block.getTransactions())) {
-            for (BlockchainBlock.Transaction tx: block.getTransactions()) {
-                processTx(block, tx);
-            }
-        }
-
-        // Certifications
-        if (CollectionUtils.isNotEmpty(block.getCertifications())) {
-            for (BlockchainBlock.Certification cert: block.getCertifications()) {
-                processCertification(block, cert);
-            }
-        }
-    }
 
     private void processTx(BlockchainBlock block, BlockchainBlock.Transaction tx) {
         Set<String> senders = ImmutableSet.copyOf(tx.getIssuers());
@@ -212,7 +237,6 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
             }
         }
 
-        // TODO : indexer la TX dans un index/type spécifique ?
     }
 
     private void processCertification(BlockchainBlock block, BlockchainBlock.Certification certification) {
@@ -243,7 +267,13 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
                 .setReferenceHash(block.getHash())
                 .build();
 
-        userEventService.notifyUser(event);
+        event = userEventService.fillUserEvent(event);
+
+        bulkRequest.add(client.prepareIndex(UserEventService.INDEX, UserEventService.EVENT_TYPE)
+                .setSource(userEventService.toJson(event))
+                .setRefresh(false));
+
+        flushBulkRequestOrSchedule();
     }
 
 

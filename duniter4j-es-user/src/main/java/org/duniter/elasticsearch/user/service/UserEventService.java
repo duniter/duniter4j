@@ -44,7 +44,6 @@ import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserProfile;
 import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -56,7 +55,6 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
@@ -118,7 +116,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
     /**
      * Notify a user
      */
-    public ListenableActionFuture<IndexResponse> notifyUser(UserEvent event) {
+    public ActionFuture<IndexResponse> notifyUser(UserEvent event) {
         Preconditions.checkNotNull(event);
         Preconditions.checkNotNull(event.getRecipient());
 
@@ -132,35 +130,29 @@ public class UserEventService extends AbstractService implements ChangeService.C
         return indexEvent(locale, event);
     }
 
-    public ListenableActionFuture<IndexResponse> indexEvent(Locale locale, UserEvent event) {
+    /**
+     * Notify a user
+     */
+    public UserEvent fillUserEvent(UserEvent event) {
+        Preconditions.checkNotNull(event);
         Preconditions.checkNotNull(event.getRecipient());
-        Preconditions.checkNotNull(event.getType());
-        Preconditions.checkNotNull(event.getCode());
 
-        String nodePubkey = pluginSettings.getNodePubkey();
+        // Get user profile locale
+        UserProfile userProfile = getUserProfile(event.getRecipient(),
+                UserProfile.PROPERTY_EMAIL, UserProfile.PROPERTY_TITLE, UserProfile.PROPERTY_LOCALE);
+
+        Locale locale = userProfile.getLocale() != null ? new Locale(userProfile.getLocale()) : null;
+
+        // Add new event to index
+        return fillUserEvent(locale, event);
+    }
+
+    public ActionFuture<IndexResponse> indexEvent(Locale locale, UserEvent event) {
+
+        UserEvent completeUserEvent = fillUserEvent(locale, event);
 
         // Generate json
-        String eventJson;
-        if (StringUtils.isNotBlank(nodePubkey)) {
-            UserEvent signedEvent = new UserEvent(event);
-            signedEvent.setMessage(event.getLocalizedMessage(locale));
-            // set issuer, hash, signature
-            signedEvent.setIssuer(nodePubkey);
-
-            // Add hash
-            String hash = cryptoService.hash(toJson(signedEvent, true));
-            signedEvent.setHash(hash);
-
-            // Add signature
-            String signature = cryptoService.sign(toJson(signedEvent, true), pluginSettings.getNodeKeypair().getSecKey());
-            signedEvent.setSignature(signature);
-
-            eventJson = toJson(signedEvent);
-        } else {
-            logger.warn("Could not generate hash for new user event (no keyring)");
-            // Node has not keyring: do NOT sign it
-            eventJson = event.toJson(locale);
-        }
+        String eventJson = toJson(completeUserEvent);
 
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a event to recipient [%s]", event.getRecipient().substring(0, 8)));
@@ -171,11 +163,11 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
     }
 
-    public ListenableActionFuture<IndexResponse> indexEvent(String eventJson) {
+    public ActionFuture<IndexResponse> indexEvent(String eventJson) {
         return indexEvent(eventJson, true);
     }
 
-    public ListenableActionFuture<IndexResponse> indexEvent(String eventJson, boolean checkSignature) {
+    public ActionFuture<IndexResponse> indexEvent(String eventJson, boolean checkSignature) {
 
         if (checkSignature) {
             JsonNode jsonNode = readAndVerifyIssuerSignature(eventJson);
@@ -194,13 +186,19 @@ public class UserEventService extends AbstractService implements ChangeService.C
                 .execute();
     }
 
+
     public ActionFuture<?> deleteEventsByReference(final UserEvent.Reference reference) {
         Preconditions.checkNotNull(reference);
 
-        return threadPool.schedule(() -> doDeleteEventsByReference(reference));
+        final int bulkSize = pluginSettings.getIndexBulkSize();
+
+        return threadPool.schedule(() -> {
+            BulkRequestBuilder bulkRequest = client.prepareBulk();
+            addDeleteEventsByReferenceToBulk(reference, bulkRequest, bulkSize, true);
+        });
     }
 
-    public ListenableActionFuture<UpdateResponse> markEventAsRead(String id, String signature) {
+    public ActionFuture<UpdateResponse> markEventAsRead(String id, String signature) {
 
         Map<String, Object> fields = client.getMandatoryFieldsById(INDEX, EVENT_TYPE, id, UserEvent.PROPERTY_HASH, UserEvent.PROPERTY_RECIPIENT);
         String recipient = fields.get(UserEvent.PROPERTY_RECIPIENT).toString();
@@ -249,8 +247,41 @@ public class UserEventService extends AbstractService implements ChangeService.C
                 .collect(Collectors.toList());
     }
 
+    public String toJson(UserEvent userEvent) {
+        return toJson(userEvent, false);
+    }
+
     /* -- Internal methods -- */
 
+
+    protected UserEvent fillUserEvent(Locale locale, UserEvent event) {
+        Preconditions.checkNotNull(event.getRecipient());
+        Preconditions.checkNotNull(event.getType());
+        Preconditions.checkNotNull(event.getCode());
+
+        String nodePubkey = pluginSettings.getNodePubkey();
+
+        // Generate json
+        if (StringUtils.isNotBlank(nodePubkey)) {
+            UserEvent signedEvent = new UserEvent(event);
+            signedEvent.setMessage(event.getLocalizedMessage(locale));
+            // set issuer, hash, signature
+            signedEvent.setIssuer(nodePubkey);
+
+            // Add hash
+            String hash = cryptoService.hash(toJson(signedEvent, true));
+            signedEvent.setHash(hash);
+
+            // Add signature
+            String signature = cryptoService.sign(toJson(signedEvent, true), pluginSettings.getNodeKeypair().getSecKey());
+            signedEvent.setSignature(signature);
+
+            return signedEvent;
+        } else {
+            logger.warn("Could not generate hash for new user event (no keyring)");
+            return event;
+        }
+    }
 
     public static XContentBuilder createEventType() {
         try {
@@ -358,7 +389,10 @@ public class UserEventService extends AbstractService implements ChangeService.C
         return result;
     }
 
-    private void doDeleteEventsByReference(final UserEvent.Reference reference) {
+    public BulkRequestBuilder addDeleteEventsByReferenceToBulk(final UserEvent.Reference reference,
+                                                               BulkRequestBuilder bulkRequest,
+                                                               final int bulkSize,
+                                                               final boolean flushAll) {
 
         // Prepare search request
         SearchRequestBuilder searchRequest = client
@@ -389,8 +423,6 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
         // Execute query, while there is some data
         try {
-            int bulkSize = pluginSettings.getIndexBulkSize();
-            BulkRequestBuilder bulkRequest = client.prepareBulk();
 
             int counter = 0;
             boolean loop = true;
@@ -409,7 +441,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
                     counter++;
 
                     // Flush the bulk if not empty
-                    if ((counter % bulkSize) == 0) {
+                    if ((bulkRequest.numberOfActions() % bulkSize) == 0) {
                         client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
                         bulkRequest = client.prepareBulk();
                     }
@@ -427,7 +459,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
             } while(loop);
 
             // last flush
-            if ((counter % bulkSize) != 0) {
+            if (flushAll && (bulkRequest.numberOfActions() % bulkSize) != 0) {
                 client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
             }
 
@@ -435,6 +467,8 @@ public class UserEventService extends AbstractService implements ChangeService.C
             // Failed or no item on index
             logger.error(String.format("Error while deleting by reference: %s. Skipping deletions.", e.getMessage()), e);
         }
+
+        return bulkRequest;
     }
 
 
@@ -442,9 +476,6 @@ public class UserEventService extends AbstractService implements ChangeService.C
         return client.getSourceByIdOrNull(UserService.INDEX, UserService.PROFILE_TYPE, pubkey, UserProfile.class, fieldnames);
     }
 
-    private String toJson(UserEvent userEvent) {
-        return toJson(userEvent, false);
-    }
 
     private String toJson(UserEvent userEvent, boolean cleanHashAndSignature) {
         try {
@@ -509,16 +540,18 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
         event.setId(eventId);
 
-        // Notify listeners
-        threadPool.schedule(() -> {
-            synchronized (LISTENERS) {
-                LISTENERS.values().forEach(listener -> {
-                    if (event.getRecipient().equals(listener.getPubkey())) {
-                        listener.onEvent(event);
-                    }
-                });
-            }
-        });
+        if (LISTENERS.size() > 0) {
+            // Notify listeners
+            threadPool.schedule(() -> {
+                synchronized (LISTENERS) {
+                    LISTENERS.values().forEach(listener -> {
+                        if (event.getRecipient().equals(listener.getPubkey())) {
+                            listener.onEvent(event);
+                        }
+                    });
+                }
+            });
+        }
 
     }
 

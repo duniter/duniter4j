@@ -145,20 +145,20 @@ public class SubscriptionService extends AbstractService {
 
 
             // TODO: remove this (DEV lon)
-            /*long devDuration = 10 * 60 * 1000;
             threadPool.scheduler().scheduleAtFixedRate(
                     () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
-                    1000 * 2,
-                    devDuration, TimeUnit.MILLISECONDS);*/
+                    1000 * 20, // start in 20s
+                    10 * 60 * 1000, // every 10 min
+                    TimeUnit.MILLISECONDS);
 
             // Daily execution
-            threadPool.scheduler().scheduleAtFixedRate(
+            threadPool.scheduleAtFixedRate(
                     () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
                     DateUtils.delayBeforeHour(pluginSettings.getEmailSubscriptionsExecuteHour()),
                     DateUtils.DAY_DURATION_IN_MILLIS, TimeUnit.MILLISECONDS);
 
             // Weekly execution
-            threadPool.scheduler().scheduleAtFixedRate(
+            threadPool.scheduleAtFixedRate(
                     () -> executeEmailSubscriptions(EmailSubscription.Frequency.weekly),
                     DateUtils.delayBeforeDayAndHour(pluginSettings.getEmailSubscriptionsExecuteDayOfWeek(), pluginSettings.getEmailSubscriptionsExecuteHour()),
                     7 * DateUtils.DAY_DURATION_IN_MILLIS, TimeUnit.MILLISECONDS);

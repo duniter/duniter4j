@@ -29,6 +29,8 @@ import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.dao.AbstractDao;
 import org.duniter.elasticsearch.dao.BlockStatDao;
+import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
+import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.model.BlockchainBlockStat;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -65,7 +67,8 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
 
             // Preparing
             IndexRequestBuilder request = client.prepareIndex(block.getCurrency(), TYPE)
-                    .setId(block.getNumber().toString())
+                    .setId(String.valueOf(block.getNumber()))
+                    .setRefresh(false)
                     .setSource(json);
 
             // Execute
@@ -86,7 +89,7 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
         // Preparing indexBlocksFromNode
         IndexRequestBuilder request = client.prepareIndex(currencyName, TYPE)
                 .setId(id)
-                .setRefresh(true)
+                .setRefresh(false)
                 .setSource(json);
 
         // Execute
@@ -150,6 +153,27 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
 
         // Execute
         client.safeExecuteRequest(request, wait);
+    }
+
+    @Override
+    public void delete(String currency, String id, String hash, boolean wait) {
+        Preconditions.checkNotNull(currency);
+        Preconditions.checkNotNull(id);
+        Preconditions.checkNotNull(hash);
+
+        try {
+            // get the current hash
+            String existingHash = client.getTypedFieldById(currency, TYPE, id, BlockchainBlockStat.PROPERTY_HASH);
+
+            // Execute the delete, only if same hash
+            if (hash.equals(existingHash)) {
+                DeleteRequestBuilder request = client.prepareDelete(currency, TYPE, id);
+                client.safeExecuteRequest(request, wait);
+            }
+        } catch(NotFoundException e) {
+            // Not exists: do not delete
+        }
+
     }
 
     @Override

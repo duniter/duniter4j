@@ -42,7 +42,7 @@ public class BlockchainBlock implements Serializable {
 
     private static final long serialVersionUID = -5598140972293452669L;
     
-    private String version;
+    private Integer version;
     private Long nonce;
     private Integer number;
     private Integer powMin;
@@ -76,10 +76,10 @@ public class BlockchainBlock implements Serializable {
 //  raw": "Version: 1\nType: Block\nCurrency: zeta_brouzouf\nNonce: 8233\nNumber: 1\nDate: 1416589860\nConfirmedDate: 1416589860\nIssuer: HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk\nPreviousHash: 00006CD96A01378465318E48310118AC6B2F3625\nPreviousIssuer: HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk\nMembersCount: 4\nIdentities:\nJoiners:\nActives:\nLeavers:\nExcluded:\nCertifications:\nTransactions:\n"
     private String raw;
 
-    public String getVersion() {
+    public Integer getVersion() {
         return version;
     }
-    public void setVersion(String version) {
+    public void setVersion(Integer version) {
         this.version = version;
     }
     public Long getNonce() {

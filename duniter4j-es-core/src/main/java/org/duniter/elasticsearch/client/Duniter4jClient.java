@@ -25,8 +25,12 @@ package org.duniter.elasticsearch.client;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.local.LocalEntity;
 import org.duniter.elasticsearch.dao.handler.StringReaderHandler;
+import org.duniter.elasticsearch.threadpool.CompletableActionFuture;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestBuilder;
+import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.search.SearchHit;
@@ -35,6 +39,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * Created by blavenie on 03/04/17.
@@ -97,5 +103,9 @@ public interface Duniter4jClient extends Bean, Client {
 
     void flushDeleteBulk(final String index, final String type, BulkRequestBuilder bulkRequest);
 
+    void flushBulk(BulkRequestBuilder bulkRequest);
+
     void safeExecuteRequest(ActionRequestBuilder<?, ?, ?> request, boolean wait);
+
+    ScheduledThreadPoolExecutor scheduler();
 }

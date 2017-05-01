@@ -25,7 +25,9 @@ package org.duniter.elasticsearch.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.http.client.methods.RequestBuilder;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.local.LocalEntity;
@@ -34,10 +36,13 @@ import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.concurrent.CompletableFutures;
 import org.duniter.elasticsearch.dao.AbstractDao;
 import org.duniter.elasticsearch.dao.handler.StringReaderHandler;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.NotFoundException;
+import org.duniter.elasticsearch.threadpool.CompletableActionFuture;
+import org.duniter.elasticsearch.threadpool.RetryPolicy;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.*;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
@@ -80,6 +85,7 @@ import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.suggest.SuggestRequest;
 import org.elasticsearch.action.suggest.SuggestRequestBuilder;
 import org.elasticsearch.action.suggest.SuggestResponse;
+import org.elasticsearch.action.support.PlainListenableActionFuture;
 import org.elasticsearch.action.termvectors.*;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
@@ -93,8 +99,11 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.common.util.concurrent.FutureUtils;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
@@ -102,6 +111,10 @@ import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Benoit on 08/04/2015.
@@ -111,13 +124,14 @@ public class Duniter4jClientImpl implements Duniter4jClient {
     private final static ESLogger logger = Loggers.getLogger("duniter.client");
 
     private final Client client;
-
+    private final org.duniter.elasticsearch.threadpool.ThreadPool threadPool;
     private final ObjectMapper objectMapper;
 
     @Inject
-    public Duniter4jClientImpl(Client client) {
+    public Duniter4jClientImpl(Client client, org.duniter.elasticsearch.threadpool.ThreadPool threadPool) {
         super();
         this.client = client;
+        this.threadPool = threadPool;
         this.objectMapper = JacksonUtils.newObjectMapper();
     }
 
@@ -505,7 +519,7 @@ public class Duniter4jClientImpl implements Duniter4jClient {
     }
 
     @Override
-    public void flushDeleteBulk(final String index, final String type, BulkRequestBuilder bulkRequest) {
+    public void flushDeleteBulk(final String index, final String type, final BulkRequestBuilder bulkRequest) {
         if (bulkRequest.numberOfActions() > 0) {
 
             BulkResponse bulkResponse = bulkRequest.execute().actionGet();
@@ -516,6 +530,31 @@ public class Duniter4jClientImpl implements Duniter4jClient {
                     boolean skip = !itemResponse.isFailed();
                     if (!skip) {
                         logger.debug(String.format("[%s/%s] Error while deleting doc [%s]: %s. Skipping this deletion.", index, type, itemResponse.getId(), itemResponse.getFailureMessage()));
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void flushBulk(final BulkRequestBuilder bulkRequest) {
+        if (bulkRequest.numberOfActions() > 0) {
+
+            // Flush the bulk if not empty
+            BulkResponse bulkResponse = bulkRequest.get();
+
+            Set<String> missingDocIds = new LinkedHashSet<>();
+
+            // If failures, continue but save missing blocks
+            if (bulkResponse.hasFailures()) {
+                // process failures by iterating through each bulk response item
+                for (BulkItemResponse itemResponse : bulkResponse) {
+                    boolean skip = !itemResponse.isFailed()
+                            || missingDocIds.contains(itemResponse.getId());
+                    if (!skip) {
+                        logger.error(String.format("[%s/%s] could not process _id=%s: %s. Skipping.",
+                                itemResponse.getIndex(), itemResponse.getType(), itemResponse.getId(), itemResponse.getFailureMessage()));
+                        missingDocIds.add(itemResponse.getId());
                     }
                 }
             }
@@ -958,6 +997,10 @@ public class Duniter4jClientImpl implements Duniter4jClient {
 
     public ThreadPool threadPool() {
         return client.threadPool();
+    }
+
+    public ScheduledThreadPoolExecutor scheduler() {
+        return (ScheduledThreadPoolExecutor)client.threadPool().scheduler();
     }
 
     public void close() {

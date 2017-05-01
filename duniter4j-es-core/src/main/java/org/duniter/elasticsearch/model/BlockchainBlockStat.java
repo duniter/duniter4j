@@ -44,7 +44,7 @@ public class BlockchainBlockStat implements Serializable {
     public static final String PROPERTY_TX_CHANGE_COUNT = "txChangeCount";
 
     // Property copied from Block
-    private String version;
+    private int version;
     private String currency;
     private Integer number;
     private String hash;
@@ -63,11 +63,11 @@ public class BlockchainBlockStat implements Serializable {
         super();
     }
 
-    public String getVersion() {
+    public int getVersion() {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(int version) {
         this.version = version;
     }
 

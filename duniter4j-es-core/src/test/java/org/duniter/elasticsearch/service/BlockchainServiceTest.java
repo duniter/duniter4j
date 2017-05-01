@@ -57,7 +57,7 @@ public class BlockchainServiceTest {
         service = ServiceLocator.instance().getBean(BlockchainService.class);
         remoteService = ServiceLocator.instance().getBlockchainRemoteService();
         config = Configuration.instance();
-        peer = createTestPeer();
+        peer = createTestPeer(config);
         objectMapper = JacksonUtils.newObjectMapper();
 
         // Init the currency
@@ -72,18 +72,26 @@ public class BlockchainServiceTest {
     }
 
     @Test
-    public void indexBlock() {
+    public void indexBlock() throws Exception {
         BlockchainBlock current = remoteService.getCurrentBlock(peer);
         service.indexCurrentBlock(current, true/*wait*/);
 
         try {
             String blockStr = objectMapper.writeValueAsString(current);
 
-            service.indexBlockFromJson(peer, blockStr, true/*is rurrent*/, false/*detected fork*/, true/*wait*/);
+            service.indexBlockFromJson(peer, blockStr, true/*is current*/, false/*detected fork*/, true/*wait*/);
         }
         catch(Exception e) {
             Assert.fail(e.getMessage());
         }
+
+        Thread.sleep(1000);
+
+        // Try to get the indexed block
+        BlockchainBlock retrievedBlock = service.getBlockById(current.getCurrency(), current.getNumber().intValue());
+        Assert.assertNotNull(retrievedBlock);
+
+
     }
 
 	/* -- internal methods */
@@ -97,10 +105,10 @@ public class BlockchainServiceTest {
         }
     }
 
-    protected Peer createTestPeer() {
+    protected Peer createTestPeer(Configuration config) {
         Peer peer = new Peer(
-                Configuration.instance().getNodeHost(),
-                Configuration.instance().getNodePort());
+                config.getNodeHost(),
+                config.getNodePort());
 
         return peer;
     }

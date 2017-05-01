@@ -169,7 +169,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean getNodeBmaUseSsl() {
-        return settings.getAsBoolean("duniter.useSsl", null);
+        return settings.getAsBoolean("duniter.useSsl", getNodeBmaPort() == 443);
     }
 
     public boolean isIndexBulkEnable() {
