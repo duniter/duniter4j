@@ -123,6 +123,7 @@ duniter.string.analyzer: french
 # Enabling node blockchain synchronization
 #
 duniter.blockchain.enable: true
+duniter.blockchain.reload: true
 #
 # Force to reset and reload the blockchain, at startup - DO SET to true in production
 #
@@ -189,7 +190,6 @@ duniter.mail.smtp.port: 25
 #
 #duniter.mail.from: no-reply@domain.com
 duniter.mail.from: 'no-reply@duniter.fr'
-
 #
 # Mail: admin address
 #
@@ -201,11 +201,10 @@ duniter.mail.admin: 'benoit.lavenier@e-is.pro'
 #
 #duniter.mail.subject.prefix: '[Cesium+]'
 
-# ---------------------------------- Duniter4j Changes module ----------------------
+# ---------------------------------- Duniter4j Websocket server ----------------------
 #
-# Index to listen, for the changes module (Allow to listen changes throw websocket)
+# Websocket port (usefull for listen changes)
 #
-duniter.changes.listenSource: '*/block'
 duniter.ws.port: 9400
 
 # ---------------------------------- Duniter4j Subscription module -----------------

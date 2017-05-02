@@ -62,7 +62,6 @@ public class ChangeService {
     }
 
     private static final String SETTING_PRIMARY_SHARD_ONLY = "duniter.changes.primaryShardOnly";
-    private static final String SETTING_LISTEN_SOURCE = "duniter.changes.listenSource";
 
     private final ESLogger log = Loggers.getLogger(ChangeService.class);
 

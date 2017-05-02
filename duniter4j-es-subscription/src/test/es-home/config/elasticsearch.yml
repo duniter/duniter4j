@@ -178,7 +178,10 @@ duniter.mail.admin: blavenie@EIS-DEV
 #
 #duniter.mail.subject.prefix: [Duniter4j ES]
 
-duniter.changes.listenSource: '*/block'
+# ---------------------------------- Duniter4j Websocket server ----------------------
+#
+# Websocket port (usefull for listen changes)
+#
 duniter.ws.port: 9400
 
 # ---------------------------------- Duniter4j Subscription services ------------
