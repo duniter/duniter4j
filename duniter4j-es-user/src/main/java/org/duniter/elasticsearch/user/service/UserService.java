@@ -82,6 +82,13 @@ public class UserService extends AbstractService {
     }
 
     /**
+     * Create index need for blockchain mail, if need
+     */
+    public boolean isIndexExists() {
+        return client.existsIndex(INDEX);
+    }
+
+    /**
      * Create index for mail
      * @throws JsonProcessingException
      */

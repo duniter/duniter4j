@@ -187,15 +187,13 @@ public class UserEventService extends AbstractService implements ChangeService.C
     }
 
 
-    public ActionFuture<?> deleteEventsByReference(final UserEvent.Reference reference) {
+    public void deleteEventsByReference(final UserEvent.Reference reference) {
         Preconditions.checkNotNull(reference);
 
         final int bulkSize = pluginSettings.getIndexBulkSize();
 
-        return threadPool.schedule(() -> {
-            BulkRequestBuilder bulkRequest = client.prepareBulk();
-            addDeleteEventsByReferenceToBulk(reference, bulkRequest, bulkSize, true);
-        });
+       BulkRequestBuilder bulkRequest = client.prepareBulk();
+        addDeleteEventsByReferenceToBulk(reference, bulkRequest, bulkSize, true);
     }
 
     public ActionFuture<UpdateResponse> markEventAsRead(String id, String signature) {

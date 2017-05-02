@@ -83,7 +83,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         // Reload all indices
         if (pluginSettings.reloadAllIndices()) {
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading [user-plugin] indices...");
+                logger.info("Reloading indices...");
             }
             injector.getInstance(HistoryService.class)
                     .deleteIndex()
@@ -102,14 +102,17 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading [user-plugin] indices. [OK]");
+                logger.info("Reloading indices [OK]");
             }
         }
 
         else {
             if (logger.isInfoEnabled()) {
-                logger.info("Checking [user-plugin] indices...");
+                logger.info("Checking indices...");
             }
+
+            boolean cleanBlockchainUserEvents = injector.getInstance(UserService.class).isIndexExists() && pluginSettings.reloadBlockchainIndices();
+
             injector.getInstance(HistoryService.class).createIndexIfNotExists();
             injector.getInstance(UserService.class).createIndexIfNotExists();
             injector.getInstance(MessageService.class).createIndexIfNotExists();
@@ -117,19 +120,19 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(UserInvitationService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Checking [user-plugin] indices. [OK]");
+                logger.info("Checking indices [OK]");
             }
 
-            // Reload blockchain indices : user/event
-            if (pluginSettings.reloadBlockchainIndices()) {
+            // Clean user events on blockchain
+            if (cleanBlockchainUserEvents) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("Deleting existing user event, referencing a block...");
+                    logger.info("Deleting user events on blockchain (blockchain will be reload)...");
                 }
                 // Delete events that reference a block
                 injector.getInstance(UserEventService.class)
                         .deleteEventsByReference(new UserEvent.Reference(null/*all*/, BlockchainService.BLOCK_TYPE, null/*all*/));
                 if (logger.isInfoEnabled()) {
-                    logger.info("Deleting existing user event, referencing a block. [OK]");
+                    logger.info("Deleting user events on blockchain [OK]");
                 }
             }
         }

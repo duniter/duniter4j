@@ -97,9 +97,20 @@ public abstract class AbstractBlockchainListenerService extends AbstractService 
 
         switch (change.getOperation()) {
             // on INDEX
+            case CREATE:
+                if (change.getSource() != null) {
+                    synchronized (threadLock) {
+                        processBlockIndex(change);
+                    }
+                }
+                break;
+
+            // on INDEX
             case INDEX:
-                synchronized (threadLock) {
-                    processBlockIndex(change);
+                if (change.getSource() != null) {
+                    synchronized (threadLock) {
+                        processBlockIndex(change);
+                    }
                 }
                 break;
 

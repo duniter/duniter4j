@@ -85,7 +85,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         // Reload All indices
         if (pluginSettings.reloadAllIndices() || pluginSettings.reloadBlockchainIndices()) {
             if (logger.isWarnEnabled()) {
-                logger.warn("Reloading [core-plugin] indices...");
+                logger.warn("Reloading indices...");
             }
 
             injector.getInstance(CurrencyService.class)
@@ -93,21 +93,21 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading [core-plugin] indices. [OK]");
+                logger.info("Reloading indices [OK]");
             }
         }
 
         else {
 
             if (logger.isInfoEnabled()) {
-                logger.info("Checking if [core-plugin] indices exists...");
+                logger.info("Checking indices...");
             }
 
             injector.getInstance(CurrencyService.class)
                     .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Checking if [core-plugin] indices exists. [OK]");
+                logger.info("Checking indices [OK]");
             }
         }
     }
@@ -120,8 +120,12 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             Peer peer = pluginSettings.checkAndGetPeer();
 
             // Index (or refresh) node's currency
-            Currency currency = injector.getInstance(CurrencyService.class)
+            final Currency currency = injector.getInstance(CurrencyService.class)
                     .indexCurrencyFromPeer(peer, true);
+
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("[%s] Indexing blockchain...", currency.getCurrencyName()));
+            }
 
             injector.getInstance(RestSecurityController.class)
 
@@ -160,6 +164,10 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                 // Index peers (and listen if new peer appear)
                 injector.getInstance(PeerService.class)
                         .listenAndIndexPeers(peer);
+
+                if (logger.isInfoEnabled()) {
+                    logger.info(String.format("[%s] Indexing blockchain [OK]", currency.getCurrencyName()));
+                }
 
             }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
 

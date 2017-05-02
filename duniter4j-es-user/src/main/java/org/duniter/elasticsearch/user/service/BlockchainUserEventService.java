@@ -68,7 +68,6 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
     private final UserService userService;
     private final UserEventService userEventService;
     private final AdminService adminService;
-    private Queue<UserEvent.Reference> referencesToDelete = ConcurrentCollections.newBlockingQueue();
 
     @Inject
     public BlockchainUserEventService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
@@ -147,20 +146,13 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
             reference.setHash(block.getHash());
         }
 
-        // Add to queue
-        referencesToDelete.add(reference);
-
+        this.bulkRequest = userEventService.addDeleteEventsByReferenceToBulk(reference, this.bulkRequest, this.bulkSize, false);
         flushBulkRequestOrSchedule();
     }
 
 
     protected void beforeFlush() {
 
-        UserEvent.Reference reference = referencesToDelete.poll();
-        while (reference != null) {
-            this.bulkRequest = userEventService.addDeleteEventsByReferenceToBulk(reference, this.bulkRequest, this.bulkSize, false);
-            reference = referencesToDelete.poll();
-        }
     }
 
     /* -- internal method -- */

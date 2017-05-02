@@ -79,24 +79,24 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
         if (reloadIndices) {
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading all subscription indices...");
+                logger.info("Reloading indices...");
             }
             injector.getInstance(SubscriptionIndexDao.class)
                     .deleteIndex()
                     .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Reloading all subscription indices... [OK]");
+                logger.info("Reloading indices [OK]");
             }
         }
         else {
             if (logger.isInfoEnabled()) {
-                logger.info("Checking subscription indices...");
+                logger.info("Checking indices...");
             }
             injector.getInstance(SubscriptionIndexDao.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
-                logger.info("Checking subscription indices... [OK]");
+                logger.info("Checking indices [OK]");
             }
         }
     }
