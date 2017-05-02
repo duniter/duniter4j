@@ -20,7 +20,7 @@
     <xml-apis.version>2.0.2</xml-apis.version>
     <kalium.version>0.5.0_blavenie</kalium.version>
     <scrypt.version>1.4.0</scrypt.version>
-    <elasticsearch.version>2.3.3</elasticsearch.version>
+    <elasticsearch.version>2.4.5</elasticsearch.version>
     <jna.version>4.1.0</jna.version>
     <tyrus.version>1.13</tyrus.version>
 
@@ -187,11 +187,6 @@
         <groupId>org.nuiton.i18n</groupId>
         <artifactId>nuiton-i18n</artifactId>
         <version>${nuitonI18nVersion}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpcore</artifactId>
-        <version>4.3.2</version>
       </dependency>
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>

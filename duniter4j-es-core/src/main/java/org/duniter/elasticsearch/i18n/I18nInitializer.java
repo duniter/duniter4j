@@ -22,8 +22,6 @@ package org.duniter.elasticsearch.i18n;
  * #L%
  */
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nuiton.i18n.bundle.I18nBundle;
 import org.nuiton.i18n.init.DefaultI18nInitializer;
 import org.nuiton.i18n.init.UserI18nInitializer;
@@ -36,7 +34,6 @@ import java.util.List;
  * Created by blavenie on 10/01/17.
  */
 public class I18nInitializer extends org.nuiton.i18n.init.I18nInitializer{
-    private static final Log log = LogFactory.getLog(UserI18nInitializer.class);
     protected final File userDirectory;
 
     private String[] bundleNames;

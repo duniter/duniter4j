@@ -127,7 +127,7 @@ public class ChangeService {
                         }
 
                         @Override
-                        public void postIndex(Engine.Index index) {
+                        public void postIndex(Engine.Index index, boolean created) {
                             if (!hasListener(indexName, index.type(), index.id())) {
                                 return;
                             }
@@ -137,7 +137,7 @@ public class ChangeService {
                                     index.type(),
                                     index.id(),
                                     new DateTime(),
-                                    ChangeEvent.Operation.INDEX,
+                                    created ? ChangeEvent.Operation.CREATE : ChangeEvent.Operation.INDEX,
                                     index.version(),
                                     index.source()
                             );
