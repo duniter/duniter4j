@@ -23,12 +23,14 @@ package org.duniter.elasticsearch.service;
  */
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
+import org.duniter.core.client.model.elasticsearch.Records;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
@@ -36,7 +38,6 @@ import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.nuiton.i18n.I18n;
@@ -111,41 +112,30 @@ public abstract class AbstractService implements Bean {
     }
 
     protected JsonNode readAndVerifyIssuerSignature(String recordJson) throws ElasticsearchException {
+       return readAndVerifyIssuerSignature(recordJson, Records.PROPERTY_ISSUER);
+    }
+
+    protected JsonNode readAndVerifyIssuerSignature(String recordJson, String issuerFieldName) throws ElasticsearchException {
 
         try {
-            JsonNode actualObj = objectMapper.readTree(recordJson);
-            readAndVerifyIssuerSignature(recordJson, actualObj);
-            return actualObj;
+            JsonNode recordObj = objectMapper.readTree(recordJson);
+            readAndVerifyIssuerSignature(recordJson, recordObj, issuerFieldName);
+            return recordObj;
         }
         catch(IOException e) {
             throw new InvalidFormatException("Invalid record JSON: " + e.getMessage(), e);
         }
     }
 
-    protected void readAndVerifyIssuerSignature(String recordJson, JsonNode actualObj) throws ElasticsearchException {
 
-        Set<String> fieldNames = ImmutableSet.copyOf(actualObj.fieldNames());
-        if (!fieldNames.contains(Record.PROPERTY_ISSUER)
-                || !fieldNames.contains(Record.PROPERTY_SIGNATURE)) {
-            throw new InvalidFormatException(String.format("Invalid record JSON format. Required fields [%s,%s]", Record.PROPERTY_ISSUER, Record.PROPERTY_SIGNATURE));
-        }
-        String issuer = getMandatoryField(actualObj, Record.PROPERTY_ISSUER).asText();
-        String signature = getMandatoryField(actualObj, Record.PROPERTY_SIGNATURE).asText();
-
+    protected void readAndVerifyIssuerSignature(JsonNode actualObj, String issuerFieldName) throws ElasticsearchException, JsonProcessingException {
         // Remove hash and signature
-        recordJson = JacksonUtils.removeAttribute(recordJson, Record.PROPERTY_SIGNATURE);
-        recordJson = JacksonUtils.removeAttribute(recordJson, Record.PROPERTY_HASH);
-
-        if (!cryptoService.verify(recordJson, signature, issuer)) {
-            throw new InvalidSignatureException("Invalid signature of JSON string");
-        }
-
-        // TODO: check issuer is in the WOT ?
+        String recordJson = objectMapper.writeValueAsString(actualObj);
+        readAndVerifyIssuerSignature(recordJson, actualObj, issuerFieldName);
     }
 
-
     protected String getIssuer(JsonNode actualObj) {
-        return  getMandatoryField(actualObj, Record.PROPERTY_ISSUER).asText();
+        return  getMandatoryField(actualObj, Records.PROPERTY_ISSUER).asText();
     }
 
     protected JsonNode getMandatoryField(JsonNode actualObj, String fieldName) {
@@ -159,5 +149,33 @@ public abstract class AbstractService implements Bean {
     public interface RetryFunction<T> {
 
         T execute() throws TechnicalException;
+    }
+
+    /* -- internal methods -- */
+
+    private void readAndVerifyIssuerSignature(String recordJson, JsonNode recordObj, String issuerFieldName) throws ElasticsearchException {
+
+        Set<String> fieldNames = ImmutableSet.copyOf(recordObj.fieldNames());
+        if (!fieldNames.contains(issuerFieldName)
+                || !fieldNames.contains(Records.PROPERTY_SIGNATURE)) {
+            throw new InvalidFormatException(String.format("Invalid record JSON format. Required fields [%s,%s]", Records.PROPERTY_ISSUER, Records.PROPERTY_SIGNATURE));
+        }
+        String issuer = getMandatoryField(recordObj, issuerFieldName).asText();
+        String signature = getMandatoryField(recordObj, Records.PROPERTY_SIGNATURE).asText();
+
+        // Remove hash and signature
+        recordJson = JacksonUtils.removeAttribute(recordJson, Records.PROPERTY_SIGNATURE);
+        recordJson = JacksonUtils.removeAttribute(recordJson, Records.PROPERTY_HASH);
+
+        // Remove 'read_signature' attribute if exists (added AFTER signature)
+        if (fieldNames.contains(Records.PROPERTY_READ_SIGNATURE)) {
+            recordJson = JacksonUtils.removeAttribute(recordJson, Records.PROPERTY_READ_SIGNATURE);
+        }
+
+        if (!cryptoService.verify(recordJson, signature, issuer)) {
+            throw new InvalidSignatureException("Invalid signature of JSON string");
+        }
+
+        // TODO: check issuer is in the WOT ?
     }
 }

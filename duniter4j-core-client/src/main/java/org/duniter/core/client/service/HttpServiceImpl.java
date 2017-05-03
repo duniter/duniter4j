@@ -24,6 +24,7 @@ package org.duniter.core.client.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -517,7 +518,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     }
 
     public <T> T readValue(InputStream json, Class<T> clazz) throws IOException {
-        return objectMapper.readValue(json, clazz);
+        return objectMapper.readValue(new InputStreamReader(json, Charsets.UTF_8.name()), clazz);
     }
 
 }

@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.user.service;
  */
 
 import org.duniter.core.client.model.elasticsearch.Protocol;
+import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
@@ -31,6 +32,7 @@ import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.duniter.elasticsearch.user.model.Message;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 
@@ -90,8 +92,8 @@ public class SynchroService extends AbstractSynchroService {
                 MessageService.INDEX, MessageService.INBOX_TYPE,
                 sinceTime);
 
-        importChanges(result, peer, MessageService.INDEX, MessageService.INBOX_TYPE,  sinceTime);
-        importChanges(result, peer, MessageService.INDEX, MessageService.OUTBOX_TYPE,  sinceTime);
+        importChanges(result, peer, MessageService.INDEX, MessageService.INBOX_TYPE, sinceTime);
+        importChanges(result, peer, MessageService.INDEX, MessageService.OUTBOX_TYPE, sinceTime);
     }
 
     protected void importGroupChanges(SynchroResult result, Peer peer, long sinceTime) {

@@ -22,6 +22,7 @@ package org.duniter.core.client.model.bma.jackson;
  * #L%
  */
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationConfig;
@@ -57,6 +58,9 @@ public abstract class JacksonUtils extends SimpleModule {
         module.addDeserializer(NetworkPeering.Endpoint.class, new EndpointDeserializer());
 
         objectMapper.registerModule(module);
+
+        // Adding features
+        //objectMapper.getFactory().configure(JsonGenerator.Feature., true);
 
         return objectMapper;
     }

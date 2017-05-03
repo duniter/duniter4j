@@ -22,7 +22,10 @@ package org.duniter.elasticsearch.service;
  * #L%
  */
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import org.duniter.core.util.Preconditions;
 import org.apache.commons.io.IOUtils;
@@ -37,7 +40,9 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
+import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.ServiceLocator;
@@ -90,23 +95,16 @@ public abstract class AbstractSynchroService extends AbstractService {
                                       String fromIndex, String fromType,
                                       String toIndex, String toType,
                                       long sinceTime) {
-        Preconditions.checkNotNull(result);
-        Preconditions.checkNotNull(peer);
-        Preconditions.checkNotNull(fromIndex);
-        Preconditions.checkNotNull(fromType);
-        Preconditions.checkNotNull(toIndex);
-        Preconditions.checkNotNull(toType);
-
         return doImportChanges(result, peer, fromIndex, fromType, toIndex, toType, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, sinceTime);
     }
 
     protected long importChanges(SynchroResult result, Peer peer, String index, String type, long sinceTime) {
-        Preconditions.checkNotNull(result);
-        Preconditions.checkNotNull(peer);
-        Preconditions.checkNotNull(index);
-        Preconditions.checkNotNull(type);
-
         return doImportChanges(result, peer, index, type, index, type, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, sinceTime);
+    }
+
+    protected long importChanges(SynchroResult result, Peer peer, String index, String type,
+                                 String issuerFieldName, String versionFieldName, long sinceTime) {
+        return doImportChanges(result, peer, index, type, index, type, issuerFieldName, versionFieldName, sinceTime);
     }
 
     /* -- private methods -- */
@@ -116,7 +114,14 @@ public abstract class AbstractSynchroService extends AbstractService {
                                  String fromIndex, String fromType,
                                  String toIndex, String toType,
                                  String issuerFieldName, String versionFieldName, long sinceTime) {
-
+        Preconditions.checkNotNull(result);
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(fromIndex);
+        Preconditions.checkNotNull(fromType);
+        Preconditions.checkNotNull(toIndex);
+        Preconditions.checkNotNull(toType);
+        Preconditions.checkNotNull(issuerFieldName);
+        Preconditions.checkNotNull(versionFieldName);
 
         long offset = 0;
         int size = pluginSettings.getIndexBulkSize() / 10;
@@ -177,8 +182,8 @@ public abstract class AbstractSynchroService extends AbstractService {
             HttpPost httpPost = new HttpPost(httpService.getPath(peer, fromIndex, fromType, "_search"));
             httpPost.setHeader("Content-Type", "application/json;charset=UTF-8");
             httpPost.setEntity(new ByteArrayEntity(bos.bytes().array()));
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("[%s] [%s/%s] Sending POST request: %s", peer, fromIndex, fromType, new String(bos.bytes().array())));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("[%s] [%s/%s] Sending POST request: %s", peer, fromIndex, fromType, new String(bos.bytes().array())));
             }
             // Parse response
             node = httpService.executeRequest(httpPost, JsonNode.class, String.class);
@@ -188,6 +193,9 @@ public abstract class AbstractSynchroService extends AbstractService {
             return 0;
         }
         catch(TechnicalException e) {
+            throw new TechnicalException("Unable to parse search response", e);
+        }
+        catch(Exception e) {
             throw new TechnicalException("Unable to parse search response", e);
         }
 
@@ -203,6 +211,7 @@ public abstract class AbstractSynchroService extends AbstractService {
 
         long insertHits = 0;
         long updateHits = 0;
+        long invalidSignatureHits = 0;
 
         if (offset < total) {
 
@@ -233,13 +242,22 @@ public abstract class AbstractSynchroService extends AbstractService {
 
                     // Insert (new doc)
                     if (doInsert) {
-                        String json = source.toString();
-                        //readAndVerifyIssuerSignature(json, source);
+
                         if (debug) {
-                            logger.trace(String.format("[%s] [%s/%s] insert _id=%s\n%s", peer, toIndex, toType, id, json));
+                            logger.trace(String.format("[%s] [%s/%s] insert _id=%s\n%s", peer, toIndex, toType, id, source.toString()));
                         }
+
+                        // TODO: found why some user/profile document failed !
+                        // Il semble que le format JSON ne soit pas le même que celui qui a été signé
+                        try {
+                            readAndVerifyIssuerSignature(source, issuerFieldName);
+                        } catch(InvalidSignatureException e) {
+                            invalidSignatureHits++;
+                            logger.warn(String.format("[%s] [%s/%s/%s] %s.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
+                        }
+
                         bulkRequest.add(client.prepareIndex(toIndex, toType, id)
-                                .setSource(json.getBytes())
+                                .setSource(objectMapper.writeValueAsBytes(source))
                         );
                         insertHits++;
                     }
@@ -258,26 +276,38 @@ public abstract class AbstractSynchroService extends AbstractService {
                         boolean doUpdate = (existingVersion == null || version > existingVersion.longValue());
 
                         if (doUpdate) {
-                            String json = source.toString();
-                            //readAndVerifyIssuerSignature(json, source);
                             if (debug) {
-                                logger.trace(String.format("[%s] [%s/%s] update _id=%s\n%s", peer, toIndex, toType, id, json));
+                                logger.trace(String.format("[%s] [%s/%s] update _id=%s\n%s", peer, toIndex, toType, id, source.toString()));
                             }
+
+                            // TODO: found why some user/profile document failed !
+                            // Il semble que le format JSON ne soit pas le même que celui qui a été signé
+                            try {
+                                readAndVerifyIssuerSignature(source, issuerFieldName);
+                            } catch(InvalidSignatureException e) {
+                                invalidSignatureHits++;
+                                logger.warn(String.format("[%s] [%s/%s/%s] %s.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
+                            }
+
                             bulkRequest.add(client.prepareIndex(toIndex, toType, id)
-                                    .setSource(json.getBytes()));
+                                    .setSource(objectMapper.writeValueAsBytes(source)));
 
                             updateHits++;
                         }
                     }
 
-                } catch (InvalidFormatException e) {
-                    if (debug) {
-                        logger.debug(String.format("[%s] [%s/%s] %s. Skipping.", peer, toIndex, toType, e.getMessage()));
+                }
+                catch (DuniterElasticsearchException e) {
+                    if (logger.isDebugEnabled()) {
+                        logger.warn(String.format("[%s] [%s/%s/%s] %s. Skipping.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
+                    }
+                    else {
+                        logger.warn(String.format("[%s] [%s/%s/%s] %s. Skipping.", peer, toIndex, toType, id, e.getMessage()));
                     }
                     // Skipping document (continue)
                 }
                 catch (Exception e) {
-                    logger.warn(String.format("[%s] [%s/%s] %s. Skipping.", peer, toIndex, toType, e.getMessage()), e);
+                    logger.error(String.format("[%s] [%s/%s/%s] %s. Skipping.", peer, toIndex, toType, id, e.getMessage()), e);
                     // Skipping document (continue)
                 }
             }
@@ -308,12 +338,8 @@ public abstract class AbstractSynchroService extends AbstractService {
         // update result stats
         result.addInserts(toIndex, toType, insertHits);
         result.addUpdates(toIndex, toType, updateHits);
+        result.addInvalidSignatures(toIndex, toType, invalidSignatureHits);
 
         return counter;
-
-        /*}
-        finally {
-            //IOUtils.closeQuietly(response);
-        }*/
     }
 }

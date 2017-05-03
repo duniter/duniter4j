@@ -41,9 +41,10 @@ public class Message extends Record {
 
 
     public static final String PROPERTY_NONCE="nonce";
+    public static final String PROPERTY_TITLE="title";
     public static final String PROPERTY_CONTENT="content";
     public static final String PROPERTY_RECIPIENT="recipient";
-    public static final String PROPERTY_READ_SIGNATURE="readSignature";
+    public static final String PROPERTY_READ_SIGNATURE="read_signature";
 
     private String nonce;
 
@@ -72,12 +73,12 @@ public class Message extends Record {
         this.recipient = recipient;
     }
 
-    @JsonGetter("read_signature")
+    @JsonGetter(PROPERTY_READ_SIGNATURE)
     public String getReadSignature() {
         return readSignature;
     }
 
-    @JsonSetter("read_signature")
+    @JsonSetter(PROPERTY_READ_SIGNATURE)
     public void setReadSignature(String readSignature) {
         this.readSignature = readSignature;
     }
