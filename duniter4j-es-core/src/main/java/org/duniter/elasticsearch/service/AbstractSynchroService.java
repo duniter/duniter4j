@@ -247,7 +247,7 @@ public abstract class AbstractSynchroService extends AbstractService {
                             logger.trace(String.format("[%s] [%s/%s] insert _id=%s\n%s", peer, toIndex, toType, id, source.toString()));
                         }
 
-                        // TODO: found why some user/profile document failed !
+                        // FIXME: some user/profile document failed ! - see issue #11
                         // Il semble que le format JSON ne soit pas le même que celui qui a été signé
                         try {
                             readAndVerifyIssuerSignature(source, issuerFieldName);
@@ -280,7 +280,7 @@ public abstract class AbstractSynchroService extends AbstractService {
                                 logger.trace(String.format("[%s] [%s/%s] update _id=%s\n%s", peer, toIndex, toType, id, source.toString()));
                             }
 
-                            // TODO: found why some user/profile document failed !
+                            // FIXME: some user/profile document failed ! - see issue #11
                             // Il semble que le format JSON ne soit pas le même que celui qui a été signé
                             try {
                                 readAndVerifyIssuerSignature(source, issuerFieldName);
