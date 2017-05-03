@@ -125,8 +125,8 @@ duniter.blockchain.sync.enable: true
 #
 # Duniter node address
 #
-duniter.host: gtest.duniter.org
-duniter.port: 10900
+duniter.host: g1.duniter.org
+duniter.port: 10901
 #duniter.useSsl: true
 #duniter.network.timeout: 5000
 #
