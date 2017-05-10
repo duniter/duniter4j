@@ -297,7 +297,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         Runnable getPeersRunnable = () -> {
             if (threadLock.isLocked()) {
-                log.error("Rejected getPeersRunnable() call. Another refresh is already running...");
+                log.debug("Rejected getPeersRunnable() call. Another refresh is already running...");
                 return;
             }
             synchronized (threadLock) {
@@ -331,7 +331,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         Consumer<NetworkPeers.Peer> refreshPeerConsumer = (bmaPeer) -> {
             if (threadLock.isLocked()) {
-                log.error("Rejected refreshPeerConsumer() call. Another refresh is already running...");
+                log.debug("Rejected refreshPeerConsumer() call. Another refresh is already running...");
                 return;
             }
             synchronized (threadLock) {

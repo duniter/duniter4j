@@ -69,23 +69,7 @@ public class EndpointDeserializer extends JsonDeserializer<NetworkPeering.Endpoi
         Matcher mather = bmaPattern.matcher(ept);
         if (mather.matches()) {
             endpoint.api = EndpointApi.BASIC_MERKLED_API;
-
-            for(int i=1; i<=mather.groupCount(); i++) {
-                String word = mather.group(i);
-
-                if (StringUtils.isNotBlank(word)) {
-                    if (InetAddressUtils.isIPv4Address(word)) {
-                        endpoint.ipv4 = word;
-                    } else if (InetAddressUtils.isIPv6Address(word)) {
-                        endpoint.ipv6 = word;
-                    } else if (i == mather.groupCount() && word.matches("\\d+")){
-                        endpoint.port = Integer.parseInt(word);
-                    } else {
-                        endpoint.dns = word;
-                    }
-                }
-            }
-
+            parseDefaultFormatEndPoint(mather, endpoint, 1);
             return endpoint;
         }
 
@@ -93,56 +77,42 @@ public class EndpointDeserializer extends JsonDeserializer<NetworkPeering.Endpoi
         mather = bmasPattern.matcher(ept);
         if (mather.matches()) {
             endpoint.api = EndpointApi.BMAS;
-
-            for(int i=1; i<=mather.groupCount(); i++) {
-                String word = mather.group(i);
-
-                if (StringUtils.isNotBlank(word)) {
-                    if (InetAddressUtils.isIPv4Address(word)) {
-                        endpoint.ipv4 = word;
-                    } else if (InetAddressUtils.isIPv6Address(word)) {
-                        endpoint.ipv6 = word;
-                    } else if (i == mather.groupCount() && word.matches("\\d+")){
-                        endpoint.port = Integer.parseInt(word);
-                    } else {
-                        endpoint.dns = word;
-                    }
-                }
-            }
-
+            parseDefaultFormatEndPoint(mather, endpoint, 1);
             return endpoint;
         }
 
         // Other API
         mather = otherApiPattern.matcher(ept);
         if (mather.matches()) {
+            String api = mather.group(1);
             try {
-                endpoint.api = EndpointApi.valueOf(mather.group(1));
+                endpoint.api = EndpointApi.valueOf(api);
+                parseDefaultFormatEndPoint(mather, endpoint, 2);
+                return endpoint;
             } catch(Exception e) {
-                log.warn("Unable to deserialize endpoint: unknown api [" + mather.group(1) + "]");
-                // not known API: skip
-                return null;
+                // Log unknown API (and continue = will skip this endpoint)
+                log.warn("Unable to deserialize endpoint: unknown api [" + api + "]");
             }
-
-            for(int i=2; i<=mather.groupCount(); i++) {
-                String word = mather.group(i);
-
-                if (StringUtils.isNotBlank(word)) {
-                    if (InetAddressUtils.isIPv4Address(word)) {
-                        endpoint.ipv4 = word;
-                    } else if (InetAddressUtils.isIPv6Address(word)) {
-                        endpoint.ipv6 = word;
-                    } else if (i == mather.groupCount() && word.matches("\\d+")){
-                        endpoint.port = Integer.parseInt(word);
-                    } else {
-                        endpoint.dns = word;
-                    }
-                }
-            }
-
-            return endpoint;
         }
 
         return null;
+    }
+
+    public static void parseDefaultFormatEndPoint(Matcher matcher, NetworkPeering.Endpoint endpoint, int startGroup) {
+        for(int i=startGroup; i<=matcher.groupCount(); i++) {
+            String word = matcher.group(i);
+
+            if (StringUtils.isNotBlank(word)) {
+                if (InetAddressUtils.isIPv4Address(word)) {
+                    endpoint.ipv4 = word;
+                } else if (InetAddressUtils.isIPv6Address(word)) {
+                    endpoint.ipv6 = word;
+                } else if (i == matcher.groupCount() && word.matches("\\d+")){
+                    endpoint.port = Integer.parseInt(word);
+                } else {
+                    endpoint.dns = word;
+                }
+            }
+        }
     }
 }

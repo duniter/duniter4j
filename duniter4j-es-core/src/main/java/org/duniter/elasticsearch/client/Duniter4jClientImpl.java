@@ -25,9 +25,7 @@ package org.duniter.elasticsearch.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.http.client.methods.RequestBuilder;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.local.LocalEntity;
@@ -36,13 +34,9 @@ import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.concurrent.CompletableFutures;
-import org.duniter.elasticsearch.dao.AbstractDao;
 import org.duniter.elasticsearch.dao.handler.StringReaderHandler;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.NotFoundException;
-import org.duniter.elasticsearch.threadpool.CompletableActionFuture;
-import org.duniter.elasticsearch.threadpool.RetryPolicy;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.*;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
@@ -85,7 +79,6 @@ import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.suggest.SuggestRequest;
 import org.elasticsearch.action.suggest.SuggestRequestBuilder;
 import org.elasticsearch.action.suggest.SuggestResponse;
-import org.elasticsearch.action.support.PlainListenableActionFuture;
 import org.elasticsearch.action.termvectors.*;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
@@ -99,11 +92,8 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
-import org.elasticsearch.common.util.concurrent.FutureUtils;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
@@ -111,10 +101,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Benoit on 08/04/2015.

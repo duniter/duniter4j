@@ -204,6 +204,12 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
                     .field("type", "long")
                     .endObject()
 
+                    // issuer
+                    .startObject(BlockchainBlockStat.PROPERTY_ISSUER)
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
                     // hash
                     .startObject(BlockchainBlockStat.PROPERTY_HASH)
                     .field("type", "string")

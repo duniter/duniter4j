@@ -34,7 +34,6 @@ import org.duniter.elasticsearch.dao.BlockStatDao;
 import org.duniter.elasticsearch.model.BlockchainBlockStat;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.unit.TimeValue;
@@ -126,8 +125,9 @@ public class BlockchainStatsService extends AbstractBlockchainListenerService {
         BlockchainBlockStat stat = new BlockchainBlockStat();
 
         stat.setNumber(block.getNumber());
-        stat.setHash(block.getHash());
         stat.setCurrency(block.getCurrency());
+        stat.setHash(block.getHash());
+        stat.setIssuer(block.getIssuer());
         stat.setMedianTime(block.getMedianTime());
         stat.setMembersCount(block.getMembersCount());
         stat.setMonetaryMass(block.getMonetaryMass());

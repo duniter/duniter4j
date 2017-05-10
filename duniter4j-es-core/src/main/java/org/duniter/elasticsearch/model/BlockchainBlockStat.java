@@ -33,6 +33,7 @@ public class BlockchainBlockStat implements Serializable {
     public static final String PROPERTY_VERSION = "version";
     public static final String PROPERTY_CURRENCY = "currency";
     public static final String PROPERTY_NUMBER = "number";
+    public static final String PROPERTY_ISSUER = "issuer";
     public static final String PROPERTY_HASH = "hash";
     public static final String PROPERTY_MEDIAN_TIME = "medianTime";
     public static final String PROPERTY_MEMBERS_COUNT = "membersCount";
@@ -47,6 +48,7 @@ public class BlockchainBlockStat implements Serializable {
     private int version;
     private String currency;
     private Integer number;
+    private String issuer;
     private String hash;
     private Long medianTime;
     private Integer membersCount;
@@ -77,6 +79,14 @@ public class BlockchainBlockStat implements Serializable {
 
     public void setCurrency(String currency) {
         this.currency = currency;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 
     public BigInteger getDividend() {
@@ -158,4 +168,5 @@ public class BlockchainBlockStat implements Serializable {
     public void setUnitbase(Integer unitbase) {
         this.unitbase = unitbase;
     }
+
 }

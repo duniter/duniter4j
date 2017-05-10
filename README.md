@@ -3,21 +3,29 @@ duniter4j
 
 duniter4j is a Java Client API for [Duniter](http://duniter.org).
 
-## Architecture
+## Components
 
-duniter4j has four main components :
+Duniter4j has tree main components :
 
- - duniter4j-core-shared: common classes
+ - a command line tool (duniter4j-client), to execute basic operation on a Duniter currency : transfer, view peers, ... 
+  
+ - an API (duniter4j-core-client), that allow developer to access to a Duniter network.
+
+ - a ElastiSearch node (duniter4j-elasticsearch), to add store & full-text capabilities, on blockchain data, user profiles (Cesium+) and more (private message).
+
+## Command line tool
+
+ - Download the file `duniter4j-client-<version>-full-<platform>.zip` from the [lastest releases page](/releases)
  
- - duniter4j-core-client: a Client API to access to a Duniter network.
+ - Unzip the archive
+ 
+ - The open a terminal and call duniter4j.sh
    
- - duniter4j-es-*: ElasticSearch plugins, to store blockchain, user profiles (Cesium+), registry, market and more.
 
- - duniter4j-es-assembly: a standalone assembly with ElasticSearch and embedded plugins 
+## ElastiSearch node
 
-## Install as ES plugin
-
-### Install Java 
+### Prerequisites
+#### Install Java 
 
  - Install Java JRE 8 or more.
  
@@ -36,19 +44,7 @@ sudo apt-get install openjdk-8-jre
        
     No installation need for Windows (include in binaries) 
 
-### Install ElasticSearch 2.3.3
-
- Download lastest release of ElasticSearch
- 
-### Install ElasticSearch plugins
-
-```bash
-   /bin/plugin install mapper-attachments
-   
-   /bin/plugin install https://github.com/duniter/duniter4j/releases/download/0.3.4/duniter4j-elasticsearch-0.3.4.zip
-```
-
-### Install libsodium 
+#### Install libsodium 
 
 [The Sodium crypto library (libsodium)](https://download.libsodium.org/doc/installation/) is a modern, easy-to-use software library for encryption, decryption, signatures, password hashing and more. 
 
@@ -67,7 +63,7 @@ sudo apt-get install openjdk-8-jre
     sudo make install        
 ```
 
-## Install from standalone bundle 
+### Install bundle 
 
  - Install Java (see on top) 
  
@@ -141,6 +137,18 @@ $ ./elasticsearch
 [2016-09-24 00:17:11,026][INFO ][duniter.blockchain       ] [gtest] [gtest.duniter.org:10900] Indexing block #41282 - hash [00000AAD73B0E76B870E6779CD7ACCCE175802D7867C13B5C8ED077F380548C5]
 ```
 
+
+### Install on an existing ElasticSearch node
+
+Make sure you have a ElasticSearch v1.4.5 installed.
+ 
+Then install Duniter4j plugins :
+
+```bash
+   /bin/plugin install mapper-attachments
+   
+   /bin/plugin install https://github.com/duniter/duniter4j/releases/download/0.3.4/duniter4j-elasticsearch-0.3.4.zip
+```
 
 ## Use API (Developer)
 

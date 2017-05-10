@@ -26,6 +26,7 @@ package org.duniter.core.client.model.bma;
 public enum EndpointApi {
     BASIC_MERKLED_API,
     BMAS,
+    BMATOR,
     ES_CORE_API,
     ES_USER_API,
     UNDEFINED
