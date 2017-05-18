@@ -123,7 +123,7 @@ duniter.string.analyzer: french
 # Enabling node blockchain synchronization
 #
 duniter.blockchain.enable: true
-duniter.blockchain.reload: true
+#duniter.blockchain.reload: true
 #
 # Force to reset and reload the blockchain, at startup - DO SET to true in production
 #
@@ -160,7 +160,7 @@ duniter.security.enable: true
 #
 # Should synchronize data using P2P
 #
-duniter.data.sync.enable: false
+duniter.data.sync.enable: true
 #duniter.data.sync.enable: true
 duniter.data.sync.host: g1.data.duniter.fr
 duniter.data.sync.port: 443
