@@ -182,7 +182,7 @@ public class MailServiceImpl implements MailService, Closeable {
             transport.sendMessage(message, message.getAllRecipients());
 
         }  catch (MessagingException e) {
-            throw new TechnicalException(String.format("Error while sending email to [%s] using smtp server [%s]: %s",
+            throw new TechnicalException(String.format("Error while sending email to [%s] using smtp config [%s]: %s",
                     Joiner.on(',').join(recipients), getSmtpServerAsString(),
                     e.getMessage()
             ), e);
@@ -198,7 +198,9 @@ public class MailServiceImpl implements MailService, Closeable {
     private String getSmtpServerAsString(String smtpHost, int smtpPort, String smtpUsername) {
         StringBuilder buffer = new StringBuilder();
         if (StringUtils.isNotBlank(smtpUsername)) {
-            buffer.append(smtpUsername).append("@");
+            buffer.append("username=")
+                    .append(smtpUsername)
+                    .append(", server=");
         }
         return buffer.append(smtpHost)
                 .append(":")
@@ -321,7 +323,8 @@ public class MailServiceImpl implements MailService, Closeable {
         mc.addMailcap("text/html;; x-java-content-handler=com.sun.mail.handlers.text_html");
         mc.addMailcap("text/xml;; x-java-content-handler=com.sun.mail.handlers.text_xml");
         mc.addMailcap("text/plain;; x-java-content-handler=com.sun.mail.handlers.text_plain");
-        mc.addMailcap("multipart/*;; x-java-content-handler=com.sun.mail.handlers.multipart_mixed");
+        //mc.addMailcap("multipart/*;; x-java-content-handler=com.sun.mail.handlers.multipart_mixed");
+        mc.addMailcap("multipart/alternative;; x-java-content-handler=com.sun.mail.handlers.multipart_mixed");
         mc.addMailcap("message/rfc822;; x-java-content- handler=com.sun.mail.handlers.message_rfc822");
     }
 }

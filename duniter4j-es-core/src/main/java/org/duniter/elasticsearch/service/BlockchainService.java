@@ -540,7 +540,7 @@ public class BlockchainService extends AbstractService {
         }
 
         if (StringUtils.isNotBlank(currentBlockJson)) {
-            indexCurrentBlockFromJson(currencyName, currentBlockJson, false);
+            indexCurrentBlockFromJson(currencyName, currentBlockJson, true);
         }
 
         return missingBlockNumbers;

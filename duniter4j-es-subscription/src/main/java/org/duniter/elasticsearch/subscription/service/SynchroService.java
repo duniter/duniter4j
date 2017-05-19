@@ -29,8 +29,10 @@ import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.subscription.dao.SubscriptionIndexDao;
+import org.duniter.elasticsearch.subscription.dao.execution.SubscriptionExecutionDao;
 import org.duniter.elasticsearch.subscription.dao.record.SubscriptionRecordDao;
 import org.duniter.elasticsearch.subscription.model.Protocol;
+import org.duniter.elasticsearch.subscription.model.SubscriptionExecution;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.elasticsearch.common.inject.Inject;
@@ -70,6 +72,7 @@ public class SynchroService extends AbstractSynchroService {
     }
 
     protected void importSubscriptionsChanges(SynchroResult result, Peer peer, long sinceTime) {
+        importChanges(result, peer, SubscriptionIndexDao.INDEX, SubscriptionExecutionDao.TYPE,  sinceTime);
         importChanges(result, peer, SubscriptionIndexDao.INDEX, SubscriptionRecordDao.TYPE,  sinceTime);
     }
 }

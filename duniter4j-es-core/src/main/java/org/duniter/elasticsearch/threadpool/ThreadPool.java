@@ -42,10 +42,7 @@ import org.elasticsearch.transport.TransportService;
 import org.nuiton.i18n.I18n;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Manage thread pool, to execute tasks asynchronously.
@@ -76,11 +73,6 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
         this.scheduler = new LoggingScheduledThreadPoolExecutor(logger, availableProcessors,
                 EsExecutors.daemonThreadFactory(settings, "duniter-scheduler"),
                 new RetryPolicy(1, TimeUnit.SECONDS));
-        /*this.scheduler = new ScheduledThreadPoolExecutor(availableProcessors,
-                EsExecutors.daemonThreadFactory(settings, "duniter-scheduler"),
-                new RetryPolicy(1, TimeUnit.SECONDS)) {
-
-        };*/
         this.scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         this.scheduler.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
         this.scheduler.setRemoveOnCancelPolicy(true);
@@ -161,6 +153,13 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
                 command));
     }
 
+
+    public ScheduledActionFuture<?> schedule(Runnable command,
+                                       long delay, TimeUnit unit) {
+
+        return new ScheduledActionFuture<>(scheduler.schedule(command, delay, unit));
+    }
+
     /**
      * Schedules an rest that runs on the scheduler thread, after a delay.
      *
@@ -182,20 +181,10 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
      * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
      */
     public ScheduledActionFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit timeUnit) {
-        return new ScheduledActionFuture<>(scheduler.scheduleAtFixedRate(command, initialDelay, period, timeUnit));
+        long initialDelayMs = new TimeValue(initialDelay, timeUnit).millis();
+        long periodMs = new TimeValue(period, timeUnit).millis();
+        return new ScheduledActionFuture<>(scheduleAtFixedRateWorkaround(command, initialDelayMs, periodMs));
     }
-
-    /**
-     * Schedules a periodic rest that always runs on the scheduler thread.
-     *
-     * @param command the rest to take
-     * @param initialDelay the initial delay
-     * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
-     */
-    public ScheduledActionFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit timeUnit) {
-        return new ScheduledActionFuture<>(scheduler.scheduleWithFixedDelay(command, initialDelay, delay, timeUnit));
-    }
-
 
     /* -- protected methods  -- */
 
@@ -254,9 +243,38 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
         return canContinue;
     }
 
+    /**
+     * This method use a workaround to execution schedule at fixed time, because standard call of scheduler.scheduleAtFixedRate
+     * does not worked !!
+     **/
+    protected ScheduledFuture<?> scheduleAtFixedRateWorkaround(final Runnable command, final long initialDelayMs, final long periodMs) {
+        final long expectedNextExecutionTime = System.currentTimeMillis() + initialDelayMs + periodMs;
+
+        return scheduler.schedule(
+                () -> {
+                    try {
+                        command.run();
+                    } catch (Throwable t) {
+                        logger.error("Error while processing subscriptions", t);
+                    }
+
+                    long nextDelayMs = expectedNextExecutionTime - System.currentTimeMillis();
+
+                    // When an execution duration is too long, go to next execution time.
+                    while (nextDelayMs < 0) {
+                        nextDelayMs += periodMs;
+                    }
+
+                    // Schedule the next execution
+                    scheduleAtFixedRateWorkaround(command, nextDelayMs, periodMs);
+                },
+                initialDelayMs,
+                TimeUnit.MILLISECONDS)
+                ;
+    }
+
     public ScheduledExecutorService scheduler() {
-        return delegate.scheduler();
-        //return scheduler;
+        return scheduler;
     }
 
 

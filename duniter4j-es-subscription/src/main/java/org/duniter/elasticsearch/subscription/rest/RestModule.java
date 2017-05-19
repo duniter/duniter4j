@@ -32,9 +32,15 @@ public class RestModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
 
-        // Mail
+        // Subscription category
+        bind(RestSubscriptionCategoryGetAction.class).asEagerSingleton();
+
+        // Subscription execution
+        bind(RestSubscriptionCategoryGetAction.class).asEagerSingleton();
+
+        // Subscription record
         bind(RestSubscriptionRecordIndexAction.class).asEagerSingleton();
         bind(RestSubscriptionRecordUpdateAction.class).asEagerSingleton();
-        bind(RestSubscriptionCategoryGetAction.class).asEagerSingleton();
+
     }
 }

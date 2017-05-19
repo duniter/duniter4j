@@ -34,6 +34,7 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.concurrent.CompletableFutures;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.subscription.PluginSettings;
@@ -45,6 +46,8 @@ import org.duniter.elasticsearch.subscription.model.email.EmailSubscription;
 import org.duniter.elasticsearch.subscription.util.DateUtils;
 import org.duniter.elasticsearch.subscription.util.stringtemplate.DateRenderer;
 import org.duniter.elasticsearch.subscription.util.stringtemplate.StringRenderer;
+import org.duniter.elasticsearch.threadpool.CompletableActionFuture;
+import org.duniter.elasticsearch.threadpool.ScheduledActionFuture;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.AdminService;
@@ -60,6 +63,7 @@ import org.stringtemplate.v4.STGroupDir;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -133,6 +137,15 @@ public class SubscriptionService extends AbstractService {
             return this;
         }
 
+        // for DEBUG only: execute a fake job every minute, to test scheduler
+        if (logger.isDebugEnabled()) {
+            threadPool.scheduleAtFixedRate(
+                    () -> logger.debug("Scheduled fake task successfully executed - scheduled every [1 min]"),
+                    20 * 1000 /* start in 20s */,
+                    60 * 1000 /* every 1 min */,
+                    TimeUnit.MILLISECONDS);
+        }
+
         // Email subscriptions
         {
             if (logger.isInfoEnabled()) {
@@ -143,25 +156,19 @@ public class SubscriptionService extends AbstractService {
                 logger.warn(I18n.t("duniter4j.es.subscription.email.start", pluginSettings.getEmailSubscriptionsExecuteHour(), dayOfWeek));
             }
 
-
-            // TODO: remove this (DEV lon)
-            threadPool.scheduler().scheduleAtFixedRate(
-                    () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
-                    1000 * 20, // start in 20s
-                    10 * 60 * 1000, // every 10 min
-                    TimeUnit.MILLISECONDS);
-
             // Daily execution
             threadPool.scheduleAtFixedRate(
                     () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
                     DateUtils.delayBeforeHour(pluginSettings.getEmailSubscriptionsExecuteHour()),
-                    DateUtils.DAY_DURATION_IN_MILLIS, TimeUnit.MILLISECONDS);
+                    DateUtils.DAY_DURATION_IN_MILLIS,
+                    TimeUnit.MILLISECONDS);
 
             // Weekly execution
             threadPool.scheduleAtFixedRate(
                     () -> executeEmailSubscriptions(EmailSubscription.Frequency.weekly),
                     DateUtils.delayBeforeDayAndHour(pluginSettings.getEmailSubscriptionsExecuteDayOfWeek(), pluginSettings.getEmailSubscriptionsExecuteHour()),
-                    7 * DateUtils.DAY_DURATION_IN_MILLIS, TimeUnit.MILLISECONDS);
+                    7 * DateUtils.DAY_DURATION_IN_MILLIS,
+                    TimeUnit.MILLISECONDS);
         }
         return this;
     }
@@ -208,7 +215,6 @@ public class SubscriptionService extends AbstractService {
     }
 
     /* -- protected methods -- */
-
 
     protected EmailSubscription decryptEmailSubscription(EmailSubscription subscription) {
         Preconditions.checkNotNull(subscription);
@@ -309,15 +315,12 @@ public class SubscriptionService extends AbstractService {
                 pluginSettings.getCesiumUrl())
                 .render(issuerLocale);
 
-
-
         // Schedule email sending
         threadPool.schedule(() -> mailService.sendHtmlEmailWithText(
                 emailSubjectPrefix + I18n.t("duniter4j.es.subscription.email.subject", userEvents.size()),
                 text,
                 "<body>" + html + "</body>",
                 subscription.getContent().getEmail()));
-
 
         // Compute last time (should be the first one, as events are sorted in DESC order)
         Long lastEventTime = userEvents.get(0).getTime();

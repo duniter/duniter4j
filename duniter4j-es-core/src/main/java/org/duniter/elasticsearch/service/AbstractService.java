@@ -97,7 +97,7 @@ public abstract class AbstractService implements Bean {
                 }
 
                 if (logger.isDebugEnabled()) {
-                    logger.debug(I18n.t("duniter4j.removeServiceUtils.waitThenRetry", e.getMessage(), retry, retryCount));
+                    logger.debug(I18n.t("duniter4j.service.waitThenRetry", e.getMessage(), retry, retryCount));
                 }
 
                 try {

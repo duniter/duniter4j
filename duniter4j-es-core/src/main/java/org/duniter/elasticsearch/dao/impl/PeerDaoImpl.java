@@ -87,7 +87,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
         Preconditions.checkNotNull(peer);
         Preconditions.checkArgument(StringUtils.isNotBlank(peer.getId()));
         Preconditions.checkArgument(StringUtils.isNotBlank(peer.getCurrency()));
-        Preconditions.checkNotNull(peer.getHash());
+        //Preconditions.checkNotNull(peer.getHash());
         Preconditions.checkNotNull(peer.getHost());
         Preconditions.checkNotNull(peer.getApi());
 

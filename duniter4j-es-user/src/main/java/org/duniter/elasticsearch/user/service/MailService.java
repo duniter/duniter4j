@@ -26,21 +26,9 @@ package org.duniter.elasticsearch.user.service;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.model.SmtpConfig;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.util.Preconditions;
-import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.crypto.CryptoUtils;
-import org.duniter.core.util.crypto.KeyPair;
 import org.duniter.elasticsearch.client.Duniter4jClient;
-import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.user.PluginSettings;
-import org.duniter.elasticsearch.user.model.UserEvent;
-import org.duniter.elasticsearch.user.model.UserProfile;
 import org.elasticsearch.common.inject.Inject;
-import org.nuiton.i18n.I18n;
-
-import javax.activation.CommandMap;
-import javax.activation.MailcapCommandMap;
-import java.util.Locale;
 
 /**
  * Created by Benoit on 30/03/2015.

@@ -22,7 +22,12 @@ package org.duniter.elasticsearch.subscription;
  * #L%
  */
 
+import org.duniter.elasticsearch.dao.BlockDao;
+import org.duniter.elasticsearch.rest.security.RestSecurityController;
+import org.duniter.elasticsearch.service.BlockchainService;
+import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.subscription.dao.SubscriptionIndexDao;
+import org.duniter.elasticsearch.subscription.dao.execution.SubscriptionExecutionDao;
 import org.duniter.elasticsearch.subscription.service.SubscriptionService;
 import org.duniter.elasticsearch.subscription.service.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -33,6 +38,7 @@ import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.rest.RestRequest;
 
 /**
  * Created by blavenie on 17/06/16.
@@ -58,7 +64,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             createIndices();
 
             // Waiting cluster back to GREEN or YELLOW state, before synchronize
-            threadPool.scheduleOnClusterHealthStatus(this::synchronize,
+            threadPool.scheduleOnClusterHealthStatus(this::doAfterStart,
                     ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
         }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
     }
@@ -99,6 +105,13 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                 logger.info("Checking indices [OK]");
             }
         }
+    }
+
+    protected void doAfterStart() {
+
+        // Wait cluster state OK, then synchronize
+        threadPool.scheduleOnClusterHealthStatus(this::synchronize,
+                ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
     }
 
     protected void synchronize() {

@@ -2,8 +2,3 @@
 { "name": "Notifications" , "parent": null}
 { "index": { "_id": "email"}}
 { "name": "Email", "parent": "_notification"}
-
-{ "index": { "_id": "_service"}}
-{ "name": "Services de paiement" , "parent": null}
-{ "index": { "_id": "transfer"}}
-{ "name": "Virement automatique", "parent": "_service"}

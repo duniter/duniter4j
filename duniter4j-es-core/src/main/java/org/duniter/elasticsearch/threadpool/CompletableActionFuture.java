@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Clase qui offre l'interface de ES, tout en étant compatible avec java.util.concurrent.CompletableFuture
+ * Classe qui offre l'interface de ES, tout en étant compatible avec java.util.concurrent.CompletableFuture
  * (poar exemple pour faire des thenCompose()...
  * @param <T>
  */
