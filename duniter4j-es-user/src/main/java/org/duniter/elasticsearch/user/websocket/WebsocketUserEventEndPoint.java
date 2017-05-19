@@ -38,6 +38,8 @@ package org.duniter.elasticsearch.user.websocket;
     limitations under the License.
 */
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.duniter.core.client.model.bma.Constants;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.user.PluginSettings;
@@ -59,6 +61,7 @@ import java.util.regex.Pattern;
 public class WebsocketUserEventEndPoint implements UserEventService.UserEventListener {
 
     public static Locale defaultLocale;
+    public static ObjectMapper mapper;
 
     public static class Init {
 
@@ -67,6 +70,10 @@ public class WebsocketUserEventEndPoint implements UserEventService.UserEventLis
             webSocketServer.addEndPoint(WebsocketUserEventEndPoint.class);
             defaultLocale = pluginSettings.getI18nLocale();
             if (defaultLocale == null) defaultLocale = new Locale("en", "GB");
+
+            // Define a static mapper
+            mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         }
     }
 
@@ -100,7 +107,18 @@ public class WebsocketUserEventEndPoint implements UserEventService.UserEventLis
 
     @Override
     public void onEvent(UserEvent event) {
-        session.getAsyncRemote().sendText(event.toJson(locale));
+        try {
+            UserEvent copy = new UserEvent(event);
+            copy.setMessage(copy.getLocalizedMessage(locale));
+            String json = mapper.writeValueAsString(copy);
+
+            // Force to serialized 'id' (skip @JsonIgnore) - fix #12
+            json = "{\"id\":\""+event.getId()+"\"," + json.substring(1);
+
+            session.getAsyncRemote().sendText(json);
+        } catch(IOException e) {
+            // silent
+        }
     }
 
     @Override
