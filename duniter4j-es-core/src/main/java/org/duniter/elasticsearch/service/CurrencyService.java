@@ -118,7 +118,7 @@ public class CurrencyService extends AbstractService {
             }
 
             try {
-                Thread.sleep(10 * 1000); // wait 20s
+                Thread.sleep(10 * 1000); // wait 10s
             } catch(Exception e) {
                 throw new TechnicalException(e);
             }
@@ -146,7 +146,7 @@ public class CurrencyService extends AbstractService {
         result.setParameters(parameters);
 
         // Save it
-        saveCurrency(result, pluginSettings.getKeyringPublicKey());
+        saveCurrency(result);
 
         return result;
     }
@@ -154,21 +154,17 @@ public class CurrencyService extends AbstractService {
     /**
      * Save a blockchain (update or create) into the blockchain index.
      * @param currency
-     * @param issuer
      * @throws DuplicateIndexIdException
      * @throws AccessDeniedException if exists and user if not the original blockchain sender
      */
-    public void saveCurrency(Currency currency, String issuer) throws DuplicateIndexIdException {
+    public void saveCurrency(Currency currency) throws DuplicateIndexIdException {
         Preconditions.checkNotNull(currency, "currency could not be null") ;
         Preconditions.checkNotNull(currency.getId(), "currency attribute 'currency' could not be null");
 
-        String previousIssuer = getSenderPubkeyByCurrencyId(currency.getId());
+        boolean exists = currencyDao.isExists(currency.getId());
 
         // Currency not exists, so create it
-        if (previousIssuer == null) {
-            // make sure to fill the sender
-            currency.setIssuer(issuer);
-
+        if (!exists) {
             // Save it
             currencyDao.create(currency);
 
@@ -181,14 +177,6 @@ public class CurrencyService extends AbstractService {
 
         // Exists, so check the owner signature
         else {
-            if (issuer != null && !Objects.equals(issuer, previousIssuer)) {
-                throw new AccessDeniedException("Could not change the currency, because it has been registered by another public key.");
-            }
-
-            // Make sure the sender is not changed
-            if (issuer != null) {
-                currency.setIssuer(previousIssuer);
-            }
 
             // Save changes
             currencyDao.update(currency);
@@ -199,87 +187,7 @@ public class CurrencyService extends AbstractService {
         }
     }
 
-    /**
-     * Registrer a new blockchain.
-     * @param pubkey the sender pubkey
-     * @param jsonCurrency the blockchain, as JSON
-     * @param signature the signature of sender.
-     * @throws InvalidSignatureException if signature not correspond to sender pubkey
-     */
-    public void insertCurrency(String pubkey, String jsonCurrency, String signature) {
-        Preconditions.checkNotNull(pubkey);
-        Preconditions.checkNotNull(jsonCurrency);
-        Preconditions.checkNotNull(signature);
-
-        if (!cryptoService.verify(jsonCurrency, signature, pubkey)) {
-            String currencyName = JacksonUtils.getValueFromJSONAsString(jsonCurrency, "currencyName");
-            logger.warn(String.format("Currency not added, because bad signature. blockchain [%s]", currencyName));
-            throw new InvalidSignatureException("Bad signature");
-        }
-
-        Currency currency;
-        try {
-            currency = objectMapper.readValue(jsonCurrency, Currency.class);
-            Preconditions.checkNotNull(currency);
-            Preconditions.checkNotNull(currency.getCurrencyName());
-        } catch(Throwable t) {
-            logger.error("Error while reading blockchain JSON: " + jsonCurrency);
-            throw new TechnicalException("Error while reading blockchain JSON: " + jsonCurrency, t);
-        }
-
-        saveCurrency(currency, pubkey);
-    }
-
-
-
     /* -- Internal methods -- */
-
-
-
-    /**
-     * Retrieve a blockchain from its name
-     * @param currencyId
-     * @return
-     */
-    protected String getSenderPubkeyByCurrencyId(String currencyId) {
-
-        if (!isCurrencyExists(currencyId)) {
-            return null;
-        }
-
-        // Prepare request
-
-        SearchRequestBuilder searchRequest = client
-                .prepareSearch(INDEX)
-                .setTypes(RECORD_TYPE)
-                .setSearchType(SearchType.QUERY_AND_FETCH);
-
-        // If more than a word, search on terms match
-        searchRequest.setQuery(new IdsQueryBuilder().addIds(currencyId));
-
-        // Execute query
-        try {
-            SearchResponse response = searchRequest.execute().actionGet();
-
-            // Read query result
-            SearchHit[] searchHits = response.getHits().getHits();
-            for (SearchHit searchHit : searchHits) {
-                if (searchHit.source() != null) {
-                    Currency currency = objectMapper.readValue(new String(searchHit.source(), "UTF-8"), Currency.class);
-                    return currency.getIssuer();
-                }
-                else {
-                    SearchHitField field = searchHit.getFields().get("issuer");
-                    return field.getValue().toString();
-                }
-            }
-        }
-        catch(SearchPhaseExecutionException | IOException e) {
-            // Failed or no item on index
-        }
-
-        return null;
-    }
 
     protected IndexDao<?> getCurrencyDataDao(final String currencyId) {
         // Create data

@@ -47,7 +47,6 @@ import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.dao.BlockDao;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
-import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -386,25 +385,7 @@ public class BlockchainService extends AbstractService {
         return blockDao.getBlockById(currencyName, CURRENT_BLOCK_ID);
     }
 
-    public Map<String, Object> getBlockFieldsById(String currencyName, int number, String... fields) {
-        return getBlockFieldsById(currencyName, String.valueOf(number), fields);
-    }
-
-    public Map<String, Object> getCurrentBlockFields(String currencyName, String... fields) {
-        return getBlockFieldsById(currencyName, CURRENT_BLOCK_ID, fields);
-    }
-
     /* -- Internal methods -- */
-
-
-    protected Map<String, Object> getBlockFieldsById(String currency, String blockId, String... fields) {
-        try {
-            return client.getMandatoryFieldsById(currency, BLOCK_TYPE, blockId, fields);
-        }
-        catch(NotFoundException e) {
-            throw new BlockNotFoundException(e);
-        }
-    }
 
     protected Collection<String> indexBlocksNoBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
         Set<String> missingBlockNumbers = new LinkedHashSet<>();

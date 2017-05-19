@@ -22,9 +22,10 @@ package org.duniter.elasticsearch.subscription.rest;
  * #L%
  */
 
+import org.duniter.elasticsearch.subscription.rest.execution.RestSubscriptionExecutionGetAction;
+import org.duniter.elasticsearch.subscription.rest.record.RestSubscriptionCategoryGetAction;
 import org.duniter.elasticsearch.subscription.rest.record.RestSubscriptionRecordIndexAction;
 import org.duniter.elasticsearch.subscription.rest.record.RestSubscriptionRecordUpdateAction;
-import org.duniter.elasticsearch.subscription.rest.record.RestSubscriptionCategoryGetAction;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
@@ -36,7 +37,7 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestSubscriptionCategoryGetAction.class).asEagerSingleton();
 
         // Subscription execution
-        bind(RestSubscriptionCategoryGetAction.class).asEagerSingleton();
+        bind(RestSubscriptionExecutionGetAction.class).asEagerSingleton();
 
         // Subscription record
         bind(RestSubscriptionRecordIndexAction.class).asEagerSingleton();

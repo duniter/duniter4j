@@ -71,7 +71,7 @@ public class PeerService extends AbstractService {
                        CryptoService cryptoService,
                        PeerDao peerDao,
                        final ServiceLocator serviceLocator){
-        super("duniter.peers", client, settings, cryptoService);
+        super("duniter.network.peer", client, settings, cryptoService);
         this.peerDao = peerDao;
         this.threadPool = threadPool;
         threadPool.scheduleOnStarted(() -> {

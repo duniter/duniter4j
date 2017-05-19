@@ -466,7 +466,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 NetworkPeers.Peer peer = networkRemoteService.getPeerLeaf(requestedPeer, leaf);
                 addEndpointsAsPeers(peer, result, leaf);
 
-            } catch(HttpNotFoundException e) {
+            } catch(HttpNotFoundException | TechnicalException e) {
                 log.warn("Peer not found for leaf=" + leaf);
                 // skip
             }
@@ -524,7 +524,6 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     protected Peer getVersion(final Peer peer) {
         JsonNode json = executeRequest(peer, BMA_URL_STATUS, JsonNode.class);
-        // TODO update peer
         json = json.get("duniter");
         if (json.isMissingNode()) throw new TechnicalException(String.format("Invalid format of [%s] response", BMA_URL_STATUS));
         json = json.get("version");

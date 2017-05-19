@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -37,6 +38,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -50,6 +52,7 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BmaTechnicalException;
 import org.duniter.core.client.service.exception.*;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.cache.SimpleCache;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
@@ -62,6 +65,7 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -299,7 +303,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                         result = (T)response;
                     }
                     else {
-                        result = (T) parseResponse(response, resultClass);
+                        result = (T) parseResponse(request, response, resultClass);
                         EntityUtils.consume(response.getEntity());
                     }
                     break;
@@ -311,7 +315,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                     throw new HttpNotFoundException(I18n.t("duniter4j.client.notFound", request.toString()));
                 case HttpStatus.SC_BAD_REQUEST:
                     try {
-                        Object errorResponse = parseResponse(response, errorClass);
+                        Object errorResponse = parseResponse(request, response, errorClass);
                         if (errorResponse instanceof Error) {
                             throw new HttpBadRequestException((Error)errorResponse);
                         }
@@ -329,7 +333,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                     break;
                 default:
                     String defaultMessage = I18n.t("duniter4j.client.status", request.toString(), response.getStatusLine().toString());
-                    if (response.getEntity() != null && response.getEntity().getContentType().toString().contains("application/json")) {
+                    if (isContentType(response, ContentType.APPLICATION_JSON)) {
                         JsonNode node = objectMapper.readTree(response.getEntity().getContent());
                         if (node.hasNonNull("ucode")) {
                             throw new BmaTechnicalException(node.get("ucode").asInt(), node.get("message").asText(defaultMessage));
@@ -379,7 +383,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         return result;
     }
 
-    protected Object parseResponse(HttpResponse response, Class<?> ResultClass) throws IOException {
+    protected Object parseResponse(HttpUriRequest request, HttpResponse response, Class<?> ResultClass) throws IOException {
         Object result = null;
 
         boolean isStreamContent = ResultClass == null || ResultClass.equals(InputStream.class);
@@ -411,11 +415,22 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
         // deserialize Json
         else {
+
             try {
                 result = readValue(content, ResultClass);
             }
             catch (Exception e) {
-                throw new TechnicalException(I18n.t("duniter4j.client.core.invalidResponse"), e);
+                String requestPath = request.getURI().toString();
+
+                // Check if content-type error
+                ContentType contentType = ContentType.getOrDefault(response.getEntity());
+                String actualMimeType = contentType.getMimeType();
+                if (!ObjectUtils.equals(ContentType.APPLICATION_JSON.getMimeType(), actualMimeType)) {
+                    throw new TechnicalException(I18n.t("duniter4j.client.core.invalidResponseContentType", requestPath, ContentType.APPLICATION_JSON.getMimeType(), actualMimeType));
+                }
+
+                // throw a generic error
+                throw new TechnicalException(I18n.t("duniter4j.client.core.invalidResponse", requestPath), e);
             }
             finally {
                 if (content!= null) {
@@ -425,10 +440,17 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         }
 
         if (result == null) {
-            throw new TechnicalException(I18n.t("duniter4j.client.core.emptyResponse"));
+            throw new TechnicalException(I18n.t("duniter4j.client.core.emptyResponse", request.getURI().toString()));
         }
 
         return result;
+    }
+
+    private boolean isContentType(HttpResponse response, ContentType expectedContentType) {
+        if (response.getEntity() == null) return false;
+        ContentType contentType = ContentType.getOrDefault(response.getEntity());
+        String actualMimeType = contentType.getMimeType();
+        return ObjectUtils.equals(expectedContentType.getMimeType(), actualMimeType);
     }
 
     protected String getContentAsString(InputStream content) throws IOException {

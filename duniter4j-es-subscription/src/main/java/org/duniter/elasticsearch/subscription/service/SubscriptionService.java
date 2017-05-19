@@ -34,7 +34,6 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.concurrent.CompletableFutures;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.subscription.PluginSettings;
@@ -46,8 +45,6 @@ import org.duniter.elasticsearch.subscription.model.email.EmailSubscription;
 import org.duniter.elasticsearch.subscription.util.DateUtils;
 import org.duniter.elasticsearch.subscription.util.stringtemplate.DateRenderer;
 import org.duniter.elasticsearch.subscription.util.stringtemplate.StringRenderer;
-import org.duniter.elasticsearch.threadpool.CompletableActionFuture;
-import org.duniter.elasticsearch.threadpool.ScheduledActionFuture;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.AdminService;
@@ -55,15 +52,14 @@ import org.duniter.elasticsearch.user.service.MailService;
 import org.duniter.elasticsearch.user.service.UserEventService;
 import org.duniter.elasticsearch.user.service.UserService;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.unit.TimeValue;
 import org.nuiton.i18n.I18n;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.STGroupDir;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -92,7 +88,7 @@ public class SubscriptionService extends AbstractService {
                                AdminService adminService,
                                UserService userService,
                                UserEventService userEventService) {
-        super("subscription.service", client, settings, cryptoService);
+        super("duniter.subscription", client, settings, cryptoService);
         this.subscriptionRecordDao = subscriptionRecordDao;
         this.subscriptionExecutionDao = subscriptionExecutionDao;
         this.threadPool = threadPool;
@@ -154,6 +150,14 @@ public class SubscriptionService extends AbstractService {
                 cal.set(Calendar.DAY_OF_WEEK, pluginSettings.getEmailSubscriptionsExecuteDayOfWeek());
                 String dayOfWeek = new SimpleDateFormat("EEE").format(cal.getTime());
                 logger.warn(I18n.t("duniter4j.es.subscription.email.start", pluginSettings.getEmailSubscriptionsExecuteHour(), dayOfWeek));
+            }
+
+            // Execution at startup
+            if (pluginSettings.isEmailSubscriptionsExecuteAtStartup()) {
+                threadPool.schedule(
+                        () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
+                        new TimeValue(20, TimeUnit.SECONDS) /* after 20s */
+                );
             }
 
             // Daily execution
@@ -390,10 +394,10 @@ public class SubscriptionService extends AbstractService {
 
         if (execution.getId() == null) {
 
-            subscriptionExecutionDao.create(json, false/*not wait*/);
+            //subscriptionExecutionDao.create(json, false/*not wait*/);
         }
         else {
-            subscriptionExecutionDao.update(execution.getId(), json, false/*not wait*/);
+            //subscriptionExecutionDao.update(execution.getId(), json, false/*not wait*/);
         }
         return execution;
     }

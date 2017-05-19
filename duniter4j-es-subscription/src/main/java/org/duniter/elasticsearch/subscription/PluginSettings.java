@@ -84,6 +84,14 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     /**
+     * Should email subscription be send at startup ?
+     * @return
+     */
+    public boolean isEmailSubscriptionsExecuteAtStartup() {
+        return settings.getAsBoolean("duniter.subscription.email.atStartup", false);
+    }
+
+    /**
      * Day of the week to trigger weekly email subscription (default: 2 = monday)
      * @return
      */

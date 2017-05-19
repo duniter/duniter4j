@@ -22,10 +22,7 @@ package org.duniter.elasticsearch.user.model;
  * #L%
  */
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.client.model.elasticsearch.Record;
@@ -176,24 +173,6 @@ public class UserEvent extends Record {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    @JsonIgnore
-    public String toJson() {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            return mapper.writeValueAsString(this);
-        } catch(Exception e) {
-            throw new TechnicalException(e);
-        }
-    }
-
-    @JsonIgnore
-    public String toJson(Locale locale) {
-        UserEvent copy = new UserEvent(this);
-        copy.setMessage(getLocalizedMessage(locale));
-        return copy.toJson();
     }
 
     private static long getDefaultTime() {

@@ -109,22 +109,17 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
     protected void doAfterStart() {
 
-        // Wait cluster state OK, then synchronize
-        threadPool.scheduleOnClusterHealthStatus(this::synchronize,
-                ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
-    }
-
-    protected void synchronize() {
-
-        if (pluginSettings.enableDataSync()) {
-            // Synchronize
-            injector.getInstance(SynchroService.class).synchronize();
-        }
-
         // Start subscription services
         if (pluginSettings.enableSubscription()) {
 
             injector.getInstance(SubscriptionService.class).startScheduling();
         }
+
+        // Synchronize data
+        if (pluginSettings.enableDataSync()) {
+            // Synchronize
+            injector.getInstance(SynchroService.class).synchronize();
+        }
     }
+
 }

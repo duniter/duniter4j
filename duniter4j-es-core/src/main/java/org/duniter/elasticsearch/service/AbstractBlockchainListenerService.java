@@ -139,7 +139,7 @@ public abstract class AbstractBlockchainListenerService extends AbstractService 
     protected abstract void beforeFlush();
 
     protected void flushBulkRequestOrSchedule() {
-        if (flushing) return;
+        if (flushing || bulkRequest.numberOfActions() == 0) return;
 
         // Flush now, if need or later
         if (bulkRequest.numberOfActions() % bulkSize == 0) {

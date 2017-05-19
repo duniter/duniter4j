@@ -33,7 +33,6 @@ import java.io.Serializable;
 public class Currency extends org.duniter.core.client.model.local.Currency implements Serializable {
 
     private String[] tags;
-    private String issuer;
 
     public String[] getTags() {
         return tags;
@@ -43,11 +42,4 @@ public class Currency extends org.duniter.core.client.model.local.Currency imple
         this.tags = tags;
     }
 
-    public String getIssuer() {
-        return issuer;
-    }
-
-    public void setIssuer(String issuer) {
-        this.issuer = issuer;
-    }
 }

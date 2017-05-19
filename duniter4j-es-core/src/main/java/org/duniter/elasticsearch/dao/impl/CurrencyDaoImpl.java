@@ -183,12 +183,6 @@ public class CurrencyDaoImpl extends AbstractIndexTypeDao<CurrencyExtendDao> imp
                     .field("type", "integer")
                     .endObject()
 
-                    // issuer
-                    .startObject("issuer")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
                     // tags
                     .startObject("tags")
                     .field("type", "completion")
