@@ -8,8 +8,12 @@
 * [ES CORE API](#es-core-api)
   * [currency](#currency)
       * [currency/block](#currencyblock)
+      * [currency/blockstat](#currencyblockstat)
+      * [currency/peer](#currencypeer)
+      * [currency/tx](#currencytx)
 * [ES USER API](#userapi)
   * [user](#user)
+      * [user/event](#userevent)
       * [user/profile](#userprofile)
       * [user/settings](#usersettings)
   * [message](#message)
@@ -17,15 +21,6 @@
       * [message/oubox](#messageoutbox)
   * [invitation](#invitation)
       * [invitation/certification](#invitationcertification)
-* [ES GCHANGE API](#gchangeapi)
-  * [market](#market)
-      * [market/category](#marketcategory)
-      * [market/record](#marketrecord)
-      * [market/comment](#marletcomment)
-  * [registry](#registry)
-      * [registrymarket/category](#registrycategory)
-      * [registry/record](#registryrecord)
-      * [registry/comment](#registrycomment)
 
 ## Overview
 
@@ -33,30 +28,23 @@ Duniter4j Elasticsearch offer HTTP access to 3 main API :
 
  - `ES CORE API` (ECA): BlockChain indexation;
  - `ES USER API` (EUA): User data indexation, such as: profiles, private messages, settings (crypted);
- - `ES GCHANGE API` (EGA): Exchange data (market place: offer, ad...), professionals registry. 
-
 
 Data is made accessible through an HTTP API :
 
     http[s]://node[:port]/...
     |-- <currency_name>/
-    |   `-- lookup
+    |   |-- block
+    |   |-- blockstat
+    |   |-- peer
+    |   `-- tx
     |-- user/
     |   |-- profile
     |   `-- settings
     |-- message/
     |   |-- inbox
     |   `-- outbox
-    |-- invitation/
-    |   `-- certification
-    |-- market/
-    |   |-- category
-    |   |-- record
-    |   `-- comment
-    `-- registry/
-        |-- category
-        |-- record
-        `-- comment
+    `-- invitation/
+        `-- certification
 
 ### Document format
  
@@ -97,9 +85,19 @@ For example, a deletion on `message/inbox` should send this document:
  - Get a block by number: `<currency>/block/<number>`
  - Search on blocks: `<currency>/block/_search` (POST or GET)
 
+#### `<currency>/blockstat`
+
+#### `<currency>/peer`
+
+
 ## ES USER API
 
 ### `user/*`
+
+#### `user/event`
+
+ - Get events on an account, by pubkey: `user/event/_search?q=issuer:<pubkey>` (GET)
+ - Search on events: `user/event/_search` (POST or GET)
 
 #### `user/profile`
 
@@ -171,21 +169,3 @@ Some additional fields are `description`, `socials`, `tags` and `avatar` :
  - Delete an existing invitation: `invitation/certification/_delete` (POST)
  - Search on invitations: `invitation/certification/_search` (POST or GET)
 
-
-## ES GCHANGE API
-
-### `market/*`
-
-#### `market/category`
-
-#### `market/record`
-
-#### `market/comment`
-
-### `registry/*`
-
-#### `registry/category`
-
-#### `registry/record`
-
-#### `registry/comment`
