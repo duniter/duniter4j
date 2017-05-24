@@ -119,21 +119,6 @@ public class ModelUtils {
     }
 
     /**
-     * Transform a list of sources, into a Map, using the fingerprint as key
-     * @param movements
-     * @return
-     */
-    public static Map<String, Movement> movementsToFingerprintMap(List<Movement> movements) {
-
-        Map<String, Movement> result = new HashMap<>();
-        for(Movement movement: movements) {
-            result.put(movement.getFingerprint(), movement);
-        }
-
-        return result;
-    }
-
-    /**
      * Return a small string, for the given pubkey.
      * @param pubkey
      * @return

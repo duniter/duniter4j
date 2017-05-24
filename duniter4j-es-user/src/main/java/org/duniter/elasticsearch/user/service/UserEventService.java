@@ -420,53 +420,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
         searchRequest.setQuery(QueryBuilders.nestedQuery(UserEvent.PROPERTY_REFERENCE, QueryBuilders.constantScoreQuery(boolQuery)));
 
         // Execute query, while there is some data
-        try {
-
-            int counter = 0;
-            boolean loop = true;
-            searchRequest.setSize(bulkSize);
-            SearchResponse response = searchRequest.execute().actionGet();
-            do {
-
-                // Read response
-                SearchHit[] searchHits = response.getHits().getHits();
-                for (SearchHit searchHit : searchHits) {
-
-                    // Add deletion to bulk
-                    bulkRequest.add(
-                            client.prepareDelete(INDEX, EVENT_TYPE, searchHit.getId())
-                    );
-                    counter++;
-
-                    // Flush the bulk if not empty
-                    if ((bulkRequest.numberOfActions() % bulkSize) == 0) {
-                        client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
-                        bulkRequest = client.prepareBulk();
-                    }
-                }
-
-                // Prepare next iteration
-                if (counter == 0 || counter >= response.getHits().getTotalHits()) {
-                    loop = false;
-                }
-                // Prepare next iteration
-                else {
-                    searchRequest.setFrom(counter);
-                    response = searchRequest.execute().actionGet();
-                }
-            } while(loop);
-
-            // last flush
-            if (flushAll && (bulkRequest.numberOfActions() % bulkSize) != 0) {
-                client.flushDeleteBulk(INDEX, EVENT_TYPE, bulkRequest);
-            }
-
-        } catch (SearchPhaseExecutionException e) {
-            // Failed or no item on index
-            logger.error(String.format("Error while deleting by reference: %s. Skipping deletions.", e.getMessage()), e);
-        }
-
-        return bulkRequest;
+        return client.bulkDeleteFromSearch(INDEX, EVENT_TYPE, searchRequest, bulkRequest, bulkSize, flushAll);
     }
 
 

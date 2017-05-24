@@ -24,43 +24,30 @@ package org.duniter.elasticsearch.dao;
 
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.bma.BlockchainBlock;
-import org.duniter.elasticsearch.model.BlockchainBlockStat;
+import org.duniter.elasticsearch.model.Movement;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import java.util.List;
 
 /**
  * Created by blavenie on 03/04/17.
  */
-public interface BlockStatDao extends Bean, TypeDao<BlockStatDao> {
+public interface MovementDao extends Bean, TypeDao<MovementDao> {
 
-    String TYPE = "blockstat";
+    String TYPE = "movement";
 
-    void create(BlockchainBlockStat block, boolean wait);
-
-    /**
-     *
-     * @param currencyName
-     * @param number the block number
-     * @param json block as JSON
-     */
-    void create(String currencyName, String id, byte[] json, boolean wait);
+    void create(Movement block, boolean wait);
 
     boolean isExists(String currencyName, String id);
 
-    void update(BlockchainBlockStat block, boolean wait);
-
-    /**
-     *
-     * @param currencyName
-     * @param number the block number, or -1 for current
-     * @param json block as JSON
-     */
-    void update(String currencyName, String id, byte[] json, boolean wait);
+    void update(Movement operation, boolean wait);
 
     void delete(String currency, String id, boolean wait);
 
-    void delete(String currency, String id, String hash, boolean wait);
-
-    BlockchainBlockStat toBlockStat(BlockchainBlock block);
-
+    BulkRequestBuilder bulkDeleteByBlock(String currency,
+                                             String number,
+                                             String hash,
+                                             BulkRequestBuilder bulkRequest,
+                                             int bulkSize,
+                                             boolean flushAll);
 }

@@ -24,21 +24,26 @@ package org.duniter.elasticsearch.dao.impl;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.core.client.model.bma.BlockchainBlocks;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.dao.AbstractDao;
 import org.duniter.elasticsearch.dao.BlockStatDao;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.model.BlockchainBlockStat;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
+import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -46,7 +51,7 @@ import java.io.IOException;
 public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
 
     public BlockStatDaoImpl(){
-        super("duniter.dao.blockStat");
+        super("duniter.dao.block.stat");
     }
 
     @Override
@@ -61,7 +66,6 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
         Preconditions.checkNotNull(block.getNumber());
 
         // Serialize into JSON
-        // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         try {
             String json = objectMapper.writeValueAsString(block);
 
@@ -263,10 +267,53 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
         }
     }
 
-    public BlockchainBlockStat getById(String currencyName, String id) {
-        return client.getSourceById(currencyName, TYPE, id, BlockchainBlockStat.class);
+    public BlockchainBlockStat toBlockStat(BlockchainBlock block) {
+
+        BlockchainBlockStat result = newBlockStat(block);
+
+        // Tx
+        if (CollectionUtils.isNotEmpty(block.getTransactions())) {
+            CounterMetric txChangeCounter = new CounterMetric();
+            CounterMetric txAmountCounter = new CounterMetric();
+            Arrays.stream(block.getTransactions())
+                    .forEach(tx -> {
+                        long txAmount = BlockchainBlocks.getTxAmount(tx);
+                        if (txAmount == 0l) {
+                            txChangeCounter.inc();
+                        }
+                        else {
+                            txAmountCounter.inc(txAmount);
+                        }
+                    });
+            result.setTxAmount(BigInteger.valueOf(txAmountCounter.count()));
+            result.setTxChangeCount((int)txChangeCounter.count());
+            result.setTxCount(block.getTransactions().length);
+        }
+        else {
+            result.setTxAmount(BigInteger.valueOf(0));
+            result.setTxChangeCount(0);
+            result.setTxCount(0);
+        }
+
+        return result;
     }
 
     /* -- Internal methods -- */
 
+    private BlockchainBlockStat newBlockStat(BlockchainBlock block) {
+        BlockchainBlockStat stat = new BlockchainBlockStat();
+
+        stat.setNumber(block.getNumber());
+        stat.setCurrency(block.getCurrency());
+        stat.setHash(block.getHash());
+        stat.setIssuer(block.getIssuer());
+        stat.setMedianTime(block.getMedianTime());
+        stat.setMembersCount(block.getMembersCount());
+        stat.setMonetaryMass(block.getMonetaryMass());
+        stat.setUnitbase(block.getUnitbase());
+        stat.setVersion(block.getVersion());
+        stat.setDividend(block.getDividend());
+
+        return stat;
+    }
 }

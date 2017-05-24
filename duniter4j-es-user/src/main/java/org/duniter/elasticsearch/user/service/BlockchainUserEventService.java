@@ -24,38 +24,26 @@ package org.duniter.elasticsearch.user.service;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
-import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.client.Duniter4jClient;
-import org.duniter.elasticsearch.dao.BlockStatDao;
-import org.duniter.elasticsearch.model.BlockchainBlockStat;
 import org.duniter.elasticsearch.service.AbstractBlockchainListenerService;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
-import org.duniter.elasticsearch.service.changes.ChangeService;
-import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.nuiton.i18n.I18n;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.CompletableFuture;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -148,11 +136,6 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
 
         this.bulkRequest = userEventService.addDeleteEventsByReferenceToBulk(reference, this.bulkRequest, this.bulkSize, false);
         flushBulkRequestOrSchedule();
-    }
-
-
-    protected void beforeFlush() {
-
     }
 
     /* -- internal method -- */
@@ -261,11 +244,15 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
 
         event = userEventService.fillUserEvent(event);
 
-        bulkRequest.add(client.prepareIndex(UserEventService.INDEX, UserEventService.EVENT_TYPE)
-                .setSource(userEventService.toJson(event))
-                .setRefresh(false));
-
-        flushBulkRequestOrSchedule();
+        try {
+            bulkRequest.add(client.prepareIndex(UserEventService.INDEX, UserEventService.EVENT_TYPE)
+                    .setSource(objectMapper.writeValueAsBytes(event))
+                    .setRefresh(false));
+            flushBulkRequestOrSchedule();
+        }
+        catch(JsonProcessingException e) {
+            logger.error("Could not serialize UserEvent into JSON: " + e.getMessage(), e);
+        }
     }
 
 

@@ -32,6 +32,7 @@ import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.search.SearchHit;
 
@@ -104,6 +105,13 @@ public interface Duniter4jClient extends Bean, Client {
     void flushDeleteBulk(final String index, final String type, BulkRequestBuilder bulkRequest);
 
     void flushBulk(BulkRequestBuilder bulkRequest);
+
+    BulkRequestBuilder bulkDeleteFromSearch(String index,
+                                            String type,
+                                            SearchRequestBuilder searchRequest,
+                                            BulkRequestBuilder bulkRequest,
+                                            int bulkSize,
+                                            boolean flushAll);
 
     void safeExecuteRequest(ActionRequestBuilder<?, ?, ?> request, boolean wait);
 

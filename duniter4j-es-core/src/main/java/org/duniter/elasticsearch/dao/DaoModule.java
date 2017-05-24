@@ -28,6 +28,7 @@ import org.duniter.core.client.dao.PeerDao;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.client.Duniter4jClientImpl;
 import org.duniter.elasticsearch.dao.impl.BlockStatDaoImpl;
+import org.duniter.elasticsearch.dao.impl.MovementDaoImpl;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
@@ -38,6 +39,7 @@ public class DaoModule extends AbstractModule implements Module {
 
         bind(Duniter4jClient.class).to(Duniter4jClientImpl.class).asEagerSingleton();
         bind(BlockStatDao.class).to(BlockStatDaoImpl.class).asEagerSingleton();
+        bind(MovementDao.class).to(MovementDaoImpl.class).asEagerSingleton();
 
         bindWithLocator(BlockDao.class);
         bindWithLocator(PeerDao.class);

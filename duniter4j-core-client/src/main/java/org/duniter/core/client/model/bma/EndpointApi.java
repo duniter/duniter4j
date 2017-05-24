@@ -29,5 +29,6 @@ public enum EndpointApi {
     BMATOR,
     ES_CORE_API,
     ES_USER_API,
+    MONIT_API,
     UNDEFINED
 }

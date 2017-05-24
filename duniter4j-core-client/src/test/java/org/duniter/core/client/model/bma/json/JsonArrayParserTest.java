@@ -1,4 +1,4 @@
-package org.duniter.core.client.model.bma.gson;
+package org.duniter.core.client.model.bma.json;
 
 /*
  * #%L

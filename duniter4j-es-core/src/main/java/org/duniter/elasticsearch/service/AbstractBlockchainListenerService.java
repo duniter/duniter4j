@@ -136,8 +136,6 @@ public abstract class AbstractBlockchainListenerService extends AbstractService 
 
     protected abstract void processBlockDelete(ChangeEvent change);
 
-    protected abstract void beforeFlush();
-
     protected void flushBulkRequestOrSchedule() {
         if (flushing || bulkRequest.numberOfActions() == 0) return;
 
@@ -150,7 +148,6 @@ public abstract class AbstractBlockchainListenerService extends AbstractService 
             flushing = true;
             threadPool.schedule(() -> {
                 synchronized (threadLock) {
-                    beforeFlush();
                     client.flushBulk(bulkRequest);
                     bulkRequest = client.prepareBulk();
                     flushing = false;

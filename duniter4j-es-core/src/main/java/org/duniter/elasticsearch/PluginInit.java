@@ -27,6 +27,7 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.dao.BlockDao;
 import org.duniter.elasticsearch.dao.BlockStatDao;
 import org.duniter.elasticsearch.dao.PeerDao;
+import org.duniter.elasticsearch.dao.MovementDao;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.CurrencyService;
@@ -151,7 +152,15 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                             PeerDao.TYPE)
                     .allowPostSearchIndexType(
                             currency.getCurrencyName(),
-                            PeerDao.TYPE);
+                            PeerDao.TYPE)
+
+                    // Add access to <currency>/movement index
+                    .allowIndexType(RestRequest.Method.GET,
+                            currency.getCurrencyName(),
+                            MovementDao.TYPE)
+                    .allowPostSearchIndexType(
+                            currency.getCurrencyName(),
+                            MovementDao.TYPE);
 
             // Wait end of currency index creation, then index blocks
             threadPool.scheduleOnClusterHealthStatus(() -> {

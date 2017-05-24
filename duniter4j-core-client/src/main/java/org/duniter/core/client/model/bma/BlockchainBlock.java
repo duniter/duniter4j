@@ -567,7 +567,7 @@ public class BlockchainBlock implements Serializable {
 
         private String[] signatures;
 
-        private String version;
+        private int version;
 
         private String currency;
 
@@ -599,11 +599,11 @@ public class BlockchainBlock implements Serializable {
             this.signatures = signatures;
         }
 
-        public String getVersion() {
+        public int getVersion() {
             return version;
         }
 
-        public void setVersion(String version) {
+        public void setVersion(int version) {
             this.version = version;
         }
 

@@ -28,7 +28,6 @@ import org.duniter.core.client.dao.CurrencyDao;
 import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainParameters;
-import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
@@ -41,23 +40,12 @@ import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.dao.*;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
-import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
-import org.elasticsearch.index.query.IdsQueryBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -217,6 +205,10 @@ public class CurrencyService extends AbstractService {
                     // Add blockStat type
                     BlockStatDao blockStatDao = injector.getInstance(BlockStatDao.class);
                     createIndexRequestBuilder.addMapping(blockStatDao.getType(), blockStatDao.createTypeMapping());
+
+                    // Add operation type
+                    MovementDao operationDao = ServiceLocator.instance().getBean(MovementDao.class);
+                    createIndexRequestBuilder.addMapping(operationDao.getType(), operationDao.createTypeMapping());
 
                     createIndexRequestBuilder.execute().actionGet();
                 }

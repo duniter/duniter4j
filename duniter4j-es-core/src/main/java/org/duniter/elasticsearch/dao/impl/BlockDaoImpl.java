@@ -75,7 +75,6 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         Preconditions.checkNotNull(block.getNumber());
 
         // Serialize into JSON
-        // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         try {
             String json = objectMapper.writeValueAsString(block);
 

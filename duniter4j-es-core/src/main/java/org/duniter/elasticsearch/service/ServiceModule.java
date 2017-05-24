@@ -23,8 +23,6 @@ package org.duniter.elasticsearch.service;
  */
 
 import org.duniter.core.beans.Bean;
-import org.duniter.core.client.dao.CurrencyDao;
-import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.service.DataContext;
 import org.duniter.core.client.service.HttpService;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
@@ -40,7 +38,6 @@ import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
-import org.elasticsearch.script.ScriptModule;
 
 public class ServiceModule extends AbstractModule implements Module {
 
@@ -55,7 +52,7 @@ public class ServiceModule extends AbstractModule implements Module {
 
         // blockchain indexation services
         bind(BlockchainService.class).asEagerSingleton();
-        bind(BlockchainStatsService.class).asEagerSingleton();
+        bind(BlockchainListenerService.class).asEagerSingleton();
         bind(PeerService.class).asEagerSingleton();
 
         // Duniter Client API beans

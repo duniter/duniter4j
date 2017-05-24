@@ -22,6 +22,8 @@ package org.duniter.core.client.model.local;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 
 /**
@@ -30,17 +32,31 @@ import java.io.Serializable;
  */
 public class Movement implements LocalEntity<Long>, Serializable {
 
+    public static final String PROPERTY_MEDIAN_TIME = "medianTime";
+    public static final String PROPERTY_BLOCK_NUMBER= "blockNumber";
+    public static final String PROPERTY_BLOCK_HASH = "blockHash";
+    public static final String PROPERTY_DIVIDEND = "dividend";
+    public static final String PROPERTY_IS_UD = "isUD";
+    public static final String PROPERTY_ISSUER = "issuer";
+    public static final String PROPERTY_RECIPIENT = "recipient";
+    public static final String PROPERTY_AMOUNT = "amount";
+    public static final String PROPERTY_UNITBASE = "unitbase";
+    public static final String PROPERTY_COMMENT = "comment";
+    public static final String PROPERTY_TX_VERSION = "txVersion";
+
     private Long id;
     private long walletId;
-    private long amount;
-    private Long time;
+    private Long medianTime;
     private Integer blockNumber;
+    private String blockHash;
+    private String issuer;
+    private String recipient;
+    private long amount;
+    private int unitbase;
     private long dividend;
     private boolean isUD = false;
-    private String fingerprint;
     private String comment;
-    private String issuers;
-    private String receivers;
+    private String txVersion;
 
     @Override
     public Long getId() {
@@ -60,6 +76,22 @@ public class Movement implements LocalEntity<Long>, Serializable {
         this.walletId = walletId;
     }
 
+    public int getUnitbase() {
+        return unitbase;
+    }
+
+    public void setUnitbase(int unitbase) {
+        this.unitbase = unitbase;
+    }
+
+    public String getBlockHash() {
+        return blockHash;
+    }
+
+    public void setBlockHash(String blockHash) {
+        this.blockHash = blockHash;
+    }
+
     public long getAmount() {
         return amount;
     }
@@ -68,12 +100,12 @@ public class Movement implements LocalEntity<Long>, Serializable {
         this.amount = amount;
     }
 
-    public Long getTime() {
-        return time;
+    public Long getMedianTime() {
+        return medianTime;
     }
 
-    public void setTime(Long time) {
-        this.time = time;
+    public void setMedianTime(Long medianTime) {
+        this.medianTime = medianTime;
     }
 
     public Integer getBlockNumber() {
@@ -84,20 +116,13 @@ public class Movement implements LocalEntity<Long>, Serializable {
         this.blockNumber = blockNumber;
     }
 
+    @JsonIgnore
     public boolean isUD() {
         return isUD;
     }
 
     public void setUD(boolean isUD) {
         this.isUD = isUD;
-    }
-
-    public String getFingerprint() {
-        return fingerprint;
-    }
-
-    public void setFingerprint(String fingerprint) {
-        this.fingerprint = fingerprint;
     }
 
     public String getComment() {
@@ -108,24 +133,25 @@ public class Movement implements LocalEntity<Long>, Serializable {
         this.comment = comment;
     }
 
+    @JsonIgnore
     public boolean isValidate() {
         return blockNumber != null;
     }
 
-    public String getIssuers() {
-        return issuers;
+    public String getIssuer() {
+        return issuer;
     }
 
-    public void setIssuers(String issuers) {
-        this.issuers = issuers;
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 
-    public void setReceivers(String receivers) {
-        this.receivers = receivers;
+    public void setRecipient(String recipient) {
+        this.recipient = recipient;
     }
 
-    public String getReceivers() {
-        return receivers;
+    public String getRecipient() {
+        return recipient;
     }
 
     public long getDividend() {

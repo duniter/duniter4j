@@ -548,6 +548,66 @@ public class Duniter4jClientImpl implements Duniter4jClient {
         }
     }
 
+    @Override
+    public BulkRequestBuilder bulkDeleteFromSearch(final String index,
+                                                   final String type,
+                                                   final SearchRequestBuilder searchRequest,
+                                                   BulkRequestBuilder bulkRequest,
+                                                   final int bulkSize,
+                                                   final boolean flushAll) {
+
+        // Execute query, while there is some data
+        try {
+
+            int counter = 0;
+            boolean loop = true;
+            searchRequest.setSize(bulkSize);
+            SearchResponse response = searchRequest.execute().actionGet();
+
+            // Execute query, while there is some data
+            do {
+
+                // Read response
+                SearchHit[] searchHits = response.getHits().getHits();
+                for (SearchHit searchHit : searchHits) {
+
+                    // Add deletion to bulk
+                    bulkRequest.add(
+                            client.prepareDelete(index, type, searchHit.getId())
+                    );
+                    counter++;
+
+                    // Flush the bulk if not empty
+                    if ((bulkRequest.numberOfActions() % bulkSize) == 0) {
+                        flushDeleteBulk(index, type, bulkRequest);
+                        bulkRequest = client.prepareBulk();
+                    }
+                }
+
+                // Prepare next iteration
+                if (counter == 0 || counter >= response.getHits().getTotalHits()) {
+                    loop = false;
+                }
+                // Prepare next iteration
+                else {
+                    searchRequest.setFrom(counter);
+                    response = searchRequest.execute().actionGet();
+                }
+            } while(loop);
+
+            // last flush
+            if (flushAll && (bulkRequest.numberOfActions() % bulkSize) != 0) {
+                flushDeleteBulk(index, type, bulkRequest);
+            }
+
+        } catch (SearchPhaseExecutionException e) {
+            // Failed or no item on index
+            logger.error(String.format("Error while deleting by reference: %s. Skipping deletions.", e.getMessage()), e);
+        }
+
+        return bulkRequest;
+    }
+
     /* delegate methods */
 
     @Override
