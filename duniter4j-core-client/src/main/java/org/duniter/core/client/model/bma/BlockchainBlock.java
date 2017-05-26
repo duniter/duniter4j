@@ -482,9 +482,17 @@ public class BlockchainBlock implements Serializable {
 
 
     public static class Revoked implements Serializable {
+        private String pubkey;
         private String signature;
-        private String userId;
 
+
+        public String getPubkey() {
+            return pubkey;
+        }
+
+        public void setPubkey(String pubkey) {
+            this.pubkey = pubkey;
+        }
         public String getSignature() {
             return signature;
         }
@@ -492,20 +500,12 @@ public class BlockchainBlock implements Serializable {
             this.signature = signature;
         }
 
-        public String getUserId() {
-            return userId;
-        }
-
-        public void setUserId(String userId) {
-            this.userId = userId;
-        }
-
         @Override
         public String toString() {
 
             StringBuilder sb = new StringBuilder()
-                    .append(signature)
-                    .append(":").append(userId);
+                    .append(pubkey)
+                    .append(":").append(signature);
 
             return sb.toString();
         }

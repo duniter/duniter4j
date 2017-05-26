@@ -22,9 +22,7 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import org.duniter.core.util.Preconditions;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -42,7 +40,10 @@ public final class BlockchainBlocks {
 
     public static final Pattern SIG_PUBKEY_PATTERN = Pattern.compile("SIG\\(([^)]+)\\)");
 
-    public static final Pattern TX_UNLOCK_PATTERN = Pattern.compile("([0-9]+):SIG\\(([^)]+)\\)");
+    public static final Pattern TX_INPUT_CONDITION_FUNCTION = Pattern.compile("(SIG|XHX)\\(([^)]+)\\)");
+    public static final Pattern TX_INPUT_CONDITION = Pattern.compile(TX_INPUT_CONDITION_FUNCTION + "(:? " + TX_INPUT_CONDITION_FUNCTION + ")*");
+
+    public static final Pattern TX_UNLOCK_PATTERN = Pattern.compile("([0-9]+):(" + TX_INPUT_CONDITION+")");
     public static final Pattern TX_OUTPUT_PATTERN = Pattern.compile("([0-9]+):([0-9]+):([^:]+)");
     public static final Pattern TX_INPUT_PATTERN = Pattern.compile("([0-9]+):([0-9]+):([TD]):([^:]+):([^:]+)");
 
@@ -64,28 +65,25 @@ public final class BlockchainBlocks {
     public static long getTxAmount(final BlockchainBlock.Transaction tx,
                                    Predicate<String> issuerFilter) {
 
-        final Map<Integer, Integer> inputIndexByIssuerIndex = Maps.newHashMap();
-        Arrays.stream(tx.getUnlocks())
-                .map(TX_UNLOCK_PATTERN::matcher)
-                .filter(Matcher::matches)
-                .forEach(matcher -> inputIndexByIssuerIndex.put(
-                        Integer.parseInt(matcher.group(1)),
-                        Integer.parseInt(matcher.group(2)))
-                );
+        final Map<Integer, List<String>> inputIssuers = getInputIssuers(tx);
 
         return IntStream.range(0, tx.getIssuers().length)
-                .mapToLong(i -> {
-                    final String issuer = tx.getIssuers()[i];
+                .mapToLong(issuerIndex -> {
+                    final String issuer = tx.getIssuers()[issuerIndex];
 
                     // Skip if issuerFilter test failed
                     if (issuerFilter != null && !issuerFilter.test(issuer)) return 0;
 
                     long inputSum = IntStream.range(0, tx.getInputs().length)
-                            .filter(j -> i == inputIndexByIssuerIndex.get(j))
-                            .mapToObj(j -> tx.getInputs()[j])
-                            .map(input -> input.split(":"))
-                            .filter(inputParts -> inputParts.length > 2)
-                            .mapToLong(inputParts -> powBase(Long.parseLong(inputParts[0]), Integer.parseInt(inputParts[1])))
+                            .filter(inputIssuers::containsKey)
+                            .mapToLong(inputIndex -> {
+                                String[] inputParts = tx.getInputs()[inputIndex].split(":");
+                                List<String> issuers = inputIssuers.get(inputIndex);
+                                if (inputParts.length > 2 && issuers.contains(issuer)) {
+                                    return powBase(Long.parseLong(inputParts[0]), Integer.parseInt(inputParts[1]), issuers.size());
+                                }
+                                return 0;
+                            })
                             .sum();
 
                     long outputSum = Arrays.stream(tx.getOutputs())
@@ -105,15 +103,20 @@ public final class BlockchainBlocks {
         return amount * (long)Math.pow(10, unitbase);
     }
 
+    public static long powBase(long amount, int unitbase, int divisor) {
+        if (unitbase == 0) return amount;
+        return amount * (long)Math.pow(10, unitbase) / divisor;
+    }
+
     public static List<TxInput> getTxInputs(final BlockchainBlock.Transaction tx) {
         Preconditions.checkNotNull(tx);
 
-        final Function<Integer, String> issuerByInputIndex = transformInputIndex2Issuer(tx);
+        final Map<Integer, List<String>> inputIssuers = getInputIssuers(tx);
 
         return IntStream.range(0, tx.getInputs().length)
                 .mapToObj(i -> {
                     TxInput txInput = parseInput(tx.getInputs()[i]);
-                    txInput.issuer = issuerByInputIndex.apply(i);
+                    txInput.issuers = inputIssuers.get(i);
                     return txInput;
                 })
                 .collect(Collectors.toList());
@@ -162,8 +165,8 @@ public final class BlockchainBlocks {
         Preconditions.checkNotNull(txInputs);
         return txInputs.stream()
                 // only keep inputs from issuer
-                .filter(input -> Objects.equals(issuer, input.issuer))
-                .mapToLong(input -> powBase(input.amount, input.unitbase))
+                .filter(input -> input.issuers.contains(issuer))
+                .mapToLong(input -> powBase(input.amount, input.unitbase, input.issuers.size()))
                 .sum();
     }
 
@@ -180,7 +183,9 @@ public final class BlockchainBlocks {
 
     public static Set<String> getTxRecipients(Collection<TxOutput> txOutputs) {
         Preconditions.checkNotNull(txOutputs);
-        return txOutputs.stream().map(output -> output.recipient).distinct().collect(Collectors.toSet());
+        return txOutputs.stream().map(output -> output.recipient)
+                .filter(Objects::nonNull)
+                .distinct().collect(Collectors.toSet());
     }
 
     public static class TxInput {
@@ -189,7 +194,7 @@ public final class BlockchainBlocks {
         public String type;
         public String txHashOrPubkey;
         public String indexOrBlockId;
-        public String issuer;
+        public List<String> issuers;
 
         public boolean isUD() {
             return "D".equals(type);
@@ -206,18 +211,30 @@ public final class BlockchainBlocks {
     /* -- Internal methods -- */
 
 
-    private static Function<Integer, String> transformInputIndex2Issuer(final BlockchainBlock.Transaction tx) {
-        final Map<Integer, Integer> inputIndexByIssuerIndex = Maps.newHashMap();
-        Arrays.stream(tx.getUnlocks())
+    private static Map<Integer, List<String>> getInputIssuers(final BlockchainBlock.Transaction tx) {
+        return Arrays.stream(tx.getUnlocks())
                 .map(TX_UNLOCK_PATTERN::matcher)
                 .filter(Matcher::matches)
-                .forEach(matcher -> inputIndexByIssuerIndex.put(
-                        Integer.parseInt(matcher.group(1)),
-                        Integer.parseInt(matcher.group(2)))
+                .collect(Collectors.toMap(
+                        matcher -> Integer.decode(matcher.group(1)),
+                        matcher -> getUnlockConditionIssuers(tx.getIssuers(), matcher.group(2)))
                 );
-
-
-        return (inputIndex -> tx.getIssuers()[inputIndexByIssuerIndex.get(inputIndex)]);
     }
 
+    private static List<String> getUnlockConditionIssuers(String[] issuers, String condition) {
+        // parse condition
+        Matcher matcher = TX_INPUT_CONDITION_FUNCTION.matcher(condition);
+        int start = 0;
+        List<String> result = new ArrayList<>(1);
+        while (matcher.find(start)) {
+            String function = matcher.group(1);
+            if ("SIG".equals(function)) {
+                int issuerIndex = Integer.parseInt(matcher.group(2));
+                String issuer = issuers[issuerIndex];
+                result.add(issuer);
+            }
+            start = matcher.end();
+        }
+        return result;
+    }
 }

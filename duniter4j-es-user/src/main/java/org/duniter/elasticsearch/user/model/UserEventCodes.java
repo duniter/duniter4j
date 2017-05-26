@@ -35,6 +35,8 @@ public enum UserEventCodes {
     MEMBER_JOIN,
     MEMBER_LEAVE,
     MEMBER_ACTIVE,
+    MEMBER_REVOKE,
+    MEMBER_EXCLUDE,
 
     // TX
     TX_SENT,

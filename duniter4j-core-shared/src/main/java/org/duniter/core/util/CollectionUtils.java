@@ -84,6 +84,10 @@ public class CollectionUtils {
         return collection == null ? 0 : collection.size();
     }
 
+    public static int size(final Object[] array) {
+        return array == null ? 0 : array.length;
+    }
+
     public static <E> E extractSingleton(Collection<E> collection) {
         if(collection != null && collection.size() == 1) {
             return collection.iterator().next();

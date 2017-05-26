@@ -50,8 +50,8 @@ public class RevokedDeserializer extends JsonDeserializer<BlockchainBlock.Revoke
         BlockchainBlock.Revoked result = new BlockchainBlock.Revoked();
         int i = 0;
 
+        result.setPubkey(parts[i++]);
         result.setSignature(parts[i++]);
-        result.setUserId(parts[i++]);
 
         return result;
     }

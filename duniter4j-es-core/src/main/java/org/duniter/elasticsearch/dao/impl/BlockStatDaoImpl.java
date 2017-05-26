@@ -252,8 +252,13 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
                     .field("type", "long")
                     .endObject()
 
-                    // txChangeAmount
+                    // txChangeCount
                     .startObject(BlockchainBlockStat.PROPERTY_TX_CHANGE_COUNT)
+                    .field("type", "integer")
+                    .endObject()
+
+                    // certCount
+                    .startObject(BlockchainBlockStat.PROPERTY_CERT_COUNT)
                     .field("type", "integer")
                     .endObject()
 
@@ -294,6 +299,9 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
             result.setTxChangeCount(0);
             result.setTxCount(0);
         }
+
+        // Cert count
+        result.setCertCount(CollectionUtils.size(block.getCertifications()));
 
         return result;
     }

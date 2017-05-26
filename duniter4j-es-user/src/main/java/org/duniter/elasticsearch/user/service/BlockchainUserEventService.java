@@ -95,6 +95,13 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
             }
         }
 
+        // Actives
+        if (CollectionUtils.isNotEmpty(block.getActives())) {
+            for (BlockchainBlock.Joiner active: block.getActives()) {
+                notifyUserEvent(block, active.getPublicKey(), UserEventCodes.MEMBER_ACTIVE, I18n.n("duniter.user.event.MEMBER_ACTIVE"), block.getCurrency());
+            }
+        }
+
         // Leavers
         if (CollectionUtils.isNotEmpty(block.getLeavers())) {
             for (BlockchainBlock.Joiner leaver: block.getJoiners()) {
@@ -102,10 +109,17 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
             }
         }
 
-        // Actives
-        if (CollectionUtils.isNotEmpty(block.getActives())) {
-            for (BlockchainBlock.Joiner active: block.getActives()) {
-                notifyUserEvent(block, active.getPublicKey(), UserEventCodes.MEMBER_ACTIVE, I18n.n("duniter.user.event.MEMBER_ACTIVE"), block.getCurrency());
+        // Revoked
+        if (CollectionUtils.isNotEmpty(block.getRevoked())) {
+            for (BlockchainBlock.Revoked revoked: block.getRevoked()) {
+                notifyUserEvent(block, revoked.getPubkey(), UserEventCodes.MEMBER_REVOKE, I18n.n("duniter.user.event.MEMBER_REVOKE"), block.getCurrency());
+            }
+        }
+
+        // Excluded
+        if (CollectionUtils.isNotEmpty(block.getExcluded())) {
+            for (String excluded: block.getExcluded()) {
+                notifyUserEvent(block, excluded, UserEventCodes.MEMBER_EXCLUDE, I18n.n("duniter.user.event.MEMBER_EXCLUDE"), block.getCurrency());
             }
         }
 

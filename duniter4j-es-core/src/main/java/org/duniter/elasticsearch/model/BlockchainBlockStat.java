@@ -43,6 +43,7 @@ public class BlockchainBlockStat implements Serializable {
     public static final String PROPERTY_TX_COUNT = "txCount";
     public static final String PROPERTY_TX_AMOUNT = "txAmount";
     public static final String PROPERTY_TX_CHANGE_COUNT = "txChangeCount";
+    public static final String PROPERTY_CERT_COUNT = "certCount";
 
     // Property copied from Block
     private int version;
@@ -60,6 +61,7 @@ public class BlockchainBlockStat implements Serializable {
     private Integer txCount;
     private BigInteger txAmount;
     private Integer txChangeCount;
+    private Integer certCount;
 
     public BlockchainBlockStat() {
         super();
@@ -169,4 +171,11 @@ public class BlockchainBlockStat implements Serializable {
         this.unitbase = unitbase;
     }
 
+    public Integer getCertCount() {
+        return certCount;
+    }
+
+    public void setCertCount(Integer certCount) {
+        this.certCount = certCount;
+    }
 }
