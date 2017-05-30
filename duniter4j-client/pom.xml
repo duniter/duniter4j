@@ -344,7 +344,7 @@
             <id>linux-x64-bundle</id>
             <activation>
                 <property>
-                    <name>performFullRelease64</name>
+                    <name>performRelease</name>
                     <value>true</value>
                 </property>
             </activation>
@@ -410,7 +410,7 @@
             <id>linux-i586-bundle</id>
             <activation>
                 <property>
-                    <name>performFullRelease</name>
+                    <name>performRelease</name>
                     <value>true</value>
                 </property>
             </activation>
@@ -476,7 +476,7 @@
             <id>windows-i586-bundle</id>
             <activation>
                 <property>
-                    <name>performFullRelease</name>
+                    <name>performRelease</name>
                     <value>true</value>
                 </property>
             </activation>
@@ -561,7 +561,7 @@
             <id>windows-x64-bundle</id>
             <activation>
                 <property>
-                    <name>performFullRelease</name>
+                    <name>performRelease</name>
                     <value>true</value>
                 </property>
             </activation>
