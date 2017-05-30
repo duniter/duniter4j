@@ -19,6 +19,7 @@
     <guava.version>18.0</guava.version>
     <xml-apis.version>2.0.2</xml-apis.version>
     <kalium.version>0.5.0_blavenie</kalium.version>
+    <jnr-ffi.version>2.0.5</jnr-ffi.version>
     <scrypt.version>1.4.0</scrypt.version>
     <elasticsearch.version>2.4.5</elasticsearch.version>
     <jna.version>4.1.0</jna.version>
@@ -220,6 +221,13 @@
         <artifactId>kalium</artifactId>
         <version>${kalium.version}</version>
       </dependency>
+      <!-- jnr ffi -->
+      <dependency>
+        <groupId>com.github.jnr</groupId>
+        <artifactId>jnr-ffi</artifactId>
+        <version>${jnr-ffi.version}</version>
+      </dependency>
+
       <!-- scrypt lib -->
       <dependency>
         <groupId>com.lambdaworks</groupId>

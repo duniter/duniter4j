@@ -16,7 +16,8 @@ Le projet Duniter4j est composé de plusieurs sous-modules :
  - `duniter4j-es-*`: Les plugins ElasticSearch, qui implémentent : 
   * `duniter4j-es-core`: Indexation de BlockChain  Duniter (ESA ou ES API);
   * `duniter4j-es-user`: Indexation de données utilisateurs (profils, des messages privées, paramètres chiffrés) (ESUA ou ES USER API);
-  * `duniter4j-es-subscription`: Indexation d'annonces, registre des profesionnels (GChange API ). Note : cette partie sera pas la suite sortie dans un autre projet. 
+  * `duniter4j-es-subscription`: Indexation des abonnement en ligne (notifications par email);
+  * `duniter4j-es-assembly`: gestion des livrables (packaging).
 
 ## Niveau I : récupérer le code source
 
@@ -95,7 +96,7 @@ Si l'application se lance, vous aurez dores et déjà un environnement entièrem
 
 ### Installer JDK
 
- - Sous Windows : Téléchargez puis installez un JDK (version 8 ou +) depuis le [site web d'Oracle ](http://oracle.com/java/index.html)
+ - Sous Windows : Téléchargez puis installez un JDK (version 8 ou +) depuis le [site web d'Oracle](http://oracle.com/java/index.html)
  - Sous Linux (Debian) : Lancez la commande suivante :
 
 ```bash
@@ -117,8 +118,8 @@ sudo apt-get install openjdk-8-jre
 
 Installer les outils nécessaires pour la compilation :
 
-  - Installez [Apache Maven 3](http://maven.apache.org]
-    * Sous Windows : [téléchargez](http://maven.apache.org/download.cgi) (version 3.x) puis installez en suivant [ces instructions]((http://maven.apache.org/install.html).
+  - Installez [Apache Maven 3](http://maven.apache.org)
+    * Sous Windows : [téléchargez](http://maven.apache.org/download.cgi) (version 3.x) puis installez en suivant [ces instructions](http://maven.apache.org/install.html).
     * Sous Linux : Lancez la commande :
 ```
     sudo apt-get install maven
@@ -152,7 +153,7 @@ Si vous avez un noeud Duniter qui est lancé localement, configurez le en modifi
 # Duniter node to synchronize
 #
 duniter.host: localhost
-duniter.port: 8999    <- à remplacer par le port de votre noeud
+duniter.port: 10901    <- à remplacer par le port de votre noeud
 ```
 
 Si vous n'avez pas de noeud local, conservez la configuration par défaut :
@@ -161,8 +162,8 @@ Si vous n'avez pas de noeud local, conservez la configuration par défaut :
 #
 # Duniter node to synchronize
 #
-duniter.host: cgeek.fr
-duniter.port: 9330
+duniter.host: g1.duniter.org
+duniter.port: 10901
 ```
 
 #### Désactivation de la couche de sécurité
@@ -203,7 +204,7 @@ Si tout c'est bien passé, vous devriez obtenir quelque chose qui ressemble à c
 [INFO] Duniter4j :: Core Client API ...................... SUCCESS [5.633s]
 [INFO] Duniter4j :: ElasticSearch Core plugin ............ SUCCESS [8.954s]
 [INFO] Duniter4j :: ElasticSearch User plugin ............ SUCCESS [1.039s]
-[INFO] Duniter4j :: ElasticSearch GChange plugin ......... SUCCESS [0.804s]
+[INFO] Duniter4j :: ElasticSearch Subscription plugin .... SUCCESS [0.804s]
 [INFO] Duniter4j :: ElasticSearch Assembly ............... SUCCESS [4.747s]
 
 [INFO] ------------------------------------------------------------------------
@@ -215,7 +216,7 @@ Si tout c'est bien passé, vous devriez obtenir quelque chose qui ressemble à c
 [INFO] ------------------------------------------------------------------------
 ```
 
-Bravo, vous avez compiler avec succès le projet !
+Bravo, vous avez compilé le projet avec succès !
 
 
 #### Compiler sans les tests unitaires

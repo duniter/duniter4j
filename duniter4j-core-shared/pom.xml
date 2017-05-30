@@ -39,6 +39,11 @@
       <groupId>com.lambdaworks</groupId>
       <artifactId>scrypt</artifactId>
     </dependency>
+    <!-- jnr ffi -->
+    <dependency>
+      <groupId>com.github.jnr</groupId>
+      <artifactId>jnr-ffi</artifactId>
+    </dependency>
 
     <!-- http -->
     <dependency>
