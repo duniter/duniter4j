@@ -253,7 +253,8 @@ public abstract class AbstractSynchroService extends AbstractService {
                             readAndVerifyIssuerSignature(source, issuerFieldName);
                         } catch(InvalidSignatureException e) {
                             invalidSignatureHits++;
-                            logger.warn(String.format("[%s] [%s/%s/%s] %s.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
+                            // FIXME: should enable this log (after issue #11 resolution)
+                            //logger.warn(String.format("[%s] [%s/%s/%s] %s.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
                         }
 
                         bulkRequest.add(client.prepareIndex(toIndex, toType, id)
@@ -286,7 +287,8 @@ public abstract class AbstractSynchroService extends AbstractService {
                                 readAndVerifyIssuerSignature(source, issuerFieldName);
                             } catch(InvalidSignatureException e) {
                                 invalidSignatureHits++;
-                                logger.warn(String.format("[%s] [%s/%s/%s] %s.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
+                                // FIXME: should enable this log (after issue #11 resolution)
+                                //logger.warn(String.format("[%s] [%s/%s/%s] %s.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
                             }
 
                             bulkRequest.add(client.prepareIndex(toIndex, toType, id)
