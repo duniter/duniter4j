@@ -2,7 +2,7 @@
 es.logger.level: INFO
 rootLogger: ${es.logger.level}, console, file
 logger:
-  # log rest execution errors for easier debugging
+  # log action execution errors for easier debugging
   action: DEBUG
 
   # deprecation logging, turn to DEBUG to see them
@@ -14,29 +14,31 @@ logger:
   com.amazonaws.jmx.SdkMBeanRegistrySupport: ERROR
   com.amazonaws.metrics.AwsSdkMetrics: ERROR
 
-  org.apache.http: WARN
-  org.apache.http.client: ERROR
-
-  org.duniter: INFO
-
-  org.duniter.core.beans: DEBUG
-  org.duniter.core.client.service: DEBUG
-  org.duniter.elasticsearch: DEBUG
-  org.duniter.elasticsearch.service: DEBUG
-  org.duniter.elasticsearch.user.service: DEBUG
-  org.duniter.elasticsearch.subscription.service: DEBUG
-
-
   duniter: DEBUG
   duniter.security: ERROR
   duniter.user.event: INFO
   duniter.network.p2p: INFO
+  duniter.network.peer: DEBUG
   duniter.mail: DEBUG
+  duniter.subscription: DEBUG
 
   security: DEBUG
 
-  org.nuiton.i18n: WARN
-  org.nuiton.config: WARN
+  org.duniter: INFO
+  #org.duniter.core.beans: DEBUG
+  #org.duniter.core.client.service: DEBUG
+  #org.duniter.elasticsearch: DEBUG
+  #org.duniter.elasticsearch.service: DEBUG
+  #org.duniter.elasticsearch.user.service: DEBUG
+  org.duniter.elasticsearch.subscription.service: DEBUG
+
+  org.nuiton.i18n: ERROR
+  org.nuiton.config: ERROR
+  org.nuiton.converter: WARN
+  org.apache.http: WARN
+  org.apache.http.client: ERROR
+  org.glassfish.grizzly: WARN
+  org.glassfish.tyrus: WARN
 
   # gateway
   #gateway: DEBUG
