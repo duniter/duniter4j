@@ -15,7 +15,7 @@
 # Use a descriptive name for your cluster:
 #
 # cluster.name: my-application
-cluster.name: duniter4j-elasticsearch
+cluster.name: duniter4j-es-g1
 #
 # ------------------------------------ Node ------------------------------------
 #
@@ -111,7 +111,7 @@ security.manager.enabled: false
 #
 # duniter.enabled: false
 #
-# Reset and reload all Duniter4j data at startup - DO NOT SET to true in production
+# Delete then create all indices at startup - DO NOT set to true in production
 #
 # duniter.indices.reload: true
 #
@@ -119,39 +119,36 @@ security.manager.enabled: false
 #
 duniter.string.analyzer: french
 #
-# Enabling node blockchain synchronization
+# Enabling blockchain synchronization
 #
-duniter.blockchain.sync.enable: true
+duniter.blockchain.enable: true
+#
+# Force blockchain reload - WARNING: all user events will be resetted to 'unread'
+#
+#duniter.blockchain.reload: true
 #
 # Duniter node address
 #
 duniter.host: g1.duniter.org
 duniter.port: 10901
+#
 #duniter.useSsl: true
 #duniter.network.timeout: 5000
 #
-# ---------------------------------- Duniter4j security -------------------------
+# ---------------------------------- Duniter4j security module -------------------
 #
-# Allow admin actions
+# Keyring for the ES node
 #
 #duniter.keyring.salt:
 #duniter.keyring.password:
 #
-# Enable security, to disable HTTP access to the default ES admin API
+# Enable security - will restrict HTTP access to only Duniter4j known indices
 #
 duniter.security.enable: true
 #
-# Security token prefix (default: 'duniter-')
-#
-# duniter.auth.token.prefix: duniter-
-#
-# Token validity duration, in seconds (default: 600)
-#
-# duniter.auth.tokenValidityDuration: 3600  # = 1hour
-
 # ---------------------------------- Duniter4j P2P sync -------------------------
 #
-# Should synchronize data using P2P
+# Should synchronize data from an existing ES node ?
 #
 duniter.data.sync.enable: true
 duniter.data.sync.host: g1.data.duniter.fr
@@ -200,7 +197,7 @@ duniter.ws.port: 9400
 #
 # Enable subscription module (Need to enable mail features)
 #
-duniter.subscription.enable: true
+duniter.subscription.enable: false
 #
 # Email subscription: Day of the week to trigger weekly (default: 2 = monday)
 #

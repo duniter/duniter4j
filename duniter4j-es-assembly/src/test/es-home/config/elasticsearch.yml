@@ -15,14 +15,13 @@
 # Use a descriptive name for your cluster:
 #
 # cluster.name: my-application
-cluster.name: gtest-duniter-es
+cluster.name: duniter4j-elasticsearch-test
 #
 # ------------------------------------ Node ------------------------------------
 #
-#
 # Use a descriptive name for the node:
 #
-node.name: EIS-DEV
+# node.name: node-1
 #
 # Add custom attributes to the node:
 #
@@ -53,7 +52,7 @@ node.name: EIS-DEV
 #
 # Set the bind address to a specific IP (IPv4 or IPv6):
 #
-#network.host: 192.168.0.28
+# network.host: 192.168.233.118
 #
 # Set a custom port for HTTP:
 #
@@ -112,7 +111,7 @@ security.manager.enabled: false
 #
 # duniter.enabled: false
 #
-# Reset all data and re-create all Duniter4j inidices, at startup - DO SET to true in production
+# Delete then create all indices at startup - DO NOT set to true in production
 #
 # duniter.indices.reload: true
 #
@@ -120,16 +119,15 @@ security.manager.enabled: false
 #
 duniter.string.analyzer: french
 #
-# Enabling node blockchain synchronization
+# Enabling blockchain synchronization
 #
 duniter.blockchain.enable: true
+#
+# Force blockchain reload - WARNING: all user events will be resetted to 'unread'
+#
 #duniter.blockchain.reload: true
 #
-# Force to reset and reload the blockchain, at startup - DO SET to true in production
-#
-#duniter.blockchain.reload: true
-#
-# Duniter node to synchronize
+# Duniter node address
 #
 duniter.host: g1.duniter.org
 duniter.port: 10901
@@ -142,10 +140,9 @@ duniter4j.network.timeout: 10000
 #
 duniter.keyring.salt: 'abc'
 duniter.keyring.password: 'def'
-
-# Enable security, to disable HTTP access to the default ES admin API
 #
-#duniter.security.enable: false
+# Enable security - will restrict HTTP access to only Duniter4j known indices
+#
 duniter.security.enable: true
 #
 # Security token prefix (default: 'duniter-')
@@ -158,7 +155,7 @@ duniter.security.enable: true
 
 # ---------------------------------- Duniter4j P2P sync -------------------------
 #
-# Should synchronize data using P2P
+# Should synchronize data from an existing ES node ?
 #
 duniter.data.sync.enable: true
 #duniter.data.sync.enable: true
@@ -207,7 +204,7 @@ duniter.mail.admin: 'benoit.lavenier@e-is.pro'
 #
 duniter.ws.port: 9400
 
-# ---------------------------------- Duniter4j Subscription module -----------------
+# ---------------------------------- Duniter4j Subscription module -------------------
 #
 # Enable subscription module (Need to enable mail features)
 #
