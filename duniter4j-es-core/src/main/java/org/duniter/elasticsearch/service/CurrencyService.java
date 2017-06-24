@@ -95,7 +95,9 @@ public class CurrencyService extends AbstractService {
      * @return the created blockchain
      */
     public Currency indexCurrencyFromPeer(Peer peer, boolean autoReconnect) {
-        if (!autoReconnect) return indexCurrencyFromPeer(peer);
+        if (!autoReconnect) {
+            return indexCurrencyFromPeer(peer);
+        }
 
         while(true) {
             try {
@@ -120,6 +122,7 @@ public class CurrencyService extends AbstractService {
      * @return the created blockchain
      */
     public Currency indexCurrencyFromPeer(Peer peer) {
+
         BlockchainParameters parameters = blockchainRemoteService.getParameters(peer);
         BlockchainBlock firstBlock = blockchainRemoteService.getBlock(peer, 0l);
         BlockchainBlock currentBlock = blockchainRemoteService.getCurrentBlock(peer);

@@ -157,7 +157,7 @@ duniter.security.enable: true
 #
 # Should synchronize data from an existing ES node ?
 #
-duniter.data.sync.enable: true
+duniter.data.sync.enable: false
 #duniter.data.sync.enable: true
 duniter.data.sync.host: g1.data.duniter.fr
 duniter.data.sync.port: 443
@@ -166,7 +166,7 @@ duniter.data.sync.port: 443
 #
 # Enable mail module ?
 #
-duniter.mail.enable: true
+duniter.mail.enable: false
 #
 # Mail: SMTP server configuration (host and port)
 #

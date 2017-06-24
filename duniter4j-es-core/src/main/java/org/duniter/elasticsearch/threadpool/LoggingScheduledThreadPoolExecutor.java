@@ -22,6 +22,7 @@ package org.duniter.elasticsearch.threadpool;
  * #L%
  */
 
+import org.duniter.core.exception.TechnicalException;
 import org.elasticsearch.common.logging.ESLogger;
 
 import java.util.concurrent.*;

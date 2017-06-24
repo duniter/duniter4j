@@ -348,6 +348,9 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         catch (SocketTimeoutException | ConnectTimeoutException e) {
             throw new HttpTimeoutException(I18n.t("duniter4j.client.core.timeout"), e);
         }
+        catch (TechnicalException e) {
+            throw e;
+        }
         catch (Throwable e) {
             throw new TechnicalException(e.getMessage(), e);
         }

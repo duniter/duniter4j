@@ -132,6 +132,11 @@ public class BlockchainParameters implements Serializable{
      */
     private Integer dtDiffEval;
 
+    /**
+     * The number of previous blocks to check for personalized difficulty
+     */
+    @Deprecated
+    private Integer blocksRot;
 
     /**
      * The percent of previous issuers to reach for personalized difficulty
@@ -249,6 +254,16 @@ public class BlockchainParameters implements Serializable{
 
     public void setDtDiffEval(Integer dtDiffEval) {
         this.dtDiffEval = dtDiffEval;
+    }
+
+    @Deprecated
+    public Integer getBlocksRot() {
+        return blocksRot;
+    }
+
+    @Deprecated
+    public void setBlocksRot(Integer blocksRot) {
+        this.blocksRot = blocksRot;
     }
 
     public Double getPercentRot() {

@@ -118,64 +118,78 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         // Synchronize blockchain
         if (pluginSettings.enableBlockchain()) {
 
+
             Peer peer = pluginSettings.checkAndGetPeer();
 
-            // Index (or refresh) node's currency
-            final Currency currency = injector.getInstance(CurrencyService.class)
-                    .indexCurrencyFromPeer(peer, true);
-
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("[%s] Indexing blockchain...", currency.getCurrencyName()));
+            Currency currency;
+            try {
+                // Index (or refresh) node's currency
+                currency = injector.getInstance(CurrencyService.class)
+                        .indexCurrencyFromPeer(peer, true);
+            } catch(Throwable e){
+                logger.error(String.format("Error while indexing currency. Skipping blockchain indexation.", e.getMessage()), e);
+                throw e;
             }
 
+            final String currencyName = currency.getCurrencyName();
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("[%s] Indexing blockchain...", currencyName));
+            }
+
+            // Add access security rules, for the currency indices
             injector.getInstance(RestSecurityController.class)
 
                     // Add access to <currency>/block index
                     .allowIndexType(RestRequest.Method.GET,
-                            currency.getCurrencyName(),
+                            currencyName,
                             BlockDao.TYPE)
                     .allowPostSearchIndexType(
-                            currency.getCurrencyName(),
+                            currencyName,
                             BlockDao.TYPE)
 
                     // Add access to <currency>/blockStat index
                     .allowIndexType(RestRequest.Method.GET,
-                            currency.getCurrencyName(),
+                            currencyName,
                             BlockStatDao.TYPE)
                     .allowPostSearchIndexType(
-                            currency.getCurrencyName(),
+                            currencyName,
                             BlockStatDao.TYPE)
 
                     // Add access to <currency>/peer index
                     .allowIndexType(RestRequest.Method.GET,
-                            currency.getCurrencyName(),
+                            currencyName,
                             PeerDao.TYPE)
                     .allowPostSearchIndexType(
-                            currency.getCurrencyName(),
+                            currencyName,
                             PeerDao.TYPE)
 
                     // Add access to <currency>/movement index
                     .allowIndexType(RestRequest.Method.GET,
-                            currency.getCurrencyName(),
+                            currencyName,
                             MovementDao.TYPE)
                     .allowPostSearchIndexType(
-                            currency.getCurrencyName(),
+                            currencyName,
                             MovementDao.TYPE);
 
             // Wait end of currency index creation, then index blocks
             threadPool.scheduleOnClusterHealthStatus(() -> {
 
-                // Index blocks (and listen if new block appear)
-                injector.getInstance(BlockchainService.class)
-                        .indexLastBlocks(peer)
-                        .listenAndIndexNewBlock(peer);
+                try {
+                    // Index blocks (and listen if new block appear)
+                    injector.getInstance(BlockchainService.class)
+                            .indexLastBlocks(peer)
+                            .listenAndIndexNewBlock(peer);
 
-                // Index peers (and listen if new peer appear)
-                injector.getInstance(PeerService.class)
-                        .listenAndIndexPeers(peer);
+                    // Index peers (and listen if new peer appear)
+                    injector.getInstance(PeerService.class)
+                            .listenAndIndexPeers(peer);
 
-                if (logger.isInfoEnabled()) {
-                    logger.info(String.format("[%s] Indexing blockchain [OK]", currency.getCurrencyName()));
+                    if (logger.isInfoEnabled()) {
+                        logger.info(String.format("[%s] Indexing blockchain [OK]", currencyName));
+                    }
+                } catch(Throwable e){
+                    logger.error(String.format("[%s] Indexing blockchain error: %s", currencyName, e.getMessage()), e);
+                    throw e;
                 }
 
             }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
