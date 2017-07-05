@@ -23,10 +23,11 @@ package org.duniter.core.client.model.bma;
  */
 
 import org.duniter.core.util.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +38,8 @@ import java.util.stream.IntStream;
  * Created by blavenie on 26/04/17.
  */
 public final class BlockchainBlocks {
+
+    private static final Logger log = LoggerFactory.getLogger(BlockchainBlocks.class);
 
     public static final Pattern SIG_PUBKEY_PATTERN = Pattern.compile("SIG\\(([^)]+)\\)");
 
@@ -112,10 +115,20 @@ public final class BlockchainBlocks {
         Preconditions.checkNotNull(tx);
 
         final Map<Integer, List<String>> inputIssuers = getInputIssuers(tx);
+        if (inputIssuers == null || inputIssuers.size() == 0) {
+            log.warn("Invalid block TX: no issuer found ! ", tx.toString());
+        }
 
         return IntStream.range(0, tx.getInputs().length)
                 .mapToObj(i -> {
                     TxInput txInput = parseInput(tx.getInputs()[i]);
+                    if (txInput == null) {
+                        log.warn(String.format("Invalid block TX: unable to parse inputs: %s", i, tx.getInputs()[i]));
+                        txInput = new TxInput();
+                        txInput.amount = 0;
+                        txInput.unitbase = 0;
+                        txInput.type = "T";
+                    }
                     txInput.issuers = inputIssuers.get(i);
                     return txInput;
                 })
