@@ -92,6 +92,15 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     /**
+     * Should email subscription execute as DEBUG mode ?
+     * @return
+     */
+    public boolean isEmailSubscriptionsDebug() {
+        return settings.getAsBoolean("duniter.subscription.email.debug", false);
+    }
+
+
+    /**
      * Day of the week to trigger weekly email subscription (default: 2 = monday)
      * @return
      */

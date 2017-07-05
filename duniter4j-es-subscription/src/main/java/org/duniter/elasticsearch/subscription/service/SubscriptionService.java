@@ -152,8 +152,8 @@ public class SubscriptionService extends AbstractService {
                 logger.warn(I18n.t("duniter4j.es.subscription.email.start", pluginSettings.getEmailSubscriptionsExecuteHour(), dayOfWeek));
             }
 
-            // Execution at startup
-            if (pluginSettings.isEmailSubscriptionsExecuteAtStartup()) {
+            // Execution at startup (or DEBUG mode)
+            if (pluginSettings.isEmailSubscriptionsExecuteAtStartup() || pluginSettings.isEmailSubscriptionsDebug()) {
                 threadPool.schedule(
                         () -> executeEmailSubscriptions(EmailSubscription.Frequency.daily),
                         new TimeValue(20, TimeUnit.SECONDS) /* after 20s */
@@ -213,7 +213,7 @@ public class SubscriptionService extends AbstractService {
             from += size;
         }
 
-        logger.info(String.format("Executing %s email subscription... [OK] (%s executions in %s ms)",
+        logger.info(String.format("Executing %s email subscription... [OK] emails sent [%s] (in %s ms)",
                 frequency.name(), executionCount, System.currentTimeMillis()-now));
 
     }
@@ -259,7 +259,24 @@ public class SubscriptionService extends AbstractService {
                                                          final Map<String, String> profileTitles) {
         Preconditions.checkNotNull(subscription);
 
-        logger.info(String.format("Processing email subscription [%s]", subscription.getId()));
+        boolean debug = pluginSettings.isEmailSubscriptionsDebug();
+        if (subscription.getContent() != null && subscription.getContent().getEmail() != null) {
+            if (debug) {
+                logger.info(String.format("Processing email subscription to [%s - %s] on account [%s]",
+                        senderName,
+                        subscription.getContent().getEmail(),
+                        ModelUtils.minifyPubkey(subscription.getIssuer())));
+            }
+            else {
+                logger.info(String.format("Processing email subscription [%s] on account [%s]",
+                        subscription.getId(),
+                        ModelUtils.minifyPubkey(subscription.getIssuer())));
+            }
+        }
+        else {
+            logger.warn(String.format("Processing email subscription [%s] - no email found in subscription content: skipping", subscription.getId()));
+            return null;
+        }
 
         SubscriptionExecution lastExecution = subscriptionExecutionDao.getLastExecution(subscription);
         Long lastExecutionTime;
@@ -319,12 +336,21 @@ public class SubscriptionService extends AbstractService {
                 pluginSettings.getCesiumUrl())
                 .render(issuerLocale);
 
-        // Schedule email sending
-        threadPool.schedule(() -> mailService.sendHtmlEmailWithText(
-                emailSubjectPrefix + I18n.t("duniter4j.es.subscription.email.subject", userEvents.size()),
-                text,
-                "<body>" + html + "</body>",
-                subscription.getContent().getEmail()));
+        final String object = emailSubjectPrefix + I18n.t("duniter4j.es.subscription.email.subject", userEvents.size());
+        if (pluginSettings.isEmailSubscriptionsDebug()) {
+            logger.info(String.format("---- Email to send (debug mode) ------\nTo:%s\nObject: %s\nText content:\n%s",
+                    subscription.getContent().getEmail(),
+                    object,
+                    text));
+        }
+        else {
+            // Schedule email sending
+            threadPool.schedule(() -> mailService.sendHtmlEmailWithText(
+                    object,
+                    text,
+                    "<body>" + html + "</body>",
+                    subscription.getContent().getEmail()));
+        }
 
         // Compute last time (should be the first one, as events are sorted in DESC order)
         Long lastEventTime = userEvents.get(0).getTime();
@@ -352,6 +378,9 @@ public class SubscriptionService extends AbstractService {
                 issuerProfilNames.get(subscription.getIssuer()) :
                 ModelUtils.minifyPubkey(subscription.getIssuer());
 
+        // Remove comma (to avoid to be used as many args in the i18n_args template)
+        issuerName = issuerName.replaceAll("[, ]+", " ");
+        senderName = StringUtils.isNotBlank(senderName) ? senderName.replaceAll("[, ]+", " ") : senderName;
 
         try {
             // Compute body
@@ -393,11 +422,10 @@ public class SubscriptionService extends AbstractService {
         execution.setSignature(cryptoService.sign(json, pluginSettings.getNodeKeypair().getSecKey()));
 
         if (execution.getId() == null) {
-
-            //subscriptionExecutionDao.create(json, false/*not wait*/);
+            subscriptionExecutionDao.create(toJson(execution), false/*not wait*/);
         }
         else {
-            //subscriptionExecutionDao.update(execution.getId(), json, false/*not wait*/);
+            subscriptionExecutionDao.update(execution.getId(), toJson(execution), false/*not wait*/);
         }
         return execution;
     }
