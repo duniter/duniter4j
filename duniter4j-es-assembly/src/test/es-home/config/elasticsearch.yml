@@ -210,6 +210,11 @@ duniter.ws.port: 9400
 #
 duniter.subscription.enable: true
 #
+# Opions to DEBUG this features
+#
+#duniter.subscription.email.atStartup: false
+#duniter.subscription.email.debug: false
+#
 # Email subscription: Day of the week to trigger weekly (default: 2 = monday)
 #
 #duniter.subscription.email.dayOfWeek: 2
