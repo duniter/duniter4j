@@ -27,7 +27,7 @@ package org.duniter.core.test;
 public class TestFixtures {
 
 	public String getCurrency() {
-        return "gtest";
+        return "g1-test";
     }
 	
     public String getUid() {

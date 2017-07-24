@@ -26,6 +26,6 @@ package org.duniter.core.client;
 public class TestFixtures extends org.duniter.core.test.TestFixtures {
 
     public String getDefaultCurrency() {
-        return "gtest";
+        return "g1-test";
     }
 }
