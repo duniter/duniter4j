@@ -22,6 +22,7 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
+import org.duniter.core.client.model.exception.InvalidFormatException;
 import org.duniter.core.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,18 +117,14 @@ public final class BlockchainBlocks {
 
         final Map<Integer, List<String>> inputIssuers = getInputIssuers(tx);
         if (inputIssuers == null || inputIssuers.size() == 0) {
-            log.warn("Invalid block TX: no issuer found ! ", tx.toString());
+            throw new InvalidFormatException("No issuer found in TX: " + tx.toString());
         }
 
         return IntStream.range(0, tx.getInputs().length)
                 .mapToObj(i -> {
                     TxInput txInput = parseInput(tx.getInputs()[i]);
                     if (txInput == null) {
-                        log.warn(String.format("Invalid block TX: unable to parse inputs [%s]: %s", i, tx.getInputs()[i]));
-                        txInput = new TxInput();
-                        txInput.amount = 0;
-                        txInput.unitbase = 0;
-                        txInput.type = "T";
+                        throw new InvalidFormatException("Unable to parse TX inputs: " + tx.getInputs()[i]);
                     }
                     txInput.issuers = inputIssuers.get(i);
                     return txInput;
@@ -172,10 +169,7 @@ public final class BlockchainBlocks {
             }
         }
         else {
-            log.warn("Invalid block TX: unable to parse output: " + output);
-            result = new TxOutput();
-            result.amount=0;
-            result.unitbase=0;
+            throw new InvalidFormatException("Unable to parse TX output: " + output);
         }
         return result;
     }
@@ -205,11 +199,10 @@ public final class BlockchainBlocks {
         return txOutputs.stream()
                 .map(output -> {
                     if (output == null) {
-                        log.warn("There is null output here ;(");
+                        throw new InvalidFormatException("TX outputs should not be null");
                     }
                     return output;
                 })
-                .filter(Objects::nonNull)
                 .map(output -> output.recipient)
                 .filter(Objects::nonNull)
                 .distinct().collect(Collectors.toSet());

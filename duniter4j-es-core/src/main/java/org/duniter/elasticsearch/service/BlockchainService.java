@@ -326,7 +326,13 @@ public class BlockchainService extends AbstractService {
             }
         }
 
-        // Preparing indexBlocksFromNode
+        // Workaround for https://github.com/duniter/duniter/issues/1042
+        if (json.contains("[object Object]")) {
+            // Getting block using GET request '/blochain/block'
+            json = blockchainRemoteService.getBlockAsJson(peer, number);
+        }
+
+        // Index new block
         blockDao.create(currencyName, getBlockId(number), json.getBytes(), wait);
 
         // Update current

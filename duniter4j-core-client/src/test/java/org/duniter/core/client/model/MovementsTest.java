@@ -1,16 +1,14 @@
 package org.duniter.core.client.model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.duniter.core.client.model.bma.BlockchainBlock;
-import org.duniter.core.client.model.bma.jackson.JacksonUtils;
+import org.duniter.core.client.model.exception.InvalidFormatException;
 import org.duniter.core.client.model.local.Movement;
 import org.duniter.core.client.model.local.Movements;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.util.List;
 
 /**
@@ -18,27 +16,31 @@ import java.util.List;
  */
 public class MovementsTest {
 
-    @Test
-    public void testGetMovements() throws Exception {
 
-        final BlockchainBlock block = readBlockFile("block_with_tx.json");
+    private static final Logger log = LoggerFactory.getLogger(MovementsTest.class);
+
+    @Test
+    public void getMovements() throws Exception {
+
+        final BlockchainBlock block = BlockFileUtils.readBlockFile("block_with_tx.json");
         List<Movement> mov = Movements.getMovements(block);
         Assert.assertTrue(mov.size() > 0);
     }
 
-    /* -- internal methods -- */
 
-    private BlockchainBlock readBlockFile(String jsonFileName) {
+
+    @Test
+    public void getMovements_issue19() {
+
+        // This test should detect when TX.inputs format is invalid - see #19
+        BlockchainBlock block = BlockFileUtils.readBlockFile("block_issue_19.json");
         try {
-            ObjectMapper om = JacksonUtils.newObjectMapper();
-            BlockchainBlock block = om.readValue(Files.readAllBytes(new File("src/test/resources" , jsonFileName).toPath()), BlockchainBlock.class);
-            Assume.assumeNotNull(block);
-            return block;
+            List<Movement> mov = Movements.getMovements(block);
+            Assert.fail("no exception");
+        } catch(InvalidFormatException e) {
+            // OK
+            log.error(e.getMessage());
         }
-        catch(Exception e) {
-            Assume.assumeNoException(e);
-            return null;
-        }
-    }
 
+    }
 }
