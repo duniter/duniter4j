@@ -123,7 +123,7 @@ public final class BlockchainBlocks {
                 .mapToObj(i -> {
                     TxInput txInput = parseInput(tx.getInputs()[i]);
                     if (txInput == null) {
-                        log.warn(String.format("Invalid block TX: unable to parse inputs: %s", i, tx.getInputs()[i]));
+                        log.warn(String.format("Invalid block TX: unable to parse inputs [%s]: %s", i, tx.getInputs()[i]));
                         txInput = new TxInput();
                         txInput.amount = 0;
                         txInput.unitbase = 0;
@@ -138,7 +138,7 @@ public final class BlockchainBlocks {
     public static List<TxOutput> getTxOutputs(final BlockchainBlock.Transaction tx) {
         Preconditions.checkNotNull(tx);
         return Arrays.stream(tx.getOutputs())
-                .map(output -> parseOuput(output))
+                .map(output -> parseOutput(output))
                 .collect(Collectors.toList());
     }
 
@@ -156,7 +156,7 @@ public final class BlockchainBlocks {
         return result;
     }
 
-    public static TxOutput parseOuput(String output) {
+    public static TxOutput parseOutput(String output) {
         TxOutput result = null;
         Matcher matcher = TX_OUTPUT_PATTERN.matcher(output);
         if (matcher.matches()) {
@@ -170,6 +170,12 @@ public final class BlockchainBlocks {
             if (matcher.matches()) {
                 result.recipient = matcher.group(1);
             }
+        }
+        else {
+            log.warn("Invalid block TX: unable to parse output: " + output);
+            result = new TxOutput();
+            result.amount=0;
+            result.unitbase=0;
         }
         return result;
     }
@@ -196,7 +202,15 @@ public final class BlockchainBlocks {
 
     public static Set<String> getTxRecipients(Collection<TxOutput> txOutputs) {
         Preconditions.checkNotNull(txOutputs);
-        return txOutputs.stream().map(output -> output.recipient)
+        return txOutputs.stream()
+                .map(output -> {
+                    if (output == null) {
+                        log.warn("There is null output here ;(");
+                    }
+                    return output;
+                })
+                .filter(Objects::nonNull)
+                .map(output -> output.recipient)
                 .filter(Objects::nonNull)
                 .distinct().collect(Collectors.toSet());
     }
