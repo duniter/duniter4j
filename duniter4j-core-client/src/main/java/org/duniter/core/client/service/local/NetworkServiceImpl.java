@@ -134,7 +134,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     public List<Peer> getPeers(final Peer mainPeer, Filter filter, Sort sort, ExecutorService executor) {
 
         try {
-            return asyncGetPeers(mainPeer, executor)
+            return asyncGetPeers(mainPeer, (filter != null ? filter.filterEndpoints : null), executor)
                 .thenCompose(CompletableFutures::allOfToList)
                 .thenApply(this::fillPeerStatsConsensus)
                 .thenApply(peers -> peers.stream()
@@ -162,14 +162,14 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     @Override
-    public CompletableFuture<List<CompletableFuture<Peer>>> asyncGetPeers(final Peer mainPeer, ExecutorService executor) throws ExecutionException, InterruptedException {
+    public CompletableFuture<List<CompletableFuture<Peer>>> asyncGetPeers(final Peer mainPeer, List<String> filterEndpoints, ExecutorService executor) throws ExecutionException, InterruptedException {
         Preconditions.checkNotNull(mainPeer);
 
         log.debug("Loading network peers...");
 
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
 
-        CompletableFuture<List<Peer>> peersFuture = CompletableFuture.supplyAsync(() -> loadPeerLeafs(mainPeer), pool);
+        CompletableFuture<List<Peer>> peersFuture = CompletableFuture.supplyAsync(() -> loadPeerLeafs(mainPeer, filterEndpoints), pool);
         CompletableFuture<Map<String, String>> memberUidsFuture = CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool);
 
         return CompletableFuture.allOf(
@@ -184,6 +184,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                                     mainPeer.setCurrency(peer.getCurrency());
                                     return asyncRefreshPeer(mainPeer, memberUids, pool);
                                 }
+
                                 return asyncRefreshPeer(peer, memberUids, pool);
                             })
                             .collect(Collectors.toList());
@@ -339,7 +340,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
             }
             try {
                 final List<Peer> newPeers = new ArrayList<>();
-                addEndpointsAsPeers(bmaPeer, newPeers, null);
+                addEndpointsAsPeers(bmaPeer, newPeers, null, filter.filterEndpoints);
 
                 CompletableFuture<List<CompletableFuture<Peer>>> jobs =
                         CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool)
@@ -423,7 +424,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     /* -- protected methods -- */
 
-    protected List<Peer> loadPeerLeafs(Peer peer) {
+    protected List<Peer> loadPeerLeafs(Peer peer, List<String> filterEndpoints) {
         List<String> leaves = networkRemoteService.getPeersLeaves(peer);
 
         if (CollectionUtils.isEmpty(leaves)) return new ArrayList<>(); // should never occur
@@ -444,7 +445,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
             int count = Constants.Config.MAX_SAME_REQUEST_COUNT;
             while (offset < leaves.size()) {
                 if (offset + count > leaves.size()) count = leaves.size() - offset;
-                loadPeerLeafs(peer, result, leaves, offset, count);
+                loadPeerLeafs(peer, result, leaves, offset, count, filterEndpoints);
                 offset += count;
                 try {
                     Thread.sleep(1000); // wait 1 s
@@ -458,13 +459,13 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return result;
     }
 
-    protected void loadPeerLeafs(Peer requestedPeer, List<Peer> result, List<String> leaves, int offset, int count) {
+    protected void loadPeerLeafs(Peer requestedPeer, List<Peer> result, List<String> leaves, int offset, int count, List<String> filterEndpoints) {
 
         for (int i = offset; i< offset + count; i++) {
             String leaf = leaves.get(i);
             try {
                 NetworkPeers.Peer peer = networkRemoteService.getPeerLeaf(requestedPeer, leaf);
-                addEndpointsAsPeers(peer, result, leaf);
+                addEndpointsAsPeers(peer, result, leaf, filterEndpoints);
 
             } catch(HttpNotFoundException | TechnicalException e) {
                 log.warn("Peer not found for leaf=" + leaf);
@@ -473,7 +474,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         }
     }
 
-    protected void addEndpointsAsPeers(NetworkPeers.Peer peer, List<Peer> result, String hash) {
+    protected void addEndpointsAsPeers(NetworkPeers.Peer peer, List<Peer> result, String hash, List<String> filterEndpoints) {
         if (CollectionUtils.isNotEmpty(peer.getEndpoints())) {
             for (NetworkPeering.Endpoint ep: peer.getEndpoints()) {
                 if (ep != null && ep.getApi() != null) {
@@ -483,7 +484,12 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                             .setPubkey(peer.getPubkey())
                             .setEndpoint(ep)
                             .build();
-                    result.add(peerEp);
+                    // Filter on endpoints - fix #18
+                    if (CollectionUtils.isEmpty(filterEndpoints)
+                            || StringUtils.isBlank(peerEp.getApi())
+                            || filterEndpoints.contains(peerEp.getApi())) {
+                        result.add(peerEp);
+                    }
                 }
             }
         }

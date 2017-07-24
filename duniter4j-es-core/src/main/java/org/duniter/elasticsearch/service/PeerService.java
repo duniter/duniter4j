@@ -129,7 +129,7 @@ public class PeerService extends AbstractService {
             sortDef.sortType = null;
 
             try {
-                networkService.asyncGetPeers(firstPeer, threadPool.scheduler())
+                networkService.asyncGetPeers(firstPeer, filterDef.filterEndpoints, threadPool.scheduler())
                         .thenCompose(CompletableFutures::allOfToList)
                         .thenApply(networkService::fillPeerStatsConsensus)
                         .thenApply(peers -> peers.stream()
