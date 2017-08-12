@@ -125,7 +125,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking indices [OK]");
-            }for
+            }
 
             // Clean user events on blockchain
             if (cleanBlockchainUserEvents) {
