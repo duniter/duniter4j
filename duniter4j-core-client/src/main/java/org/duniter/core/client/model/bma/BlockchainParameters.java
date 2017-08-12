@@ -23,6 +23,8 @@ package org.duniter.core.client.model.bma;
  */
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.io.Serializable;
 
 /**
@@ -31,6 +33,8 @@ import java.io.Serializable;
  * @author Benoit Lavenier <benoit.lavenier@e-is.pro>
  * @since 1.0
  */
+// FIXME: next ignore is due to issue on Duniter v1.4 - should be removed later
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class BlockchainParameters implements Serializable{
 
     private static final long serialVersionUID = 929951447031659549L;
@@ -312,14 +316,6 @@ public class BlockchainParameters implements Serializable{
 
     public void setMsWindow(Integer msWindow) {
         this.msWindow = msWindow;
-    }
-
-    public Double getXpercent() {
-        return xpercent;
-    }
-
-    public void setXpercent(Double xpercent) {
-        this.xpercent = xpercent;
     }
 
     @Override

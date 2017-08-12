@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.user.service;
+package org.duniter.elasticsearch.user.dao;
 
 /*
  * #%L
@@ -22,31 +22,19 @@ package org.duniter.elasticsearch.user.service;
  * #L%
  */
 
+import org.duniter.elasticsearch.user.dao.page.*;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
-public class ServiceModule extends AbstractModule implements Module {
+public class DaoModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
-        bind(HistoryService.class).asEagerSingleton();
 
-        bind(MessageService.class).asEagerSingleton();
+        // Page
+        bind(RegistryIndexDao.class).to(RegistryIndexDaoImpl.class).asEagerSingleton();
+        bind(RegistryCommentDao.class).to(RegistryCommentDaoImpl.class).asEagerSingleton();
+        bind(RegistryRecordDao.class).to(RegistryRecordDaoImpl.class).asEagerSingleton();
 
-        bind(UserService.class).asEagerSingleton();
-        bind(GroupService.class).asEagerSingleton();
-        bind(PageService.class).asEagerSingleton();
-
-        bind(AdminService.class).asEagerSingleton();
-        bind(MailService.class).asEagerSingleton();
-        bind(UserEventService.class).asEagerSingleton();
-
-        bind(UserInvitationService.class).asEagerSingleton();
-
-        bind(BlockchainUserEventService.class).asEagerSingleton();
-
-        bind(SynchroService.class).asEagerSingleton();
     }
-
-    /* protected methods */
 
 }

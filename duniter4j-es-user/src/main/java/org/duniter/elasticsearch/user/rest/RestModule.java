@@ -22,6 +22,7 @@ package org.duniter.elasticsearch.user.rest;
  * #L%
  */
 
+import org.duniter.elasticsearch.user.rest.group.RestGroupImageAction;
 import org.duniter.elasticsearch.user.rest.group.RestGroupIndexAction;
 import org.duniter.elasticsearch.user.rest.group.RestGroupUpdateAction;
 import org.duniter.elasticsearch.user.rest.history.RestHistoryDeleteIndexAction;
@@ -33,6 +34,7 @@ import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordGetAc
 import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordIndexAction;
 import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordMarkAsReadAction;
 import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordSearchAction;
+import org.duniter.elasticsearch.user.rest.page.*;
 import org.duniter.elasticsearch.user.rest.user.*;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
@@ -53,6 +55,7 @@ public class RestModule extends AbstractModule implements Module {
         // Group
         bind(RestGroupIndexAction.class).asEagerSingleton();
         bind(RestGroupUpdateAction.class).asEagerSingleton();
+        bind(RestGroupImageAction.class).asEagerSingleton();
 
         // History
         bind(RestHistoryDeleteIndexAction.class).asEagerSingleton();
@@ -64,6 +67,14 @@ public class RestModule extends AbstractModule implements Module {
 
         // Invitation
         bind(RestInvitationCertificationIndexAction.class).asEagerSingleton();
+
+        // Page
+        bind(RestRegistryRecordIndexAction.class).asEagerSingleton();
+        bind(RestRegistryRecordUpdateAction.class).asEagerSingleton();
+        bind(RestRegistryCommentIndexAction.class).asEagerSingleton();
+        bind(RestRegistryCommentUpdateAction.class).asEagerSingleton();
+        bind(RestRegistryCategoryAction.class).asEagerSingleton();
+        bind(RestRegistryImageAction.class).asEagerSingleton();
 
         // Backward compatibility
         {

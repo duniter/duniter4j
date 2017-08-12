@@ -1,10 +1,10 @@
-package org.duniter.core.client.model.elasticsearch;
+package org.duniter.elasticsearch.user.model.page;
 
 /*
  * #%L
- * Duniter4j :: Core Client API
+ * Duniter4j :: ElasticSearch GChange plugin
  * %%
- * Copyright (C) 2014 - 2016 EIS
+ * Copyright (C) 2014 - 2017 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,22 +22,22 @@ package org.duniter.core.client.model.elasticsearch;
  * #L%
  */
 
+import org.duniter.core.client.model.elasticsearch.Record;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by blavenie on 01/03/16.
+ * Created by blavenie on 01/12/16.
  */
-public class UserGroup extends Record {
+public class RegistryRecord extends Record {
 
     public static final String PROPERTY_TITLE="title";
     public static final String PROPERTY_DESCRIPTION="description";
-    public static final String PROPERTY_CREATION_TIME="creationTime";
     public static final String PROPERTY_THUMBNAIL="thumbnail";
 
     private String title;
     private String description;
-    private Long creationTime;
     private Map<String, String> thumbnail = new HashMap<>();
 
     public String getTitle() {
@@ -54,14 +54,6 @@ public class UserGroup extends Record {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Long getCreationTime() {
-        return creationTime;
-    }
-
-    public void setCreationTime(Long creationTime) {
-        this.creationTime = creationTime;
     }
 
     public Map<String, String> getThumbnail() {

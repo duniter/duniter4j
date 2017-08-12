@@ -100,6 +100,9 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(UserInvitationService.class)
                     .deleteIndex()
                     .createIndexIfNotExists();
+            injector.getInstance(PageService.class)
+                    .deleteIndex()
+                    .createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Reloading indices [OK]");
@@ -118,10 +121,11 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(MessageService.class).createIndexIfNotExists();
             injector.getInstance(GroupService.class).createIndexIfNotExists();
             injector.getInstance(UserInvitationService.class).createIndexIfNotExists();
+            injector.getInstance(PageService.class).createIndexIfNotExists();
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking indices [OK]");
-            }
+            }for
 
             // Clean user events on blockchain
             if (cleanBlockchainUserEvents) {

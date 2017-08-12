@@ -23,6 +23,7 @@ package org.duniter.elasticsearch.user;
  */
 
 import com.google.common.collect.Lists;
+import org.duniter.elasticsearch.user.dao.DaoModule;
 import org.duniter.elasticsearch.user.rest.RestModule;
 import org.duniter.elasticsearch.user.service.ServiceModule;
 import org.duniter.elasticsearch.user.websocket.WebSocketModule;
@@ -63,11 +64,10 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
             return modules;
         }
 
+        modules.add(new DaoModule());
         modules.add(new RestModule());
         modules.add(new ServiceModule());
         modules.add(new WebSocketModule());
-
-
 
         return modules;
     }

@@ -38,6 +38,7 @@ import java.math.BigInteger;
  * @author Benoit Lavenier <benoit.lavenier@e-is.pro>
  * @since 1.0
  */
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class BlockchainBlock implements Serializable {
 
     private static final long serialVersionUID = -5598140972293452669L;

@@ -157,8 +157,8 @@ duniter.security.enable: true
 #
 # Should synchronize data from an existing ES node ?
 #
-duniter.data.sync.enable: false
-#duniter.data.sync.enable: true
+#duniter.data.sync.enable: false
+duniter.data.sync.enable: true
 duniter.data.sync.host: g1.data.duniter.fr
 duniter.data.sync.port: 443
 
