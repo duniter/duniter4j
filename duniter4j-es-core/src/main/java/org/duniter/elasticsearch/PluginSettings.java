@@ -194,12 +194,24 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.blockchain.reload", false);
     }
 
+    public int reloadBlockchainIndicesFrom()  {
+        return settings.getAsInt("duniter.blockchain.reload.from", 0);
+    }
+
+    public boolean reloadPeerIndices()  {
+        return settings.getAsBoolean("duniter.peer.reload", false);
+    }
+
     public File getTempDirectory() {
         return Configuration.instance().getTempDirectory();
     }
 
     public int getNetworkTimeout()  {
-        return settings.getAsInt("duniter.network.timeout", 5000 /*5s*/);
+        return settings.getAsInt("duniter.network.timeout", 300000 /*300s*/);
+    }
+
+    public int getPeerDownTimeout()  {
+        return settings.getAsInt("duniter.peer.down.timeout", 10*60*1000 /*10min*/);
     }
 
     public int getNetworkMaxConnections()  {

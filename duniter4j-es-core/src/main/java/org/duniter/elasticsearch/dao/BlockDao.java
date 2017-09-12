@@ -68,4 +68,6 @@ public interface BlockDao extends Bean, TypeDao<BlockDao> {
     void deleteRange(final String currencyName, final int fromNumber, final int toNumber);
 
     List<BlockchainBlock> getBlocksByIds(String currencyName, Collection<String> ids);
+
+    void deleteById(final String currencyName, String id);
 }

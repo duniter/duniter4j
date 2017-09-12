@@ -166,9 +166,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         Preconditions.checkNotNull(mainPeer);
 
         log.debug("Loading network peers...");
-
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
-
         CompletableFuture<List<Peer>> peersFuture = CompletableFuture.supplyAsync(() -> loadPeerLeafs(mainPeer, filterEndpoints), pool);
         CompletableFuture<Map<String, String>> memberUidsFuture = CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool);
 
@@ -178,11 +176,14 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     final Map<String, String> memberUids = memberUidsFuture.join();
                     return peersFuture.join().stream()
                             .map(peer -> {
+                                // For if same as main peer,
                                 if (mainPeer.getUrl().equals(peer.getUrl())) {
+                                    // Update properties
                                     mainPeer.setPubkey(peer.getPubkey());
                                     mainPeer.setHash(peer.getHash());
                                     mainPeer.setCurrency(peer.getCurrency());
-                                    return asyncRefreshPeer(mainPeer, memberUids, pool);
+                                    // reuse instance
+                                    peer = mainPeer;
                                 }
 
                                 return asyncRefreshPeer(peer, memberUids, pool);
@@ -212,8 +213,15 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 .thenApply(apeer -> {
                     String uid = StringUtils.isNotBlank(peer.getPubkey()) ? memberUids.get(peer.getPubkey()) : null;
                     peer.getStats().setUid(uid);
-                    if (peer.getStats().isReacheable() && StringUtils.isNotBlank(uid)) {
-                        getHardship(peer);
+                    if (peer.getStats().isReacheable()) {
+
+                        // Last UP time
+                        peer.getStats().setLastUpTime(System.currentTimeMillis()/1000 /*unix timestamp*/ );
+
+                        // Hardship
+                        if (StringUtils.isNotBlank(uid)) {
+                            getHardship(peer);
+                        }
                     }
                     return apeer;
                 })
@@ -308,7 +316,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 List<Peer> updatedPeers = getPeers(mainPeer, filter, sort, pool);
 
                 knownPeers.clear();
-                updatedPeers.stream().forEach(peer -> {
+                updatedPeers.forEach(peer -> {
                     String buid = buid(peer.getStats());
                     if (!knownBlocks.contains(buid)) {
                         knownBlocks.add(buid);
@@ -361,22 +369,22 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     }
                     return include;
                 }))
-                        .thenApply(addedPeers -> {
-                            result.addAll(addedPeers);
-                            fillPeerStatsConsensus(result);
-                            result.sort(peerComparator);
+                    .thenApply(addedPeers -> {
+                        result.addAll(addedPeers);
+                        fillPeerStatsConsensus(result);
+                        result.sort(peerComparator);
 
-                            result.stream().forEach(peer -> {
-                                String buid = buid(peer.getStats());
-                                if (!knownBlocks.contains(buid)) {
-                                    knownBlocks.add(buid);
-                                }
-                                knownPeers.put(peer.toString(), peer);
-                            });
-
-                            listener.onChanged(result);
-                            return result;
+                        result.forEach(peer -> {
+                            String buid = buid(peer.getStats());
+                            if (!knownBlocks.contains(buid)) {
+                                knownBlocks.add(buid);
+                            }
+                            knownPeers.put(peer.toString(), peer);
                         });
+
+                        listener.onChanged(result);
+                        return result;
+                    });
             }
             catch(Exception e) {
                 log.error("Error while refreshing a peer: " + e.getMessage(), e);
@@ -399,7 +407,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 BlockchainBlock block = readValue(json, BlockchainBlock.class);
                 String blockBuid = buid(block);
                 boolean isNewBlock = (blockBuid != null && !knownBlocks.contains(blockBuid));
-                // If new block + wait 5s for network propagation
+                // If new block + wait 3s for network propagation
                 if (!isNewBlock) return;
             } catch(IOException e) {
                 log.error("Could not parse peer received by WS: " + e.getMessage(), e);
@@ -431,11 +439,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         // If less than 100 node, get it in ONE call
         if (leaves.size() < 100) {
-            // TODO uncomment on prod
-            //List<Peer> peers = networkService.getPeers(peer);
-            //return ImmutableList.of(peers.get(0), peers.get(1), peers.get(2), peers.get(3));
-
-            //return networkService.getPeers(peer);
+            return networkRemoteService.getPeers(peer);
         }
 
         // Get it by multiple call on /network/peering?leaf=

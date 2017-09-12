@@ -31,4 +31,5 @@ public interface PeerDao extends org.duniter.core.client.dao.PeerDao, TypeDao<Pe
 
     String TYPE = "peer";
 
+
 }

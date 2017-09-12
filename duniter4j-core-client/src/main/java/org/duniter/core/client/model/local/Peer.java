@@ -160,6 +160,7 @@ public class Peer implements LocalEntity<String>, Serializable {
 
     }
 
+    public static final String PROPERTY_STATS = "stats";
 
     private String id;
 
@@ -260,6 +261,10 @@ public class Peer implements LocalEntity<String>, Serializable {
 
     public String getApi() {
         return api;
+    }
+
+    public void setApi(String api) {
+        this.api = api;
     }
 
     public String getDns() {
@@ -366,6 +371,9 @@ public class Peer implements LocalEntity<String>, Serializable {
     }
 
     public static class Stats {
+        public static final String PROPERTY_STATUS = "status";
+        public static final String PROPERTY_LAST_UP_TIME = "lastUpTime";
+
         private String version;
         private PeerStatus status = PeerStatus.UP; // default
         private Integer blockNumber;
@@ -377,6 +385,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         private boolean isForkConsensus = false;
         private Double consensusPct = 0d;
         private String uid;
+        private Long lastUpTime;
 
         public Stats() {
 
@@ -473,6 +482,14 @@ public class Peer implements LocalEntity<String>, Serializable {
 
         public void setUid(String uid) {
             this.uid = uid;
+        }
+
+        public Long getLastUpTime() {
+            return lastUpTime;
+        }
+
+        public void setLastUpTime(Long lastUpTime) {
+            this.lastUpTime = lastUpTime;
         }
     }
 }

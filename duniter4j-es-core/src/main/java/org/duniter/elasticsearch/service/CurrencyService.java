@@ -40,6 +40,7 @@ import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.dao.*;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
+import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
@@ -65,12 +66,17 @@ public class CurrencyService extends AbstractService {
                            PluginSettings settings,
                            CryptoService cryptoService,
                            CurrencyDao currencyDao,
-                           BlockchainRemoteService blockchainRemoteService,
-                           Injector injector) {
+                           ThreadPool threadPool,
+                           Injector injector,
+                            final ServiceLocator serviceLocator) {
         super("duniter." + INDEX, client, settings, cryptoService);
-        this.blockchainRemoteService = blockchainRemoteService;
         this.currencyDao = (CurrencyExtendDao)currencyDao;
         this.injector = injector;
+
+        threadPool.scheduleOnStarted(() -> {
+            this.blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
+            setIsReady(true);
+        });
     }
 
     public CurrencyService createIndexIfNotExists() {
@@ -122,6 +128,8 @@ public class CurrencyService extends AbstractService {
      * @return the created blockchain
      */
     public Currency indexCurrencyFromPeer(Peer peer) {
+
+        waitReady();
 
         BlockchainParameters parameters = blockchainRemoteService.getParameters(peer);
         BlockchainBlock firstBlock = blockchainRemoteService.getBlock(peer, 0l);

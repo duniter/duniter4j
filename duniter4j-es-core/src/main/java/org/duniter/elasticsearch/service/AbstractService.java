@@ -35,6 +35,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.ElasticsearchException;
@@ -58,6 +59,7 @@ public abstract class AbstractService implements Bean {
     protected CryptoService cryptoService;
     protected final int retryCount;
     protected final int retryWaitDuration;
+    protected boolean ready = false;
 
     public AbstractService(String loggerName, Duniter4jClient client, PluginSettings pluginSettings) {
         this(loggerName, client, pluginSettings, null);
@@ -83,6 +85,23 @@ public abstract class AbstractService implements Bean {
     }
 
     /* -- protected methods --*/
+
+    protected void setIsReady(boolean ready) {
+        this.ready = ready;
+    }
+    protected boolean isReady() {
+        return this.ready;
+    }
+
+    protected void waitReady() {
+        try {
+            while (!ready) {
+                Thread.sleep(500);
+            }
+        } catch (InterruptedException e){
+            // Silent
+        }
+    }
 
     protected <T> T executeWithRetry(RetryFunction<T> retryFunction) throws TechnicalException{
         int retry = 0;

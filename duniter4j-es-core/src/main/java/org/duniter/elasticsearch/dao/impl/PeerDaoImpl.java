@@ -29,11 +29,22 @@ import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.dao.AbstractDao;
 import org.duniter.elasticsearch.dao.PeerDao;
-import org.duniter.elasticsearch.dao.TypeDao;
+import org.duniter.elasticsearch.model.Movement;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.SingleBucketAggregation;
+import org.elasticsearch.search.aggregations.metrics.max.Max;
 
 import java.io.IOException;
 import java.util.List;
@@ -136,6 +147,119 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
     }
 
     @Override
+    public Long getMaxLastUpTime(String currencyName) {
+
+        // Prepare request
+        SearchRequestBuilder searchRequest = client
+                .prepareSearch(currencyName)
+                .setTypes(TYPE)
+                .setFetchSource(false)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+
+        // Get max(number)
+        searchRequest.addAggregation(AggregationBuilders.nested(Peer.PROPERTY_STATS)
+                .path(Peer.PROPERTY_STATS)
+                .subAggregation(
+                        AggregationBuilders.max(Peer.Stats.PROPERTY_LAST_UP_TIME)
+                            .field(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_LAST_UP_TIME)
+                            .missing(0)
+                ));
+
+        // Execute query
+        SearchResponse searchResponse = searchRequest.execute().actionGet();
+
+        // Read query result
+        SingleBucketAggregation stats = searchResponse.getAggregations().get(Peer.PROPERTY_STATS);
+        if (stats == null) return null;
+
+        Max result = stats.getAggregations().get(Peer.Stats.PROPERTY_LAST_UP_TIME);
+        if (result == null) {
+            return null;
+        }
+
+        return (result.getValue() == Double.NEGATIVE_INFINITY)
+                ? null
+                : (long)result.getValue();
+    }
+
+    @Override
+    public void updatePeersAsDown(String currencyName, long lastUpTimeTimeout) {
+
+        long minUpTime = (System.currentTimeMillis() - lastUpTimeTimeout)/1000;
+
+        SearchRequestBuilder searchRequest = client.prepareSearch(currencyName)
+                .setFetchSource(false)
+                .setTypes(TYPE);
+
+        // Query = filter on lastUpTime
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
+                // where lastUpTime < minUpTime
+                .filter(QueryBuilders.rangeQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_LAST_UP_TIME).lte(minUpTime))
+                // AND status = UP
+                .filter(QueryBuilders.termQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_STATUS, Peer.PeerStatus.UP.name()));
+        searchRequest.setQuery(QueryBuilders.nestedQuery(Peer.PROPERTY_STATS, QueryBuilders.constantScoreQuery(boolQuery)));
+
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
+
+        // Execute query, while there is some data
+        try {
+
+            int counter = 0;
+            boolean loop = true;
+            int bulkSize = pluginSettings.getIndexBulkSize();
+            searchRequest.setSize(bulkSize);
+            SearchResponse response = searchRequest.execute().actionGet();
+
+            // Execute query, while there is some data
+            do {
+
+                // Read response
+                SearchHit[] searchHits = response.getHits().getHits();
+                for (SearchHit searchHit : searchHits) {
+
+                    // Add deletion to bulk
+                    bulkRequest.add(
+                            client.prepareUpdate(currencyName, TYPE, searchHit.getId())
+                            .setDoc(String.format("{\"%s\": {\"%s\": \"%s\"}}", Peer.PROPERTY_STATS, Peer.Stats.PROPERTY_STATUS, Peer.PeerStatus.DOWN.name()).getBytes())
+                    );
+                    counter++;
+
+                    // Flush the bulk if not empty
+                    if ((bulkRequest.numberOfActions() % bulkSize) == 0) {
+                        client.flushBulk(bulkRequest);
+                        bulkRequest = client.prepareBulk();
+                    }
+                }
+
+                // Prepare next iteration
+                if (counter == 0 || counter >= response.getHits().getTotalHits()) {
+                    loop = false;
+                }
+                // Prepare next iteration
+                else {
+                    searchRequest.setFrom(counter);
+                    response = searchRequest.execute().actionGet();
+                }
+            } while(loop);
+
+            // last flush
+            if ((bulkRequest.numberOfActions() % bulkSize) != 0) {
+                client.flushBulk(bulkRequest);
+            }
+
+            if (counter > 0) {
+                logger.info(String.format("Mark %s peers as DOWN", counter));
+            }
+
+        } catch (SearchPhaseExecutionException e) {
+            // Failed or no item on index
+            logger.error(String.format("Error while update peer status to DOWN: %s.", e.getMessage()), e);
+        }
+
+
+    }
+
+    @Override
     public XContentBuilder createTypeMapping() {
         try {
             XContentBuilder mapping = XContentFactory.jsonBuilder()
@@ -178,6 +302,80 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
                     // ipv6
                     .startObject("ipv6")
                     .field("type", "string")
+                    .endObject()
+
+                    // stats
+                    .startObject(Peer.PROPERTY_STATS)
+                    .field("type", "nested")
+                    //.field("dynamic", "false")
+                    .startObject("properties")
+
+                        // stats.version
+                        .startObject("version")
+                        .field("type", "string")
+                        .endObject()
+
+                        // stats.status
+                        .startObject(Peer.Stats.PROPERTY_STATUS)
+                        .field("type", "string")
+                        .field("index", "not_analyzed")
+                        .endObject()
+
+                        // stats.blockNumber
+                        .startObject("blockNumber")
+                        .field("type", "integer")
+                        .endObject()
+
+                        // stats.blockHash
+                        .startObject("version")
+                        .field("type", "string")
+                        .field("index", "not_analyzed")
+                        .endObject()
+
+                        // stats.error
+                        .startObject("error")
+                        .field("type", "string")
+                        .endObject()
+
+
+                        // stats.medianTime
+                        .startObject("medianTime")
+                        .field("type", "integer")
+                        .endObject()
+
+                        // stats.hardshipLevel
+                        .startObject("hardshipLevel")
+                        .field("type", "integer")
+                        .endObject()
+
+                        // stats.consensusPct
+                        .startObject("consensusPct")
+                        .field("type", "integer")
+                        .endObject()
+
+                        // stats.uid
+                        .startObject("uid")
+                        .field("type", "string")
+                        .endObject()
+
+                        // stats.mainConsensus
+                        .startObject("mainConsensus")
+                        .field("type", "boolean")
+                        .field("index", "not_analyzed")
+                        .endObject()
+
+                        // stats.uid
+                        .startObject("forkConsensus")
+                        .field("type", "boolean")
+                        .field("index", "not_analyzed")
+                        .endObject()
+
+                        // stats.lastUP
+                        .startObject(Peer.Stats.PROPERTY_LAST_UP_TIME)
+                        .field("type", "integer")
+                        .endObject()
+
+                    .endObject()
                     .endObject()
 
                     .endObject()

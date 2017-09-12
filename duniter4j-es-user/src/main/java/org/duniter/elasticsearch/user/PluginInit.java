@@ -23,7 +23,6 @@ package org.duniter.elasticsearch.user;
  */
 
 import org.duniter.elasticsearch.PluginSettings;
-import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.*;
@@ -129,12 +128,14 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
             // Clean user events on blockchain
             if (cleanBlockchainUserEvents) {
+                int blockNumber = pluginSettings.reloadBlockchainIndicesFrom();
                 if (logger.isInfoEnabled()) {
-                    logger.info("Deleting user events on blockchain (blockchain will be reload)...");
+                    logger.info(String.format("Deleting user events on blockchain from block #%s (blockchain will be reload)...", blockNumber));
                 }
+
                 // Delete events that reference a block
                 injector.getInstance(UserEventService.class)
-                        .deleteEventsByReference(new UserEvent.Reference(null/*all*/, BlockchainService.BLOCK_TYPE, null/*all*/));
+                        .deleteBlockEventsFrom(blockNumber);
                 if (logger.isInfoEnabled()) {
                     logger.info("Deleting user events on blockchain [OK]");
                 }

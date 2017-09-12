@@ -113,7 +113,7 @@ security.manager.enabled: false
 #
 # Delete then create all indices at startup - DO NOT set to true in production
 #
-# duniter.indices.reload: true
+#duniter.indices.reload: true
 #
 # Default string analyzer
 #
@@ -125,7 +125,8 @@ duniter.blockchain.enable: true
 #
 # Force blockchain reload - WARNING: all user events will be resetted to 'unread'
 #
-#duniter.blockchain.reload: true
+duniter.blockchain.reload: true
+duniter.blockchain.reload.from: 50999
 #
 # Duniter node address
 #

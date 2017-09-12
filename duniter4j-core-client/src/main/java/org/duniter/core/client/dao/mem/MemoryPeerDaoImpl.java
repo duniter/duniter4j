@@ -25,10 +25,7 @@ package org.duniter.core.client.dao.mem;
 import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.local.Peer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -78,5 +75,29 @@ public class MemoryPeerDaoImpl implements PeerDao {
     public boolean isExists(final String currencyId, final  String peerId) {
         return peersByCurrencyId.values().stream()
                 .anyMatch(peer -> currencyId.equals(peer.getCurrency()) && peerId.equals(peer.getId()));
+    }
+
+    @Override
+    public Long getMaxLastUpTime(String currencyId) {
+        OptionalLong max = getPeersByCurrencyId(currencyId).stream()
+                .mapToLong(peer -> peer.getStats() != null ? peer.getStats().getLastUpTime() : -1)
+                .max();
+
+        if (!max.isPresent()) {
+            return null;
+        }
+        return max.getAsLong();
+    }
+
+    @Override
+    public void updatePeersAsDown(String currencyId, long lastUpTimeTimeout) {
+        long maxLastUpTime = (System.currentTimeMillis() - lastUpTimeTimeout)/1000;
+
+        getPeersByCurrencyId(currencyId).stream()
+                .filter(peer -> peer.getStats() != null && peer.getStats().getLastUpTime() <= maxLastUpTime)
+                .forEach(peer -> {
+                    peer.getStats().setStatus(Peer.PeerStatus.DOWN);
+                });
+
     }
 }

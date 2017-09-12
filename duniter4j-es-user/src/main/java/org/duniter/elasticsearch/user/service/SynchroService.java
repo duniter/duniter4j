@@ -83,6 +83,7 @@ public class SynchroService extends AbstractSynchroService {
     protected void importUserChanges(SynchroResult result, Peer peer, long sinceTime) {
         importChanges(result, peer, UserService.INDEX, UserService.PROFILE_TYPE,  sinceTime);
         importChanges(result, peer, UserService.INDEX, UserService.SETTINGS_TYPE,  sinceTime);
+        importChanges(result, peer, UserService.INDEX, UserEventService.EVENT_TYPE,  sinceTime);
     }
 
     protected void importMessageChanges(SynchroResult result, Peer peer, long sinceTime) {

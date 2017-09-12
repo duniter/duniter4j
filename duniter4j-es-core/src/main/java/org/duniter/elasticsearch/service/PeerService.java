@@ -77,45 +77,34 @@ public class PeerService extends AbstractService {
         threadPool.scheduleOnStarted(() -> {
             this.blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
             this.networkService = serviceLocator.getNetworkService();
+            setIsReady(true);
         });
     }
 
-    public PeerService indexAllPeers(Peer peer) {
-        indexAllPeers(peer, nullProgressionModel);
-        return this;
-    }
-
-    public PeerService indexAllPeers(Peer peer, ProgressionModel progressionModel) {
+    public PeerService indexPeers(Peer peer) {
 
         try {
             // Get the blockchain name from node
             BlockchainParameters parameter = blockchainRemoteService.getParameters(peer);
             if (parameter == null) {
-                progressionModel.setStatus(ProgressionModel.Status.FAILED);
                 logger.error(I18n.t("duniter4j.es.networkService.indexPeers.remoteParametersError", peer));
                 return this;
             }
             String currencyName = parameter.getCurrency();
 
-            indexPeers(currencyName, peer, progressionModel);
+            indexPeers(currencyName, peer);
 
         } catch(Exception e) {
             logger.error("Error during indexAllPeers: " + e.getMessage(), e);
-            progressionModel.setStatus(ProgressionModel.Status.FAILED);
         }
 
         return this;
     }
 
-
-    public PeerService indexPeers(String currencyName, Peer firstPeer, ProgressionModel progressionModel) {
-        progressionModel.setStatus(ProgressionModel.Status.RUNNING);
-        progressionModel.setTotal(100);
+    public PeerService indexPeers(String currencyName, Peer firstPeer) {
         long timeStart = System.currentTimeMillis();
 
         try {
-
-            progressionModel.setTask(I18n.t("duniter4j.es.networkService.indexPeers.task", currencyName, firstPeer));
             logger.info(I18n.t("duniter4j.es.networkService.indexPeers.task", currencyName, firstPeer));
 
             // Default filter
@@ -128,28 +117,11 @@ public class PeerService extends AbstractService {
             org.duniter.core.client.service.local.NetworkService.Sort sortDef = new org.duniter.core.client.service.local.NetworkService.Sort();
             sortDef.sortType = null;
 
-            try {
-                networkService.asyncGetPeers(firstPeer, filterDef.filterEndpoints, threadPool.scheduler())
-                        .thenCompose(CompletableFutures::allOfToList)
-                        .thenApply(networkService::fillPeerStatsConsensus)
-                        .thenApply(peers -> peers.stream()
-                                // filter on currency
-                                .filter(peer -> ObjectUtils.equals(firstPeer.getCurrency(), peer.getCurrency()))
-                                // filter, then sort
-                                .filter(networkService.peerFilter(filterDef))
-                                .map(peer -> savePeer(peer))
-                                .collect(Collectors.toList()))
-                        .thenApply(peers -> {
-                            logger.info(I18n.t("duniter4j.es.networkService.indexPeers.succeed", currencyName, firstPeer, peers.size(), (System.currentTimeMillis() - timeStart)));
-                            progressionModel.setStatus(ProgressionModel.Status.SUCCESS);
-                            return peers;
-                        });
-            } catch (InterruptedException | ExecutionException e) {
-                throw new TechnicalException("Error while loading peers: " + e.getMessage(), e);
-            }
+            List<Peer> peers = networkService.getPeers(firstPeer, filterDef, sortDef, threadPool.scheduler());
+            savePeers(currencyName, peers);
+            logger.info(I18n.t("duniter4j.es.networkService.indexPeers.succeed", currencyName, firstPeer, peers.size(), (System.currentTimeMillis() - timeStart)));
         } catch(Exception e) {
             logger.error("Error during indexBlocksFromNode: " + e.getMessage(), e);
-            progressionModel.setStatus(ProgressionModel.Status.FAILED);
         }
 
         return this;
@@ -174,14 +146,13 @@ public class PeerService extends AbstractService {
         NetworkService.Sort sortDef = new NetworkService.Sort();
         sortDef.sortType = null;
 
-        networkService.addPeersChangeListener(mainPeer, peers -> {
-            if (CollectionUtils.isNotEmpty(peers)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("[%s] Updating peers endpoints (%s endpoints found)", currencyName, peers.size()));
-                }
-                peers.stream().forEach(peer -> savePeer(peer));
-            }
-        }, filterDef, sortDef, true /*autoreconnect*/, threadPool.scheduler());
+        networkService.addPeersChangeListener(mainPeer,
+                peers -> savePeers(currencyName, peers),
+                filterDef, sortDef, true /*autoreconnect*/, threadPool.scheduler());
+    }
+
+    public Long getMaxLastUpTime(String currencyName) {
+        return peerDao.getMaxLastUpTime(currencyName);
     }
 
     /**
@@ -224,6 +195,18 @@ public class PeerService extends AbstractService {
 
 
     /* -- protected methods -- */
+
+    protected void savePeers(String currencyName, List<Peer> peers) {
+        if (CollectionUtils.isNotEmpty(peers)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("[%s] Updating peers endpoints (%s endpoints found)", currencyName, peers.size()));
+            }
+            peers.forEach(this::savePeer);
+        }
+
+        // Mark old peers as DOWN
+        peerDao.updatePeersAsDown(currencyName, pluginSettings.getPeerDownTimeout());
+    }
 
     protected List<Peer> toPeers(SearchResponse response, boolean withHighlight) {
         // Read query result

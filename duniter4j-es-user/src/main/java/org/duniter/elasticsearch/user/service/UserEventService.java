@@ -36,6 +36,7 @@ import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
+import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.service.changes.ChangeSource;
@@ -192,8 +193,30 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
         final int bulkSize = pluginSettings.getIndexBulkSize();
 
-       BulkRequestBuilder bulkRequest = client.prepareBulk();
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
         addDeleteEventsByReferenceToBulk(reference, bulkRequest, bulkSize, true);
+    }
+
+    public void deleteBlockEventsFrom(final int fromBlockNumber) {
+        final int bulkSize = pluginSettings.getIndexBulkSize();
+
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
+
+        // Prepare search request
+        SearchRequestBuilder searchRequest = client
+                .prepareSearch(INDEX)
+                .setTypes(EVENT_TYPE)
+                .setFetchSource(false)
+                .setSearchType(SearchType.QUERY_AND_FETCH);
+
+        // Query = filter on reference
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        boolQuery.filter(QueryBuilders.termQuery(UserEvent.PROPERTY_REFERENCE + "." + UserEvent.Reference.PROPERTY_TYPE, BlockchainService.BLOCK_TYPE));
+        boolQuery.filter(QueryBuilders.rangeQuery(UserEvent.PROPERTY_REFERENCE + "." + UserEvent.Reference.PROPERTY_ID).gte(fromBlockNumber));
+
+        searchRequest.setQuery(QueryBuilders.nestedQuery(UserEvent.PROPERTY_REFERENCE, QueryBuilders.constantScoreQuery(boolQuery)));
+
+        client.bulkDeleteFromSearch(INDEX, EVENT_TYPE, searchRequest, bulkRequest, bulkSize, true);
     }
 
     public ActionFuture<UpdateResponse> markEventAsRead(String id, String signature) {

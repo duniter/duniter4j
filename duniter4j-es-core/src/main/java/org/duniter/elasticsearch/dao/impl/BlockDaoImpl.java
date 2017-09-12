@@ -244,6 +244,45 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
                 : (int)result.getValue();
     }
 
+
+    public BlockchainBlock getBlockById(String currencyName, String id) {
+        return client.getSourceById(currencyName, TYPE, id, BlockchainBlock.class);
+    }
+
+    /**
+     * Delete blocks from a start number (using bulk)
+     * @param currencyName
+     * @param fromNumber
+     */
+    public void deleteRange(final String currencyName, final int fromNumber, final int toNumber) {
+
+        int bulkSize = pluginSettings.getIndexBulkSize();
+
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
+        for (int number=fromNumber; number<=toNumber; number++) {
+
+            bulkRequest.add(
+                    client.prepareDelete(currencyName, TYPE, String.valueOf(number))
+            );
+
+            // Flush the bulk if not empty
+            if ((fromNumber - number % bulkSize) == 0) {
+                client.flushDeleteBulk(currencyName, TYPE, bulkRequest);
+                bulkRequest = client.prepareBulk();
+            }
+        }
+
+        // last flush
+        client.flushDeleteBulk(currencyName, TYPE, bulkRequest);
+    }
+
+    @Override
+    public void deleteById(String currencyName, String number) {
+        client.prepareDelete(currencyName, TYPE, number).execute().actionGet();
+    }
+
+
+
     @Override
     public XContentBuilder createTypeMapping() {
         try {
@@ -333,36 +372,6 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         }
     }
 
-    public BlockchainBlock getBlockById(String currencyName, String id) {
-        return client.getSourceById(currencyName, TYPE, id, BlockchainBlock.class);
-    }
-
-    /**
-     * Delete blocks from a start number (using bulk)
-     * @param currencyName
-     * @param fromNumber
-     */
-    public void deleteRange(final String currencyName, final int fromNumber, final int toNumber) {
-
-        int bulkSize = pluginSettings.getIndexBulkSize();
-
-        BulkRequestBuilder bulkRequest = client.prepareBulk();
-        for (int number=fromNumber; number<=toNumber; number++) {
-
-            bulkRequest.add(
-                    client.prepareDelete(currencyName, TYPE, String.valueOf(number))
-            );
-
-            // Flush the bulk if not empty
-            if ((fromNumber - number % bulkSize) == 0) {
-                client.flushDeleteBulk(currencyName, TYPE, bulkRequest);
-                bulkRequest = client.prepareBulk();
-            }
-        }
-
-        // last flush
-        client.flushDeleteBulk(currencyName, TYPE, bulkRequest);
-    }
 
     /* -- Internal methods -- */
 

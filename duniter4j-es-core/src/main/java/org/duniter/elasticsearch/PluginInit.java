@@ -84,7 +84,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     protected void createIndices() {
 
         // Reload All indices
-        if (pluginSettings.reloadAllIndices() || pluginSettings.reloadBlockchainIndices()) {
+        if (pluginSettings.reloadAllIndices()) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Reloading indices...");
             }
@@ -98,7 +98,21 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             }
         }
 
+        else if (pluginSettings.enableBlockchain() && pluginSettings.reloadBlockchainIndices() && pluginSettings.reloadBlockchainIndicesFrom() <= 0) {
+            if (logger.isWarnEnabled()) {
+                logger.warn("/!\\ Reloading blockchain indices...");
+            }
+            injector.getInstance(CurrencyService.class)
+                    .deleteIndex()
+                    .createIndexIfNotExists();
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Reloading blockchain indices [OK]");
+            }
+        }
+
         else {
+
 
             if (logger.isInfoEnabled()) {
                 logger.info("Checking indices...");
@@ -132,9 +146,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             }
 
             final String currencyName = currency.getCurrencyName();
-            if (logger.isInfoEnabled()) {
-                logger.info(String.format("[%s] Indexing blockchain...", currencyName));
-            }
+
 
             // Add access security rules, for the currency indices
             injector.getInstance(RestSecurityController.class)
@@ -170,6 +182,22 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .allowPostSearchIndexType(
                             currencyName,
                             MovementDao.TYPE);
+
+            // If partial reload (from a block)
+            if (pluginSettings.reloadBlockchainIndices() && pluginSettings.reloadBlockchainIndicesFrom() > 0) {
+                if (logger.isWarnEnabled()) {
+                    logger.warn(String.format("/!\\ Re-indexing blockchain from block #%s...", pluginSettings.reloadBlockchainIndicesFrom()));
+                }
+
+                injector.getInstance(BlockchainService.class)
+                        .deleteFrom(currencyName, pluginSettings.reloadBlockchainIndicesFrom());
+            }
+            else {
+                if (logger.isInfoEnabled()) {
+                    logger.info(String.format("[%s] Indexing blockchain...", currencyName));
+                }
+            }
+
 
             // Wait end of currency index creation, then index blocks
             threadPool.scheduleOnClusterHealthStatus(() -> {

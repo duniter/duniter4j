@@ -369,7 +369,7 @@ public class BlockchainService extends AbstractService {
     * @param json block as JSON
     * @pram wait need to wait until block processed ?
     */
-    public void indexCurrentBlockFromJson(String currencyName, String json, boolean wait) {
+    public void indexCurrentBlockFromJson(final String currencyName, final String json, final boolean wait) {
         Preconditions.checkNotNull(json);
         Preconditions.checkArgument(json.length() > 0);
         Preconditions.checkArgument(StringUtils.isNotBlank(currencyName));
@@ -383,12 +383,22 @@ public class BlockchainService extends AbstractService {
         }
     }
 
-    public BlockchainBlock getBlockById(String currencyName, int number) {
+    public BlockchainBlock getBlockById(final String currencyName, final int number) {
         return blockDao.getBlockById(currencyName, String.valueOf(number));
     }
 
-    public BlockchainBlock getCurrentBlock(String currencyName) {
+    public BlockchainBlock getCurrentBlock(final String currencyName) {
         return blockDao.getBlockById(currencyName, CURRENT_BLOCK_ID);
+    }
+
+    public void deleteFrom(final String currencyName, final int fromBlock) {
+        int maxBlock = blockDao.getMaxBlockNumber(currencyName);
+
+        blockDao.deleteRange(currencyName, fromBlock, maxBlock);
+
+        // Delete current also
+        blockDao.deleteById(currencyName, CURRENT_BLOCK_ID);
+
     }
 
     /* -- Internal methods -- */
