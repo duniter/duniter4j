@@ -67,7 +67,7 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
 
         // Serialize into JSON
         try {
-            String json = objectMapper.writeValueAsString(block);
+            String json = getObjectMapper().writeValueAsString(block);
 
             // Preparing
             IndexRequestBuilder request = client.prepareIndex(block.getCurrency(), TYPE)
@@ -112,7 +112,7 @@ public class BlockStatDaoImpl extends AbstractDao implements BlockStatDao {
         // Serialize into JSON
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         try {
-            String json = objectMapper.writeValueAsString(block);
+            String json = getObjectMapper().writeValueAsString(block);
 
             // Preparing
             UpdateRequestBuilder request = client.prepareUpdate(block.getCurrency(), TYPE, block.getNumber().toString())

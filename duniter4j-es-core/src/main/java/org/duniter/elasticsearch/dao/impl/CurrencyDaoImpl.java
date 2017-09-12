@@ -61,7 +61,7 @@ public class CurrencyDaoImpl extends AbstractIndexTypeDao<CurrencyExtendDao> imp
             }
 
             // Serialize into JSON
-            byte[] json = objectMapper.writeValueAsBytes(currency);
+            byte[] json = getObjectMapper().writeValueAsBytes(currency);
 
             // Preparing indexBlocksFromNode
             IndexRequestBuilder indexRequest = client.prepareIndex(INDEX, RECORD_TYPE)
@@ -89,7 +89,7 @@ public class CurrencyDaoImpl extends AbstractIndexTypeDao<CurrencyExtendDao> imp
             }
 
             // Serialize into JSON
-            byte[] json = objectMapper.writeValueAsBytes(currency);
+            byte[] json = getObjectMapper().writeValueAsBytes(currency);
 
             UpdateRequestBuilder updateRequest = client.prepareUpdate(INDEX, RECORD_TYPE, currency.getId())
                     .setDoc(json);

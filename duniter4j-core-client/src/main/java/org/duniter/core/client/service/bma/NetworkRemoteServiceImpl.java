@@ -62,13 +62,8 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
     public static final String URL_WS_PEER = "/ws/peer";
 
-    protected ObjectMapper objectMapper;
-
-
     public NetworkRemoteServiceImpl() {
         super();
-
-        objectMapper = JacksonUtils.newObjectMapper();
     }
 
     public NetworkPeering getPeering(Peer peer) {
@@ -104,6 +99,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
             if (jsonNode.has("leaf")) {
                 jsonNode = jsonNode.get("leaf");
                 if (jsonNode.has("value")) {
+                    ObjectMapper objectMapper = JacksonUtils.getThreadObjectMapper();
                     jsonNode = jsonNode.get("value");
                     String json = objectMapper.writeValueAsString(jsonNode);
                     result = objectMapper.readValue(json, NetworkPeers.Peer.class);

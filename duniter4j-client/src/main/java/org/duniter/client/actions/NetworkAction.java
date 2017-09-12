@@ -43,6 +43,7 @@ import org.nuiton.i18n.I18n;
 import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -113,7 +114,7 @@ public class NetworkAction extends AbstractAction {
     /* -- protected methods -- */
 
 
-    public void showPeersTable(List<Peer> peers, boolean clearConsole) {
+    public void showPeersTable(Collection<Peer> peers, boolean clearConsole) {
 
         // Clearing console
         if (clearConsole) {
@@ -125,7 +126,7 @@ public class NetworkAction extends AbstractAction {
             return;
         }
 
-        Peer mainConsensusPeer = peers.get(0);
+        Peer mainConsensusPeer = peers.iterator().next();
         Peer.Stats mainConsensusStats = mainConsensusPeer.getStats();
         if (mainConsensusStats.isMainConsensus()) {
             Long mediantTime = mainConsensusStats.getMedianTime();

@@ -42,6 +42,17 @@ public abstract class JacksonUtils extends SimpleModule {
     public static final String REGEX_ATTRIBUTE_REPLACE = "[,]?(?:\"%s\"|%s)[\\s\\n\\r]*:[\\s\\n\\r]*(?:\"[^\"]+\"|null)";
 
 
+    private static final ThreadLocal<ObjectMapper> mapper = new ThreadLocal<ObjectMapper>() {
+        @Override
+        protected ObjectMapper initialValue() {
+            return newObjectMapper();
+        }
+    };
+
+    public static ObjectMapper getThreadObjectMapper() {
+        return mapper.get();
+    }
+
     public static ObjectMapper newObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
 

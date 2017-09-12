@@ -105,7 +105,7 @@ public class TransactionAction extends AbstractAction  {
 
 
             // Compute keypair and wallet
-            KeyPair keypair = null;
+            KeyPair keypair;
             if (authParameters.authScrypt) {
                 CryptoService cryptoService = ServiceLocator.instance().getCryptoService();
                 keypair = cryptoService.getKeyPairFromSeed(

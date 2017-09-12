@@ -40,7 +40,6 @@ public abstract class AbstractDao implements Bean {
 
 
     protected final ESLogger logger;
-    protected final ObjectMapper objectMapper;
 
     protected Duniter4jClient client;
     protected CryptoService cryptoService;
@@ -49,7 +48,6 @@ public abstract class AbstractDao implements Bean {
     public AbstractDao(String loggerName) {
         super();
         this.logger = Loggers.getLogger(loggerName);
-        this.objectMapper = JacksonUtils.newObjectMapper();
     }
 
     @Inject
@@ -69,4 +67,7 @@ public abstract class AbstractDao implements Bean {
 
     /* -- protected methods  -- */
 
+    protected ObjectMapper getObjectMapper() {
+        return JacksonUtils.getThreadObjectMapper();
+    }
 }

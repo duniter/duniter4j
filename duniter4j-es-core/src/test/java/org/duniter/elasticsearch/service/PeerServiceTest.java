@@ -56,7 +56,6 @@ public class PeerServiceTest {
     private NetworkRemoteService remoteService;
     private Configuration config;
     private Peer peer;
-    private ObjectMapper objectMapper;
 
     @Before
     public void setUp() throws Exception {
@@ -67,7 +66,6 @@ public class PeerServiceTest {
         peer = new Peer.Builder()
                 .setHost(config.getNodeHost())
                 .setPort(config.getNodePort()).build();
-        objectMapper = JacksonUtils.newObjectMapper();
 
         // Waiting services started
         while(!service.isReady() || !currencyService.isReady()) {
@@ -109,5 +107,6 @@ public class PeerServiceTest {
         Long maxLastUpTime = service.getMaxLastUpTime(peer1.getCurrency());
         Assert.assertNotNull(maxLastUpTime);
         Assert.assertEquals(peer1.getStats().getLastUpTime().longValue(), maxLastUpTime.longValue());
+
     }
 }

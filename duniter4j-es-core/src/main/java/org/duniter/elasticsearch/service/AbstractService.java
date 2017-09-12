@@ -29,13 +29,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
-import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.elasticsearch.Records;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
-import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.elasticsearch.ElasticsearchException;
@@ -52,7 +50,6 @@ import java.util.Set;
 public abstract class AbstractService implements Bean {
 
     protected final ESLogger logger;
-    protected final ObjectMapper objectMapper;
 
     protected Duniter4jClient client;
     protected PluginSettings pluginSettings;
@@ -77,7 +74,6 @@ public abstract class AbstractService implements Bean {
         super();
         this.logger = Loggers.getLogger(loggerName);
         this.client = client;
-        this.objectMapper = JacksonUtils.newObjectMapper();
         this.pluginSettings = pluginSettings;
         this.cryptoService = cryptoService;
         this.retryCount = pluginSettings.getNodeRetryCount();
@@ -101,6 +97,10 @@ public abstract class AbstractService implements Bean {
         } catch (InterruptedException e){
             // Silent
         }
+    }
+
+    protected ObjectMapper getObjectMapper() {
+        return JacksonUtils.getThreadObjectMapper();
     }
 
     protected <T> T executeWithRetry(RetryFunction<T> retryFunction) throws TechnicalException{
@@ -137,7 +137,7 @@ public abstract class AbstractService implements Bean {
     protected JsonNode readAndVerifyIssuerSignature(String recordJson, String issuerFieldName) throws ElasticsearchException {
 
         try {
-            JsonNode recordObj = objectMapper.readTree(recordJson);
+            JsonNode recordObj = getObjectMapper().readTree(recordJson);
             readAndVerifyIssuerSignature(recordJson, recordObj, issuerFieldName);
             return recordObj;
         }
@@ -149,7 +149,7 @@ public abstract class AbstractService implements Bean {
 
     protected void readAndVerifyIssuerSignature(JsonNode actualObj, String issuerFieldName) throws ElasticsearchException, JsonProcessingException {
         // Remove hash and signature
-        String recordJson = objectMapper.writeValueAsString(actualObj);
+        String recordJson = getObjectMapper().writeValueAsString(actualObj);
         readAndVerifyIssuerSignature(recordJson, actualObj, issuerFieldName);
     }
 

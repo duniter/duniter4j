@@ -22,13 +22,8 @@ package org.duniter.elasticsearch.service;
  * #L%
  */
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
-import org.duniter.core.util.Preconditions;
-import org.apache.commons.io.IOUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.duniter.core.client.model.elasticsearch.Record;
@@ -37,6 +32,7 @@ import org.duniter.core.client.service.HttpService;
 import org.duniter.core.client.service.exception.HttpUnauthorizeException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
@@ -44,21 +40,17 @@ import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
 import org.duniter.elasticsearch.model.SynchroResult;
-import org.duniter.elasticsearch.service.AbstractService;
-import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -212,6 +204,7 @@ public abstract class AbstractSynchroService extends AbstractService {
         long insertHits = 0;
         long updateHits = 0;
         long invalidSignatureHits = 0;
+        ObjectMapper objectMapper = getObjectMapper();
 
         if (offset < total) {
 
@@ -274,7 +267,7 @@ public abstract class AbstractSynchroService extends AbstractService {
 
                         // Check version
                         Long existingVersion = ((Number)existingDoc.getFields().get(versionFieldName).getValue()).longValue();
-                        boolean doUpdate = (existingVersion == null || version > existingVersion.longValue());
+                        boolean doUpdate = (existingVersion == null || version > existingVersion);
 
                         if (doUpdate) {
                             if (debug) {

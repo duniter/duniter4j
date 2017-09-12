@@ -45,6 +45,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
+import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.model.bma.Constants;
 import org.duniter.core.client.model.bma.Error;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
@@ -111,7 +112,9 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     protected void initCaches() {
         Configuration config = Configuration.instance();
         int cacheTimeInMillis = config.getNetworkCacheTimeInMillis();
-        final int defaultTimeout = config.getNetworkTimeout();
+        final int defaultTimeout = config.getNetworkTimeout() > 0 ?
+                config.getNetworkTimeout() :
+                Integer.parseInt(ConfigurationOption.NETWORK_TIMEOUT.getDefaultValue());
 
         requestConfigCache = new SimpleCache<Integer, RequestConfig>(cacheTimeInMillis*100) {
             @Override

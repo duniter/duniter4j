@@ -207,7 +207,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public int getNetworkTimeout()  {
-        return settings.getAsInt("duniter.network.timeout", 300000 /*300s*/);
+        return settings.getAsInt("duniter.network.timeout", 30000 /*30s*/);
     }
 
     public int getPeerDownTimeout()  {

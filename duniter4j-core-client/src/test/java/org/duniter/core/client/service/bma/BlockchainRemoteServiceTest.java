@@ -115,7 +115,7 @@ public class BlockchainRemoteServiceTest {
         Assert.assertEquals(10, result.length);
 
         // Make sure allOfToList json are valid blocks
-        ObjectMapper objectMapper = JacksonUtils.newObjectMapper();
+        ObjectMapper objectMapper = JacksonUtils.getThreadObjectMapper();
 
         int number = 0;
         for (String jsonBlock: result) {
@@ -148,7 +148,7 @@ public class BlockchainRemoteServiceTest {
 
         service.addBlockListener(createTestPeer(), (message) -> {
             try {
-                BlockchainBlock block = JacksonUtils.newObjectMapper().readValue(message, BlockchainBlock.class);
+                BlockchainBlock block = JacksonUtils.getThreadObjectMapper().readValue(message, BlockchainBlock.class);
                 log.debug("Received block #" + block.getNumber());
                 isWebSocketNewBlockReceived = true;
             }

@@ -76,7 +76,7 @@ public class Main {
 
         // Parsing args
         JCommander jc = new JCommander(this);
-        actions.entrySet().stream().forEach(entry -> jc.addCommand(entry.getKey(), entry.getValue()));
+        actions.entrySet().forEach(entry -> jc.addCommand(entry.getKey(), entry.getValue()));
         try {
             jc.parse(args);
 

@@ -68,7 +68,7 @@ public class MovementDaoImpl extends AbstractDao implements MovementDao {
 
         // Serialize into JSON
         try {
-            String json = objectMapper.writeValueAsString(operation);
+            String json = getObjectMapper().writeValueAsString(operation);
 
             // Preparing
             IndexRequestBuilder request = client.prepareIndex(operation.getCurrency(), TYPE)
@@ -96,7 +96,7 @@ public class MovementDaoImpl extends AbstractDao implements MovementDao {
 
         // Serialize into JSON
         try {
-            String json = objectMapper.writeValueAsString(operation);
+            String json = getObjectMapper().writeValueAsString(operation);
 
             // Preparing
             UpdateRequestBuilder request = client.prepareUpdate(operation.getCurrency(), TYPE, operation.getId())

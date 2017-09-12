@@ -356,7 +356,7 @@ public class BlockchainService extends AbstractService {
         // Serialize into JSON
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         try {
-            String json = objectMapper.writeValueAsString(currentBlock);
+            String json = getObjectMapper().writeValueAsString(currentBlock);
             indexCurrentBlockFromJson(currentBlock.getCurrency(), json, wait);
         } catch(IOException e) {
             throw new TechnicalException(e);

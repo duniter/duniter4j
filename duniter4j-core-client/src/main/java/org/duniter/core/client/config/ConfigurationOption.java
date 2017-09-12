@@ -182,11 +182,17 @@ public enum ConfigurationOption implements ConfigOptionDef {
             Integer.class,
             false),
 
-
     NETWORK_CACHE_TIME_IN_MILLIS (
             "duniter4j.network.cacheTimeInMillis",
             "duniter4j.config.option.network.cacheTimeInMillis.description",
             "10000",  // = 10 s
+            Integer.class,
+            false),
+
+    NETWORK_PEER_UP_MAX_AGE (
+            "duniter.network.peerUpMaxAge",
+            "duniter.config.option.network.peerUpMaxAge.description",
+            "600000",  // = 10 min
             Integer.class,
             false),
 

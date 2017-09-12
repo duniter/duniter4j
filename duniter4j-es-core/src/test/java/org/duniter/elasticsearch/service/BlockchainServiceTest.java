@@ -50,15 +50,13 @@ public class BlockchainServiceTest {
     private BlockchainRemoteService remoteService;
     private Configuration config;
     private Peer peer;
-    private ObjectMapper objectMapper;
 
     @Before
     public void setUp() throws Exception {
         service = ServiceLocator.instance().getBean(BlockchainService.class);
         remoteService = ServiceLocator.instance().getBlockchainRemoteService();
         config = Configuration.instance();
-        peer = createTestPeer(config);
-        objectMapper = JacksonUtils.newObjectMapper();
+        peer = Peer.newBuilder().setHost(config.getNodeHost()).setPort(config.getNodePort()).build();
 
         // Init the currency
         CurrencyService currencyService = ServiceLocator.instance().getBean(CurrencyService.class);
@@ -77,7 +75,7 @@ public class BlockchainServiceTest {
         service.indexCurrentBlock(current, true/*wait*/);
 
         try {
-            String blockStr = objectMapper.writeValueAsString(current);
+            String blockStr = JacksonUtils.getThreadObjectMapper().writeValueAsString(current);
 
             service.indexBlockFromJson(peer, blockStr, true/*is current*/, false/*detected fork*/, true/*wait*/);
         }
@@ -88,29 +86,11 @@ public class BlockchainServiceTest {
         Thread.sleep(1000);
 
         // Try to get the indexed block
-        BlockchainBlock retrievedBlock = service.getBlockById(current.getCurrency(), current.getNumber().intValue());
+        BlockchainBlock retrievedBlock = service.getBlockById(current.getCurrency(), current.getNumber());
         Assert.assertNotNull(retrievedBlock);
-
 
     }
 
 	/* -- internal methods */
-
-    protected void assertResults(String queryText, List<BlockchainBlock> result) {
-        log.info(String.format("Results for a search on [%s]", queryText));
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.size() > 0);
-        for (BlockchainBlock block: result) {
-            log.info("  - " + block.getNumber());
-        }
-    }
-
-    protected Peer createTestPeer(Configuration config) {
-        Peer peer = new Peer(
-                config.getNodeHost(),
-                config.getNodePort());
-
-        return peer;
-    }
 
 }

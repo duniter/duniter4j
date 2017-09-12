@@ -24,59 +24,40 @@ package org.duniter.elasticsearch.service;
 
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.local.NetworkService;
-import org.duniter.core.exception.TechnicalException;
-import org.duniter.core.model.NullProgressionModel;
-import org.duniter.core.model.ProgressionModel;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
-import org.duniter.core.util.ObjectUtils;
-import org.duniter.core.util.Preconditions;
-import org.duniter.core.util.concurrent.CompletableFutures;
-import org.duniter.core.util.json.JsonSyntaxException;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
-import org.duniter.elasticsearch.exception.DuplicateIndexIdException;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.search.SearchHitField;
-import org.elasticsearch.search.highlight.HighlightField;
 import org.nuiton.i18n.I18n;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /**
  * Created by Benoit on 30/03/2015.
  */
-public class PeerService extends AbstractService {
-
-    private final ProgressionModel nullProgressionModel = new NullProgressionModel();
+public class PeerService extends AbstractService  {
 
     private org.duniter.core.client.service.bma.BlockchainRemoteService blockchainRemoteService;
     private org.duniter.core.client.service.local.NetworkService networkService;
+    private org.duniter.core.client.service.local.PeerService delegate;
     private ThreadPool threadPool;
-    private PeerDao peerDao;
 
     @Inject
     public PeerService(Duniter4jClient client, PluginSettings settings, ThreadPool threadPool,
                        CryptoService cryptoService,
-                       PeerDao peerDao,
                        final ServiceLocator serviceLocator){
         super("duniter.network.peer", client, settings, cryptoService);
-        this.peerDao = peerDao;
         this.threadPool = threadPool;
         threadPool.scheduleOnStarted(() -> {
             this.blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
             this.networkService = serviceLocator.getNetworkService();
+            this.delegate = serviceLocator.getPeerService();
             setIsReady(true);
         });
     }
@@ -118,7 +99,7 @@ public class PeerService extends AbstractService {
             sortDef.sortType = null;
 
             List<Peer> peers = networkService.getPeers(firstPeer, filterDef, sortDef, threadPool.scheduler());
-            savePeers(currencyName, peers);
+            delegate.save(currencyName, peers, true);
             logger.info(I18n.t("duniter4j.es.networkService.indexPeers.succeed", currencyName, firstPeer, peers.size(), (System.currentTimeMillis() - timeStart)));
         } catch(Exception e) {
             logger.error("Error during indexBlocksFromNode: " + e.getMessage(), e);
@@ -141,108 +122,14 @@ public class PeerService extends AbstractService {
         filterDef.filterType = null;
         filterDef.filterStatus = Peer.PeerStatus.UP;
         filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name());
+        filterDef.currency = currencyName;
 
         // Default sort
         NetworkService.Sort sortDef = new NetworkService.Sort();
         sortDef.sortType = null;
 
         networkService.addPeersChangeListener(mainPeer,
-                peers -> savePeers(currencyName, peers),
+                peers -> logger.debug(String.format("[%s] Update peers: %s found", currencyName, CollectionUtils.size(peers))),
                 filterDef, sortDef, true /*autoreconnect*/, threadPool.scheduler());
     }
-
-    public Long getMaxLastUpTime(String currencyName) {
-        return peerDao.getMaxLastUpTime(currencyName);
-    }
-
-    /**
-     * Create or update a peer, depending on its existence and hash
-     * @param peer
-     * @throws DuplicateIndexIdException
-     */
-    public Peer savePeer(final Peer peer) throws DuplicateIndexIdException {
-        Preconditions.checkNotNull(peer, "peer could not be null") ;
-        Preconditions.checkNotNull(peer.getCurrency(), "peer attribute 'currency' could not be null");
-        Preconditions.checkNotNull(peer.getPubkey(), "peer attribute 'pubkey' could not be null");
-        Preconditions.checkNotNull(peer.getHost(), "peer attribute 'host' could not be null");
-        Preconditions.checkNotNull(peer.getApi(), "peer 'api' could not be null");
-
-        String id = cryptoService.hash(peer.computeKey());
-        peer.setId(id);
-
-        boolean exists = peerDao.isExists(peer.getCurrency(), id);
-
-        // Currency not exists, or has changed, so create it
-        if (!exists) {
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("Insert new peer [%s]", peer));
-            }
-
-            // Index new peer
-            peer.setId(id);
-            peerDao.create(peer);
-        }
-
-        // Update existing peer
-        else {
-            if (logger.isTraceEnabled()) {
-                logger.trace(String.format("Update peer [%s]", peer));
-            }
-            peerDao.update(peer);
-        }
-        return peer;
-    }
-
-
-    /* -- protected methods -- */
-
-    protected void savePeers(String currencyName, List<Peer> peers) {
-        if (CollectionUtils.isNotEmpty(peers)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("[%s] Updating peers endpoints (%s endpoints found)", currencyName, peers.size()));
-            }
-            peers.forEach(this::savePeer);
-        }
-
-        // Mark old peers as DOWN
-        peerDao.updatePeersAsDown(currencyName, pluginSettings.getPeerDownTimeout());
-    }
-
-    protected List<Peer> toPeers(SearchResponse response, boolean withHighlight) {
-        // Read query result
-        List<Peer> result = Lists.newArrayList();
-        response.getHits().forEach(searchHit -> {
-            Peer peer;
-            if (searchHit.source() != null) {
-                String jsonString = new String(searchHit.source());
-                try {
-                    peer = objectMapper.readValue(jsonString, Peer.class);
-                } catch(Exception e) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Error while parsing peer from JSON:\n" + jsonString);
-                    }
-                    throw new JsonSyntaxException("Error while read peer from JSON: " + e.getMessage(), e);
-                }
-            }
-            else {
-                peer = new Peer();
-                SearchHitField field = searchHit.getFields().get("hash");
-                peer.setHash(field.getValue());
-            }
-            result.add(peer);
-
-            // If possible, use highlights
-            if (withHighlight) {
-                Map<String, HighlightField> fields = searchHit.getHighlightFields();
-                for (HighlightField field : fields.values()) {
-                    String blockNameHighLight = field.getFragments()[0].string();
-                    peer.setHash(blockNameHighLight);
-                }
-            }
-        });
-
-        return result;
-    }
-
-
 }

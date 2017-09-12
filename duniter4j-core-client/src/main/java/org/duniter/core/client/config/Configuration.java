@@ -262,6 +262,10 @@ public class Configuration  {
         return Integer.parseInt(ConfigurationOption.NETWORK_CACHE_TIME_IN_MILLIS.getDefaultValue());
     }
 
+    public int getPeerUpMaxAge()  {
+        return applicationConfig.getOptionAsInt(ConfigurationOption.NETWORK_PEER_UP_MAX_AGE.getKey());
+    }
+
     public String getNodeElasticSearchHost() {
         return applicationConfig.getOption(ConfigurationOption.NODE_ELASTICSEARCH_HOST.getKey());
     }

@@ -64,14 +64,12 @@ public class SubscriptionServiceTest {
     private SubscriptionService service;
     private UserEventService userEventService;
     private CryptoService cryptoService;
-    private ObjectMapper objectMapper;
 
     @Before
     public void setUp() throws Exception {
         service = ServiceLocator.instance().getBean(SubscriptionService.class);
         cryptoService = ServiceLocator.instance().getCryptoService();
         userEventService = ServiceLocator.instance().getBean(UserEventService.class);
-        objectMapper = JacksonUtils.newObjectMapper();
     }
 
     @Test
@@ -125,7 +123,7 @@ public class SubscriptionServiceTest {
         EmailSubscription subscription = createEmailSubscription(wallet);
 
         // Compute full JSON (with hash + signature)
-        String json = objectMapper.writeValueAsString(subscription);
+        String json = JacksonUtils.getThreadObjectMapper().writeValueAsString(subscription);
 
         String id = service.create(json);
         Assert.assertNotNull(id);
@@ -135,6 +133,8 @@ public class SubscriptionServiceTest {
     }
 
     protected EmailSubscription createEmailSubscription(Wallet wallet) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = JacksonUtils.getThreadObjectMapper();
 
         EmailSubscription subscription = new EmailSubscription();
         subscription.setIssuer(wallet.getPubKeyHash());

@@ -48,10 +48,7 @@ public interface PeerService extends Service {
      */
     List<Peer> getPeersByCurrencyId(String currencyId);
 
-    /**
-     * Fill all cache need for currencies
-     * @param context
-     * @param accountId
-     */
-    void loadCache(long accountId);
+    void save(String currencyId, List<Peer> peers, boolean isFullUpList);
+
+    boolean isExists(String currencyId, String peerId);
 }

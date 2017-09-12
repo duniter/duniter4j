@@ -25,6 +25,7 @@ package org.duniter.core.client.service;
 
 import org.duniter.core.beans.Bean;
 import org.duniter.core.beans.BeanFactory;
+import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
 import org.duniter.core.client.service.bma.TransactionRemoteService;
@@ -150,6 +151,10 @@ public class ServiceLocator implements Closeable {
 
     public NetworkService getNetworkService() {
         return getBean(NetworkService.class);
+    }
+
+    public PeerDao getPeerDao() {
+        return getBean(PeerDao.class);
     }
 
     public <S extends Bean> S getBean(Class<S> clazz) {

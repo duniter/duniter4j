@@ -40,8 +40,6 @@ import java.util.stream.IntStream;
  */
 public final class BlockchainBlocks {
 
-    private static final Logger log = LoggerFactory.getLogger(BlockchainBlocks.class);
-
     public static final Pattern SIG_PUBKEY_PATTERN = Pattern.compile("SIG\\(([^)]+)\\)");
 
     public static final Pattern TX_INPUT_CONDITION_FUNCTION = Pattern.compile("(SIG|XHX)\\(([^)]+)\\)");
@@ -206,6 +204,11 @@ public final class BlockchainBlocks {
                 .map(output -> output.recipient)
                 .filter(Objects::nonNull)
                 .distinct().collect(Collectors.toSet());
+    }
+
+    public static String buid(BlockchainBlock block) {
+        if (block == null || block.getNumber() == null || block.getHash() == null) return null;
+        return block.getNumber() + "-" + block.getHash();
     }
 
     public static class TxInput {

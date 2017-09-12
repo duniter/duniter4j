@@ -25,6 +25,7 @@ package org.duniter.core.client.service.local;
 import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Peer;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -38,7 +39,8 @@ import java.util.function.Predicate;
 public interface NetworkService extends Service {
 
     interface PeersChangeListener {
-        void onChanged(List<Peer> peers);
+        void onChanges(Collection<Peer> peers);
+
     }
 
     class Sort {
@@ -51,6 +53,7 @@ public interface NetworkService extends Service {
         public Peer.PeerStatus filterStatus;
         public Boolean filterSsl;
         public List<String> filterEndpoints;
+        public String currency;
     }
 
 

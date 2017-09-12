@@ -76,7 +76,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
 
         // Serialize into JSON
         try {
-            String json = objectMapper.writeValueAsString(block);
+            String json = getObjectMapper().writeValueAsString(block);
 
             // Preparing
             IndexRequestBuilder request = client.prepareIndex(block.getCurrency(), TYPE)
@@ -126,7 +126,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
         // Serialize into JSON
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         try {
-            String json = objectMapper.writeValueAsString(block);
+            String json = getObjectMapper().writeValueAsString(block);
 
             // Preparing
             UpdateRequestBuilder request = client.prepareUpdate(block.getCurrency(), TYPE, block.getNumber().toString())
@@ -384,7 +384,7 @@ public class BlockDaoImpl extends AbstractDao implements BlockDao {
             if (searchHit.source() != null) {
                 String jsonString = new String(searchHit.source());
                 try {
-                    block = objectMapper.readValue(jsonString, BlockchainBlock.class);
+                    block = getObjectMapper().readValue(jsonString, BlockchainBlock.class);
                 } catch(Exception e) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("Error while parsing block from JSON:\n" + jsonString);

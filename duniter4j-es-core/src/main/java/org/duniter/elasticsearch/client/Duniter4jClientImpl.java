@@ -112,14 +112,12 @@ public class Duniter4jClientImpl implements Duniter4jClient {
 
     private final Client client;
     private final org.duniter.elasticsearch.threadpool.ThreadPool threadPool;
-    private final ObjectMapper objectMapper;
 
     @Inject
     public Duniter4jClientImpl(Client client, org.duniter.elasticsearch.threadpool.ThreadPool threadPool) {
         super();
         this.client = client;
         this.threadPool = threadPool;
-        this.objectMapper = JacksonUtils.newObjectMapper();
     }
 
     @Override
@@ -202,7 +200,10 @@ public class Duniter4jClientImpl implements Duniter4jClient {
 
     /**
      * Retrieve some field from a document id, and check if all field not null
+     * @param index
+     * @param type
      * @param docId
+     * @param fieldNames
      * @return
      */
     @Override
@@ -362,6 +363,7 @@ public class Duniter4jClientImpl implements Duniter4jClient {
 
             // Read query result
             SearchHit[] searchHits = response.getHits().getHits();
+            ObjectMapper objectMapper = JacksonUtils.getThreadObjectMapper();
 
             for (SearchHit searchHit : searchHits) {
                 if (searchHit.source() != null) {
@@ -382,7 +384,7 @@ public class Duniter4jClientImpl implements Duniter4jClient {
     @Override
     public <C extends LocalEntity<String>> C readSourceOrNull(SearchHit searchHit, Class<? extends C> clazz) {
         try {
-            C value = objectMapper.readValue(searchHit.getSourceRef().streamInput(), clazz);
+            C value = JacksonUtils.getThreadObjectMapper().readValue(searchHit.getSourceRef().streamInput(), clazz);
             value.setId(searchHit.getId());
             return value;
         }

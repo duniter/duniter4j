@@ -29,7 +29,6 @@ import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.dao.AbstractDao;
 import org.duniter.elasticsearch.dao.PeerDao;
-import org.duniter.elasticsearch.model.Movement;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -47,6 +46,7 @@ import org.elasticsearch.search.aggregations.bucket.SingleBucketAggregation;
 import org.elasticsearch.search.aggregations.metrics.max.Max;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -75,7 +75,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
         // Serialize into JSON
         // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         try {
-            String json = objectMapper.writeValueAsString(peer);
+            String json = getObjectMapper().writeValueAsString(peer);
 
             // Preparing indexBlocksFromNode
             IndexRequestBuilder indexRequest = client.prepareIndex(peer.getCurrency(), TYPE)
@@ -104,7 +104,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
 
         // Serialize into JSON
         try {
-            String json = objectMapper.writeValueAsString(peer);
+            String json = getObjectMapper().writeValueAsString(peer);
 
             // Preparing indexBlocksFromNode
             UpdateRequestBuilder updateRequest = client.prepareUpdate(peer.getCurrency(), TYPE, peer.getId())
@@ -183,9 +183,11 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
     }
 
     @Override
-    public void updatePeersAsDown(String currencyName, long lastUpTimeTimeout) {
+    public void updatePeersAsDown(String currencyName, long upTimeLimit) {
 
-        long minUpTime = (System.currentTimeMillis() - lastUpTimeTimeout)/1000;
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("[%s] Setting peers as DOWN, if older than [%s]...", currencyName, new Date(upTimeLimit*1000)));
+        }
 
         SearchRequestBuilder searchRequest = client.prepareSearch(currencyName)
                 .setFetchSource(false)
@@ -193,8 +195,8 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
 
         // Query = filter on lastUpTime
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
-                // where lastUpTime < minUpTime
-                .filter(QueryBuilders.rangeQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_LAST_UP_TIME).lte(minUpTime))
+                // where lastUpTime < upTimeLimit
+                .filter(QueryBuilders.rangeQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_LAST_UP_TIME).lte(upTimeLimit))
                 // AND status = UP
                 .filter(QueryBuilders.termQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_STATUS, Peer.PeerStatus.UP.name()));
         searchRequest.setQuery(QueryBuilders.nestedQuery(Peer.PROPERTY_STATS, QueryBuilders.constantScoreQuery(boolQuery)));

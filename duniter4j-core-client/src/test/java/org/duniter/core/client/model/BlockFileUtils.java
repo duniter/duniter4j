@@ -2,6 +2,7 @@ package org.duniter.core.client.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.junit.Assume;
 
 import java.io.File;
@@ -14,7 +15,7 @@ public class BlockFileUtils {
 
     public static BlockchainBlock readBlockFile(String jsonFileName) {
         try {
-            ObjectMapper om = org.duniter.core.client.model.bma.jackson.JacksonUtils.newObjectMapper();
+            ObjectMapper om = JacksonUtils.getThreadObjectMapper();
             BlockchainBlock block = om.readValue(Files.readAllBytes(new File("src/test/resources" , jsonFileName).toPath()), BlockchainBlock.class);
             Assume.assumeNotNull(block);
             return block;

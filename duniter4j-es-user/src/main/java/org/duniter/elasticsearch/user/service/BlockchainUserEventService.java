@@ -260,7 +260,7 @@ public class BlockchainUserEventService extends AbstractBlockchainListenerServic
 
         try {
             bulkRequest.add(client.prepareIndex(UserEventService.INDEX, UserEventService.EVENT_TYPE)
-                    .setSource(objectMapper.writeValueAsBytes(event))
+                    .setSource(getObjectMapper().writeValueAsBytes(event))
                     .setRefresh(false));
             flushBulkRequestOrSchedule();
         }

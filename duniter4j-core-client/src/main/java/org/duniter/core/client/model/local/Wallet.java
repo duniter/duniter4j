@@ -25,6 +25,7 @@ package org.duniter.core.client.model.local;
 import java.io.Serializable;
 import java.util.Collection;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.duniter.core.client.model.bma.WotCertification;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
@@ -36,7 +37,6 @@ import org.duniter.core.util.crypto.KeyPair;
  */
 public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
 
-
     private Long id;
     private Long accountId;
     private String currency;
@@ -47,11 +47,6 @@ public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
     private long blockNumber = -1;
     private long txBlockNumber = -1;
     private Collection<WotCertification> certifications;
-
-    /**
-     * Use for UI, when some properties has not been displayed yet
-     */
-    private boolean isDirty = false;
 
     public Wallet() {
         super(null, null);
@@ -176,14 +171,6 @@ public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
 
     public Boolean getIsMember() {
         return identity.getIsMember();
-    }
-
-    public boolean isDirty() {
-        return isDirty;
-    }
-
-    public void setDirty(boolean isDirty) {
-        this.isDirty = isDirty;
     }
 
     public Double getCreditAsUD() {

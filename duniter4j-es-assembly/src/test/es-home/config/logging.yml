@@ -26,6 +26,7 @@ logger:
   security: DEBUG
 
   org.duniter: INFO
+  org.duniter.core.util.LockManager: DEBUG
   #org.duniter.core.beans: DEBUG
   #org.duniter.core.client.service: DEBUG
   #org.duniter.elasticsearch: DEBUG

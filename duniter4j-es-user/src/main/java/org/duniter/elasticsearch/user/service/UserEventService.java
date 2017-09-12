@@ -30,7 +30,6 @@ import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
-import org.duniter.core.service.MailService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
@@ -47,7 +46,6 @@ import org.duniter.elasticsearch.user.model.UserProfile;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -57,7 +55,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
 
 import java.io.IOException;
@@ -95,7 +92,6 @@ public class UserEventService extends AbstractService implements ChangeService.C
         }
     }
 
-    private final MailService mailService;
     private final ThreadPool threadPool;
     public final boolean trace;
 
@@ -103,10 +99,8 @@ public class UserEventService extends AbstractService implements ChangeService.C
     public UserEventService(final Duniter4jClient client,
                             final PluginSettings pluginSettings,
                             final CryptoService cryptoService,
-                            final MailService mailService,
                             final ThreadPool threadPool) {
         super("duniter.user.event", client, pluginSettings, cryptoService);
-        this.mailService = mailService;
         this.threadPool = threadPool;
         this.trace = logger.isTraceEnabled();
 
@@ -454,7 +448,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
 
     private String toJson(UserEvent userEvent, boolean cleanHashAndSignature) {
         try {
-            String json = objectMapper.writeValueAsString(userEvent);
+            String json = getObjectMapper().writeValueAsString(userEvent);
             if (cleanHashAndSignature) {
                 json = JacksonUtils.removeAttribute(json, Record.PROPERTY_SIGNATURE);
                 json = JacksonUtils.removeAttribute(json, Record.PROPERTY_HASH);
@@ -484,7 +478,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
                 // on create
                 case CREATE:
                     if (change.getSource() != null) {
-                        UserEvent event = objectMapper.readValue(change.getSource().streamInput(), UserEvent.class);
+                        UserEvent event = getObjectMapper().readValue(change.getSource().streamInput(), UserEvent.class);
                         processEventCreate(change.getId(), event);
                     }
                     break;
@@ -492,7 +486,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
                 // on update
                 case INDEX:
                     if (change.getSource() != null) {
-                        UserEvent event = objectMapper.readValue(change.getSource().streamInput(), UserEvent.class);
+                        UserEvent event = getObjectMapper().readValue(change.getSource().streamInput(), UserEvent.class);
                         processEventUpdate(change.getId(), event);
                     }
                     break;

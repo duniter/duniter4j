@@ -79,7 +79,7 @@ public class BlockchainListenerService extends AbstractBlockchainListenerService
             try {
                 bulkRequest.add(client.prepareIndex(block.getCurrency(), BlockStatDao.TYPE, String.valueOf(block.getNumber()))
                         .setRefresh(false) // recommended for heavy indexing
-                        .setSource(objectMapper.writeValueAsBytes(stat)));
+                        .setSource(getObjectMapper().writeValueAsBytes(stat)));
                 flushBulkRequestOrSchedule();
             } catch (JsonProcessingException e) {
                 logger.error("Could not serialize BlockStat into JSON: " + e.getMessage(), e);
@@ -100,7 +100,7 @@ public class BlockchainListenerService extends AbstractBlockchainListenerService
                     try {
                         bulkRequest.add(client.prepareIndex(block.getCurrency(), MovementDao.TYPE)
                                 .setRefresh(false) // recommended for heavy indexing
-                                .setSource(objectMapper.writeValueAsBytes(movement)));
+                                .setSource(getObjectMapper().writeValueAsBytes(movement)));
                         flushBulkRequestOrSchedule();
                     } catch (JsonProcessingException e) {
                         logger.error("Could not serialize BlockOperation into JSON: " + e.getMessage(), e);

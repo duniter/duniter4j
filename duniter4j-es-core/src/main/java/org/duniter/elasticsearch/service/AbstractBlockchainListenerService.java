@@ -161,7 +161,7 @@ public abstract class AbstractBlockchainListenerService extends AbstractService 
         Preconditions.checkNotNull(change.getSource());
 
         try {
-            return objectMapper.readValue(change.getSource().streamInput(), BlockchainBlock.class);
+            return getObjectMapper().readValue(change.getSource().streamInput(), BlockchainBlock.class);
         } catch (IOException e) {
             throw new TechnicalException(String.format("Unable to parse received block %s", change.getId()), e);
         }

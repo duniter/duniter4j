@@ -23,20 +23,25 @@ package org.duniter.core.client.service.local;
  */
 
 import org.duniter.core.beans.InitializingBean;
+import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.cache.Cache;
 import org.duniter.core.util.cache.SimpleCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -44,11 +49,14 @@ import java.util.List;
  */
 public class PeerServiceImpl implements PeerService, InitializingBean {
 
+    private static final Logger log = LoggerFactory.getLogger(PeerServiceImpl.class);
     private Cache<String, List<Peer>> peersByCurrencyIdCache;
     private Cache<String, Peer> activePeerByCurrencyIdCache;
 
     private CurrencyService currencyService;
+    private CryptoService cryptoService;
     private PeerDao peerDao;
+    private Configuration config;
 
     public PeerServiceImpl() {
         super();
@@ -56,8 +64,10 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        currencyService = ServiceLocator.instance().getCurrencyService();
-        peerDao = ServiceLocator.instance().getBean(PeerDao.class);
+        this.currencyService = ServiceLocator.instance().getCurrencyService();
+        this.peerDao = ServiceLocator.instance().getBean(PeerDao.class);
+        this.config = Configuration.instance();
+        this.cryptoService = ServiceLocator.instance().getCryptoService();
     }
 
     @Override
@@ -66,7 +76,10 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         peerDao = null;
         peersByCurrencyIdCache = null;
         activePeerByCurrencyIdCache = null;
+        cryptoService = null;
     }
+
+
 
     public Peer save(final Peer peer) {
         Preconditions.checkNotNull(peer);
@@ -74,9 +87,14 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         Preconditions.checkArgument(StringUtils.isNotBlank(peer.getHost()));
         Preconditions.checkArgument(peer.getPort() >= 0);
 
+
+        String peerId = cryptoService.hash(peer.computeKey());
+        boolean exists = isExists(peer.getCurrency(), peerId);
+        peer.setId(peerId);
+
         Peer result;
         // Create
-        if (peer.getId() == null) {
+        if (!exists) {
             result = peerDao.create(peer);
         }
 
@@ -107,7 +125,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
      * @param currencyId
      * @return
      */
-    public Peer getActivePeerByCurrencyId(String currency) {
+    public Peer getActivePeerByCurrencyId(String currencyId) {
         // Check if cache as been loaded
         if (activePeerByCurrencyIdCache == null) {
 
@@ -127,7 +145,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
             };
         }
 
-        return activePeerByCurrencyIdCache.get(currency);
+        return activePeerByCurrencyIdCache.get(currencyId);
     }
 
     /**
@@ -173,4 +191,34 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         }
     }
 
+    @Override
+    public void save(String currencyId, List<Peer> peers, boolean isFullUpList) {
+
+        int peerDownTimeoutMs = config.getPeerUpMaxAge();
+        final long nowInSec = System.currentTimeMillis()/1000;
+
+        if (CollectionUtils.isNotEmpty(peers)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("[%s] Updating peers (%s endpoints found)", currencyId, peers.size()));
+            }
+
+            // On each UP peers: set last UP time
+            peers.stream().map(Peer::getStats)
+                    .filter(Peer.Stats::isReacheable)
+                    .forEach(stats -> stats.setLastUpTime(nowInSec));
+
+            peers.forEach(this::save);
+        }
+
+        // Mark old peers as DOWN
+        if (isFullUpList && peerDownTimeoutMs > 0) {
+            Date oldDate = new Date(nowInSec * 1000 - peerDownTimeoutMs);
+            peerDao.updatePeersAsDown(currencyId, oldDate.getTime() / 1000);
+        }
+    }
+
+    @Override
+    public boolean isExists(String currencyId, String peerId) {
+        return peerDao.isExists(currencyId, peerId);
+    }
 }
