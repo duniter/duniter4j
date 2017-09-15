@@ -39,6 +39,8 @@ import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.NestedQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -139,6 +141,29 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
     @Override
     public List<Peer> getPeersByCurrencyId(String currencyId) {
         throw new TechnicalException("no implemented: loading all peers may be unsafe for memory...");
+    }
+
+    @Override
+    public List<Peer> getPeersByCurrencyIdAndApi(String currencyId, String endpointApi) {
+        Preconditions.checkNotNull(currencyId);
+        Preconditions.checkNotNull(endpointApi);
+
+        SearchRequestBuilder request = client.prepareSearch(currencyId)
+                .setTypes(TYPE)
+                .setSize(1000);
+
+        // Query = filter on lastUpTime
+        NestedQueryBuilder statusQuery = QueryBuilders.nestedQuery(Peer.PROPERTY_STATS,
+                QueryBuilders.boolQuery()
+                    .filter(QueryBuilders.termQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_STATUS, Peer.PeerStatus.UP.name())));
+
+
+        QueryBuilder apiQuery = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(Peer.PROPERTY_API, endpointApi));
+
+        request.setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.boolQuery().must(apiQuery).must(statusQuery)));
+
+        SearchResponse response = request.execute().actionGet();
+        return toList(response, Peer.class);
     }
 
     @Override
@@ -270,39 +295,34 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
                     .startObject("properties")
 
                     // currency
-                    .startObject("currency")
+                    .startObject(Peer.PROPERTY_CURRENCY)
                     .field("type", "string")
                     .endObject()
 
                     // pubkey
-                    .startObject("pubkey")
+                    .startObject(Peer.PROPERTY_PUBKEY)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // api
-                    .startObject("api")
+                    .startObject(Peer.PROPERTY_API)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // uid
-                    .startObject("uid")
-                    .field("type", "string")
-                    .endObject()
-
                     // dns
-                    .startObject("dns")
+                    .startObject(Peer.PROPERTY_DNS)
                     .field("type", "string")
                     .endObject()
 
                     // ipv4
-                    .startObject("ipv4")
+                    .startObject(Peer.PROPERTY_IPV4)
                     .field("type", "string")
                     .endObject()
 
                     // ipv6
-                    .startObject("ipv6")
+                    .startObject(Peer.PROPERTY_IPV6)
                     .field("type", "string")
                     .endObject()
 
@@ -329,7 +349,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
                         .endObject()
 
                         // stats.blockHash
-                        .startObject("version")
+                        .startObject("blockHash")
                         .field("type", "string")
                         .field("index", "not_analyzed")
                         .endObject()
@@ -338,7 +358,6 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
                         .startObject("error")
                         .field("type", "string")
                         .endObject()
-
 
                         // stats.medianTime
                         .startObject("medianTime")
@@ -356,7 +375,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
                         .endObject()
 
                         // stats.uid
-                        .startObject("uid")
+                        .startObject(Peer.Stats.PROPERTY_UID)
                         .field("type", "string")
                         .endObject()
 
@@ -366,7 +385,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
                         .field("index", "not_analyzed")
                         .endObject()
 
-                        // stats.uid
+                        // stats.forkConsensus
                         .startObject("forkConsensus")
                         .field("type", "boolean")
                         .field("index", "not_analyzed")

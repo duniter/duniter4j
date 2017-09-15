@@ -168,7 +168,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     protected void doAfterStart() {
         // Synchronize
         if (pluginSettings.enableDataSync()) {
-            injector.getInstance(SynchroService.class).synchronize();
+            injector.getInstance(SynchroService.class).startScheduling();
         }
 
         // Notify admin

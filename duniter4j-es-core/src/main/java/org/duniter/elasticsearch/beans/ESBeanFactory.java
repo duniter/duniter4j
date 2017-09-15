@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.beans;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.beans.BeanCreationException;
 import org.duniter.core.beans.BeanFactory;
+import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
 
 /**
@@ -34,6 +35,7 @@ public class ESBeanFactory extends BeanFactory {
 
     private Injector injector = null;
 
+    @Inject
     public void setInjector(Injector injector) {
         this.injector = injector;
     }

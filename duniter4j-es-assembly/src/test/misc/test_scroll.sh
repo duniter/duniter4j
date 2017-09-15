@@ -21,4 +21,35 @@
 
 curl -XPOST 'http://localhost:9200/history/delete/_search?scroll=1m'
 
-curl -XPOST 'http://localhost:9200/history/delete/_search/scroll?scroll=1m' -d 'cXVlcnlUaGVuRmV0Y2g7Mjs3MToxNlZjRUplMVMyaW1sZERvdVU2dHZnOzcyOjE2VmNFSmUxUzJpbWxkRG91VTZ0dmc7MDs='
+#curl -XPOST 'http://localhost:9200/history/delete/_search/scroll?scroll=1m' -d 'cXVlcnlUaGVuRmV0Y2g7Mjs3MToxNlZjRUplMVMyaW1sZERvdVU2dHZnOzcyOjE2VmNFSmUxUzJpbWxkRG91VTZ0dmc7MDs='
+
+curl -XPOST 'http://localhost:9200/g1-test/peer/_search' -d '{
+  "constant_score" : {
+    "filter" : {
+      "bool" : {
+        "must" : [ {
+          "bool" : {
+            "filter" : {
+              "term" : {
+                "api" : "ES_USER_API"
+              }
+            }
+          }
+        }, {
+          "nested" : {
+            "query" : {
+              "bool" : {
+                "filter" : {
+                  "term" : {
+                    "stats.status" : "UP"
+                  }
+                }
+              }
+            },
+            "path" : "stats"
+          }
+        } ]
+      }
+    }
+  }
+}''

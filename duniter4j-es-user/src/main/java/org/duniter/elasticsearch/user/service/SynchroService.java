@@ -22,41 +22,68 @@ package org.duniter.elasticsearch.user.service;
  * #L%
  */
 
+import org.duniter.core.client.dao.CurrencyDao;
+import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.elasticsearch.Protocol;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.DateUtils;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
+import org.duniter.elasticsearch.service.DocStatService;
+import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.nuiton.i18n.I18n;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by blavenie on 27/10/16.
  */
-public class SynchroService extends AbstractSynchroService {
+public class SynchroService extends AbstractSynchroService<SynchroService> {
 
-   @Inject
-    public SynchroService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
-                          ThreadPool threadPool, final ServiceLocator serviceLocator) {
-        super(client, settings.getDelegate(), cryptoService, threadPool, serviceLocator);
-    }
+    private static final EndpointApi ENDPOINT_API = EndpointApi.ES_USER_API;
 
-    public void synchronize() {
-        logger.info("Starting user data synchronization...");
+    @Inject
+    public SynchroService(Duniter4jClient client, PluginSettings settings,
+                          CryptoService cryptoService,
+                          PeerService peerService,
+                          ThreadPool threadPool,
+                          CurrencyDao currencyDao,
+                          PeerDao peerDao,
+                          final ServiceLocator serviceLocator) {
+        super(client, settings.getDelegate(), cryptoService, threadPool, currencyDao, peerDao, serviceLocator);
 
-        Peer peer = getPeerFromAPI(EndpointApi.ES_USER_API);
-        synchronize(peer);
-
-        logger.info("User data synchronization [OK]");
+        // Configure peer service to allow API
+        peerService.addIncludeEndpointApi(ENDPOINT_API.name());
     }
 
     /* -- protected methods -- */
+
+    @Override
+    protected void synchronize() {
+        logger.info("Starting user data synchronization...");
+
+        // Get peers
+        List<Peer> peers = getPeersFromApi(ENDPOINT_API);
+        if (CollectionUtils.isNotEmpty(peers)) {
+            peers.forEach(this::synchronize);
+            logger.info("User data synchronization [OK]");
+        }
+        else {
+            logger.info(String.format("User data synchronization [OK] - no endpoint found for API [%s]", ENDPOINT_API.name()));
+        }
+
+    }
 
 
     protected void synchronize(Peer peer) {

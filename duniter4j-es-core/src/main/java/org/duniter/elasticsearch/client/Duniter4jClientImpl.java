@@ -25,10 +25,12 @@ package org.duniter.elasticsearch.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.local.LocalEntity;
+import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
@@ -97,6 +99,7 @@ import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.*;
@@ -395,6 +398,7 @@ public class Duniter4jClientImpl implements Duniter4jClient {
             return null;
         }
     }
+
 
     @Override
     public void bulkFromClasspathFile(String classpathFile, String indexName, String indexType) {

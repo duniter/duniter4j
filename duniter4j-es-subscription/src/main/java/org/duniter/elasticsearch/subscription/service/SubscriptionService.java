@@ -137,7 +137,7 @@ public class SubscriptionService extends AbstractService {
         if (logger.isDebugEnabled()) {
             threadPool.scheduleAtFixedRate(
                     () -> logger.debug("Scheduled fake task successfully executed - scheduled every [1 min]"),
-                    20 * 1000 /* start in 20s */,
+                    20 * 1000 /* startScheduling in 20s */,
                     60 * 1000 /* every 1 min */,
                     TimeUnit.MILLISECONDS);
         }

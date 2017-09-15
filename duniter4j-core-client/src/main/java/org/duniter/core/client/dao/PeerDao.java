@@ -33,9 +33,12 @@ public interface PeerDao extends EntityDao<String, Peer> {
 
     List<Peer> getPeersByCurrencyId(String currencyId);
 
+    List<Peer> getPeersByCurrencyIdAndApi(String currencyId, String endpointApi);
+
     boolean isExists(String currencyId, String peerId);
 
     Long getMaxLastUpTime(String currencyId);
 
     void updatePeersAsDown(String currencyId, long maxUpTime);
+
 }

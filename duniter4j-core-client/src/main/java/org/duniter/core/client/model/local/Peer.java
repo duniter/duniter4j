@@ -158,6 +158,13 @@ public class Peer implements LocalEntity<String>, Serializable {
 
     }
 
+
+    public static final String PROPERTY_PUBKEY = "pubkey";
+    public static final String PROPERTY_CURRENCY = "currency";
+    public static final String PROPERTY_API = "api";
+    public static final String PROPERTY_DNS = "dns";
+    public static final String PROPERTY_IPV4 = "ipv4";
+    public static final String PROPERTY_IPV6 = "ipv6";
     public static final String PROPERTY_STATS = "stats";
 
     private String id;
@@ -373,6 +380,7 @@ public class Peer implements LocalEntity<String>, Serializable {
     public static class Stats {
         public static final String PROPERTY_STATUS = "status";
         public static final String PROPERTY_LAST_UP_TIME = "lastUpTime";
+        public static final String PROPERTY_UID = "uid";
 
         private String version;
         private PeerStatus status = PeerStatus.UP; // default

@@ -22,12 +22,16 @@ package org.duniter.elasticsearch.subscription.service;
  * #L%
  */
 
+import org.duniter.core.client.dao.CurrencyDao;
+import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.CollectionUtils;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractSynchroService;
+import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.subscription.dao.SubscriptionIndexDao;
 import org.duniter.elasticsearch.subscription.dao.execution.SubscriptionExecutionDao;
@@ -37,24 +41,41 @@ import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.elasticsearch.common.inject.Inject;
 
+import java.util.List;
+
 /**
  * Created by blavenie on 27/10/16.
  */
 public class SynchroService extends AbstractSynchroService {
 
+    private static final EndpointApi ENDPOINT_API = EndpointApi.ES_SUBSCRIPTION_API;
+
     @Inject
     public SynchroService(Duniter4jClient client, PluginSettings settings, CryptoService cryptoService,
-                          ThreadPool threadPool, final ServiceLocator serviceLocator) {
-        super(client, settings.getDelegate(), cryptoService, threadPool, serviceLocator);
+                          ThreadPool threadPool,
+                          PeerService peerService,
+                          CurrencyDao currencyDao,
+                          PeerDao peerDao,
+                          final ServiceLocator serviceLocator) {
+        super(client, settings.getDelegate(), cryptoService, threadPool, currencyDao, peerDao, serviceLocator);
+
+        // Configure peer service to allow API
+        peerService.addIncludeEndpointApi(ENDPOINT_API.name());
     }
 
-    public void synchronize() {
+    @Override
+    protected void synchronize() {
         logger.info("Starting subscription data synchronization...");
 
-        Peer peer = getPeerFromAPI(EndpointApi.ES_SUBSCRIPTION_API);
-        synchronize(peer);
-
-        logger.info("Subscription data synchronization [OK]");
+        // Get peers
+        List<Peer> peers = getPeersFromApi(ENDPOINT_API);
+        if (CollectionUtils.isNotEmpty(peers)) {
+            peers.forEach(this::synchronize);
+            logger.info("User subscription synchronization [OK]");
+        }
+        else {
+            logger.info(String.format("User subscription synchronization [OK] - no endpoint found for API [%s]", ENDPOINT_API.name()));
+        }
     }
 
     /* -- protected methods -- */

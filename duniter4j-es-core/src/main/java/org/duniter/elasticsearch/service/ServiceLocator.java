@@ -59,12 +59,11 @@ public class ServiceLocator
     private static ESBeanFactory beanFactory = null;
 
     @Inject
-    public ServiceLocator(Injector injector) {
+    public ServiceLocator() {
         super(getOrCreateBeanFactory());
         if (logger.isDebugEnabled()) {
             logger.debug("Starting Duniter4j ServiceLocator...");
         }
-        beanFactory.setInjector(injector);
 
         org.duniter.core.client.service.ServiceLocator.setInstance(this);
     }
@@ -80,9 +79,13 @@ public class ServiceLocator
         org.duniter.core.client.service.ServiceLocator.setInstance(null);
     }
 
+    public static ESBeanFactory getESBeanFactory() {
+        return getOrCreateBeanFactory();
+    }
+
     /* -- Internal methods -- */
 
-    protected static ESBeanFactory getOrCreateBeanFactory() {
+    public static ESBeanFactory getOrCreateBeanFactory() {
         if (beanFactory != null) {
             return beanFactory;
         }

@@ -22,6 +22,7 @@ package org.duniter.core.client.dao.mem;
  * #L%
  */
 
+import com.google.common.collect.ImmutableList;
 import org.duniter.core.client.dao.CurrencyDao;
 
 import java.util.*;
@@ -57,6 +58,11 @@ public class MemoryCurrencyDaoImpl implements CurrencyDao {
     @Override
     public void remove(final org.duniter.core.client.model.local.Currency currency) {
         currencies.remove(currency.getId());
+    }
+
+    @Override
+    public List<String> getCurrencyIds() {
+        return ImmutableList.copyOf(currencies.keySet());
     }
 
     @Override

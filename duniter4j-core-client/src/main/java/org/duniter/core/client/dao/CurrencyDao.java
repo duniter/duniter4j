@@ -40,6 +40,8 @@ public interface CurrencyDao extends Bean, EntityDao<String, Currency> {
 
     void remove(final Currency currency);
 
+    List<String> getCurrencyIds();
+
     List<Currency> getCurrencies(long accountId);
 
     /**

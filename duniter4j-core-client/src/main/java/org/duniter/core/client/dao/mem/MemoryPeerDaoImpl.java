@@ -24,6 +24,7 @@ package org.duniter.core.client.dao.mem;
 
 import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.util.Preconditions;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -66,19 +67,33 @@ public class MemoryPeerDaoImpl implements PeerDao {
 
     @Override
     public List<Peer> getPeersByCurrencyId(final String currencyId) {
+        Preconditions.checkNotNull(currencyId);
         return peersByCurrencyId.values().stream()
             .filter(peer -> currencyId.equals(peer.getCurrency()))
                 .collect(Collectors.toList());
     }
 
     @Override
+    public List<Peer> getPeersByCurrencyIdAndApi(final String currencyId, final String endpointApi) {
+        Preconditions.checkNotNull(currencyId);
+        Preconditions.checkNotNull(endpointApi);
+        return peersByCurrencyId.values().stream()
+                .filter(peer -> currencyId.equals(peer.getCurrency()) &&
+                        peer.getApi() != null &&
+                        endpointApi.equals(peer.getApi()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public boolean isExists(final String currencyId, final  String peerId) {
+        Preconditions.checkNotNull(currencyId);
         return peersByCurrencyId.values().stream()
                 .anyMatch(peer -> currencyId.equals(peer.getCurrency()) && peerId.equals(peer.getId()));
     }
 
     @Override
     public Long getMaxLastUpTime(String currencyId) {
+        Preconditions.checkNotNull(currencyId);
         OptionalLong max = getPeersByCurrencyId(currencyId).stream()
                 .mapToLong(peer -> peer.getStats() != null ? peer.getStats().getLastUpTime() : -1)
                 .max();

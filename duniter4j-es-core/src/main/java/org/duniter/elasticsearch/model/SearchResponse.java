@@ -24,8 +24,16 @@ package org.duniter.elasticsearch.model;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.jboss.netty.buffer.ChannelBuffer;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.channels.GatheringByteChannel;
 import java.util.Iterator;
 
 /**
@@ -39,35 +47,35 @@ public class SearchResponse implements Serializable {
         this.node = response;
     }
 
-    public Hits getHits() {
-        return new Hits(node.get("hits"));
+    public SearchHits getHits() {
+        return new SearchHits(node.get("hits"));
     }
 
-    public class Hits implements Iterator<Hit>{
+    public class SearchHits implements Iterator<SearchHit>{
 
         protected JsonNode node;
         private Iterator<JsonNode> hits;
-        Hits(JsonNode node) {
+        SearchHits(JsonNode node) {
             this.node = node;
             this.hits = node == null ? null : node.get("hits").iterator();
         }
 
-        public int getTotal() {
+        public int getTotalHits() {
             return node == null ? 0 : node.get("total").asInt(0);
         }
 
         public boolean hasNext() {
             return hits != null && hits.hasNext();
         }
-        public Hit next() {
-            return hits == null ? null : new Hit(hits.next());
+        public SearchHit next() {
+            return hits == null ? null : new SearchHit(hits.next());
         }
     }
 
-    public class Hit {
+    public class SearchHit {
 
         private JsonNode node;
-        Hit(JsonNode node) {
+        SearchHit(JsonNode node) {
             this.node = node;
         }
 

@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Peers;
@@ -188,7 +187,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     public CompletableFuture<Peer> asyncRefreshPeer(final Peer peer, final Map<String, String> memberUids, final ExecutorService pool) {
         return CompletableFuture.supplyAsync(() -> getVersion(peer), pool)
-                .thenApply(this::getCurrentBlock)
+                .thenApply(p -> Peers.hasBmaEndpoint(p) ? getCurrentBlock(p) : p)
                 .exceptionally(throwable -> {
                     peer.getStats().setStatus(Peer.PeerStatus.DOWN);
                     if(!(throwable instanceof HttpConnectException)) {
@@ -204,17 +203,17 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     else if (log.isTraceEnabled()) log.debug(String.format("[%s] is DOWN", peer));
                     return peer;
                 })
-                .thenApply(apeer -> {
-                    String uid = StringUtils.isNotBlank(peer.getPubkey()) ? memberUids.get(peer.getPubkey()) : null;
-                    peer.getStats().setUid(uid);
-                    if (peer.getStats().isReacheable()) {
+                .thenApply(p -> {
+                    String uid = StringUtils.isNotBlank(p.getPubkey()) ? memberUids.get(p.getPubkey()) : null;
+                    p.getStats().setUid(uid);
+                    if (p.getStats().isReacheable() && Peers.hasBmaEndpoint(p)) {
 
                         // Hardship
                         if (StringUtils.isNotBlank(uid)) {
-                            getHardship(peer);
+                            getHardship(p);
                         }
                     }
-                    return apeer;
+                    return p;
                 })
                 .exceptionally(throwable -> {
                     peer.getStats().setHardshipLevel(0);
@@ -225,13 +224,13 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     public List<Peer> fillPeerStatsConsensus(final List<Peer> peers) {
 
         final Map<String,Long> peerCountByBuid = peers.stream()
-                .filter(peer -> peer.getStats().getStatus() == Peer.PeerStatus.UP)
+                .filter(peer -> peer.getStats().isReacheable() && Peers.hasBmaEndpoint(peer))
                 .map(Peers::buid)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         // Compute main consensus buid
         Optional<Map.Entry<String, Long>> maxPeerCountEntry = peerCountByBuid.entrySet().stream()
-                .sorted(Comparator.comparing(Map.Entry::getValue, (l1, l2) -> l2.compareTo(l1)))
+                .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()))
                 .findFirst();
 
         final String mainBuid = maxPeerCountEntry.isPresent() ? maxPeerCountEntry.get().getKey() : null;;

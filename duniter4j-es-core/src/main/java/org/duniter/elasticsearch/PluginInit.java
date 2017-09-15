@@ -31,7 +31,6 @@ import org.duniter.elasticsearch.service.CurrencyService;
 import org.duniter.elasticsearch.service.DocStatService;
 import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
@@ -257,7 +256,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .registerIndex(CurrencyService.INDEX, CurrencyService.RECORD_TYPE);
 
             // Wait end of currency index creation, then index blocks
-            threadPool.scheduleOnClusterReady(docStatService::start);
+            threadPool.scheduleOnClusterReady(docStatService::startScheduling);
         }
 
         // Allow scroll search

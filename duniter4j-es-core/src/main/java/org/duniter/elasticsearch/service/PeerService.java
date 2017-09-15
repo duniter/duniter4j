@@ -24,6 +24,7 @@ package org.duniter.elasticsearch.service;
 
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointApi;
@@ -31,6 +32,7 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.local.NetworkService;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -50,6 +52,8 @@ public class PeerService extends AbstractService  {
     private PeerDao peerDao;
     private ThreadPool threadPool;
 
+    private List<String> includeEndpointApis = Lists.newArrayList(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name());
+
     @Inject
     public PeerService(Duniter4jClient client, PluginSettings settings, ThreadPool threadPool,
                        CryptoService cryptoService, PeerDao peerDao,
@@ -63,6 +67,14 @@ public class PeerService extends AbstractService  {
             this.delegate = serviceLocator.getPeerService();
             setIsReady(true);
         });
+    }
+
+    public PeerService addIncludeEndpointApi(String api) {
+        Preconditions.checkNotNull(api);
+        if (!includeEndpointApis.contains(api)) {
+            includeEndpointApis.add(api);
+        }
+        return this;
     }
 
     public PeerService indexPeers(Peer peer) {
@@ -95,7 +107,7 @@ public class PeerService extends AbstractService  {
             org.duniter.core.client.service.local.NetworkService.Filter filterDef = new org.duniter.core.client.service.local.NetworkService.Filter();
             filterDef.filterType = null;
             filterDef.filterStatus = Peer.PeerStatus.UP;
-            filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name());
+            filterDef.filterEndpoints = ImmutableList.copyOf(includeEndpointApis);
 
             // Default sort
             org.duniter.core.client.service.local.NetworkService.Sort sortDef = new org.duniter.core.client.service.local.NetworkService.Sort();
@@ -124,7 +136,7 @@ public class PeerService extends AbstractService  {
         NetworkService.Filter filterDef = new NetworkService.Filter();
         filterDef.filterType = null;
         filterDef.filterStatus = Peer.PeerStatus.UP;
-        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name());
+        filterDef.filterEndpoints = ImmutableList.copyOf(includeEndpointApis);
         filterDef.currency = currencyName;
 
         // Default sort

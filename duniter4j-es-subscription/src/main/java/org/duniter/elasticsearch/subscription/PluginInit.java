@@ -115,10 +115,10 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(SubscriptionService.class).startScheduling();
         }
 
-        // Synchronize data
+        // Start synchro service
         if (pluginSettings.enableDataSync()) {
-            // Synchronize
-            injector.getInstance(SynchroService.class).synchronize();
+            injector.getInstance(SynchroService.class)
+                    .startScheduling();
         }
     }
 

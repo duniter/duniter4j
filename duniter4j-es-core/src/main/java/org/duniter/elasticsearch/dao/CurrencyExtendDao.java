@@ -30,4 +30,6 @@ import org.duniter.core.client.dao.CurrencyDao;
 public interface CurrencyExtendDao extends CurrencyDao, IndexTypeDao<CurrencyExtendDao> {
     String INDEX = "currency";
     String RECORD_TYPE = "record";
+
+
 }

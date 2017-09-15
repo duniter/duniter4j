@@ -27,6 +27,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
+import org.duniter.core.client.dao.CurrencyDao;
+import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.local.Peer;
@@ -34,20 +36,23 @@ import org.duniter.core.client.service.HttpService;
 import org.duniter.core.client.service.exception.HttpUnauthorizeException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.DateUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.dao.CurrencyExtendDao;
 import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
+import org.duniter.elasticsearch.model.SearchResponse;
 import org.duniter.elasticsearch.model.SearchScrollResponse;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -56,39 +61,88 @@ import org.elasticsearch.index.query.QueryBuilders;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by blavenie on 27/10/16.
  */
-public abstract class AbstractSynchroService extends AbstractService {
+public abstract class AbstractSynchroService<T extends AbstractService> extends AbstractService {
 
     private static final String SCROLL_PARAM_VALUE = "1m";
 
     protected HttpService httpService;
+    protected final ThreadPool threadPool;
+    protected final PeerDao peerDao;
+    protected final CurrencyDao currencyDao;
 
-    @Inject
     public AbstractSynchroService(Duniter4jClient client,
                                   PluginSettings settings,
                                   CryptoService cryptoService,
-                                  ThreadPool threadPool, final ServiceLocator serviceLocator) {
+                                  ThreadPool threadPool,
+                                  CurrencyDao currencyDao,
+                                  PeerDao peerDao,
+                                  final ServiceLocator serviceLocator) {
         super("duniter.network.p2p", client, settings,cryptoService);
+        this.threadPool = threadPool;
+        this.currencyDao = currencyDao;
+        this.peerDao = peerDao;
         threadPool.scheduleOnStarted(() -> {
             httpService = serviceLocator.getHttpService();
             setIsReady(true);
         });
     }
 
+    /**
+     * Start scheduling doc stats update
+     * @return
+     */
+    public T startScheduling() {
+        long delayBeforeNextHour = DateUtils.delayBeforeNextHour();
+
+        // Five minute before the hour (to make sure to be ready when computing doc stat - see DocStatService)
+        delayBeforeNextHour -= 5 * 60 * 1000;
+
+        // If not already scheduling to early (in the next 5 min) then launch it
+        if (delayBeforeNextHour > 5 * 60 * 1000) {
+
+            // Launch with a delay of 10 sec
+            threadPool.schedule(this::synchronize, 10 * 1000, TimeUnit.MILLISECONDS);
+        }
+
+        // Schedule every hour
+        threadPool.scheduleAtFixedRate(
+                this::synchronize,
+                delayBeforeNextHour,
+                60 * 60 * 1000 /* every hour */,
+                TimeUnit.MILLISECONDS);
+
+        return (T)this;
+    }
+
     /* -- protected methods -- */
 
-    protected Peer getPeerFromAPI(EndpointApi api) {
-        // TODO : get peers from currency - use peering BMA API, and select peers with ESA (ES API)
-        Peer peer = Peer.newBuilder()
-                .setHost(pluginSettings.getDataSyncHost())
-                .setPort(pluginSettings.getDataSyncPort())
-                .setApi(api.name())
-                .build();
 
-        return peer;
+
+    protected abstract void synchronize();
+
+    protected List<Peer> getPeersFromApi(final EndpointApi api) {
+        Preconditions.checkNotNull(api);
+
+        try {
+            List<String> currencyIds = currencyDao.getCurrencyIds();
+            if (CollectionUtils.isEmpty(currencyIds)) return null;
+
+            return currencyIds.stream()
+                    .map(currencyId -> peerDao.getPeersByCurrencyIdAndApi(currencyId, api.name()))
+                    .filter(Objects::nonNull)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+        }
+        catch (Exception e) {
+            logger.error(String.format("Could not get peers for Api [%s]", api.name()), e);
+            return null;
+        }
     }
 
     protected void safeSynchronizeIndex(Peer peer, String index, String type, long fromTime, SynchroResult result) {
@@ -187,7 +241,7 @@ public abstract class AbstractSynchroService extends AbstractService {
                 response = executeAndParseRequest(peer, fromIndex, fromType, request);
                 if (response != null) {
                     scrollId = response.getScrollId();
-                    total = response.getHits().getTotal();
+                    total = response.getHits().getTotalHits();
                     if (total > 0 && logger.isDebugEnabled()) {
                         logger.debug(String.format("[%s] [%s/%s] %s docs to check...", peer, toIndex, toType, total));
                     }
@@ -286,8 +340,8 @@ public abstract class AbstractSynchroService extends AbstractService {
         BulkRequestBuilder bulkRequest = client.prepareBulk();
         bulkRequest.setRefresh(true);
 
-        for (Iterator<SearchScrollResponse.Hit> hits = response.getHits(); hits.hasNext();){
-            SearchScrollResponse.Hit hit = hits.next();
+        for (Iterator<SearchResponse.SearchHit> hits = response.getHits(); hits.hasNext();){
+            SearchResponse.SearchHit hit = hits.next();
             String id = hit.getId();
             JsonNode source = hit.getSource();
 

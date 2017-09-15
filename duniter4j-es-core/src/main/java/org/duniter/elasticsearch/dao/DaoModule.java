@@ -38,6 +38,8 @@ public class DaoModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
 
+        requestInjection(ServiceLocator.getESBeanFactory());
+
         // Common instance
         bind(Duniter4jClient.class).to(Duniter4jClientImpl.class).asEagerSingleton();
         bind(DocStatDao.class).to(DocStatDaoImpl.class).asEagerSingleton();
@@ -49,6 +51,7 @@ public class DaoModule extends AbstractModule implements Module {
         bindWithLocator(BlockDao.class);
         bindWithLocator(PeerDao.class);
         bindWithLocator(CurrencyDao.class);
+
 
     }
 

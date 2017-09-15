@@ -131,7 +131,7 @@ public class DocStatService extends AbstractService  {
      * Start scheduling doc stats update
      * @return
      */
-    public DocStatService start() {
+    public DocStatService startScheduling() {
         long delayBeforeNextHour = DateUtils.delayBeforeNextHour();
 
         threadPool.scheduleAtFixedRate(

@@ -24,14 +24,22 @@ package org.duniter.elasticsearch.dao;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
+import org.duniter.core.client.model.local.LocalEntity;
+import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.search.SearchHit;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by Benoit on 08/04/2015.
@@ -71,5 +79,35 @@ public abstract class AbstractDao implements Bean {
 
     protected ObjectMapper getObjectMapper() {
         return JacksonUtils.getThreadObjectMapper();
+    }
+
+    protected <C extends LocalEntity<String>> List<C> toList(SearchResponse response, Class<? extends C> clazz) {
+        ObjectMapper objectMapper = getObjectMapper();
+
+        if (response.getHits() == null || response.getHits().getTotalHits() == 0) return null;
+
+        List<C> result = Lists.newArrayList();
+        for (SearchHit hit: response.getHits().getHits()) {
+
+            try {
+                C value = objectMapper.readValue(hit.getSourceRef().streamInput(), clazz);
+                value.setId(hit.getId());
+                result.add(value);
+            }
+            catch(IOException e) {
+                logger.warn(String.format("Unable to deserialize source [%s/%s/%s] into [%s]: %s", hit.getIndex(), hit.getType(), hit.getId(), clazz.getName(), e.getMessage()));
+            }
+        }
+        return result;
+    }
+
+    protected List<String> toListIds(SearchResponse response) {
+        if (response.getHits() == null || response.getHits().getTotalHits() == 0) return null;
+
+        List<String> result = Lists.newArrayList();
+        for (SearchHit hit: response.getHits().getHits()) {
+            result.add(hit.getId());
+        }
+        return result;
     }
 }

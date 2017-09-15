@@ -20,8 +20,13 @@ public final class Peers {
     }
 
     public static String buid(Peer.Stats stats) {
-        return stats.getStatus() == Peer.PeerStatus.UP
+        return stats.getStatus() == Peer.PeerStatus.UP && stats.getBlockNumber() != null
                 ? stats.getBlockNumber() + "-" + stats.getBlockHash()
                 : null;
+    }
+
+    public static boolean hasBmaEndpoint(Peer peer) {
+        return hasEndPointAPI(peer, EndpointApi.BASIC_MERKLED_API) ||
+               hasEndPointAPI(peer, EndpointApi.BMAS);
     }
 }

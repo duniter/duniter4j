@@ -32,6 +32,8 @@ import org.duniter.elasticsearch.dao.AbstractIndexTypeDao;
 import org.duniter.elasticsearch.dao.CurrencyExtendDao;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -124,6 +126,16 @@ public class CurrencyDaoImpl extends AbstractIndexTypeDao<CurrencyExtendDao> imp
     @Override
     public List<Currency> getCurrencies(long accountId) {
         throw new TechnicalException("Not implemented yet");
+    }
+
+    @Override
+    public List<String> getCurrencyIds() {
+        SearchRequestBuilder request = client.prepareSearch(INDEX)
+                .setTypes(RECORD_TYPE)
+                .setSize(pluginSettings.getIndexBulkSize())
+                .setFetchSource(false);
+
+        return toListIds(request.execute().actionGet());
     }
 
     @Override

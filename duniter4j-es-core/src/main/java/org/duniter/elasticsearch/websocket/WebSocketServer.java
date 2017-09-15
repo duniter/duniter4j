@@ -70,7 +70,7 @@ public class WebSocketServer {
         if (pluginSettings.getWebSocketEnable()) {
             // When node started
             threadPool.scheduleOnStarted(() -> {
-                // start WS server
+                // startScheduling WS server
                 startServer(pluginSettings.getWebSocketHost(),
                         pluginSettings.getWebSocketPort(),
                         getEndPoints());
@@ -124,7 +124,7 @@ public class WebSocketServer {
                     port++;
                 }
                 else {
-                    throw new TechnicalException("Failed to start Websocket server", e);
+                    throw new TechnicalException("Failed to startScheduling Websocket server", e);
                 }
             }
 
@@ -134,7 +134,7 @@ public class WebSocketServer {
             logger.info(String.format("Websocket server started {%s:%s} on path [%s]", host, port, WS_PATH));
         }
         else {
-            String error = String.format("Failed to start Websocket server. Could not bind address {%s:%s}", host, port);
+            String error = String.format("Failed to startScheduling Websocket server. Could not bind address {%s:%s}", host, port);
             logger.error(error);
             throw new TechnicalException(error);
         }
