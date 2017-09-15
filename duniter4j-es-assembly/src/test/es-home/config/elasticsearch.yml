@@ -15,7 +15,7 @@
 # Use a descriptive name for your cluster:
 #
 # cluster.name: my-application
-cluster.name: duniter4j-elasticsearch-test
+cluster.name: duniter4j-es-assembly-test-2
 #
 # ------------------------------------ Node ------------------------------------
 #
@@ -158,10 +158,15 @@ duniter.security.enable: true
 #
 # Should synchronize data from an existing ES node ?
 #
-#duniter.data.sync.enable: false
-duniter.data.sync.enable: true
-duniter.data.sync.host: g1.data.duniter.fr
-duniter.data.sync.port: 443
+duniter.data.sync.enable: false
+#duniter.data.sync.enable: true
+duniter.data.sync.host: localhost
+duniter.data.sync.port: 9200
+
+#
+# Should maintain stats on data ?
+#
+duniter.data.stats.enable: true
 
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
@@ -203,7 +208,7 @@ duniter.mail.admin: 'benoit.lavenier@e-is.pro'
 #
 # Websocket port (usefull for listen changes)
 #
-duniter.ws.port: 9400
+duniter.ws.port: 9400-9410
 
 # ---------------------------------- Duniter4j Subscription module -------------------
 #

@@ -14,25 +14,27 @@ logger:
   com.amazonaws.jmx.SdkMBeanRegistrySupport: ERROR
   com.amazonaws.metrics.AwsSdkMetrics: ERROR
 
-  duniter: DEBUG
-  duniter.core: DEBUG
-  duniter.security: ERROR
-  duniter.user.event: INFO
-  duniter.network.p2p: INFO
-  duniter.network.peer: DEBUG
-  duniter.mail: DEBUG
-  duniter.subscription: DEBUG
+  duniter: INFO
+  #duniter.core: DEBUG
+  #duniter.security: ERROR
+  #duniter.user.event: DEBUG
+  #duniter.network.p2p: DEBUG
+  #duniter.network.peer: DEBUG
+  #duniter.mail: DEBUG
+  #duniter.subscription: DEBUG
 
   security: DEBUG
+  cluster.metadata: ERROR
+  cluster.routing.allocation: ERROR
 
   org.duniter: INFO
-  org.duniter.core.util.LockManager: DEBUG
+  #org.duniter.core.util.LockManager: DEBUG
   #org.duniter.core.beans: DEBUG
   #org.duniter.core.client.service: DEBUG
   #org.duniter.elasticsearch: DEBUG
   #org.duniter.elasticsearch.service: DEBUG
   #org.duniter.elasticsearch.user.service: DEBUG
-  org.duniter.elasticsearch.subscription.service: DEBUG
+  #org.duniter.elasticsearch.subscription.service: DEBUG
 
   org.nuiton.i18n: ERROR
   org.nuiton.config: ERROR

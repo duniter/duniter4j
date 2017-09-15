@@ -30,10 +30,7 @@ import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.elasticsearch.TestResource;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +62,8 @@ public class BlockchainServiceTest {
     }
 
     @Test
+    // Ignoring (too long !)
+    @Ignore
     public void indexLastBlocks() {
         service.indexLastBlocks(peer);
     }

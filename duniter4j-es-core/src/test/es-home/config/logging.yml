@@ -21,9 +21,10 @@ logger:
   org.duniter.elasticsearch: DEBUG
 
   duniter : DEBUG
-  duniter.network.p2p: TRACE
+  #duniter.network.p2p: TRACE
 
   security: DEBUG
+  cluster.routing.allocation: ERROR
 
   org.nuiton.i18n: WARN
   org.nuiton.config: WARN

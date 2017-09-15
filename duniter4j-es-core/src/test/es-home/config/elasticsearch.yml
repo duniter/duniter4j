@@ -178,4 +178,4 @@ duniter.mail.admin: blavenie@EIS-DEV
 #
 # Websocket port (usefull for listen changes)
 #
-duniter.ws.port: 9400
+duniter.ws.port: 9400-9410

@@ -16,6 +16,8 @@ logger:
 
   duniter: INFO
   security: INFO
+  cluster.metadata: ERROR
+  cluster.routing.allocation: ERROR
 
   org.duniter: INFO
   org.nuiton.i18n: ERROR

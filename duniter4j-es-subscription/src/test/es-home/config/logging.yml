@@ -17,16 +17,24 @@ logger:
   org.apache.http: INFO
 
   org.duniter: INFO
+  #org.duniter.elasticsearch: DEBUG
 
-  org.duniter.elasticsearch: DEBUG
+  duniter : INFO
+  #duniter.network.p2p: TRACE
 
-  duniter : DEBUG
-  duniter.network.p2p: TRACE
-
-  security: DEBUG
+  security: INFO
+  cluster.metadata: ERROR
+  cluster.routing.allocation: ERROR
 
   org.nuiton.i18n: WARN
   org.nuiton.config: WARN
+  org.nuiton.i18n: ERROR
+  org.nuiton.config: ERROR
+  org.nuiton.converter: WARN
+  org.apache.http: WARN
+  org.apache.http.client: ERROR
+  org.glassfish.grizzly: WARN
+  org.glassfish.tyrus: WARN
 
   # gateway
   #gateway: DEBUG
