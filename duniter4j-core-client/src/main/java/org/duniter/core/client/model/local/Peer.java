@@ -25,18 +25,12 @@ package org.duniter.core.client.model.local;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
-import javafx.beans.Observable;
-import org.duniter.core.beans.Bean;
-import org.duniter.core.beans.ObservableBean;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.http.InetAddressUtils;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeListenerProxy;
-import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.StringJoiner;
 

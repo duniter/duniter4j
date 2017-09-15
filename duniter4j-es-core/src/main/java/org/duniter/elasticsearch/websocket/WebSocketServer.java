@@ -39,23 +39,28 @@ package org.duniter.elasticsearch.websocket;
 */
 
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.Preconditions;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.glassfish.tyrus.server.Server;
 
-import javax.websocket.DeploymentException;
+import java.net.BindException;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 
 public class WebSocketServer {
 
+
     public static final String WS_PATH = "/ws";
     private final ESLogger log = Loggers.getLogger("duniter.ws");
+    private static final String PORT_RANGE_REGEXP = "[0-9]+-[0-9]+";
     private List<Class<?>> endPoints = new ArrayList<>();
 
     @Inject
@@ -83,32 +88,66 @@ public class WebSocketServer {
         return endPoints.toArray(new Class<?>[endPoints.size()]);
     }
 
-    private void startServer(String host, int port, Class<?>[] endPoints) {
+    private void startServer(String host, String portOrRange, Class<?>[] endPoints) {
+        Preconditions.checkNotNull(host);
+        Preconditions.checkNotNull(portOrRange);
+        Preconditions.checkArgument(portOrRange.matches(PORT_RANGE_REGEXP) || portOrRange.matches("[0-9]+"));
 
-        final Server server = new Server(host, port, WS_PATH, null, endPoints) ;
+        log.info(String.format("Starting Websocket server... {%s:%s}", host, portOrRange));
 
-        try {
-            log.info(String.format("Starting Websocket server... [%s:%s%s]", host, port, WS_PATH));
-            AccessController.doPrivileged(new PrivilegedAction() {
-                @Override
-                public Object run() {
-                    try {
-                        // Tyrus tries to load the server code using reflection. In Elasticsearch 2.x Java
-                        // security manager is used which breaks the reflection code as it can't find the class.
-                        // This is a workaround for that
-                        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-                        server.start();
-                        log.info("Websocket server started");
-                        return null;
-                    } catch (DeploymentException e) {
-                        throw new RuntimeException("Failed to start server", e);
+        String[] rangeParts = portOrRange.split("-");
+        int port =  Integer.parseInt(rangeParts[0]);
+        int endPort = rangeParts.length == 1 ? port : Integer.parseInt(rangeParts[1]);
+
+        boolean started = false;
+        while (!started && port <= endPort) {
+
+            final Server server = new Server(host, port, WS_PATH, null, endPoints) ;
+            try {
+                AccessController.doPrivileged(new PrivilegedExceptionAction<Server>() {
+                    @Override
+                    public Server run() throws Exception {
+                            // Tyrus tries to load the server code using reflection. In Elasticsearch 2.x Java
+                            // security manager is used which breaks the reflection code as it can't find the class.
+                            // This is a workaround for that
+                            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+                            server.start();
+                            return server;
                     }
+                });
+                started = true;
+            }
+            catch (PrivilegedActionException e) {
+                // port already use: retry with a new port
+                if (isBindException(e)) {
+                    server.stop(); // destroy server
+                    port++;
                 }
-            });
-        } catch (Exception e) {
-            log.error("Failed to start Websocket server", e);
-            throw new TechnicalException(e);
+                else {
+                    throw new TechnicalException("Failed to start Websocket server", e);
+                }
+            }
+
+        }
+
+        if (started) {
+            log.info(String.format("Websocket server started {%s:%s} on path [%s]", host, port, WS_PATH));
+        }
+        else {
+            String error = String.format("Failed to start Websocket server. Could not bind address {%s:%s}", host, port);
+            log.error(error);
+            throw new TechnicalException(error);
         }
     }
 
+    /* -- protected method -- */
+
+    protected boolean isBindException(Throwable t) {
+
+        if (t instanceof BindException) return true;
+        if (t.getCause() != null){
+            return isBindException(t.getCause());
+        }
+        return false;
+    }
 }

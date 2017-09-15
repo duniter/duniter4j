@@ -32,6 +32,7 @@ public class RestSubscriptionExecutionGetAction {
     @Inject
     public RestSubscriptionExecutionGetAction(RestSecurityController securityController) {
         // Add security rule to enable access on /subscription/execution
+        // only on search POST request (need by synchro)
         securityController.allowPostSearchIndexType(SubscriptionIndexDao.INDEX, SubscriptionExecutionDao.TYPE);
     }
 

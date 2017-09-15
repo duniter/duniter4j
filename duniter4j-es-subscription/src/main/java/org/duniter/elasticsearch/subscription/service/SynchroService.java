@@ -22,6 +22,7 @@ package org.duniter.elasticsearch.subscription.service;
  * #L%
  */
 
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
@@ -32,7 +33,6 @@ import org.duniter.elasticsearch.subscription.dao.SubscriptionIndexDao;
 import org.duniter.elasticsearch.subscription.dao.execution.SubscriptionExecutionDao;
 import org.duniter.elasticsearch.subscription.dao.record.SubscriptionRecordDao;
 import org.duniter.elasticsearch.subscription.model.Protocol;
-import org.duniter.elasticsearch.subscription.model.SubscriptionExecution;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.elasticsearch.common.inject.Inject;
@@ -49,30 +49,33 @@ public class SynchroService extends AbstractSynchroService {
     }
 
     public void synchronize() {
-        logger.info("Synchronizing subscription data...");
-        Peer peer = getPeerFromAPI(Protocol.EMAIL_API);
+        logger.info("Starting subscription data synchronization...");
+
+        Peer peer = getPeerFromAPI(EndpointApi.ES_SUBSCRIPTION_API);
         synchronize(peer);
+
+        logger.info("Subscription data synchronization [OK]");
     }
 
     /* -- protected methods -- */
 
     protected void synchronize(Peer peer) {
-
-        long sinceTime = 0; // TODO: get last sync time from somewhere ? (e.g. a specific index)
-
-        logger.info(String.format("[%s] Synchronizing subscription data since %s...", peer.toString(), sinceTime));
-
         SynchroResult result = new SynchroResult();
-        long time = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-        importSubscriptionsChanges(result, peer, sinceTime);
+        long fromTime = 0; // TODO: get last sync time from somewhere ? (e.g. a specific index)
+        synchronizeSubscriptions(peer, fromTime, result);
 
-        long duration = System.currentTimeMillis() - time;
-        logger.info(String.format("[%s] Synchronizing subscription data since %s [OK] %s (in %s ms)", peer.toString(), sinceTime, result.toString(), duration));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("[%s] Subscription data imported in %s ms: %s", peer, System.currentTimeMillis() - now, result.toString()));
+        }
     }
 
-    protected void importSubscriptionsChanges(SynchroResult result, Peer peer, long sinceTime) {
-        importChanges(result, peer, SubscriptionIndexDao.INDEX, SubscriptionExecutionDao.TYPE,  sinceTime);
-        importChanges(result, peer, SubscriptionIndexDao.INDEX, SubscriptionRecordDao.TYPE,  sinceTime);
+    protected void synchronizeSubscriptions(Peer peer, long fromTime, SynchroResult result) {
+        // Workaround to skip data older than june 2017
+        long executionFromTime = Math.max(fromTime, 1493743177);
+        safeSynchronizeIndex(peer, SubscriptionIndexDao.INDEX, SubscriptionExecutionDao.TYPE, executionFromTime, result);
+        
+        safeSynchronizeIndex(peer, SubscriptionIndexDao.INDEX, SubscriptionRecordDao.TYPE,  fromTime, result);
     }
 }

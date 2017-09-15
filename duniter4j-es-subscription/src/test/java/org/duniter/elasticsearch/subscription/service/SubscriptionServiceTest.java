@@ -106,6 +106,15 @@ public class SubscriptionServiceTest {
         Thread.sleep(10000);
     }
 
+    @Test
+    @Ignore
+    public void startNode() throws Exception {
+
+        while(true) {
+            Thread.sleep(10000);
+        }
+    }
+
     /* -- internal methods -- */
 
     protected Wallet createTestWallet() {

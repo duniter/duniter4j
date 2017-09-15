@@ -236,6 +236,8 @@ public class Duniter4jClientImpl implements Duniter4jClient {
         try {
             SearchResponse response = searchRequest.execute().actionGet();
 
+            if (response.getHits().getTotalHits() == 0) return null;
+
             Map<String, Object> result = new HashMap<>();
             // Read query result
             SearchHit[] searchHits = response.getHits().getHits();

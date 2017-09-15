@@ -35,19 +35,20 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 
 import java.util.Collection;
 
 public class Plugin extends org.elasticsearch.plugins.Plugin {
 
-    private ESLogger log = ESLoggerFactory.getLogger(Plugin.class.getName());
+    private ESLogger logger;
 
     private boolean enable;
 
     @Inject public Plugin(Settings settings) {
         this.enable = settings.getAsBoolean("duniter.enabled", true);
-
+        this.logger = Loggers.getLogger(Plugin.class.getName(), settings, new String[0]);
     }
 
     @Override
@@ -57,7 +58,7 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
 
     @Override
     public String description() {
-        return "Duniter ElasticSearch Plugin";
+        return "Duniter Core Plugin";
     }
 
     @Inject
@@ -71,7 +72,7 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
     public Collection<Module> nodeModules() {
         Collection<Module> modules = Lists.newArrayList();
         if (!enable) {
-            log.warn(description() + " has been disabled.");
+            logger.warn(description() + " has been disabled.");
             return modules;
         }
         modules.add(new SecurityModule());

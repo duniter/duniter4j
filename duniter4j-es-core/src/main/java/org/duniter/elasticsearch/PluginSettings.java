@@ -150,6 +150,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
 
     }
 
+    public Settings getSettings() {
+        return settings;
+    }
+
     public String getClusterName() {
         return settings.get("cluster.name", "?");
     }
@@ -286,8 +290,8 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.get("network.host", "locahost");
     }
 
-    public int getWebSocketPort()  {
-        return settings.getAsInt("duniter.ws.port", 81);
+    public String getWebSocketPort()  {
+        return settings.get("duniter.ws.port", "9400");
     }
 
     public boolean getWebSocketEnable()  {
@@ -296,6 +300,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
 
     public String[] getWebSocketChangesListenSource()  {
         return settings.getAsArray("duniter.ws.changes.listenSource", new String[]{"*"});
+    }
+
+    public boolean enableDocStats() {
+        return settings.getAsBoolean("duniter.data.stats.enable", false);
     }
 
     /* protected methods */

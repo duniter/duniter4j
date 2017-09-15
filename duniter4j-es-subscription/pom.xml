@@ -52,8 +52,6 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <!-- LOGGING DEPENDENCIES - SLF4J -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -70,14 +68,6 @@
       <optional>true</optional>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <optional>true</optional>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- JNA (need for OS shutdown hook) -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>

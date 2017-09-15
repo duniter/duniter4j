@@ -24,6 +24,7 @@ package org.duniter.elasticsearch.service;
 
 
 import com.google.common.collect.ImmutableList;
+import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
@@ -46,14 +47,16 @@ public class PeerService extends AbstractService  {
     private org.duniter.core.client.service.bma.BlockchainRemoteService blockchainRemoteService;
     private org.duniter.core.client.service.local.NetworkService networkService;
     private org.duniter.core.client.service.local.PeerService delegate;
+    private PeerDao peerDao;
     private ThreadPool threadPool;
 
     @Inject
     public PeerService(Duniter4jClient client, PluginSettings settings, ThreadPool threadPool,
-                       CryptoService cryptoService,
+                       CryptoService cryptoService, PeerDao peerDao,
                        final ServiceLocator serviceLocator){
         super("duniter.network.peer", client, settings, cryptoService);
         this.threadPool = threadPool;
+        this.peerDao = peerDao;
         threadPool.scheduleOnStarted(() -> {
             this.blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
             this.networkService = serviceLocator.getNetworkService();
@@ -131,5 +134,9 @@ public class PeerService extends AbstractService  {
         networkService.addPeersChangeListener(mainPeer,
                 peers -> logger.debug(String.format("[%s] Update peers: %s found", currencyName, CollectionUtils.size(peers))),
                 filterDef, sortDef, true /*autoreconnect*/, threadPool.scheduler());
+    }
+
+    public long getMaxLastUpTime(String currencyId) {
+        return peerDao.getMaxLastUpTime(currencyId);
     }
 }

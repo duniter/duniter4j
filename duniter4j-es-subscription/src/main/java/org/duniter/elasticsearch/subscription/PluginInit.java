@@ -48,11 +48,12 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     private final PluginSettings pluginSettings;
     private final ThreadPool threadPool;
     private final Injector injector;
-    private final static ESLogger logger = Loggers.getLogger("duniter.subscription");
+    private final ESLogger logger;
 
     @Inject
     public PluginInit(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
         super(settings);
+        this.logger = Loggers.getLogger("duniter.subscription", settings, new String[0]);
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
         this.injector = injector;
@@ -60,13 +61,12 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
     @Override
     protected void doStart() {
-        threadPool.scheduleOnClusterHealthStatus(() -> {
+        threadPool.scheduleOnClusterReady(() -> {
             createIndices();
 
             // Waiting cluster back to GREEN or YELLOW state, before synchronize
-            threadPool.scheduleOnClusterHealthStatus(this::doAfterStart,
-                    ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
-        }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+            threadPool.scheduleOnClusterReady(this::doAfterStart);
+        });
     }
 
     @Override

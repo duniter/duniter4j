@@ -72,7 +72,7 @@ public abstract class AbstractService implements Bean {
 
     public AbstractService(String loggerName, Duniter4jClient client, PluginSettings pluginSettings, CryptoService cryptoService) {
         super();
-        this.logger = Loggers.getLogger(loggerName);
+        this.logger = Loggers.getLogger(loggerName, pluginSettings.getSettings(), new String[0]);
         this.client = client;
         this.pluginSettings = pluginSettings;
         this.cryptoService = cryptoService;
@@ -85,7 +85,7 @@ public abstract class AbstractService implements Bean {
     protected void setIsReady(boolean ready) {
         this.ready = ready;
     }
-    protected boolean isReady() {
+    public boolean isReady() {
         return this.ready;
     }
 

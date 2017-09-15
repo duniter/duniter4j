@@ -1,8 +1,6 @@
-package org.duniter.core.client.model.bma;
-
-/*
+package org.duniter.elasticsearch.user;/*
  * #%L
- * UCoin Java :: Core Client API
+ * UCoin Java Client :: ElasticSearch Indexer
  * %%
  * Copyright (C) 2014 - 2016 EIS
  * %%
@@ -23,13 +21,6 @@ package org.duniter.core.client.model.bma;
  */
 
 
-public enum EndpointApi {
-    BASIC_MERKLED_API,
-    BMAS,
-    BMATOR,
-    ES_CORE_API,
-    ES_USER_API,
-    ES_SUBSCRIPTION_API,
-    MONIT_API,
-    UNDEFINED
+public class TestFixtures extends org.duniter.core.test.TestFixtures {
+
 }

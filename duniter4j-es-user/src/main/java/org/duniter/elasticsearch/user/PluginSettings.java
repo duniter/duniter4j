@@ -198,7 +198,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return "duniter4j-es-user-i18n";
     }
 
-    protected void initNodeKeyring() {
+    protected synchronized void initNodeKeyring() {
         if (this.nodeKeyPair != null) return;
         if (StringUtils.isNotBlank(getKeyringSalt()) &&
                 StringUtils.isNotBlank(getKeyringPassword())) {

@@ -7,6 +7,10 @@
   <packaging>pom</packaging>
   <name>Duniter4j : a Duniter Java Client API</name>
 
+  <prerequisites>
+    <maven>3.1.1</maven>
+  </prerequisites>
+
   <properties>
     <!-- source file encoding -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -279,7 +283,6 @@
         <artifactId>tyrus-container-grizzly-server</artifactId>
         <version>${tyrus.version}</version>
       </dependency>
-
     </dependencies>
   </dependencyManagement>
 
@@ -449,6 +452,29 @@
 
       </plugins>
     </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>3.1.1</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+
   </build>
 
   <!-- Repositories needed to find the dependencies -->

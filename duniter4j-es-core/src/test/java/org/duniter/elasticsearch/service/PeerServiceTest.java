@@ -53,6 +53,7 @@ public class PeerServiceTest {
 
     private CurrencyService currencyService;
     private PeerService service;
+    private org.duniter.core.client.service.local.PeerService localService;
     private NetworkRemoteService remoteService;
     private Configuration config;
     private Peer peer;
@@ -62,6 +63,7 @@ public class PeerServiceTest {
         currencyService = ServiceLocator.instance().getBean(CurrencyService.class);
         service = ServiceLocator.instance().getBean(PeerService.class);
         remoteService = ServiceLocator.instance().getNetworkRemoteService();
+        localService = ServiceLocator.instance().getPeerService();
         config = Configuration.instance();
         peer = new Peer.Builder()
                 .setHost(config.getNodeHost())
@@ -101,7 +103,7 @@ public class PeerServiceTest {
         peer2.getStats().setLastUpTime(peer1.getStats().getLastUpTime() - 150); // Set UP just before the peer 1
 
         // Save peers
-        service.savePeers(peer1.getCurrency(), ImmutableList.of(peer1, peer2));
+        localService.save(peer1.getCurrency(), ImmutableList.of(peer1, peer2), false);
 
         // Try to read
         Long maxLastUpTime = service.getMaxLastUpTime(peer1.getCurrency());

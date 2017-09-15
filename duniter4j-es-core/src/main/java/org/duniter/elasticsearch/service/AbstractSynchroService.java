@@ -25,7 +25,9 @@ package org.duniter.elasticsearch.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.HttpService;
@@ -39,27 +41,28 @@ import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
+import org.duniter.elasticsearch.model.SearchScrollResponse;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by blavenie on 27/10/16.
  */
 public abstract class AbstractSynchroService extends AbstractService {
+
+    private static final String SCROLL_PARAM_VALUE = "1m";
 
     protected HttpService httpService;
 
@@ -71,42 +74,70 @@ public abstract class AbstractSynchroService extends AbstractService {
         super("duniter.network.p2p", client, settings,cryptoService);
         threadPool.scheduleOnStarted(() -> {
             httpService = serviceLocator.getHttpService();
+            setIsReady(true);
         });
     }
 
     /* -- protected methods -- */
 
-    protected Peer getPeerFromAPI(String filterApiName) {
+    protected Peer getPeerFromAPI(EndpointApi api) {
         // TODO : get peers from currency - use peering BMA API, and select peers with ESA (ES API)
-        Peer peer = Peer.newBuilder().setHost(pluginSettings.getDataSyncHost()).setPort(pluginSettings.getDataSyncPort()).build();
+        Peer peer = Peer.newBuilder()
+                .setHost(pluginSettings.getDataSyncHost())
+                .setPort(pluginSettings.getDataSyncPort())
+                .setApi(api.name())
+                .build();
+
         return peer;
     }
 
-    protected long importChangesRemap(SynchroResult result,
-                                      Peer peer,
-                                      String fromIndex, String fromType,
-                                      String toIndex, String toType,
-                                      long sinceTime) {
-        return doImportChanges(result, peer, fromIndex, fromType, toIndex, toType, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, sinceTime);
+    protected void safeSynchronizeIndex(Peer peer, String index, String type, long fromTime, SynchroResult result) {
+        safeSynchronizeIndexRemap(peer, index, type, index, type, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, fromTime, result);
     }
 
-    protected long importChanges(SynchroResult result, Peer peer, String index, String type, long sinceTime) {
-        return doImportChanges(result, peer, index, type, index, type, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, sinceTime);
+    protected void safeSynchronizeIndexRemap(Peer peer,
+                                             String fromIndex, String fromType,
+                                             String toIndex, String toType,
+                                             long fromTime,
+                                             SynchroResult result) {
+        safeSynchronizeIndexRemap(peer, fromIndex, fromType, toIndex, toType, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, fromTime, result);
     }
 
-    protected long importChanges(SynchroResult result, Peer peer, String index, String type,
-                                 String issuerFieldName, String versionFieldName, long sinceTime) {
-        return doImportChanges(result, peer, index, type, index, type, issuerFieldName, versionFieldName, sinceTime);
+    protected void safeSynchronizeIndexRemap(Peer peer,
+                                             String fromIndex, String fromType,
+                                             String toIndex, String toType,
+                                             String issuerFieldName, String versionFieldName,
+                                             long fromTime,
+                                             SynchroResult result) {
+        Preconditions.checkArgument(fromTime >= 0);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("[%s] [%s/%s] Synchronizing where [%s > %s]...", peer, toIndex, toType, versionFieldName, fromTime));
+        }
+
+        QueryBuilder fromQuery = createDefaultQuery(fromTime);
+        safeSynchronizeIndexRemap(peer, fromIndex, fromType, toIndex, toType, issuerFieldName, versionFieldName, fromQuery, result);
     }
 
-    /* -- private methods -- */
+    protected void safeSynchronizeIndex(Peer peer,
+                                        String index, String type,
+                                        QueryBuilder query,
+                                        SynchroResult result) {
+        Preconditions.checkNotNull(query);
 
-    private long doImportChanges(SynchroResult result,
-                                 Peer peer,
-                                 String fromIndex, String fromType,
-                                 String toIndex, String toType,
-                                 String issuerFieldName, String versionFieldName, long sinceTime) {
-        Preconditions.checkNotNull(result);
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("[%s] [%s/%s] Synchronizing using query [%s]...", peer, index, type, query.toString()));
+        }
+
+        safeSynchronizeIndexRemap(peer, index, type, index, type, Record.PROPERTY_ISSUER, Record.PROPERTY_TIME, query, result);
+    }
+
+    protected void safeSynchronizeIndexRemap(Peer peer,
+                                             String fromIndex, String fromType,
+                                             String toIndex, String toType,
+                                             String issuerFieldName, String versionFieldName,
+                                             QueryBuilder query,
+                                             SynchroResult result) {
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(fromIndex);
         Preconditions.checkNotNull(fromType);
@@ -114,89 +145,136 @@ public abstract class AbstractSynchroService extends AbstractService {
         Preconditions.checkNotNull(toType);
         Preconditions.checkNotNull(issuerFieldName);
         Preconditions.checkNotNull(versionFieldName);
+        Preconditions.checkNotNull(query);
+        Preconditions.checkNotNull(result);
 
-        long offset = 0;
-        int size = pluginSettings.getIndexBulkSize() / 10;
-        boolean stop = false;
-        while(!stop) {
-            long currentRowCount = doImportChangesAtOffset(result, peer,
-                    fromIndex, fromType, toIndex, toType,
-                    issuerFieldName, versionFieldName, sinceTime,
-                    offset, size);
-            offset += currentRowCount;
-            stop = currentRowCount < size;
+        try {
+            synchronizeIndexRemap(peer, fromIndex, fromType, toIndex, toType, issuerFieldName, versionFieldName, query, result);
         }
-
-        return offset; // = total rows
+        catch(Exception e1) {
+            // Log the first error
+            if (logger.isDebugEnabled()) {
+                logger.error(e1.getMessage(), e1);
+            }
+            else {
+                logger.error(e1.getMessage());
+            }
+        }
     }
 
-    private long doImportChangesAtOffset(SynchroResult result, Peer peer,
-                                 String fromIndex, String fromType,
-                                 String toIndex, String toType,
-                                 String issuerFieldName, String versionFieldName,
-                                 long sinceTime,
-                                 long offset,
-                                 int size) {
+    private void synchronizeIndexRemap(Peer peer,
+                                       String fromIndex, String fromType,
+                                       String toIndex, String toType,
+                                       String issuerFieldName,
+                                       String versionFieldName,
+                                       QueryBuilder query,
+                                       SynchroResult result) {
 
+        if (!client.existsIndex(toIndex)) {
+           throw new TechnicalException(String.format("Unable to import changes. Index [%s] not exists", toIndex));
+        }
 
-        // Create the search query
-        BytesStreamOutput bos;
+        ObjectMapper objectMapper = getObjectMapper();
+
+        long counter = 0;
+        boolean stop = false;
+        String scrollId = null;
+        int total = 0;
+        while(!stop) {
+            SearchScrollResponse response;
+            if (scrollId == null) {
+                HttpUriRequest request = createScrollRequest(peer, fromIndex, fromType, query);
+                response = executeAndParseRequest(peer, fromIndex, fromType, request);
+                if (response != null) {
+                    scrollId = response.getScrollId();
+                    total = response.getHits().getTotal();
+                    if (total > 0 && logger.isDebugEnabled()) {
+                        logger.debug(String.format("[%s] [%s/%s] %s docs to check...", peer, toIndex, toType, total));
+                    }
+                }
+            }
+            else {
+                HttpUriRequest request = createNextScrollRequest(peer, scrollId);
+                response =  executeAndParseRequest(peer, fromIndex, fromType, request);
+            }
+
+            if (response == null) {
+                stop = true;
+            }
+            else {
+                counter += fetchAndIndex(peer, toIndex, toType, issuerFieldName, versionFieldName, response, objectMapper, result);
+                stop = counter >= total;
+            }
+        }
+    }
+
+    private QueryBuilder createDefaultQuery(long fromTime) {
+
+        return QueryBuilders.boolQuery()
+                .should(QueryBuilders.rangeQuery("time").gte(fromTime));
+    }
+
+    private HttpPost createScrollRequest(Peer peer,
+                                         String fromIndex, String fromType,
+                                         QueryBuilder query) {
+        HttpPost httpPost = new HttpPost(httpService.getPath(peer, fromIndex, fromType, "_search?scroll=" + SCROLL_PARAM_VALUE));
+        httpPost.setHeader("Content-Type", "application/json;charset=UTF-8");
+
         try {
-            bos = new BytesStreamOutput();
+            // Query to String
+            BytesStreamOutput bos = new BytesStreamOutput();
             XContentBuilder builder = new XContentBuilder(JsonXContent.jsonXContent, bos);
-            builder.startObject()
-                    .startObject("query")
-                    // bool.should
-                    .startObject("bool")
-                    .startObject("should")
-                    // time > sinceDate
-                    .startObject("range")
-                    .startObject("time")
-                    .field("gte", sinceTime)
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    // end: query
-                    .endObject()
-                    .field("from", offset)
-                    .field("size", size)
-                    .endObject();
+            query.toXContent(builder, null);
             builder.flush();
 
-        } catch(IOException e) {
-            throw new TechnicalException("Error while preparing default index analyzer: " + e.getMessage(), e);
-        }
+            // Sort on "_doc" - see https://www.elastic.co/guide/en/elasticsearch/reference/2.4/search-request-scroll.html
+            String content = String.format("{\"query\":%s,\"size\":%s, \"sort\": [\"_doc\"]}",
+                    bos.bytes().toUtf8(),
+                    pluginSettings.getIndexBulkSize());
+            httpPost.setEntity(new StringEntity(content, "UTF-8"));
 
-        // Execute query
-        JsonNode node;
-        try {
-            HttpPost httpPost = new HttpPost(httpService.getPath(peer, fromIndex, fromType, "_search"));
-            httpPost.setHeader("Content-Type", "application/json;charset=UTF-8");
-            httpPost.setEntity(new ByteArrayEntity(bos.bytes().array()));
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("[%s] [%s/%s] Sending POST request: %s", peer, fromIndex, fromType, new String(bos.bytes().array())));
+                logger.trace(String.format("[%s] [%s/%s] Sending POST scroll request: %s", peer, fromIndex, fromType, content));
             }
-            // Parse response
-            node = httpService.executeRequest(httpPost, JsonNode.class, String.class);
-        }
-        catch(HttpUnauthorizeException e) {
-            logger.error(String.format("[%s] [%s/%s] Unable to access (%s). Skipping data import.", peer, fromIndex, fromType, e.getMessage()));
-            return 0;
-        }
-        catch(TechnicalException e) {
-            throw new TechnicalException("Unable to parse search response", e);
-        }
-        catch(Exception e) {
-            throw new TechnicalException("Unable to parse search response", e);
+
+        } catch (IOException e) {
+            throw new TechnicalException("Error while preparing search query: " + e.getMessage(), e);
         }
 
-        node = node.get("hits");
-        int total = node == null ? 0 : node.get("total").asInt(0);
-        if (logger.isDebugEnabled() && offset == 0) {
-            logger.debug(String.format("[%s] [%s/%s] Rows to update: %s", peer, toIndex, toType, total));
-        }
+        return httpPost;
+    }
 
+    private HttpPost createNextScrollRequest(Peer peer,
+                                             String scrollId) {
+
+        HttpPost httpPost = new HttpPost(httpService.getPath(peer, "_search", "scroll"));
+        httpPost.setHeader("Content-Type", "application/json;charset=UTF-8");
+        httpPost.setEntity(new StringEntity(String.format("{\"scroll\": \"%s\", \"scroll_id\": \"%s\"}",
+                SCROLL_PARAM_VALUE,
+                scrollId), "UTF-8"));
+        return httpPost;
+    }
+
+    private SearchScrollResponse executeAndParseRequest(Peer peer, String fromIndex, String fromType, HttpUriRequest request) {
+        try {
+            // Execute query & parse response
+            JsonNode node = httpService.executeRequest(request, JsonNode.class, String.class);
+            return node == null ? null : new SearchScrollResponse(node);
+        } catch (HttpUnauthorizeException e) {
+            throw new TechnicalException(String.format("[%s] [%s/%s] Unable to access (%s).", peer, fromIndex, fromType, e.getMessage()), e);
+        } catch (TechnicalException e) {
+            throw new TechnicalException(String.format("[%s] [%s/%s] Unable to synchronize: %s", peer, fromIndex, fromType, e.getMessage()), e);
+        } catch (Exception e) {
+            throw new TechnicalException(String.format("[%s] [%s/%s] Unable to parse response: ", peer, fromIndex, fromType, e.getMessage()), e);
+        }
+    }
+
+    private long fetchAndIndex(final Peer peer,
+                               String toIndex, String toType,
+                               String issuerFieldName, String versionFieldName,
+                               SearchScrollResponse response,
+                               final ObjectMapper objectMapper,
+                               SynchroResult result) {
         boolean debug = logger.isTraceEnabled();
 
         long counter = 0;
@@ -204,17 +282,19 @@ public abstract class AbstractSynchroService extends AbstractService {
         long insertHits = 0;
         long updateHits = 0;
         long invalidSignatureHits = 0;
-        ObjectMapper objectMapper = getObjectMapper();
 
-        if (offset < total) {
+        BulkRequestBuilder bulkRequest = client.prepareBulk();
+        bulkRequest.setRefresh(true);
 
-            BulkRequestBuilder bulkRequest = client.prepareBulk();
-            bulkRequest.setRefresh(true);
+        for (Iterator<SearchScrollResponse.Hit> hits = response.getHits(); hits.hasNext();){
+            SearchScrollResponse.Hit hit = hits.next();
+            String id = hit.getId();
+            JsonNode source = hit.getSource();
 
-            for (Iterator<JsonNode> hits = node.get("hits").iterator(); hits.hasNext();){
-                JsonNode hit = hits.next();
-                String id = hit.get("_id").asText();
-                JsonNode source = hit.get("_source");
+            if (source == null) {
+                logger.error("No source for doc " + id);
+            }
+            else {
                 counter++;
 
                 try {
@@ -227,14 +307,11 @@ public abstract class AbstractSynchroService extends AbstractService {
                         throw new InvalidFormatException(String.format("Invalid format: missing or null %s field.", versionFieldName));
                     }
 
-                    GetResponse existingDoc = client.prepareGet(toIndex, toType, id)
-                            .setFields(versionFieldName, issuerFieldName)
-                            .execute().actionGet();
-
-                    boolean doInsert = !existingDoc.isExists();
+                    Map<String, Object> existingFields = client.getFieldsById(toIndex, toType, id, versionFieldName, issuerFieldName);
+                    boolean exists = existingFields != null;
 
                     // Insert (new doc)
-                    if (doInsert) {
+                    if (!exists) {
 
                         if (debug) {
                             logger.trace(String.format("[%s] [%s/%s] insert _id=%s\n%s", peer, toIndex, toType, id, source.toString()));
@@ -244,7 +321,7 @@ public abstract class AbstractSynchroService extends AbstractService {
                         // Il semble que le format JSON ne soit pas le même que celui qui a été signé
                         try {
                             readAndVerifyIssuerSignature(source, issuerFieldName);
-                        } catch(InvalidSignatureException e) {
+                        } catch (InvalidSignatureException e) {
                             invalidSignatureHits++;
                             // FIXME: should enable this log (after issue #11 resolution)
                             //logger.warn(String.format("[%s] [%s/%s/%s] %s.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
@@ -260,14 +337,14 @@ public abstract class AbstractSynchroService extends AbstractService {
                     else {
 
                         // Check same issuer
-                        String existingIssuer = (String)existingDoc.getFields().get(issuerFieldName).getValue();
+                        String existingIssuer = (String) existingFields.get(issuerFieldName);
                         if (!Objects.equals(issuer, existingIssuer)) {
                             throw new InvalidFormatException(String.format("Invalid document: not same [%s].", issuerFieldName));
                         }
 
                         // Check version
-                        Long existingVersion = ((Number)existingDoc.getFields().get(versionFieldName).getValue()).longValue();
-                        boolean doUpdate = (existingVersion == null || version > existingVersion);
+                        Number existingVersion = ((Number) existingFields.get(versionFieldName));
+                        boolean doUpdate = (existingVersion == null || version > existingVersion.longValue());
 
                         if (doUpdate) {
                             if (debug) {
@@ -278,7 +355,7 @@ public abstract class AbstractSynchroService extends AbstractService {
                             // Il semble que le format JSON ne soit pas le même que celui qui a été signé
                             try {
                                 readAndVerifyIssuerSignature(source, issuerFieldName);
-                            } catch(InvalidSignatureException e) {
+                            } catch (InvalidSignatureException e) {
                                 invalidSignatureHits++;
                                 // FIXME: should enable this log (after issue #11 resolution)
                                 //logger.warn(String.format("[%s] [%s/%s/%s] %s.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
@@ -291,40 +368,37 @@ public abstract class AbstractSynchroService extends AbstractService {
                         }
                     }
 
-                }
-                catch (DuniterElasticsearchException e) {
+                } catch (DuniterElasticsearchException e) {
                     if (logger.isDebugEnabled()) {
                         logger.warn(String.format("[%s] [%s/%s/%s] %s. Skipping.\n%s", peer, toIndex, toType, id, e.getMessage(), source.toString()));
-                    }
-                    else {
+                    } else {
                         logger.warn(String.format("[%s] [%s/%s/%s] %s. Skipping.", peer, toIndex, toType, id, e.getMessage()));
                     }
                     // Skipping document (continue)
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.error(String.format("[%s] [%s/%s/%s] %s. Skipping.", peer, toIndex, toType, id, e.getMessage()), e);
                     // Skipping document (continue)
                 }
             }
+        }
 
-            if (bulkRequest.numberOfActions() > 0) {
+        if (bulkRequest.numberOfActions() > 0) {
 
-                // Flush the bulk if not empty
-                BulkResponse bulkResponse = bulkRequest.get();
-                Set<String> missingDocIds = new LinkedHashSet<>();
+            // Flush the bulk if not empty
+            BulkResponse bulkResponse = bulkRequest.get();
+            Set<String> missingDocIds = new LinkedHashSet<>();
 
-                // If failures, continue but save missing blocks
-                if (bulkResponse.hasFailures()) {
-                    // process failures by iterating through each bulk response item
-                    for (BulkItemResponse itemResponse : bulkResponse) {
-                        boolean skip = !itemResponse.isFailed()
-                                || missingDocIds.contains(itemResponse.getId());
-                        if (!skip) {
-                            if (debug) {
-                                logger.debug(String.format("[%s] [%s/%s] could not process _id=%s: %s. Skipping.", peer, toIndex, toType, itemResponse.getId(), itemResponse.getFailureMessage()));
-                            }
-                            missingDocIds.add(itemResponse.getId());
+            // If failures, continue but save missing blocks
+            if (bulkResponse.hasFailures()) {
+                // process failures by iterating through each bulk response item
+                for (BulkItemResponse itemResponse : bulkResponse) {
+                    boolean skip = !itemResponse.isFailed()
+                            || missingDocIds.contains(itemResponse.getId());
+                    if (!skip) {
+                        if (debug) {
+                            logger.debug(String.format("[%s] [%s/%s] could not process _id=%s: %s. Skipping.", peer, toIndex, toType, itemResponse.getId(), itemResponse.getFailureMessage()));
                         }
+                        missingDocIds.add(itemResponse.getId());
                     }
                 }
             }
@@ -337,4 +411,5 @@ public abstract class AbstractSynchroService extends AbstractService {
 
         return counter;
     }
+
 }

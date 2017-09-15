@@ -154,6 +154,11 @@ duniter.data.sync.enable: true
 duniter.data.sync.host: g1.data.duniter.fr
 duniter.data.sync.port: 443
 
+#
+# Should maintain stats on data ?
+#
+duniter.data.stats.enable: true
+
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
 # Enable mail module ?

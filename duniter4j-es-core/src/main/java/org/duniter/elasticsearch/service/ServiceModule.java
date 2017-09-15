@@ -49,6 +49,7 @@ public class ServiceModule extends AbstractModule implements Module {
         bind(ThreadPool.class).asEagerSingleton();
         bind(PluginInit.class).asEagerSingleton();
         bind(ChangeService.class).asEagerSingleton();
+        bind(DocStatService.class).asEagerSingleton();
 
         // blockchain indexation services
         bind(BlockchainService.class).asEagerSingleton();

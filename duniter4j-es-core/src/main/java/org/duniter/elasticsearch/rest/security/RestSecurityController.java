@@ -51,18 +51,24 @@ public class RestSecurityController extends AbstractLifecycleComponent<RestSecur
         super(settings);
         this.enable = pluginSettings.enableSecurity();
         this.allowRulesByMethod = new HashMap<>();
+        if (!enable) {
+            log.warn("/!\\ Security has been disable using option [duniter.security.enable]. This is NOT recommended in production !");
+        }
     }
 
     public RestSecurityController allowIndexType(RestRequest.Method method, String index, String type) {
-        return allow(method, String.format("/%s/%s(/.*)?", index, type));
+        allow(method, String.format("/%s/%s(/.*)?", index, type));
+        return this;
     }
 
     public RestSecurityController allowPostSearchIndexType(String index, String type) {
-        return allow(RestRequest.Method.POST, String.format("/%s/%s/_search", index, type));
+        allow(RestRequest.Method.POST, String.format("/%s/%s/_search", index, type));
+        return this;
     }
 
     public RestSecurityController allowImageAttachment(String index, String type, String field) {
-        return allow(RestRequest.Method.GET, String.format("/%s/%s/[^/]+/_image/%s.*", index, type, field));
+        allow(RestRequest.Method.GET, String.format("/%s/%s/[^/]+/_image/%s.*", index, type, field));
+        return this;
     }
 
     public RestSecurityController allow(RestRequest.Method method, String regexPath) {

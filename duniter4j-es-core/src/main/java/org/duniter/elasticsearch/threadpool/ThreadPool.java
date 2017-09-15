@@ -109,7 +109,7 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
     }
 
     /**
-     * Schedules an rest when cluster is ready
+     * Schedules an rest when cluster is ready AND has one of the expected health status
      *
      * @param job the rest to execute
      * @param expectedStatus expected health status, to run the job
@@ -118,12 +118,25 @@ public class ThreadPool extends AbstractLifecycleComponent<ThreadPool> {
     public void scheduleOnClusterHealthStatus(Runnable job, ClusterHealthStatus... expectedStatus) {
         Preconditions.checkNotNull(job);
 
+        Preconditions.checkArgument(expectedStatus.length > 0);
+
         scheduleOnStarted(() -> {
             if (waitClusterHealthStatus(expectedStatus)) {
                 // continue
                 job.run();
             }
         });
+    }
+
+    /**
+     * Schedules an rest when cluster is ready
+     *
+     * @param job the rest to execute
+     * @param expectedStatus expected health status, to run the job
+     * @return a ScheduledFuture who's get will return when the task is complete and throw an exception if it is canceled
+     */
+    public void scheduleOnClusterReady(Runnable job) {
+        scheduleOnClusterHealthStatus(job, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
     }
 
     /**

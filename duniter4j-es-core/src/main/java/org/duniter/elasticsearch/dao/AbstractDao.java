@@ -39,7 +39,8 @@ import org.elasticsearch.common.logging.Loggers;
 public abstract class AbstractDao implements Bean {
 
 
-    protected final ESLogger logger;
+    protected final String loggerName;
+    protected ESLogger logger;
 
     protected Duniter4jClient client;
     protected CryptoService cryptoService;
@@ -47,7 +48,7 @@ public abstract class AbstractDao implements Bean {
 
     public AbstractDao(String loggerName) {
         super();
-        this.logger = Loggers.getLogger(loggerName);
+        this.loggerName = loggerName;
     }
 
     @Inject
@@ -63,6 +64,7 @@ public abstract class AbstractDao implements Bean {
     @Inject
     public void setPluginSettings(PluginSettings pluginSettings) {
         this.pluginSettings = pluginSettings;
+        this.logger = Loggers.getLogger(loggerName, pluginSettings.getSettings(), new String[0]);
     }
 
     /* -- protected methods  -- */

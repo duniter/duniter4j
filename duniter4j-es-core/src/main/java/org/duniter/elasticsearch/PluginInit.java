@@ -24,13 +24,11 @@ package org.duniter.elasticsearch;
 
 import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.elasticsearch.dao.BlockDao;
-import org.duniter.elasticsearch.dao.BlockStatDao;
-import org.duniter.elasticsearch.dao.PeerDao;
-import org.duniter.elasticsearch.dao.MovementDao;
+import org.duniter.elasticsearch.dao.*;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
 import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.CurrencyService;
+import org.duniter.elasticsearch.service.DocStatService;
 import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
@@ -50,11 +48,12 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     private final PluginSettings pluginSettings;
     private final ThreadPool threadPool;
     private final Injector injector;
-    private final static ESLogger logger = Loggers.getLogger("duniter.core");
+    private final ESLogger logger;
 
     @Inject
     public PluginInit(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
         super(settings);
+        this.logger = Loggers.getLogger("duniter.core", settings, new String[0]);
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
         this.injector = injector;
@@ -62,13 +61,13 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
     @Override
     protected void doStart() {
-        threadPool.scheduleOnClusterHealthStatus(() -> {
+        threadPool.scheduleOnClusterReady(() -> {
             createIndices();
 
             // Waiting cluster back to GREEN or YELLOW state, before doAfterStart
-            threadPool.scheduleOnClusterHealthStatus(this::doAfterStart, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+            threadPool.scheduleOnClusterReady(this::doAfterStart);
 
-        }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+        });
     }
 
     @Override
@@ -92,6 +91,12 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(CurrencyService.class)
                     .deleteIndex()
                     .createIndexIfNotExists();
+
+            if (pluginSettings.enableDocStats()) {
+                injector.getInstance(DocStatService.class)
+                        .deleteIndex()
+                        .createIndexIfNotExists();
+            }
 
             if (logger.isInfoEnabled()) {
                 logger.info("Reloading indices [OK]");
@@ -121,6 +126,11 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(CurrencyService.class)
                     .createIndexIfNotExists();
 
+            if (pluginSettings.enableDocStats()) {
+                injector.getInstance(DocStatService.class)
+                        .createIndexIfNotExists();
+            }
+
             if (logger.isInfoEnabled()) {
                 logger.info("Checking indices [OK]");
             }
@@ -131,7 +141,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
         // Synchronize blockchain
         if (pluginSettings.enableBlockchain()) {
-
 
             Peer peer = pluginSettings.checkAndGetPeer();
 
@@ -146,7 +155,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             }
 
             final String currencyName = currency.getCurrencyName();
-
 
             // Add access security rules, for the currency indices
             injector.getInstance(RestSecurityController.class)
@@ -183,6 +191,12 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                             currencyName,
                             MovementDao.TYPE);
 
+            /* TODO à décommenter quand les pending seront sauvegardés
+            injector.getInstance(DocStatService.class)
+            .registerIndex(currencyName,
+                            PendingRegistrationDao.TYPE);
+             */
+
             // If partial reload (from a block)
             if (pluginSettings.reloadBlockchainIndices() && pluginSettings.reloadBlockchainIndicesFrom() > 0) {
                 if (logger.isWarnEnabled()) {
@@ -200,7 +214,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
 
             // Wait end of currency index creation, then index blocks
-            threadPool.scheduleOnClusterHealthStatus(() -> {
+            threadPool.scheduleOnClusterReady(() -> {
 
                 try {
                     // Index blocks (and listen if new block appear)
@@ -215,14 +229,39 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     if (logger.isInfoEnabled()) {
                         logger.info(String.format("[%s] Indexing blockchain [OK]", currencyName));
                     }
+
                 } catch(Throwable e){
                     logger.error(String.format("[%s] Indexing blockchain error: %s", currencyName, e.getMessage()), e);
                     throw e;
                 }
 
-            }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
-
+            });
 
         }
+
+        // If doc stats enable
+        if (pluginSettings.enableDocStats()) {
+
+            // Add access to docstat index
+            injector.getInstance(RestSecurityController.class)
+                    .allowIndexType(RestRequest.Method.GET,
+                            DocStatDao.INDEX,
+                            DocStatDao.TYPE)
+                    .allowPostSearchIndexType(
+                            DocStatDao.INDEX,
+                            DocStatDao.TYPE);
+
+            // Add index [currency/record] to stats
+            final DocStatService docStatService = injector
+                    .getInstance(DocStatService.class)
+                    .registerIndex(CurrencyService.INDEX, CurrencyService.RECORD_TYPE);
+
+            // Wait end of currency index creation, then index blocks
+            threadPool.scheduleOnClusterReady(docStatService::start);
+        }
+
+        // Allow scroll search
+        injector.getInstance(RestSecurityController.class)
+                .allow(RestRequest.Method.POST, "^_search/scroll$");
     }
 }

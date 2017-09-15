@@ -23,7 +23,11 @@ package org.duniter.elasticsearch.user;
  */
 
 import org.duniter.elasticsearch.PluginSettings;
+import org.duniter.elasticsearch.service.DocStatService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
+import org.duniter.elasticsearch.user.dao.page.RegistryCommentDao;
+import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
+import org.duniter.elasticsearch.user.dao.page.RegistryRecordDao;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.*;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
@@ -44,12 +48,13 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     private final PluginSettings pluginSettings;
     private final ThreadPool threadPool;
     private final Injector injector;
-    private final static ESLogger logger = Loggers.getLogger("duniter.user");
+    private final ESLogger logger;
     private final String clusterName;
 
     @Inject
     public PluginInit(Settings settings, PluginSettings pluginSettings, ThreadPool threadPool, final Injector injector) {
         super(settings);
+        this.logger = Loggers.getLogger("duniter.user", settings, new String[0]);
         this.pluginSettings = pluginSettings;
         this.threadPool = threadPool;
         this.injector = injector;
@@ -58,13 +63,13 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
     @Override
     protected void doStart() {
-        threadPool.scheduleOnClusterHealthStatus(() -> {
+        threadPool.scheduleOnClusterReady(() -> {
             createIndices();
 
             // Waiting cluster back to GREEN or YELLOW state, before doAfterStart
-            threadPool.scheduleOnClusterHealthStatus(this::doAfterStart, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+            threadPool.scheduleOnClusterReady(this::doAfterStart);
 
-        }, ClusterHealthStatus.YELLOW, ClusterHealthStatus.GREEN);
+        });
     }
 
     @Override
@@ -142,11 +147,27 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             }
         }
 
+        // Register stats on indices
+        if (pluginSettings.enableDocStats()) {
+            injector.getInstance(DocStatService.class)
+                    .registerIndex(UserService.INDEX, UserService.PROFILE_TYPE)
+                    .registerIndex(UserService.INDEX, UserService.SETTINGS_TYPE)
+                    .registerIndex(MessageService.INDEX, MessageService.INBOX_TYPE)
+                    .registerIndex(MessageService.INDEX, MessageService.OUTBOX_TYPE)
+                    .registerIndex(UserInvitationService.INDEX, UserInvitationService.CERTIFICATION_TYPE)
+                    .registerIndex(UserEventService.INDEX, UserEventService.EVENT_TYPE)
+                    .registerIndex(RegistryIndexDao.INDEX, RegistryRecordDao.TYPE)
+                    .registerIndex(RegistryIndexDao.INDEX, RegistryCommentDao.TYPE)
+                    .registerIndex(GroupService.INDEX, GroupService.RECORD_TYPE)
+                    .registerIndex(HistoryService.INDEX, HistoryService.DELETE_TYPE)
+            ;
+        }
+
     }
 
     protected void doAfterStart() {
+        // Synchronize
         if (pluginSettings.enableDataSync()) {
-            // Synchronize
             injector.getInstance(SynchroService.class).synchronize();
         }
 

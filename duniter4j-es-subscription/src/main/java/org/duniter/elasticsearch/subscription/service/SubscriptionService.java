@@ -32,6 +32,7 @@ import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.DateUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
@@ -42,7 +43,6 @@ import org.duniter.elasticsearch.subscription.dao.record.SubscriptionRecordDao;
 import org.duniter.elasticsearch.subscription.model.SubscriptionExecution;
 import org.duniter.elasticsearch.subscription.model.SubscriptionRecord;
 import org.duniter.elasticsearch.subscription.model.email.EmailSubscription;
-import org.duniter.elasticsearch.subscription.util.DateUtils;
 import org.duniter.elasticsearch.subscription.util.stringtemplate.DateRenderer;
 import org.duniter.elasticsearch.subscription.util.stringtemplate.StringRenderer;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
@@ -243,7 +243,7 @@ public class SubscriptionService extends AbstractService {
         }
 
         try {
-            EmailSubscription.Content content = objectMapper.readValue(jsonContent, EmailSubscription.Content.class);
+            EmailSubscription.Content content = getObjectMapper().readValue(jsonContent, EmailSubscription.Content.class);
             subscription.setContent(content);
         } catch(Exception e) {
             logger.error(String.format("Could not parse email subscription content [%s]: %s", jsonContent, e.getMessage()));
@@ -437,7 +437,7 @@ public class SubscriptionService extends AbstractService {
     private String toJson(Record record, boolean cleanHashAndSignature) {
         Preconditions.checkNotNull(record);
         try {
-            String json = objectMapper.writeValueAsString(record);
+            String json = getObjectMapper().writeValueAsString(record);
             if (cleanHashAndSignature) {
                 json = JacksonUtils.removeAttribute(json, Record.PROPERTY_SIGNATURE);
                 json = JacksonUtils.removeAttribute(json, Record.PROPERTY_HASH);
