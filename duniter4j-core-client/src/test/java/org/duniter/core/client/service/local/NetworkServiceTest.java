@@ -53,7 +53,7 @@ public class NetworkServiceTest {
 	}
 
 	@Test
-	public void start() throws Exception {
+	public void getPeers() throws Exception {
 
 		List<Peer> peers = service.getPeers(peer);
 

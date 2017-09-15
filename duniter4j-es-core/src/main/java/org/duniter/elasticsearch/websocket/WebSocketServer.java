@@ -42,7 +42,6 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -59,12 +58,14 @@ public class WebSocketServer {
 
 
     public static final String WS_PATH = "/ws";
-    private final ESLogger log = Loggers.getLogger("duniter.ws");
+
+    private final ESLogger logger;
     private static final String PORT_RANGE_REGEXP = "[0-9]+-[0-9]+";
     private List<Class<?>> endPoints = new ArrayList<>();
 
     @Inject
     public WebSocketServer(final PluginSettings pluginSettings, ThreadPool threadPool) {
+        logger = Loggers.getLogger("duniter.ws", pluginSettings.getSettings(), new String[0]);
         // If WS enable
         if (pluginSettings.getWebSocketEnable()) {
             // When node started
@@ -76,7 +77,6 @@ public class WebSocketServer {
             });
         }
     }
-
 
     public void addEndPoint(Class<?> endPoint) {
         endPoints.add(endPoint);
@@ -93,7 +93,7 @@ public class WebSocketServer {
         Preconditions.checkNotNull(portOrRange);
         Preconditions.checkArgument(portOrRange.matches(PORT_RANGE_REGEXP) || portOrRange.matches("[0-9]+"));
 
-        log.info(String.format("Starting Websocket server... {%s:%s}", host, portOrRange));
+        logger.info(String.format("Starting Websocket server... {%s:%s}", host, portOrRange));
 
         String[] rangeParts = portOrRange.split("-");
         int port =  Integer.parseInt(rangeParts[0]);
@@ -131,11 +131,11 @@ public class WebSocketServer {
         }
 
         if (started) {
-            log.info(String.format("Websocket server started {%s:%s} on path [%s]", host, port, WS_PATH));
+            logger.info(String.format("Websocket server started {%s:%s} on path [%s]", host, port, WS_PATH));
         }
         else {
             String error = String.format("Failed to start Websocket server. Could not bind address {%s:%s}", host, port);
-            log.error(error);
+            logger.error(error);
             throw new TechnicalException(error);
         }
     }

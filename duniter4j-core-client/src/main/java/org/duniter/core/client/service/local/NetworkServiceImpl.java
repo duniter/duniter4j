@@ -41,6 +41,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.*;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.concurrent.CompletableFutures;
+import org.duniter.core.util.http.InetAddressUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -173,8 +174,14 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                                     peer = mainPeer;
                                 }
 
+                                // Exclude peer with only a local IPv4 address
+                                else if (InetAddressUtils.isLocalIPv4Address(peer.getHost())) {
+                                  return null;
+                                }
+
                                 return asyncRefreshPeer(peer, memberUids, pool);
                             })
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toList());
                 });
     }
@@ -434,14 +441,28 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         if (CollectionUtils.isEmpty(leaves)) return new ArrayList<>(); // should never occur
 
+        List<Peer> result = new ArrayList<>();
+
         // If less than 100 node, get it in ONE call
         if (leaves.size() < 100) {
-            return networkRemoteService.getPeers(peer);
+            List<Peer> peers = networkRemoteService.getPeers(peer);
+
+            if (CollectionUtils.isNotEmpty(peers)) {
+                for (Peer peerEp : peers) {
+                    // Filter on endpoints - fix #18
+                    if (CollectionUtils.isEmpty(filterEndpoints)
+                            || StringUtils.isBlank(peerEp.getApi())
+                            || filterEndpoints.contains(peerEp.getApi())) {
+                        String hash = ServiceLocator.instance().getCryptoService().hash(peerEp.computeKey()); // compute the hash
+                        peerEp.setHash(hash);
+                        result.add(peerEp);
+                    }
+                }
+            }
         }
 
         // Get it by multiple call on /network/peering?leaf=
-        List<Peer> result = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(leaves)) {
+        else {
             int offset = 0;
             int count = Constants.Config.MAX_SAME_REQUEST_COUNT;
             while (offset < leaves.size()) {
@@ -591,12 +612,12 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 peers.forEach(peerFound -> {
                     if (peerFound.getStats().getStatus() == Peer.PeerStatus.DOWN) {
                         String error = peerFound.getStats().getError();
-                        log.trace(String.format("Found peer [%s] [%s] %s",
+                        log.trace(String.format(" peer [%s] [%s] %s",
                                 peerFound.toString(),
                                 peerFound.getStats().getStatus().name(),
                                 error != null ? error : ""));
                     } else {
-                        log.trace(String.format("Found peer [%s] [%s] [v%s] block [%s]", peerFound.toString(),
+                        log.trace(String.format(" peer [%s] [%s] [v%s] block [%s]", peerFound.toString(),
                                 peerFound.getStats().getStatus().name(),
                                 peerFound.getStats().getVersion(),
                                 peerFound.getStats().getBlockNumber()

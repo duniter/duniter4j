@@ -34,7 +34,7 @@ public class NetworkPeering implements Serializable {
     private String currency;
     private String block;
     private String signature;
-
+    private String status;
 
     private String raw;
 
@@ -82,6 +82,14 @@ public class NetworkPeering implements Serializable {
         this.pubkey = pubkey;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
     @JsonIgnore
     public String getRaw() {
         return raw;
@@ -104,6 +112,7 @@ public class NetworkPeering implements Serializable {
                 "currency=" + currency + "\n" +
                 "pubkey=" + pubkey + "\n" +
                 "signature=" + signature + "\n" +
+                "status=" + status + "\n" +
                 "block=" + block + "\n";
         for(Endpoint endpoint : endpoints) {
             s += endpoint.toString() + "\n";
