@@ -126,14 +126,18 @@ duniter.blockchain.enable: true
 # Force blockchain reload - WARNING: all user events will be resetted to 'unread'
 #
 #duniter.blockchain.reload: true
+#duniter.blockchain.reload.from: 50999
 #
 # Duniter node address
 #
 duniter.host: g1.duniter.org
 duniter.port: 10901
-#
 #duniter.useSsl: true
-#duniter.network.timeout: 5000
+#
+# Should maintain stats on index rows count ?
+#
+#duniter.stats.enable: false
+
 #
 # ---------------------------------- Duniter4j security module -------------------
 #
@@ -150,14 +154,7 @@ duniter.security.enable: true
 #
 # Should synchronize data from an existing ES node ?
 #
-duniter.data.sync.enable: true
-duniter.data.sync.host: g1.data.duniter.fr
-duniter.data.sync.port: 443
-
-#
-# Should maintain stats on data ?
-#
-duniter.data.stats.enable: true
+#duniter.p2p.enable: false
 
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
@@ -196,7 +193,7 @@ duniter.mail.enable: false
 #
 # Websocket port (usefull for listen changes)
 #
-duniter.ws.port: 9400
+duniter.ws.port: 9400-9410
 
 # ---------------------------------- Duniter4j Subscription module -------------------
 #

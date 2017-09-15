@@ -26,7 +26,6 @@ package org.duniter.elasticsearch.subscription;
 import org.duniter.core.util.crypto.KeyPair;
 import org.elasticsearch.common.component.*;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.inject.Singleton;
 
 /**
  * Access to configuration options
@@ -119,11 +118,11 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     /* -- delegate methods -- */
 
     public boolean reloadIndices() {
-        return delegate.reloadIndices();
+        return delegate.reloadAllIndices();
     }
 
-    public boolean enableDataSync() {
-        return delegate.enableDataSync();
+    public boolean enableP2PSync() {
+        return delegate.enableP2PSync();
     }
 
     public boolean getMailEnable() {

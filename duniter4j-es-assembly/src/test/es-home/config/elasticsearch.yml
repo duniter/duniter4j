@@ -15,7 +15,7 @@
 # Use a descriptive name for your cluster:
 #
 # cluster.name: my-application
-cluster.name: duniter4j-es-assembly-test-2
+cluster.name: duniter4j-es-assembly-test
 #
 # ------------------------------------ Node ------------------------------------
 #
@@ -133,11 +133,15 @@ duniter.blockchain.enable: true
 duniter.host: g1.duniter.org
 duniter.port: 10901
 #duniter.useSsl: true
-duniter4j.network.timeout: 10000
+#
+# Should maintain stats on index rows count ?
+#
+#duniter.stats.enable: false
+
 #
 # ---------------------------------- Duniter4j security module -------------------
 #
-# Allow admin actions
+# Keyring for the ES node
 #
 duniter.keyring.salt: 'abc'
 duniter.keyring.password: 'def'
@@ -158,15 +162,7 @@ duniter.security.enable: true
 #
 # Should synchronize data from an existing ES node ?
 #
-duniter.data.sync.enable: false
-#duniter.data.sync.enable: true
-duniter.data.sync.host: localhost
-duniter.data.sync.port: 9200
-
-#
-# Should maintain stats on data ?
-#
-duniter.data.stats.enable: true
+#duniter.p2p.enable: false
 
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
@@ -176,8 +172,8 @@ duniter.mail.enable: false
 #
 # Mail: SMTP server configuration (host and port)
 #
-duniter.mail.smtp.host: localhost
-duniter.mail.smtp.port: 25
+#duniter.mail.smtp.host: localhost
+#duniter.mail.smtp.port: 25
 #
 # Mail: SMTP server SSL security
 #
@@ -192,13 +188,10 @@ duniter.mail.smtp.port: 25
 # Mail: 'from' address
 #
 #duniter.mail.from: no-reply@domain.com
-duniter.mail.from: 'no-reply@duniter.fr'
 #
 # Mail: admin address
 #
 #duniter.mail.admin: user@domain.com
-#duniter.mail.admin: blavenie@EIS-DEV
-duniter.mail.admin: 'benoit.lavenier@e-is.pro'
 #
 # Mail: subject prefix
 #
@@ -227,7 +220,7 @@ duniter.subscription.enable: true
 #
 # Email subscription: Hour in day to trigger daily email subscription (default: 3 AM)
 #
-duniter.subscription.email.hourOfDay: 3
+#duniter.subscription.email.hourOfDay: 3
 #
 # Email subscription: URL to a Cesium site, for links in the email content (default: https://g1.duniter.fr)
 #

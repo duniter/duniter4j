@@ -190,7 +190,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.indices.reload", false);
     }
 
-    public boolean enableBlockchain()  {
+    public boolean enableBlockchainSync()  {
         return settings.getAsBoolean("duniter.blockchain.enable", false);
     }
 
@@ -202,20 +202,12 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.blockchain.reload.from", 0);
     }
 
-    public boolean reloadPeerIndices()  {
-        return settings.getAsBoolean("duniter.peer.reload", false);
-    }
-
     public File getTempDirectory() {
         return Configuration.instance().getTempDirectory();
     }
 
     public int getNetworkTimeout()  {
         return settings.getAsInt("duniter.network.timeout", 30000 /*30s*/);
-    }
-
-    public int getPeerDownTimeout()  {
-        return settings.getAsInt("duniter.peer.down.timeout", 10*60*1000 /*10min*/);
     }
 
     public int getNetworkMaxConnections()  {
@@ -274,18 +266,6 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.security.enable", true);
     }
 
-    public boolean enableDataSync()  {
-        return settings.getAsBoolean("duniter.data.sync.enable", false);
-    }
-
-    public String getDataSyncHost()  {
-        return settings.get("duniter.data.sync.host", "data.duniter.fr");
-    }
-
-    public int getDataSyncPort()  {
-        return settings.getAsInt("duniter.data.sync.port", 80);
-    }
-
     public String getWebSocketHost()  {
         return settings.get("network.host", "locahost");
     }
@@ -303,7 +283,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean enableDocStats() {
-        return settings.getAsBoolean("duniter.data.stats.enable", false);
+        return settings.getAsBoolean("duniter.stats.enable", false);
     }
 
     /* protected methods */

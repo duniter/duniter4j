@@ -22,7 +22,6 @@ package org.duniter.elasticsearch.user;
  * #L%
  */
 
-import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.DocStatService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.dao.page.RegistryCommentDao;
@@ -31,7 +30,6 @@ import org.duniter.elasticsearch.user.dao.page.RegistryRecordDao;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.service.*;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
@@ -167,8 +165,9 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
     protected void doAfterStart() {
         // Synchronize
-        if (pluginSettings.enableDataSync()) {
-            injector.getInstance(SynchroService.class).startScheduling();
+        if (pluginSettings.enableP2PSync()) {
+            injector.getInstance(SynchroService.class)
+                    .startScheduling();
         }
 
         // Notify admin

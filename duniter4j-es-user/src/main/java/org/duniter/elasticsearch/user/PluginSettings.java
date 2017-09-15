@@ -82,13 +82,26 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return delegate.getDefaultStringAnalyzer();
     }
 
-    public boolean reloadIndices() {
+    public boolean reloadAllIndices() {
         return delegate.reloadAllIndices();
     }
 
-    public boolean enableDataSync() {
-        return delegate.enableDataSync();
+    public boolean reloadBlockchainIndices() {
+        return delegate.reloadBlockchainIndices();
     }
+
+    public int reloadBlockchainIndicesFrom() {
+        return delegate.reloadBlockchainIndicesFrom();
+    }
+
+    public boolean enableDocStats() {
+        return delegate.enableDocStats();
+    }
+
+    public boolean enableP2PSync() {
+        return settings.getAsBoolean("duniter.p2p.enable", false);
+    }
+
 
     public boolean getMailEnable() {
         return settings.getAsBoolean("duniter.mail.enable", Boolean.TRUE);
@@ -149,7 +162,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean enableBlockchainSync() {
-        return delegate.enableBlockchain();
+        return delegate.enableBlockchainSync();
     }
 
     public String getKeyringSalt() {
@@ -167,6 +180,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     public String getKeyringSecretKey() {
         return delegate.getKeyringSecretKey();
     }
+
 
     public void addI18nBundleName(String bundleName) {
         delegate.addI18nBundleName(bundleName);

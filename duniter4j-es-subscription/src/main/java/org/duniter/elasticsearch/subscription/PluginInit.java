@@ -22,23 +22,16 @@ package org.duniter.elasticsearch.subscription;
  * #L%
  */
 
-import org.duniter.elasticsearch.dao.BlockDao;
-import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.service.BlockchainService;
-import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.subscription.dao.SubscriptionIndexDao;
-import org.duniter.elasticsearch.subscription.dao.execution.SubscriptionExecutionDao;
 import org.duniter.elasticsearch.subscription.service.SubscriptionService;
 import org.duniter.elasticsearch.subscription.service.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.RestRequest;
 
 /**
  * Created by blavenie on 17/06/16.
@@ -111,12 +104,12 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
         // Start subscription services
         if (pluginSettings.enableSubscription()) {
-
-            injector.getInstance(SubscriptionService.class).startScheduling();
+            injector.getInstance(SubscriptionService.class)
+                    .startScheduling();
         }
 
-        // Start synchro service
-        if (pluginSettings.enableDataSync()) {
+        // Start synchronization service
+        if (pluginSettings.enableP2PSync()) {
             injector.getInstance(SynchroService.class)
                     .startScheduling();
         }

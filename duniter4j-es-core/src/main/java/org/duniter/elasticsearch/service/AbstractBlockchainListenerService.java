@@ -69,7 +69,7 @@ public abstract class AbstractBlockchainListenerService extends AbstractService 
                                              TimeValue processingInterval) {
         super(loggerName, client, settings, cryptoService);
         this.listenerId = loggerName;
-        this.enable = pluginSettings.enableBlockchain();
+        this.enable = pluginSettings.enableBlockchainSync();
         this.threadPool = threadPool;
 
         this.bulkSize = pluginSettings.getIndexBulkSize();
