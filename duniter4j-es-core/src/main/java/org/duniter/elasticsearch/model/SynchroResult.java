@@ -22,13 +22,20 @@ package org.duniter.elasticsearch.model;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by blavenie on 30/12/16.
  */
-public class SynchroResult {
+public class SynchroResult implements Serializable {
+
+    public static final String PROPERTY_INSERTS = "inserts";
+    public static final String PROPERTY_UPDATES = "updates";
+    public static final String PROPERTY_DELETES = "deletes";
 
     private long insertTotal = 0;
     private long updateTotal = 0;
@@ -59,18 +66,22 @@ public class SynchroResult {
         invalidSignatureTotal += nbHits;
     }
 
+    @JsonIgnore
     public long getInserts(String index, String type) {
         return insertHits.getOrDefault(index + "/" + type, 0l);
     }
 
+    @JsonIgnore
     public long getUpdates(String index, String type) {
         return updateHits.getOrDefault(index + "/" + type, 0l);
     }
 
+    @JsonIgnore
     public long getInvalidSignatures(String index, String type) {
         return invalidSignatureHits.getOrDefault(index + "/" + type, 0l);
     }
 
+    @JsonIgnore
     public long getDeletes(String index, String type) {
         return deleteHits.getOrDefault(index + "/" + type, 0l);
     }
@@ -91,6 +102,7 @@ public class SynchroResult {
         return invalidSignatureTotal;
     }
 
+    @JsonIgnore
     public long getTotal() {
         return insertTotal + updateTotal + deleteTotal;
     }

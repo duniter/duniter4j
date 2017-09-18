@@ -137,42 +137,42 @@ public class SubscriptionExecutionDaoImpl extends AbstractSubscriptionIndexTypeD
                     .startObject("properties")
 
                     // issuer
-                    .startObject("issuer")
+                    .startObject(SubscriptionExecution.PROPERTY_ISSUER)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // recipient
-                    .startObject("recipient")
+                    .startObject(SubscriptionExecution.PROPERTY_RECIPIENT)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // record type
-                    .startObject("recordType")
+                    .startObject(SubscriptionExecution.PROPERTY_RECORD_TYPE)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // record id
-                    .startObject("recordId")
+                    .startObject(SubscriptionExecution.PROPERTY_RECORD_ID)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // time
-                    .startObject("time")
+                    .startObject(SubscriptionExecution.PROPERTY_TIME)
                     .field("type", "integer")
                     .endObject()
 
                     // hash
-                    .startObject("hash")
+                    .startObject(SubscriptionExecution.PROPERTY_HASH)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // signature
-                    .startObject("signature")
+                    .startObject(SubscriptionExecution.PROPERTY_SIGNATURE)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()

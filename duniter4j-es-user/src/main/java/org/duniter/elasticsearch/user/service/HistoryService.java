@@ -112,9 +112,33 @@ public class HistoryService extends AbstractService {
 
 
     public String indexDeleteFromJson(String recordJson) {
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = actualObj.get(DeleteRecord.PROPERTY_ISSUER).asText();
+        JsonNode source = readAndVerifyIssuerSignature(recordJson);
 
+        // Check if valid deletion
+        checkIsValidDeletion(source);
+
+        if (logger.isDebugEnabled()) {
+            String issuer = source.get(DeleteRecord.PROPERTY_ISSUER).asText();
+            String index = getMandatoryField(source, DeleteRecord.PROPERTY_INDEX).asText();
+            String type = getMandatoryField(source, DeleteRecord.PROPERTY_TYPE).asText();
+            String id = getMandatoryField(source, DeleteRecord.PROPERTY_ID).asText();
+            logger.debug(String.format("Deleting document [%s/%s/%s] - issuer [%s]", index, type, id, issuer.substring(0, 8)));
+        }
+
+        // Add deletion to history
+        IndexResponse response = client.prepareIndex(INDEX, DELETE_TYPE)
+                .setSource(recordJson)
+                .setRefresh(false)
+                .execute().actionGet();
+
+        // Delete the document
+        applyDocDelete(source);
+
+        return response.getId();
+    }
+
+    public void checkIsValidDeletion(JsonNode actualObj) {
+        String issuer = actualObj.get(DeleteRecord.PROPERTY_ISSUER).asText();
         String index = getMandatoryField(actualObj, DeleteRecord.PROPERTY_INDEX).asText();
         String type = getMandatoryField(actualObj,DeleteRecord.PROPERTY_TYPE).asText();
         String id = getMandatoryField(actualObj,DeleteRecord.PROPERTY_ID).asText();
@@ -135,21 +159,15 @@ public class HistoryService extends AbstractService {
             // Check same document issuer
             client.checkSameDocumentIssuer(index, type, id, issuer);
         }
+    }
 
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Deleting document [%s/%s/%s] - issuer [%s]", index, type, id, issuer.substring(0, 8)));
-        }
-
-        // Add deletion to history
-        IndexResponse response = client.prepareIndex(INDEX, DELETE_TYPE)
-                .setSource(recordJson)
-                .setRefresh(false)
-                .execute().actionGet();
+    public void applyDocDelete(JsonNode actualObj) {
+        String index = getMandatoryField(actualObj, DeleteRecord.PROPERTY_INDEX).asText();
+        String type = getMandatoryField(actualObj,DeleteRecord.PROPERTY_TYPE).asText();
+        String id = getMandatoryField(actualObj,DeleteRecord.PROPERTY_ID).asText();
 
         // Delete the document
         client.prepareDelete(index, type, id).execute().actionGet();
-
-        return response.getId();
     }
 
     public boolean existsInDeleteHistory(final String index, final String type, final String id) {

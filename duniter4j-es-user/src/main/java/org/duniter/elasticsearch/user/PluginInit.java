@@ -112,8 +112,8 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         }
 
         else {
-            if (logger.isInfoEnabled()) {
-                logger.info("Checking indices...");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Checking indices...");
             }
 
             boolean cleanBlockchainUserEvents = injector.getInstance(UserService.class).isIndexExists() && pluginSettings.reloadBlockchainIndices();
@@ -125,8 +125,8 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             injector.getInstance(UserInvitationService.class).createIndexIfNotExists();
             injector.getInstance(PageService.class).createIndexIfNotExists();
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Checking indices [OK]");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Checking indices [OK]");
             }
 
             // Clean user events on blockchain
@@ -164,11 +164,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
     }
 
     protected void doAfterStart() {
-        // Synchronize
-        if (pluginSettings.enableP2PSync()) {
-            injector.getInstance(SynchroService.class)
-                    .startScheduling();
-        }
 
         // Notify admin
         injector.getInstance(AdminService.class)

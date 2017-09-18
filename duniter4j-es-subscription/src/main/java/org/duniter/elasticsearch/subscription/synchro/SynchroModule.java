@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.subscription.service;
+package org.duniter.elasticsearch.subscription.synchro;
 
 /*
  * #%L
@@ -25,10 +25,14 @@ package org.duniter.elasticsearch.subscription.service;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
-public class ServiceModule extends AbstractModule implements Module {
+public class SynchroModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
-        // Subscription services
-        bind(SubscriptionService.class).asEagerSingleton();
+
+        // Subscription
+        bind(SynchroSubscriptionRecordAction.class).asEagerSingleton();
+        bind(SynchroSubscriptionExecutionIndexAction.class).asEagerSingleton();
+
     }
+
 }

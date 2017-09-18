@@ -22,12 +22,17 @@ package org.duniter.elasticsearch.dao;
  * #L%
  */
 
+import org.duniter.core.client.model.local.Peer;
+import org.duniter.elasticsearch.model.SynchroExecution;
+
 /**
  * Created by blavenie on 26/04/17.
  */
-public interface PeerDao extends org.duniter.core.client.dao.PeerDao, TypeDao<PeerDao>{
+public interface SynchroExecutionDao extends TypeDao<SynchroExecutionDao>{
 
-    String TYPE = "peer";
+    String TYPE = "synchro";
 
+    void save(SynchroExecution execution);
 
+    SynchroExecution getLastExecution(Peer peer);
 }

@@ -218,6 +218,15 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.network.maxConnectionsPerRoute", 5);
     }
 
+    public boolean enableSynchro()  {
+        return settings.getAsBoolean("duniter.synchro.enable", true);
+    }
+
+    public int getSynchroTimeOffset()  {
+        return settings.getAsInt("duniter.synchro.timeOffset", 60*60/*=1hour*/);
+    }
+
+
     public boolean isDevMode() {
         return settings.getAsBoolean("duniter.dev.enable", false);
     }

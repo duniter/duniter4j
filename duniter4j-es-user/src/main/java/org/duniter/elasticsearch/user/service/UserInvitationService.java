@@ -107,12 +107,10 @@ public class UserInvitationService extends AbstractService {
 
     public String indexCertificationInvitationFromJson(String recordJson) {
 
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = getIssuer(actualObj);
-        String recipient = getMandatoryField(actualObj, Message.PROPERTY_RECIPIENT).asText();
-        Long time = getMandatoryField(actualObj, Message.PROPERTY_TIME).asLong();
+        JsonNode source = readAndVerifyIssuerSignature(recordJson);
 
         if (logger.isDebugEnabled()) {
+            String issuer = getMandatoryField(source, Message.PROPERTY_ISSUER).asText();
             logger.debug(String.format("Indexing a invitation to certify from issuer [%s]", issuer.substring(0, 8)));
         }
 
@@ -123,15 +121,24 @@ public class UserInvitationService extends AbstractService {
 
         String invitationId = response.getId();
 
+        // Notify user
+        notifyUser(invitationId, source);
+
+        return invitationId;
+    }
+
+    public void notifyUser(String id, JsonNode source) {
+        String issuer = getMandatoryField(source, Message.PROPERTY_ISSUER).asText();
+        String recipient = getMandatoryField(source, Message.PROPERTY_RECIPIENT).asText();
+        Long time = getMandatoryField(source, Message.PROPERTY_TIME).asLong();
+
         // Notify recipient
         userEventService.notifyUser(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.INVITATION_TO_CERTIFY.name())
                 .setRecipient(recipient)
                 .setMessage(I18n.n("duniter.user.event.INVITATION_TO_CERTIFY"), issuer, ModelUtils.minifyPubkey(issuer))
                 .setTime(time)
-                .setReference(INDEX, CERTIFICATION_TYPE, invitationId)
+                .setReference(INDEX, CERTIFICATION_TYPE, id)
                 .build());
-
-        return invitationId;
     }
 
     /* -- Internal methods -- */

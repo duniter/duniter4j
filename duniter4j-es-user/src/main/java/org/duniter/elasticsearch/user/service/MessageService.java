@@ -29,16 +29,14 @@ import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
-import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
-import org.duniter.elasticsearch.user.service.AbstractService;
+import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.Message;
 import org.duniter.elasticsearch.user.model.UserEvent;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -123,8 +121,6 @@ public class MessageService extends AbstractService {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
         String issuer = getIssuer(actualObj);
-        String recipient = getMandatoryField(actualObj, Message.PROPERTY_RECIPIENT).asText();
-        Long time = getMandatoryField(actualObj, Message.PROPERTY_TIME).asLong();
 
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a message from issuer [%s]", issuer.substring(0, 8)));
@@ -137,23 +133,18 @@ public class MessageService extends AbstractService {
 
         String messageId = response.getId();
 
-        // Notify recipient
-        userEventService.notifyUser(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.MESSAGE_RECEIVED.name())
-                .setRecipient(recipient)
-                .setMessage(I18n.n("duniter.user.event.MESSAGE_RECEIVED"), issuer, ModelUtils.minifyPubkey(issuer))
-                .setTime(time)
-                .setReference(INDEX, INBOX_TYPE, messageId)
-                .build());
+        // Notify new message
+        notifyUser(messageId, actualObj);
 
         return messageId;
     }
 
     public String indexOuboxFromJson(String recordJson) {
 
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
-        String issuer = getIssuer(actualObj);
+        JsonNode source = readAndVerifyIssuerSignature(recordJson);
 
         if (logger.isDebugEnabled()) {
+            String issuer = getMandatoryField(source, Message.PROPERTY_ISSUER).asText();
             logger.debug(String.format("Indexing a message from issuer [%s]", issuer.substring(0, 8)));
         }
 
@@ -163,6 +154,20 @@ public class MessageService extends AbstractService {
                 .execute().actionGet();
 
         return response.getId();
+    }
+
+    public void notifyUser(String messageId, JsonNode actualObj) {
+        String issuer = getMandatoryField(actualObj, Message.PROPERTY_ISSUER).asText();
+        String recipient = getMandatoryField(actualObj, Message.PROPERTY_RECIPIENT).asText();
+        Long time = getMandatoryField(actualObj, Message.PROPERTY_TIME).asLong();
+
+        // Notify recipient
+        userEventService.notifyUser(UserEvent.newBuilder(UserEvent.EventType.INFO, UserEventCodes.MESSAGE_RECEIVED.name())
+                .setRecipient(recipient)
+                .setMessage(I18n.n("duniter.user.event.MESSAGE_RECEIVED"), issuer, ModelUtils.minifyPubkey(issuer))
+                .setTime(time)
+                .setReference(INDEX, INBOX_TYPE, messageId)
+                .build());
     }
 
     public void markMessageAsRead(String id, String signature) {

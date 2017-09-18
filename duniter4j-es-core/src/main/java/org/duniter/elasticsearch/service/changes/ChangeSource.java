@@ -39,6 +39,8 @@ package org.duniter.elasticsearch.service.changes;
 */
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import org.duniter.core.util.StringUtils;
@@ -49,6 +51,12 @@ public class ChangeSource {
     private final Set<String> indices;
     private final Set<String> types;
     private final Set<String> ids;
+
+    public ChangeSource() {
+        this.indices = Sets.newHashSet();
+        this.types = Sets.newHashSet();
+        this.ids = Sets.newHashSet();
+    }
 
     public ChangeSource(String source) {
         String[] parts = source.split("/");
@@ -91,12 +99,22 @@ public class ChangeSource {
         return types;
     }
 
+    public void addIndex(String index){
+        this.indices.add(index);
+    }
+    public void addType(String type){
+        this.types.add(type);
+    }
+    public void addId(String id){
+        this.ids.add(id);
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
         // Add indices
         Joiner joiner = Joiner.on(',');
-        if (indices == null) {
+        if (CollectionUtils.isEmpty(indices)) {
             sb.append('*');
         }
         else {
@@ -104,8 +122,8 @@ public class ChangeSource {
         }
 
         // Add types
-        if (types == null) {
-            if (ids != null) {
+        if (CollectionUtils.isEmpty(types)) {
+            if (CollectionUtils.isNotEmpty(ids)) {
                 sb.append("/*");
             }
         }
@@ -115,7 +133,7 @@ public class ChangeSource {
         }
 
         // Add ids
-        if (ids != null) {
+        if (CollectionUtils.isNotEmpty(ids)) {
             sb.append('/');
             joiner.appendTo(sb, ids);
         }

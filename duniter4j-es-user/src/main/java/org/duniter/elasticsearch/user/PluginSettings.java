@@ -99,7 +99,11 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean enableP2PSync() {
-        return settings.getAsBoolean("duniter.p2p.enable", false);
+        return settings.getAsBoolean("duniter.p2p.enable", true);
+    }
+
+    public int getP2PSyncTimeOffset() {
+        return settings.getAsInt("duniter.p2p.timeOffsetInSec", 60*60 /*1 hour*/ );
     }
 
 

@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import org.duniter.elasticsearch.user.dao.DaoModule;
 import org.duniter.elasticsearch.user.rest.RestModule;
 import org.duniter.elasticsearch.user.service.ServiceModule;
+import org.duniter.elasticsearch.user.synchro.SynchroModule;
 import org.duniter.elasticsearch.user.websocket.WebSocketModule;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -67,9 +68,10 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
         }
 
         modules.add(new DaoModule());
-        modules.add(new RestModule());
         modules.add(new ServiceModule());
         modules.add(new WebSocketModule());
+        modules.add(new RestModule());
+        modules.add(new SynchroModule());
 
         return modules;
     }

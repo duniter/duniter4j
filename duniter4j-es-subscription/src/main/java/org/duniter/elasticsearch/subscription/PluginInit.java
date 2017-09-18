@@ -24,7 +24,6 @@ package org.duniter.elasticsearch.subscription;
 
 import org.duniter.elasticsearch.subscription.dao.SubscriptionIndexDao;
 import org.duniter.elasticsearch.subscription.service.SubscriptionService;
-import org.duniter.elasticsearch.subscription.service.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -89,13 +88,13 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
             }
         }
         else {
-            if (logger.isInfoEnabled()) {
-                logger.info("Checking indices...");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Checking indices...");
             }
             injector.getInstance(SubscriptionIndexDao.class).createIndexIfNotExists();
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Checking indices [OK]");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Checking indices [OK]");
             }
         }
     }
@@ -105,12 +104,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         // Start subscription services
         if (pluginSettings.enableSubscription()) {
             injector.getInstance(SubscriptionService.class)
-                    .startScheduling();
-        }
-
-        // Start synchronization service
-        if (pluginSettings.enableP2PSync()) {
-            injector.getInstance(SynchroService.class)
                     .startScheduling();
         }
     }

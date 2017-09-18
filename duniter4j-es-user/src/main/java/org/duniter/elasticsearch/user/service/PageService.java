@@ -52,7 +52,7 @@ public class PageService extends AbstractService {
                        RegistryIndexDao registryIndexDao,
                        RegistryCommentDao commentDao,
                        RegistryRecordDao recordDao) {
-        super("gchange.service.page", client, settings, cryptoService);
+        super("duniter.page", client, settings, cryptoService);
         this.indexDao = registryIndexDao;
         this.commentDao = commentDao;
         this.recordDao = recordDao;

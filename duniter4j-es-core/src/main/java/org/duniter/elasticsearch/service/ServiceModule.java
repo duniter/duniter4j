@@ -35,6 +35,7 @@ import org.duniter.core.service.MailService;
 import org.duniter.elasticsearch.PluginInit;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.changes.ChangeService;
+import org.duniter.elasticsearch.service.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
@@ -50,6 +51,7 @@ public class ServiceModule extends AbstractModule implements Module {
         bind(PluginInit.class).asEagerSingleton();
         bind(ChangeService.class).asEagerSingleton();
         bind(DocStatService.class).asEagerSingleton();
+        bind(SynchroService.class).asEagerSingleton();
 
         // blockchain indexation services
         bind(BlockchainService.class).asEagerSingleton();

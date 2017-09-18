@@ -30,6 +30,7 @@ import org.duniter.elasticsearch.client.Duniter4jClientImpl;
 import org.duniter.elasticsearch.dao.impl.BlockStatDaoImpl;
 import org.duniter.elasticsearch.dao.impl.DocStatDaoImpl;
 import org.duniter.elasticsearch.dao.impl.MovementDaoImpl;
+import org.duniter.elasticsearch.dao.impl.SynchroExecutionDaoImpl;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
@@ -44,10 +45,12 @@ public class DaoModule extends AbstractModule implements Module {
         bind(Duniter4jClient.class).to(Duniter4jClientImpl.class).asEagerSingleton();
         bind(DocStatDao.class).to(DocStatDaoImpl.class).asEagerSingleton();
 
-        //
+        // Dao defined in module es-core
         bind(BlockStatDao.class).to(BlockStatDaoImpl.class).asEagerSingleton();
         bind(MovementDao.class).to(MovementDaoImpl.class).asEagerSingleton();
+        bind(SynchroExecutionDao.class).to(SynchroExecutionDaoImpl.class).asEagerSingleton();
 
+        // Dao defined in module core-client
         bindWithLocator(BlockDao.class);
         bindWithLocator(PeerDao.class);
         bindWithLocator(CurrencyDao.class);

@@ -30,6 +30,7 @@ import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.CurrencyService;
 import org.duniter.elasticsearch.service.DocStatService;
 import org.duniter.elasticsearch.service.PeerService;
+import org.duniter.elasticsearch.service.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -118,8 +119,8 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         else {
 
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Checking indices...");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Checking indices...");
             }
 
             injector.getInstance(CurrencyService.class)
@@ -130,8 +131,8 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                         .createIndexIfNotExists();
             }
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Checking indices [OK]");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Checking indices [OK]");
             }
         }
     }
@@ -224,6 +225,13 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     // Index peers (and listen if new peer appear)
                     injector.getInstance(PeerService.class)
                             .listenAndIndexPeers(peer);
+
+
+                    // Start synchro
+                    if (pluginSettings.enableSynchro()) {
+                        injector.getInstance(SynchroService.class)
+                                .startScheduling();
+                    }
 
                     if (logger.isInfoEnabled()) {
                         logger.info(String.format("[%s] Indexing blockchain [OK]", currencyName));

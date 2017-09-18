@@ -44,7 +44,7 @@ public class ServiceModule extends AbstractModule implements Module {
 
         bind(BlockchainUserEventService.class).asEagerSingleton();
 
-        bind(SynchroService.class).asEagerSingleton();
+        //bind(SynchroService.class).asEagerSingleton();
     }
 
     /* protected methods */
