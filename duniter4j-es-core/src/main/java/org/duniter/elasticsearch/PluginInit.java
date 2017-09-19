@@ -30,7 +30,7 @@ import org.duniter.elasticsearch.service.BlockchainService;
 import org.duniter.elasticsearch.service.CurrencyService;
 import org.duniter.elasticsearch.service.DocStatService;
 import org.duniter.elasticsearch.service.PeerService;
-import org.duniter.elasticsearch.service.synchro.SynchroService;
+import org.duniter.elasticsearch.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;

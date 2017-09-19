@@ -56,7 +56,7 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
         threadPool.scheduleOnClusterReady(() -> {
             createIndices();
 
-            // Waiting cluster back to GREEN or YELLOW state, before synchronize
+            // Waiting cluster back to GREEN or YELLOW state, before synchronizePeer
             threadPool.scheduleOnClusterReady(this::doAfterStart);
         });
     }

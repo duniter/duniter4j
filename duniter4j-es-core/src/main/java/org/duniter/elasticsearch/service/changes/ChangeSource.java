@@ -99,14 +99,17 @@ public class ChangeSource {
         return types;
     }
 
-    public void addIndex(String index){
+    public ChangeSource addIndex(String index){
         this.indices.add(index);
+        return this;
     }
-    public void addType(String type){
+    public ChangeSource addType(String type){
         this.types.add(type);
+        return this;
     }
-    public void addId(String id){
+    public ChangeSource addId(String id){
         this.ids.add(id);
+        return this;
     }
 
     public String toString() {
@@ -158,5 +161,18 @@ public class ChangeSource {
 
     public boolean isEmpty() {
         return indices == null && types == null && ids == null;
+    }
+
+    public void merge(ChangeSource s) {
+        if (s == null) return;
+        if (CollectionUtils.isNotEmpty(s.getIndices())) {
+            indices.addAll(s.getIndices());
+        }
+        if (CollectionUtils.isNotEmpty(s.getTypes())) {
+            types.addAll(s.getTypes());
+        }
+        if (CollectionUtils.isNotEmpty(s.getIds())) {
+            ids.addAll(s.getIds());
+        }
     }
 }

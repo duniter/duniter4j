@@ -3,6 +3,7 @@ package org.duniter.elasticsearch.user.service;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.ServiceLocator;
+import org.duniter.elasticsearch.synchro.SynchroService;
 import org.duniter.elasticsearch.user.TestResource;
 import org.junit.*;
 import org.slf4j.Logger;
@@ -36,15 +37,9 @@ public class SynchroServiceTest {
     }
 
     @Test
-    public void synchronizeUser() throws Exception {
-
-        SynchroResult result = new SynchroResult();
-        long fromTime = 0L;
-
-        service.synchronizeUser(peer, fromTime, result);
-
+    public void synchronizePeer() throws Exception {
+        SynchroResult result = service.synchronizePeer(peer, false);
         Assert.assertTrue(result.getInserts() > 0);
-
     }
 
     @Test

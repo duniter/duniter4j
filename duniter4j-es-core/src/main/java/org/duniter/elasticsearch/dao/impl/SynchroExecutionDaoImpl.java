@@ -65,9 +65,8 @@ public class SynchroExecutionDaoImpl extends AbstractDao implements SynchroExecu
         Preconditions.checkNotNull(execution.getTime());
         Preconditions.checkArgument(execution.getTime() > 0);
 
-        // Serialize into JSON
-        // WARN: must use GSON, to have same JSON result (e.g identities and joiners field must be converted into String)
         try {
+            // Serialize into JSON
             String json = getObjectMapper().writeValueAsString(execution);
 
             // Preparing indexBlocksFromNode
@@ -77,7 +76,7 @@ public class SynchroExecutionDaoImpl extends AbstractDao implements SynchroExecu
             // Execute indexBlocksFromNode
             indexRequest
                     .setRefresh(true)
-                    .execute();
+                    .execute().actionGet();
         }
         catch(JsonProcessingException e) {
             throw new TechnicalException(e);
@@ -153,7 +152,8 @@ public class SynchroExecutionDaoImpl extends AbstractDao implements SynchroExecu
                     // result
                     .startObject(SynchroExecution.PROPERTY_RESULT)
                     .field("type", "nested")
-                    //.field("dynamic", "false")
+                    .field("dynamic", "false")
+                    .startObject("properties")
 
                         // inserts
                         .startObject(SynchroResult.PROPERTY_INSERTS)
@@ -167,6 +167,11 @@ public class SynchroExecutionDaoImpl extends AbstractDao implements SynchroExecu
 
                         // deletes
                         .startObject(SynchroResult.PROPERTY_DELETES)
+                        .field("type", "long")
+                        .endObject()
+
+                        // deletes
+                        .startObject(SynchroResult.PROPERTY_INVALID_SIGNATURES)
                         .field("type", "long")
                         .endObject()
 

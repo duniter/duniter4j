@@ -42,6 +42,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
+import org.duniter.elasticsearch.service.changes.ChangeEvents;
 import org.duniter.elasticsearch.service.changes.ChangeService;
 import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.elasticsearch.common.inject.Inject;
@@ -91,7 +92,7 @@ public class WebSocketChangesEndPoint implements ChangeService.ChangeListener{
 
     @Override
     public void onChange(ChangeEvent changeEvent) {
-        session.getAsyncRemote().sendText(changeEvent.toJson());
+        session.getAsyncRemote().sendText(ChangeEvents.toJson(changeEvent));
     }
 
     @Override

@@ -122,12 +122,12 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return delegate.reloadAllIndices();
     }
 
-    public boolean enableP2PSync() {
-        return delegate.enableP2PSync();
+    public boolean enableSynchro() {
+        return delegate.enableSynchro();
     }
 
-    public int getP2PSyncTimeOffset() {
-        return delegate.getP2PSyncTimeOffset();
+    public int getSynchroTimeOffset() {
+        return delegate.getSynchroTimeOffset();
     }
 
     public boolean getMailEnable() {

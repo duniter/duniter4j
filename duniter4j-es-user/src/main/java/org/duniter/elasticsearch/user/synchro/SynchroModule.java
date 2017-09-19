@@ -22,6 +22,9 @@ package org.duniter.elasticsearch.user.synchro;
  * #L%
  */
 
+import org.duniter.core.client.model.bma.EndpointApi;
+import org.duniter.elasticsearch.service.PeerService;
+import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.synchro.group.SynchroGroupRecordAction;
 import org.duniter.elasticsearch.user.synchro.history.SynchroHistoryIndexAction;
 import org.duniter.elasticsearch.user.synchro.invitation.SynchroInvitationCertificationIndexAction;
@@ -31,12 +34,27 @@ import org.duniter.elasticsearch.user.synchro.page.SynchroPageCommentAction;
 import org.duniter.elasticsearch.user.synchro.page.SynchroPageRecordAction;
 import org.duniter.elasticsearch.user.synchro.user.SynchroUserProfileAction;
 import org.duniter.elasticsearch.user.synchro.user.SynchroUserSettingsAction;
+import org.duniter.elasticsearch.user.websocket.WebsocketUserEventEndPoint;
 import org.elasticsearch.common.inject.AbstractModule;
+import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
 
 public class SynchroModule extends AbstractModule implements Module {
 
+    public static class Init {
+
+        @Inject
+        public Init(PeerService peerService, PluginSettings pluginSettings) {
+            if (pluginSettings.enableSynchro()) {
+                // Make sure PeerService will index ES_USER_API peers
+                peerService.addIncludeEndpointApi(EndpointApi.ES_USER_API);
+            }
+        }
+    }
+
     @Override protected void configure() {
+
+        bind(Init.class).asEagerSingleton();
 
         // History
         bind(SynchroHistoryIndexAction.class).asEagerSingleton();

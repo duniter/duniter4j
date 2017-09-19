@@ -326,6 +326,12 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
                     .field("type", "string")
                     .endObject()
 
+                    // epId
+                    .startObject(Peer.PROPERTY_EP_ID)
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
                     // stats
                     .startObject(Peer.PROPERTY_STATS)
                     .field("type", "nested")

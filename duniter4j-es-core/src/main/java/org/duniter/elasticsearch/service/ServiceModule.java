@@ -35,7 +35,7 @@ import org.duniter.core.service.MailService;
 import org.duniter.elasticsearch.PluginInit;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.service.changes.ChangeService;
-import org.duniter.elasticsearch.service.synchro.SynchroService;
+import org.duniter.elasticsearch.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;

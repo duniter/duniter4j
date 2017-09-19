@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.service.synchro;
+package org.duniter.elasticsearch.synchro;
 
 /*
  * #%L
@@ -22,6 +22,8 @@ package org.duniter.elasticsearch.service.synchro;
  * #L%
  */
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
@@ -43,6 +45,7 @@ import org.duniter.elasticsearch.model.SynchroResult;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
+import org.duniter.elasticsearch.service.changes.ChangeEvents;
 import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.Inject;
@@ -104,35 +107,53 @@ public class SynchroService extends AbstractService {
      * @return
      */
     public SynchroService startScheduling() {
-        long delayBeforeNextHour = DateUtils.delayBeforeNextHour();
+        // Launch once, at startup (after a delay of 10s)
+        threadPool.schedule(() -> {
+            boolean launchAtStartup;
+            try {
+                // wait for some peers
+                launchAtStartup = waitPeersReady();
+            } catch (InterruptedException e) {
+                return; // stop
+            }
 
-        // Five minute before the hour (to make sure to be ready when computing doc stat - see DocStatService)
-        delayBeforeNextHour -= 5 * 60 * 1000;
+            // If can be launched now: do it
+            if (launchAtStartup) {
+                synchronize();
+            }
 
-        // If not already scheduling to early (in the next 5 min) then launch it
-        if (delayBeforeNextHour > 5 * 60 * 1000) {
+            // Schedule next execution, to 5 min before each hour
+            // (to make sure to be ready when computing doc stat - see DocStatService)
+            long nextExecutionDelay = DateUtils.nextHour().getTime() - System.currentTimeMillis() - 5 * 60 * 1000;
 
-            // Launch with a delay of 10 sec
-            threadPool.schedule(this::synchronize, 10 * 1000, TimeUnit.MILLISECONDS);
-        }
+            // If next execution is too close, skip it
+            if (launchAtStartup && nextExecutionDelay < 5 * 60 * 1000) {
+                // add an hour
+                nextExecutionDelay += 60 * 60 * 1000;
+            }
 
-        // Schedule every hour
-        threadPool.scheduleAtFixedRate(
-                this::synchronize,
-                delayBeforeNextHour,
-                60 * 60 * 1000 /* every hour */,
-                TimeUnit.MILLISECONDS);
+            // Schedule every hour
+            threadPool.scheduleAtFixedRate(
+                    this::synchronize,
+                    nextExecutionDelay,
+                    60 * 60 * 1000 /* every hour */,
+                    TimeUnit.MILLISECONDS);
+        },
+        10 * 1000 /*wait 10 s */ ,
+        TimeUnit.MILLISECONDS);
 
         return this;
     }
 
-    /* -- protected methods -- */
-
-    protected void synchronize() {
+    public void synchronize() {
         logger.info("Starting synchronization...");
 
+        final boolean enableSynchroWebsocket = pluginSettings.enableSynchroWebsocket();
+
         // Closing all opened WS
-        closeWsClientEndpoints();
+        if (enableSynchroWebsocket) {
+            closeWsClientEndpoints();
+        }
 
         if (CollectionUtils.isNotEmpty(peerApiFilters)) {
 
@@ -141,7 +162,7 @@ public class SynchroService extends AbstractService {
                 // Get peers
                 List<Peer> peers = getPeersFromApi(peerApiFilter);
                 if (CollectionUtils.isNotEmpty(peers)) {
-                    peers.forEach(this::synchronize);
+                    peers.forEach(p -> synchronizePeer(p, enableSynchroWebsocket));
                     logger.info("Synchronization [OK]");
                 } else {
                     logger.info(String.format("Synchronization [OK] - no endpoint found for API [%s]", peerApiFilter.name()));
@@ -149,6 +170,47 @@ public class SynchroService extends AbstractService {
             });
         }
     }
+
+    public SynchroResult synchronizePeer(final Peer peer, boolean listenChanges) {
+        long now = System.currentTimeMillis();
+        SynchroResult result = new SynchroResult();
+
+        // Get the last execution time (or 0 is never synchronized)
+        // If not the first synchro, add a delay to last execution time
+        // to avoid missing data because incorrect clock configuration
+        long lastExecutionTime = getLastExecutionTime(peer);
+
+        // Execute actions
+        final long fromTime = lastExecutionTime > 0 ? lastExecutionTime - pluginSettings.getSynchroTimeOffset() : 0;
+        List<SynchroAction> executedActions = actions.stream()
+                .filter(a -> a.getEndPointApi().name().equals(peer.getApi()))
+                .map(a -> {
+                    try {
+                        a.handleSynchronize(peer, fromTime, result);
+                    } catch(Exception e) {
+                        logger.error(String.format("[%s] [%s] Failed to execute synchro action: %s", peer.getCurrency(), peer, e.getMessage()), e);
+                    }
+                    return a;
+                })
+                .collect(Collectors.toList());
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("[%s] [%s] User data imported in %s ms: %s", peer.getCurrency(), peer, System.currentTimeMillis() - now, result.toString()));
+        }
+
+        saveExecution(peer, result);
+
+        // Start listen changes on this peer
+        if (listenChanges) {
+            startListenChangesOnPeer(peer, executedActions);
+        }
+
+        return result;
+    }
+
+    /* -- protected methods -- */
+
+
 
     protected List<Peer> getPeersFromApi(final EndpointApi api) {
         Preconditions.checkNotNull(api);
@@ -169,37 +231,33 @@ public class SynchroService extends AbstractService {
         }
     }
 
-    protected void synchronize(final Peer peer) {
-        long now = System.currentTimeMillis();
-        SynchroResult result = new SynchroResult();
+    protected boolean hasSomePeers() {
 
-        long fromTime = getLastExecutionTime(peer);
+        List<String> currencyIds = currencyDao.getCurrencyIds();
+        if (CollectionUtils.isEmpty(currencyIds)) return false;
 
-        // If not the first synchro, add a delay to last execution time
-        // to avoid missing data because incorrect clock configuration
-        if (fromTime > 0) {
-            fromTime -= Math.abs(pluginSettings.getSynchroTimeOffset());
+        for (String currencyId: currencyIds) {
+            Long lastUpTime = peerDao.getMaxLastUpTime(currencyId);
+            if (lastUpTime != null) return true;
         }
 
-        ChangeSource changeSourceToListen = new ChangeSource();
-
-        // insert
-        for (SynchroAction action: actions) {
-
-            action.handleSynchronize(peer, fromTime, result);
-        }
-        //synchronize(peer, fromTime, result, changeSourceToListen);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s] [%s] User data imported in %s ms: %s", peer.getCurrency(), peer, System.currentTimeMillis() - now, result.toString()));
-        }
-
-        saveExecution(peer, result);
-
-        // Listens changes on this peer
-        //startListenChanges(peer);
-
+        return false;
     }
+
+    protected boolean waitPeersReady() throws InterruptedException{
+        int tryCounter = 0;
+        while (!isReady() && !hasSomePeers()) {
+            // Wait 10s
+            Thread.sleep(10 * 1000);
+            tryCounter++;
+            if (tryCounter == 6 /*1 min wait*/) {
+                logger.warn("Could not start data synchronisation. No Peer found.");
+                return false; // stop here
+            }
+        }
+        return true;
+    }
+
 
     protected long getLastExecutionTime(Peer peer) {
         Preconditions.checkNotNull(peer);
@@ -243,10 +301,27 @@ public class SynchroService extends AbstractService {
         wsClientEndpoints.clear();
     }
 
-    protected void listenChanges(final Peer peer, ChangeSource changeSource) {
+    protected void startListenChangesOnPeer(final Peer peer,
+                                            final List<SynchroAction> actions) {
         // Listens changes on this peer
         Preconditions.checkNotNull(peer);
-        Preconditions.checkNotNull(changeSource);
+        Preconditions.checkNotNull(actions);
+
+        // Compute a change source for ALL indices/types
+        final ChangeSource changeSource = new ChangeSource();
+        actions.stream()
+                .map(SynchroAction::getChangeSource)
+                .filter(Objects::nonNull)
+                .forEach(changeSource::merge);
+
+        // Prepare a map of actions by index/type
+        final ArrayListMultimap<String, SynchroAction> actionsBySource = ArrayListMultimap.create(actions.size(), 2);
+        actions.stream()
+            .forEach(a -> {
+                if (a.getChangeSource() != null) {
+                    actionsBySource.put(a.getChangeSource().toString(), a);
+                }
+            });
 
         // Get (or create) the websocket endpoint
         WebsocketClientEndpoint wsClientEndPoint = httpService.getWebsocketClientEndpoint(peer, WS_CHANGES_URL, false);
@@ -257,8 +332,15 @@ public class SynchroService extends AbstractService {
         // add listener
         wsClientEndPoint.registerListener( message -> {
             try {
-                ChangeEvent changeEvent = getObjectMapper().readValue(message, ChangeEvent.class);
-                importChangeEvent(peer, changeEvent);
+                ChangeEvent changeEvent = ChangeEvents.fromJson(getObjectMapper(), message);
+                String source = changeEvent.getIndex() + "/" +  changeEvent.getType();
+                List<SynchroAction> sourceActions = actionsBySource.get(source);
+
+                // Call each mapped actions
+                if (CollectionUtils.isNotEmpty(sourceActions)) {
+                    sourceActions.forEach(a -> a.handleChange(peer, changeEvent));
+                }
+
             } catch (Exception e) {
                 if (logger.isDebugEnabled()) {
                     logger.warn(String.format("[%s] Unable to process changes received by [/ws/_changes]: %s", peer, e.getMessage()), e);
@@ -273,16 +355,4 @@ public class SynchroService extends AbstractService {
         wsClientEndpoints.add(wsClientEndPoint);
     }
 
-    protected void importChangeEvent(final Peer peer, ChangeEvent changeEvent) {
-        Preconditions.checkNotNull(changeEvent);
-        Preconditions.checkNotNull(changeEvent.getOperation());
-
-        // Skip delete operation (imported by history/delete)
-        if (changeEvent.getOperation() == ChangeEvent.Operation.DELETE) return;
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s] [%s/%s] Received change event", peer, changeEvent.getIndex(), changeEvent.getType()));
-        }
-        changeEvent.getSource();
-    }
 }

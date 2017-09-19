@@ -132,7 +132,7 @@ public class ChangeService {
                                 return;
                             }
 
-                            ChangeEvent change=new ChangeEvent(
+                            ChangeEvent change = new ChangeEvent(
                                     indexName,
                                     index.type(),
                                     index.id(),

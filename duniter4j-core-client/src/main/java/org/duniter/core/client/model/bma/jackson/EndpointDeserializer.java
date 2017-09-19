@@ -46,15 +46,18 @@ public class EndpointDeserializer extends JsonDeserializer<NetworkPeering.Endpoi
     public static final String EP_END_REGEXP = "(?:[ ]+([a-z0-9-_]+[.][a-z0-9-_.]*))?(?:[ ]+([0-9.]+))?(?:[ ]+([0-9a-f:]+))?(?:[ ]+([0-9]+))$";
     public static final String BMA_API_REGEXP = "^BASIC_MERKLED_API" + EP_END_REGEXP;
     public static final String BMAS_API_REGEXP = "^BMAS" + EP_END_REGEXP;
+    public static final String WS2P_API_REGEXP = "^WS2P[ ]+([a-z0-9]+)[ ]+" + EP_END_REGEXP;
     public static final String OTHER_API_REGEXP = "^([A-Z_-]+)" + EP_END_REGEXP;
 
     private Pattern bmaPattern;
     private Pattern bmasPattern;
+    private Pattern ws2pPattern;
     private Pattern otherApiPattern;
 
     public EndpointDeserializer() {
         bmaPattern = Pattern.compile(BMA_API_REGEXP);
         bmasPattern = Pattern.compile(BMAS_API_REGEXP);
+        ws2pPattern = Pattern.compile(WS2P_API_REGEXP);
         otherApiPattern = Pattern.compile(OTHER_API_REGEXP);
     }
 
@@ -78,6 +81,15 @@ public class EndpointDeserializer extends JsonDeserializer<NetworkPeering.Endpoi
         if (mather.matches()) {
             endpoint.api = EndpointApi.BMAS;
             parseDefaultFormatEndPoint(mather, endpoint, 1);
+            return endpoint;
+        }
+
+        // WS2P API
+        mather = ws2pPattern.matcher(ept);
+        if (mather.matches()) {
+            endpoint.api = EndpointApi.WS2P;
+            endpoint.id = mather.group(1);
+            parseDefaultFormatEndPoint(mather, endpoint, 2);
             return endpoint;
         }
 

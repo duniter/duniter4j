@@ -27,6 +27,7 @@ public enum EndpointApi {
     BASIC_MERKLED_API,
     BMAS,
     BMATOR,
+    WS2P,
     ES_CORE_API,
     ES_USER_API,
     ES_SUBSCRIPTION_API,

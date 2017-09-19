@@ -127,6 +127,7 @@ public class NetworkPeering implements Serializable {
         public String ipv4;
         public String ipv6;
         public Integer port;
+        public String id;
 
         public EndpointApi getApi() {
             return api;
@@ -168,9 +169,18 @@ public class NetworkPeering implements Serializable {
             this.port = port;
         }
 
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
         @Override
         public String toString() {
             String s = "api=" + api.name() + "\n" +
+                    (id != null ? ("id=" + id + "\n") : "" ) +
                     "dns=" + dns + "\n" +
                     "ipv4=" + ipv4 + "\n" +
                     "ipv6=" + ipv6 + "\n" +

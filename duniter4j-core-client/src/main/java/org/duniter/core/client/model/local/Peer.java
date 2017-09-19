@@ -47,6 +47,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         private String ipv4;
         private String ipv6;
         private Integer port;
+        private String epId;
         private Boolean useSsl;
         private String pubkey;
         private String hash;
@@ -101,6 +102,11 @@ public class Peer implements LocalEntity<String>, Serializable {
             return this;
         }
 
+        public Builder setEpId(String epId) {
+            this.epId = epId;
+            return this;
+        }
+
         public Builder setHost(String host) {
             Preconditions.checkNotNull(host);
             if (InetAddressUtils.isIPv4Address(host)) {
@@ -135,6 +141,9 @@ public class Peer implements LocalEntity<String>, Serializable {
             if (source.port != null) {
                setPort(source.port);
             }
+            if (StringUtils.isNotBlank(source.id)) {
+                setEpId(source.id);
+            }
             return this;
         }
 
@@ -144,6 +153,9 @@ public class Peer implements LocalEntity<String>, Serializable {
                     (port == 443 || this.api == EndpointApi.BMAS.name());
             String api = this.api != null ? this.api : EndpointApi.BASIC_MERKLED_API.name();
             Peer ep = new Peer(api, dns, ipv4, ipv6, port, useSsl);
+            if (StringUtils.isNotBlank(this.epId)) {
+                ep.setEpId(this.epId);
+            }
             if (StringUtils.isNotBlank(this.currency)) {
                 ep.setCurrency(this.currency);
             }
@@ -165,6 +177,7 @@ public class Peer implements LocalEntity<String>, Serializable {
     public static final String PROPERTY_DNS = "dns";
     public static final String PROPERTY_IPV4 = "ipv4";
     public static final String PROPERTY_IPV6 = "ipv6";
+    public static final String PROPERTY_EP_ID = "epId";
     public static final String PROPERTY_STATS = "stats";
 
     private String id;
@@ -173,6 +186,7 @@ public class Peer implements LocalEntity<String>, Serializable {
     private String dns;
     private String ipv4;
     private String ipv6;
+    private String epId;
 
     private String url;
     private String host;
@@ -308,6 +322,14 @@ public class Peer implements LocalEntity<String>, Serializable {
         init();
     }
 
+    public String getEpId() {
+        return epId;
+    }
+
+    public void setEpId(String epId) {
+        this.epId = epId;
+    }
+
     public boolean isUseSsl() {
         return useSsl;
     }
@@ -353,6 +375,9 @@ public class Peer implements LocalEntity<String>, Serializable {
         StringJoiner joiner = new StringJoiner(" ");
         if (api != null) {
             joiner.add(api);
+        }
+        if (epId != null) {
+            joiner.add(epId);
         }
         if (dns != null) {
             joiner.add(dns);

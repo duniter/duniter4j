@@ -36,6 +36,7 @@ public class SynchroResult implements Serializable {
     public static final String PROPERTY_INSERTS = "inserts";
     public static final String PROPERTY_UPDATES = "updates";
     public static final String PROPERTY_DELETES = "deletes";
+    public static final String PROPERTY_INVALID_SIGNATURES = "invalidSignatures";
 
     private long insertTotal = 0;
     private long updateTotal = 0;

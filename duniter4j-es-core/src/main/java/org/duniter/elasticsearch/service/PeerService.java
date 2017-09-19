@@ -52,7 +52,11 @@ public class PeerService extends AbstractService  {
     private PeerDao peerDao;
     private ThreadPool threadPool;
 
-    private List<String> includeEndpointApis = Lists.newArrayList(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name());
+    // Define endpoint API to include
+    private List<String> includeEndpointApis = Lists.newArrayList(
+            EndpointApi.BASIC_MERKLED_API.name(),
+            EndpointApi.BMAS.name(),
+            EndpointApi.WS2P.name());
 
     @Inject
     public PeerService(Duniter4jClient client, PluginSettings settings, ThreadPool threadPool,
@@ -74,6 +78,12 @@ public class PeerService extends AbstractService  {
         if (!includeEndpointApis.contains(api)) {
             includeEndpointApis.add(api);
         }
+        return this;
+    }
+
+    public PeerService addIncludeEndpointApi(EndpointApi api) {
+        Preconditions.checkNotNull(api);
+        addIncludeEndpointApi(api.name());
         return this;
     }
 

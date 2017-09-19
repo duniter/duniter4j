@@ -22,10 +22,7 @@ package org.duniter.core.client.model.bma.jackson;
  * #L%
  */
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.NetworkPeering;

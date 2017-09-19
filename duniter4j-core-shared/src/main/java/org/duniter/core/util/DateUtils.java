@@ -45,7 +45,6 @@ public class DateUtils {
         Calendar cal = new GregorianCalendar();
         cal.setTimeInMillis(System.currentTimeMillis());
         cal.add(Calendar.HOUR, 1);
-        cal.add(Calendar.HOUR_OF_DAY, 1);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
