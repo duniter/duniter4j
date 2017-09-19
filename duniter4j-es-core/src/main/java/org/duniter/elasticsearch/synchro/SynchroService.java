@@ -237,24 +237,33 @@ public class SynchroService extends AbstractService {
         if (CollectionUtils.isEmpty(currencyIds)) return false;
 
         for (String currencyId: currencyIds) {
-            Long lastUpTime = peerDao.getMaxLastUpTime(currencyId);
-            if (lastUpTime != null) return true;
+            boolean hasSome = peerDao.hasPeersUpWithApi(currencyId, peerApiFilters);
+            if (hasSome) return true;
         }
 
         return false;
     }
 
     protected boolean waitPeersReady() throws InterruptedException{
-        int tryCounter = 0;
+        final int sleepTime = 10 * 1000 /*10s*/;
+
+
+
+        int maxWaitingDuration = 5 * 6 * sleepTime; // 5 min
+        int waitingDuration = 0;
         while (!isReady() && !hasSomePeers()) {
             // Wait 10s
-            Thread.sleep(10 * 1000);
-            tryCounter++;
-            if (tryCounter == 6 /*1 min wait*/) {
-                logger.warn("Could not start data synchronisation. No Peer found.");
+            Thread.sleep(sleepTime);
+            waitingDuration += sleepTime;
+            if (waitingDuration >= maxWaitingDuration) {
+                logger.warn(String.format("Could not start data synchronisation. No Peer found (after waiting %s min).", waitingDuration/60/1000));
                 return false; // stop here
             }
         }
+
+        // Wait again, to make sure all peers have been saved by NetworkService
+        Thread.sleep(sleepTime*2);
+
         return true;
     }
 

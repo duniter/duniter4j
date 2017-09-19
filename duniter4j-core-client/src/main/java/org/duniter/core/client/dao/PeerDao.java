@@ -22,9 +22,11 @@ package org.duniter.core.client.dao;
  * #L%
  */
 
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by blavenie on 29/12/15.
@@ -41,4 +43,5 @@ public interface PeerDao extends EntityDao<String, Peer> {
 
     void updatePeersAsDown(String currencyId, long maxUpTime);
 
+    boolean hasPeersUpWithApi(String currencyId, Set<EndpointApi> api);
 }

@@ -23,6 +23,7 @@ package org.duniter.core.client.dao.mem;
  */
 
 import org.duniter.core.client.dao.PeerDao;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.util.Preconditions;
 
@@ -113,5 +114,16 @@ public class MemoryPeerDaoImpl implements PeerDao {
                     peer.getStats().setStatus(Peer.PeerStatus.DOWN);
                 });
 
+    }
+
+    @Override
+    public boolean hasPeersUpWithApi(String currencyId, Set<EndpointApi> api) {
+        return getPeersByCurrencyId(currencyId)
+                .stream()
+                .anyMatch(p ->
+                    api.contains(EndpointApi.valueOf(p.getApi())) &&
+                            p.getStats() != null &&
+                            Peer.PeerStatus.UP.equals(p.getStats().getStatus())
+                );
     }
 }

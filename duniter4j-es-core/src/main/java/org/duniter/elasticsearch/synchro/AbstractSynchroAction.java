@@ -158,7 +158,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
         }
         try {
             if (trace) {
-                logger.trace(String.format("%s [WS] Processing new change event...", logPrefix));
+                logger.trace(String.format("%s Processing new change event...", logPrefix));
             }
 
             JsonNode source = ChangeEvents.readTree(changeEvent.getSource());

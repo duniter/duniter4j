@@ -192,6 +192,14 @@ public abstract class AbstractService implements Bean {
         }
 
         if (!cryptoService.verify(recordJson, signature, issuer)) {
+
+            if (recordJson.contains("\"socials\":[]")) {
+                recordJson = recordJson.replaceAll(",\"socials\":\\[\\]", "");
+                if (cryptoService.verify(recordJson, signature, issuer)) {
+                    return; // ok
+                }
+            }
+
             throw new InvalidSignatureException("Invalid signature of JSON string");
         }
 

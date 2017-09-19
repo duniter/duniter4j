@@ -53,12 +53,14 @@ public class EndpointDeserializer extends JsonDeserializer<NetworkPeering.Endpoi
     private Pattern bmasPattern;
     private Pattern ws2pPattern;
     private Pattern otherApiPattern;
+    private boolean debug;
 
     public EndpointDeserializer() {
-        bmaPattern = Pattern.compile(BMA_API_REGEXP);
-        bmasPattern = Pattern.compile(BMAS_API_REGEXP);
-        ws2pPattern = Pattern.compile(WS2P_API_REGEXP);
-        otherApiPattern = Pattern.compile(OTHER_API_REGEXP);
+        this.bmaPattern = Pattern.compile(BMA_API_REGEXP);
+        this.bmasPattern = Pattern.compile(BMAS_API_REGEXP);
+        this.ws2pPattern = Pattern.compile(WS2P_API_REGEXP);
+        this.otherApiPattern = Pattern.compile(OTHER_API_REGEXP);
+        this.debug = log.isDebugEnabled();
     }
 
     @Override
@@ -103,7 +105,12 @@ public class EndpointDeserializer extends JsonDeserializer<NetworkPeering.Endpoi
                 return endpoint;
             } catch(Exception e) {
                 // Log unknown API (and continue = will skip this endpoint)
-                log.warn("Unable to deserialize endpoint: unknown api [" + api + "]");
+                if (debug) {
+                    log.warn("Unable to deserialize endpoint: unknown api [" + api + "]", e); // link the exception
+                }
+                else {
+                    log.warn("Unable to deserialize endpoint: unknown api [" + api + "]");
+                }
             }
         }
 

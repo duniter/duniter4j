@@ -23,8 +23,10 @@ package org.duniter.elasticsearch.dao.impl;
  */
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.dao.AbstractDao;
@@ -50,6 +52,7 @@ import org.elasticsearch.search.aggregations.metrics.max.Max;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by blavenie on 29/12/15.
@@ -284,6 +287,29 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
         }
 
 
+    }
+
+    @Override
+    public boolean hasPeersUpWithApi(String currencyId, Set<EndpointApi> api) {
+        SearchRequestBuilder searchRequest = client.prepareSearch(currencyId)
+                .setFetchSource(false)
+                .setTypes(TYPE)
+                .setSize(0);
+
+        // Query = filter on lastUpTime
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
+
+        if (CollectionUtils.isNotEmpty(api)) {
+            query.minimumNumberShouldMatch(api.size());
+            api.forEach(a -> query.should(QueryBuilders.termQuery(Peer.PROPERTY_API, a.name())));
+        }
+
+        query.must(QueryBuilders.nestedQuery(Peer.PROPERTY_STATS, QueryBuilders.constantScoreQuery(QueryBuilders.boolQuery()
+                .filter(QueryBuilders.termQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_STATUS, Peer.PeerStatus.UP.name())))));
+
+        searchRequest.setQuery(query);
+        SearchResponse response = searchRequest.execute().actionGet();
+        return response.getHits() != null && response.getHits().getTotalHits() > 0;
     }
 
     @Override
