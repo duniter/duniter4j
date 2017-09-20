@@ -91,6 +91,7 @@ public class BlockchainService extends AbstractService {
         this.blockDao = blockDao;
         threadPool.scheduleOnStarted(() -> {
             blockchainRemoteService = serviceLocator.getBlockchainRemoteService();
+            setIsReady(true);
         });
         dispatchConnectionListener = new WebsocketClientEndpoint.ConnectionListener() {
             @Override

@@ -88,7 +88,7 @@ public class TestResource extends org.duniter.core.test.TestResource {
         FileUtils.copyDirectory(new File("../duniter4j-es-user/target/classes"), new File(esHomeDir, "plugins/duniter4j-es-user"));
 
         if (startESNode) {
-            Elasticsearch.main(new String[]{"startScheduling"});
+            Elasticsearch.main(new String[]{"start"});
         }
 
         /*while(true) {

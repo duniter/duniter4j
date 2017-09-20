@@ -158,7 +158,7 @@ public class PeerService extends AbstractService  {
                 filterDef, sortDef, true /*autoreconnect*/, threadPool.scheduler());
     }
 
-    public long getMaxLastUpTime(String currencyId) {
+    public Long getMaxLastUpTime(String currencyId) {
         return peerDao.getMaxLastUpTime(currencyId);
     }
 }
