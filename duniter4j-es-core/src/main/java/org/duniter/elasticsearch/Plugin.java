@@ -34,7 +34,6 @@ import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 
@@ -48,7 +47,7 @@ public class Plugin extends org.elasticsearch.plugins.Plugin {
 
     @Inject public Plugin(Settings settings) {
         this.enable = settings.getAsBoolean("duniter.enabled", true);
-        this.logger = Loggers.getLogger(Plugin.class.getName(), settings, new String[0]);
+        this.logger = Loggers.getLogger("duniter.core", settings, new String[0]);
     }
 
     @Override

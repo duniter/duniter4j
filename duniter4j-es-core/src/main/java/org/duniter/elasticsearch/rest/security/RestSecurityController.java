@@ -27,6 +27,7 @@ import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestRequest;
 
@@ -40,15 +41,18 @@ import java.util.TreeSet;
  */
 public class RestSecurityController extends AbstractLifecycleComponent<RestSecurityController> {
 
-    private static final ESLogger log = ESLoggerFactory.getLogger("duniter.security");
+    private final ESLogger log;
 
     private boolean enable;
+    private boolean trace;
 
     private Map<RestRequest.Method, Set<String>> allowRulesByMethod;
 
     @Inject
     public RestSecurityController(Settings settings, PluginSettings pluginSettings) {
         super(settings);
+        this.log = Loggers.getLogger("duniter.security", settings, new String[0]);
+        this.trace = log.isTraceEnabled();
         this.enable = pluginSettings.enableSecurity();
         this.allowRulesByMethod = new HashMap<>();
         if (!enable) {
@@ -72,11 +76,8 @@ public class RestSecurityController extends AbstractLifecycleComponent<RestSecur
     }
 
     public RestSecurityController allow(RestRequest.Method method, String regexPath) {
-        Set<String> allowRules = allowRulesByMethod.get(method);
-        if (allowRules == null) {
-            allowRules = new TreeSet<>();
-            allowRulesByMethod.put(method, allowRules);
-        }
+        Set<String> allowRules = allowRulesByMethod.computeIfAbsent(method, k -> new TreeSet<>());
+
         if (!allowRules.contains(regexPath)) {
             allowRules.add(regexPath);
         }
@@ -85,25 +86,42 @@ public class RestSecurityController extends AbstractLifecycleComponent<RestSecur
 
     public boolean isAllow(RestRequest request) {
         if (!this.enable) return true;
+
         RestRequest.Method method = request.method();
-        if (log.isTraceEnabled()) {
-            log.trace(String.format("Checking rules for %s request [%s]...", method, request.path()));
-        }
+        String path = request.path();
 
         Set<String> allowRules = allowRulesByMethod.get(request.method());
-        String path = request.path();
-        if (allowRules != null) {
-            for (String allowRule : allowRules) {
-                if (path.matches(allowRule)) {
-                    if (log.isTraceEnabled()) {
+
+        // Trace mode
+        if (trace) {
+            log.trace(String.format("Checking rules for %s request [%s]...", method, path));
+            if (allowRules == null) {
+                log.trace(String.format("No matching rules for %s request [%s]: reject", method, path));
+            }
+            else {
+                boolean found = false;
+                for (String allowRule : allowRules) {
+                    log.trace(String.format(" - Trying against rule [%s] for %s requests: not match", allowRule, method));
+                    if (path.matches(allowRule)) {
                         log.trace(String.format("Find matching rule [%s] for %s request [%s]: allow", allowRule, method, path));
+                        found = true;
+                        break;
                     }
-                    return true;
+                }
+                if (!found) {
+                    log.trace(String.format("No matching rules for %s request [%s]: reject", method, path));
                 }
             }
         }
 
-        log.trace(String.format("No matching rules for %s request [%s]: reject", method, path));
+        // Check if allow
+        if (allowRules != null) {
+            for (String allowRule : allowRules) {
+                if (path.matches(allowRule)) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 

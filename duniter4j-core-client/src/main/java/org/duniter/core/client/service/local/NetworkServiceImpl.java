@@ -186,8 +186,8 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     public CompletableFuture<Peer> asyncRefreshPeer(final Peer peer, final Map<String, String> memberUids, final ExecutorService pool) {
-        return CompletableFuture.supplyAsync(() -> getVersion(peer), pool)
-                .thenApply(p -> Peers.hasBmaEndpoint(p) ? getCurrentBlock(p) : p)
+        return CompletableFuture.supplyAsync(() -> fillVersion(peer), pool)
+                .thenApply(p -> Peers.hasBmaEndpoint(p) ? fillCurrentBlock(p) : p)
                 .exceptionally(throwable -> {
                     peer.getStats().setStatus(Peer.PeerStatus.DOWN);
                     if(!(throwable instanceof HttpConnectException)) {
@@ -210,7 +210,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
                         // Hardship
                         if (StringUtils.isNotBlank(uid)) {
-                            getHardship(p);
+                            fillHardship(p);
                         }
                     }
                     return p;
@@ -432,6 +432,14 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     }
 
+    public String getVersion(final Peer peer) {
+        JsonNode json = get(peer, BMA_URL_STATUS);
+        json = json.get("duniter");
+        if (json.isMissingNode()) throw new TechnicalException(String.format("Invalid format of [%s] response", BMA_URL_STATUS));
+        json = json.get("version");
+        if (json.isMissingNode()) throw new TechnicalException(String.format("No version attribute found in [%s] response", BMA_URL_STATUS));
+        return json.asText();
+    }
 
     /* -- protected methods -- */
 
@@ -549,19 +557,14 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return true;
     }
 
-    protected Peer getVersion(final Peer peer) {
-        JsonNode json = executeRequest(peer, BMA_URL_STATUS, JsonNode.class);
-        json = json.get("duniter");
-        if (json.isMissingNode()) throw new TechnicalException(String.format("Invalid format of [%s] response", BMA_URL_STATUS));
-        json = json.get("version");
-        if (json.isMissingNode()) throw new TechnicalException(String.format("No version attribute found in [%s] response", BMA_URL_STATUS));
-        String version = json.asText();
+    protected Peer fillVersion(final Peer peer) {
+        String version = getVersion(peer);
         peer.getStats().setVersion(version);
         return peer;
     }
 
-    protected Peer getCurrentBlock(final Peer peer) {
-        JsonNode json = executeRequest(peer, BMA_URL_BLOCKCHAIN_CURRENT , JsonNode.class);
+    protected Peer fillCurrentBlock(final Peer peer) {
+        JsonNode json = get(peer, BMA_URL_BLOCKCHAIN_CURRENT);
 
         String currency = json.has("currency") ? json.get("currency").asText() : null;
         peer.setCurrency(currency);
@@ -582,10 +585,10 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return peer;
     }
 
-    protected Peer getHardship(final Peer peer) {
+    protected Peer fillHardship(final Peer peer) {
         if (StringUtils.isBlank(peer.getPubkey())) return peer;
 
-        JsonNode json = executeRequest(peer, BMA_URL_BLOCKCHAIN_HARDSHIP + peer.getPubkey(), JsonNode.class);
+        JsonNode json = get(peer, BMA_URL_BLOCKCHAIN_HARDSHIP + peer.getPubkey());
         Integer level = json.has("level") ? json.get("level").asInt() : null;
         peer.getStats().setHardshipLevel(level);
         return peer;

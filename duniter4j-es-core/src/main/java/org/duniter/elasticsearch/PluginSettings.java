@@ -230,6 +230,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.p2p.peerTimeOffset", 60*60/*=1hour*/);
     }
 
+    public String[] getSynchroPingEndpoints()  {
+        return settings.getAsArray("duniter.p2p.ping.endpoints");
+    }
+
 
     public boolean isDevMode() {
         return settings.getAsBoolean("duniter.dev.enable", false);
@@ -296,7 +300,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean enableDocStats() {
-        return settings.getAsBoolean("duniter.stats.enable", false);
+        return settings.getAsBoolean("duniter.stats.enable", true);
     }
 
     /* protected methods */

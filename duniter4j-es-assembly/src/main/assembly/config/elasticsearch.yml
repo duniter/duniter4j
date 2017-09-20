@@ -99,7 +99,7 @@ http.cors.enabled: true
 #
 # Require explicit names when deleting indices:
 #
-# rest.destructive_requires_name: true
+# action.destructive_requires_name: true
 #
 # Security to isolate plugin classpath - /!\ WARNING: should be DISABLE for Duniter4j
 #
@@ -163,6 +163,10 @@ duniter.security.enable: true
 # Max peer time offset, in seconds (max peer's clock error) - use to request peer's data. (default: 3600 = 1hour)
 #
 # duniter.p2p.peerTimeOffset: 3600
+#
+# Pass an initial list of hosts to perform synchronization when new node is started:
+#
+duniter.p2p.ping.endpoints: ["g1:ES_USER_API g1.data.duniter.fr 443"]
 #
 # ---------------------------------- Duniter4j Mail module -----------------------
 #

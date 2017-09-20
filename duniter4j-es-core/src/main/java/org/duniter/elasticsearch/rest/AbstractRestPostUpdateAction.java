@@ -30,6 +30,7 @@ import org.duniter.elasticsearch.exception.DuniterElasticsearchException;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.*;
 
@@ -38,7 +39,7 @@ import static org.elasticsearch.rest.RestStatus.OK;
 
 public abstract class AbstractRestPostUpdateAction extends BaseRestHandler {
 
-    private static ESLogger log = null;
+    private final ESLogger log;
 
     private final JsonUpdater updater;
 
@@ -49,11 +50,11 @@ public abstract class AbstractRestPostUpdateAction extends BaseRestHandler {
                                         String typeName,
                                         JsonUpdater updater) {
         super(settings, controller, client);
+        log = Loggers.getLogger("duniter.rest" + indexName, settings, String.format("[%s]", indexName));
         controller.registerHandler(POST,
                 String.format("/%s/%s/{id}/_update", indexName, typeName),
                 this);
         securityController.allowIndexType(POST, indexName, typeName);
-        log = ESLoggerFactory.getLogger(String.format("[%s]", indexName));
         this.updater = updater;
     }
 

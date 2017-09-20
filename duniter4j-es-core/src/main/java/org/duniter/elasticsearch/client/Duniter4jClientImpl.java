@@ -111,14 +111,15 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  */
 public class Duniter4jClientImpl implements Duniter4jClient {
 
-    private final static ESLogger logger = Loggers.getLogger("duniter.client");
+    private final ESLogger logger;
 
     private final Client client;
     private final org.duniter.elasticsearch.threadpool.ThreadPool threadPool;
 
     @Inject
-    public Duniter4jClientImpl(Client client, org.duniter.elasticsearch.threadpool.ThreadPool threadPool) {
+    public Duniter4jClientImpl(Client client, Settings settings, org.duniter.elasticsearch.threadpool.ThreadPool threadPool) {
         super();
+        this.logger = Loggers.getLogger("duniter.client", settings, new String[0]);
         this.client = client;
         this.threadPool = threadPool;
     }

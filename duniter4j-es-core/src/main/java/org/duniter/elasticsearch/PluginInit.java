@@ -189,7 +189,15 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                             MovementDao.TYPE)
                     .allowPostSearchIndexType(
                             currencyName,
-                            MovementDao.TYPE);
+                            MovementDao.TYPE)
+
+                    // Add access to <currency>/synchro index
+                    .allowIndexType(RestRequest.Method.GET,
+                            currencyName,
+                            SynchroExecutionDao.TYPE)
+                    .allowPostSearchIndexType(
+                            currencyName,
+                            SynchroExecutionDao.TYPE);
 
             /* TODO à décommenter quand les pending seront sauvegardés
             injector.getInstance(DocStatService.class)

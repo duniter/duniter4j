@@ -23,19 +23,16 @@ package org.duniter.elasticsearch.rest.security;
  */
 
 import org.duniter.elasticsearch.PluginSettings;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.rest.*;
-
-import java.util.Map;
 
 import static org.elasticsearch.rest.RestStatus.FORBIDDEN;
 
 public class RestSecurityFilter extends RestFilter {
 
-    private static final ESLogger log = ESLoggerFactory.getLogger("duniter.security");
+    private final ESLogger logger;
 
     private RestSecurityController securityController;
     private final boolean debug;
@@ -43,19 +40,20 @@ public class RestSecurityFilter extends RestFilter {
     @Inject
     public RestSecurityFilter(PluginSettings pluginSettings, RestController controller, RestSecurityController securityController) {
         super();
+        logger = Loggers.getLogger("duniter.security", pluginSettings.getSettings(), new String[0]);
         if (pluginSettings.enableSecurity()) {
-            log.info("Enable security on duniter4j index access");
+            logger.info("Enable security on all duniter4j indices");
             controller.registerFilter(this);
         }
         this.securityController = securityController;
-        this.debug = log.isDebugEnabled();
+        this.debug = logger.isDebugEnabled();
     }
 
     @Override
     public void process(RestRequest request, RestChannel channel, RestFilterChain filterChain) throws Exception {
 
         if (request.path().contains("message/record")) {
-            log.debug("---------------- Redirection ?!");
+            logger.debug("---------------- Redirection ?!");
 
             filterChain.continueProcessing(new RedirectionRestRequest(request, "message/inbox"), channel);
             return;
@@ -63,14 +61,14 @@ public class RestSecurityFilter extends RestFilter {
 
         if (securityController.isAllow(request)) {
             if (debug) {
-                log.debug(String.format("Allow %s request [%s]", request.method().name(), request.path()));
+                logger.debug(String.format("Allow %s request [%s]", request.method().name(), request.path()));
             }
 
             filterChain.continueProcessing(request, channel);
         }
 
         else {
-            log.warn(String.format("Refused %s request to [%s]", request.method().name(), request.path()));
+            logger.warn(String.format("Refused %s request to [%s]", request.method().name(), request.path()));
             channel.sendResponse(new BytesRestResponse(FORBIDDEN));
         }
     }

@@ -91,4 +91,5 @@ public interface NetworkService extends Service {
                                 final ExecutorService executor);
 
 
+    String getVersion(final Peer peer);
 }

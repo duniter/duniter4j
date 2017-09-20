@@ -1,5 +1,6 @@
 package org.duniter.elasticsearch.subscription.synchro;
 
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.synchro.SynchroService;
@@ -23,6 +24,11 @@ public class SynchroSubscriptionRecordAction extends AbstractSynchroAction {
         setEnableUpdate(true); // with update
 
         synchroService.register(this);
+    }
+
+    @Override
+    public EndpointApi getEndPointApi() {
+        return EndpointApi.ES_SUBSCRIPTION_API;
     }
 
 }

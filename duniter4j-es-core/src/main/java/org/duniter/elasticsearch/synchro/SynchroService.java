@@ -22,16 +22,21 @@ package org.duniter.elasticsearch.synchro;
  * #L%
  */
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.duniter.core.client.dao.CurrencyDao;
 import org.duniter.core.client.dao.PeerDao;
+import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.EndpointApi;
+import org.duniter.core.client.model.bma.Endpoints;
+import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.HttpService;
+import org.duniter.core.client.service.local.NetworkService;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.DateUtils;
@@ -50,6 +55,7 @@ import org.duniter.elasticsearch.service.changes.ChangeSource;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.Inject;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -63,12 +69,13 @@ public class SynchroService extends AbstractService {
 
     private static final String WS_CHANGES_URL = "/ws/_changes";
 
-    protected HttpService httpService;
-    protected final Set<EndpointApi> peerApiFilters = Sets.newHashSet();
-    protected final ThreadPool threadPool;
-    protected final PeerDao peerDao;
-    protected final CurrencyDao currencyDao;
-    protected final SynchroExecutionDao synchroExecutionDao;
+    private HttpService httpService;
+    private NetworkService networkService;
+    private final Set<EndpointApi> peerApiFilters = Sets.newHashSet();
+    private final ThreadPool threadPool;
+    private final PeerDao peerDao;
+    private final CurrencyDao currencyDao;
+    private final SynchroExecutionDao synchroExecutionDao;
     private List<WebsocketClientEndpoint> wsClientEndpoints = Lists.newArrayList();
     private List<SynchroAction> actions = Lists.newArrayList();
 
@@ -88,6 +95,7 @@ public class SynchroService extends AbstractService {
         this.synchroExecutionDao = synchroExecutionDao;
         threadPool.scheduleOnStarted(() -> {
             httpService = serviceLocator.getHttpService();
+            networkService = serviceLocator.getNetworkService();
             setIsReady(true);
         });
     }
@@ -173,6 +181,14 @@ public class SynchroService extends AbstractService {
 
     public SynchroResult synchronizePeer(final Peer peer, boolean enableSynchroWebsocket) {
         long now = System.currentTimeMillis();
+
+        // Check if peer alive and valid
+        boolean isAliveAndValid = isAliveAndValid(peer);
+        if (!isAliveAndValid) {
+            logger.warn(String.format("[%s] [%s] Not reachable, or not running on this currency. Skipping.", peer.getCurrency(), peer));
+            return null;
+        }
+
         SynchroResult result = new SynchroResult();
 
         // Get the last execution time (or 0 is never synchronized)
@@ -210,7 +226,39 @@ public class SynchroService extends AbstractService {
 
     /* -- protected methods -- */
 
+    protected List<Peer> getConfigPingPeers(List<String> currencyIds, final EndpointApi api) {
+        String[] endpoints = pluginSettings.getSynchroPingEndpoints();
+        if (ArrayUtils.isEmpty(endpoints)) return null;
 
+        List<Peer> peers = Lists.newArrayList();
+        for (String endpoint: endpoints) {
+            try {
+                String[] endpointPart = endpoint.split(":");
+
+                if (endpointPart.length == 2) {
+                    String currency = endpointPart[0];
+                    NetworkPeering.Endpoint ep = Endpoints.parse(endpointPart[1]);
+                    if (ep.api == api && currencyIds.contains(currency)) {
+                        Peer peer = Peer.newBuilder()
+                                .setEndpoint(ep)
+                                .setCurrency(currency)
+                                .build();
+
+                        String peerId = cryptoService.hash(peer.computeKey());
+                        peer.setId(peerId);
+
+                        peers.add(peer);
+                    }
+                }
+                else {
+                    logger.warn(String.format("Unable to parse P2P endpoint [%s]: %s", endpoint));
+                }
+            } catch (IOException e) {
+                logger.warn(String.format("Unable to parse P2P endpoint [%s]: %s", endpoint, e.getMessage()));
+            }
+        }
+        return peers;
+    }
 
     protected List<Peer> getPeersFromApi(final EndpointApi api) {
         Preconditions.checkNotNull(api);
@@ -219,11 +267,19 @@ public class SynchroService extends AbstractService {
             List<String> currencyIds = currencyDao.getCurrencyIds();
             if (CollectionUtils.isEmpty(currencyIds)) return null;
 
-            return currencyIds.stream()
+            // Get default peer, defined in config option
+            List<Peer> peers = getConfigPingPeers(currencyIds, api);
+            if (peers == null) {
+                peers = Lists.newArrayList();
+            }
+
+            peers.addAll(currencyIds.stream()
                     .map(currencyId -> peerDao.getPeersByCurrencyIdAndApi(currencyId, api.name()))
                     .filter(Objects::nonNull)
                     .flatMap(List::stream)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
+
+            return peers;
         }
         catch (Exception e) {
             logger.error(String.format("Could not get peers for Api [%s]", api.name()), e);
@@ -364,4 +420,26 @@ public class SynchroService extends AbstractService {
         wsClientEndpoints.add(wsClientEndPoint);
     }
 
+    protected boolean isAliveAndValid(Peer peer) {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(peer.getCurrency());
+
+        try {
+            // TODO: check version is compatible
+            //String version = networkService.getVersion(peer);
+
+            Currency currency = currencyDao.getById(peer.getCurrency());
+            if (currency == null) return false;
+
+            BlockchainBlock block = httpService.executeRequest(peer, String.format("/%s/block/0/_source", peer.getCurrency()), BlockchainBlock.class);
+
+            return Objects.equals(block.getCurrency(), peer.getCurrency()) &&
+                   Objects.equals(block.getSignature(), currency.getFirstBlockSignature());
+
+        }
+        catch(Exception e) {
+            logger.debug(String.format("[%s] [%s] Peer not alive or invalid: %s", peer.getCurrency(), peer, e.getMessage()));
+            return false;
+        }
+    }
 }
