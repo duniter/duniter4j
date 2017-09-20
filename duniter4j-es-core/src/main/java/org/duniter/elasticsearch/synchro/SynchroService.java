@@ -81,7 +81,7 @@ public class SynchroService extends AbstractService {
                           PeerDao peerDao,
                           SynchroExecutionDao synchroExecutionDao,
                           final ServiceLocator serviceLocator) {
-        super("duniter.synchro", client, settings, cryptoService);
+        super("duniter.p2p", client, settings, cryptoService);
         this.threadPool = threadPool;
         this.currencyDao = currencyDao;
         this.peerDao = peerDao;
@@ -171,7 +171,7 @@ public class SynchroService extends AbstractService {
         }
     }
 
-    public SynchroResult synchronizePeer(final Peer peer, boolean listenChanges) {
+    public SynchroResult synchronizePeer(final Peer peer, boolean enableSynchroWebsocket) {
         long now = System.currentTimeMillis();
         SynchroResult result = new SynchroResult();
 
@@ -201,7 +201,7 @@ public class SynchroService extends AbstractService {
         saveExecution(peer, result);
 
         // Start listen changes on this peer
-        if (listenChanges) {
+        if (enableSynchroWebsocket) {
             startListenChangesOnPeer(peer, executedActions);
         }
 

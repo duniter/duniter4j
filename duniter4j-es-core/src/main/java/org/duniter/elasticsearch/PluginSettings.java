@@ -219,15 +219,15 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public boolean enableSynchro()  {
-        return settings.getAsBoolean("duniter.synchro.enable", true);
+        return settings.getAsBoolean("duniter.p2p.enable", true);
     }
 
     public boolean enableSynchroWebsocket()  {
-        return settings.getAsBoolean("duniter.synchro.ws.enable", true);
+        return settings.getAsBoolean("duniter.p2p.ws.enable", true);
     }
 
     public int getSynchroTimeOffset()  {
-        return settings.getAsInt("duniter.synchro.timeOffset", 60*60/*=1hour*/);
+        return settings.getAsInt("duniter.p2p.peerTimeOffset", 60*60/*=1hour*/);
     }
 
 

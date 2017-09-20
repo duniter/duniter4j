@@ -158,15 +158,7 @@ duniter.security.enable: true
 #
 # Should synchronize data from an existing ES node ?
 #
-duniter.data.sync.enable: true
-#duniter.data.sync.enable: true
-duniter.data.sync.host: localhost
-duniter.data.sync.port: 9200
-
-#
-# Should maintain stats on data ?
-#
-duniter.data.stats.enable: true
+duniter.p2p.enable: false
 
 # ---------------------------------- Duniter4j Mail module -----------------------
 #

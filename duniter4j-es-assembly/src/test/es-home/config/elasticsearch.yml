@@ -14,7 +14,6 @@
 #
 # Use a descriptive name for your cluster:
 #
-# cluster.name: my-application
 cluster.name: duniter4j-es-assembly-test
 #
 # ------------------------------------ Node ------------------------------------
@@ -101,19 +100,20 @@ http.cors.enabled: true
 # Require explicit names when deleting indices:
 #
 # rest.destructive_requires_name: true
-
+#
+# Security to isolate plugin classpath - /!\ WARNING: should be DISABLE for Duniter4j
+#
 security.manager.enabled: false
-
 #
 # ---------------------------------- Duniter4j ---------------------------------
 #
-# Disbale duniter4j plugin
+# Enable duniter4j plugins
 #
 # duniter.enabled: false
 #
-# Delete then create all indices at startup - DO NOT set to true in production
+# Delete then create all indices at startup - /!\ WARNING: DO NOT set to true in production
 #
-#duniter.indices.reload: true
+# duniter.indices.reload: true
 #
 # Default string analyzer
 #
@@ -123,30 +123,30 @@ duniter.string.analyzer: french
 #
 duniter.blockchain.enable: true
 #
-# Force blockchain reload - WARNING: all user events will be resetted to 'unread'
+# Force blockchain full synchronization - /!\ WARNING: all user events will be reset to 'unread'
 #
-#duniter.blockchain.reload: true
-#duniter.blockchain.reload.from: 50999
+# duniter.blockchain.reload: true
+# duniter.blockchain.reload.from: 50999
 #
 # Duniter node address
 #
 duniter.host: g1.duniter.org
 duniter.port: 10901
-#duniter.useSsl: true
+# duniter.useSsl: true
 #
-# Should maintain stats on index rows count ?
+# Compute statistics on indices (each hour) ? (default: true)
 #
-#duniter.stats.enable: false
-
+# duniter.stats.enable: false
 #
 # ---------------------------------- Duniter4j security module -------------------
 #
-# Keyring for the ES node
+# Keyring, use to sign emitted documents (user events, subscription, etc.).
+# If not set, random keys will be generated.
 #
 duniter.keyring.salt: 'abc'
 duniter.keyring.password: 'def'
 #
-# Enable security - will restrict HTTP access to only Duniter4j known indices
+# Enable security - will restrict HTTP access to only Duniter4j known indices - /!\ WARNING: should be enable for production use
 #
 duniter.security.enable: true
 #
@@ -158,12 +158,20 @@ duniter.security.enable: true
 #
 # duniter.auth.tokenValidityDuration: 3600  # = 1hour
 
-# ---------------------------------- Duniter4j P2P sync -------------------------
+# ---------------------------------- Duniter4j P2P module -------------------------
 #
-# Should synchronize data from an existing ES node ?
+# Enable P2P synchronize between ES peers ? (default: true)
 #
-#duniter.p2p.enable: false
-
+# duniter.p2p.enable: false
+#
+# Enable P2P websocket direct synchronisation ? (default: true)
+#
+# duniter.p2p.ws.enable: false
+#
+# Max peer time offset, in seconds (max peer's clock error) - use to request peer's data. (default: 3600 = 1hour)
+#
+# duniter.p2p.peerTimeOffset: 3600
+#
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
 # Enable mail module ?
@@ -199,10 +207,10 @@ duniter.mail.enable: false
 
 # ---------------------------------- Duniter4j Websocket server ----------------------
 #
-# Websocket port (usefull for listen changes)
+# Websocket port (default: 9400-9410)
 #
 duniter.ws.port: 9400-9410
-
+#
 # ---------------------------------- Duniter4j Subscription module -------------------
 #
 # Enable subscription module (Need to enable mail features)

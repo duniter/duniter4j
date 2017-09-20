@@ -87,7 +87,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                                  PluginSettings pluginSettings,
                                  CryptoService cryptoService,
                                  ThreadPool threadPool) {
-        super("duniter.synchro." + toIndex, client, pluginSettings, cryptoService);
+        super("duniter.p2p." + toIndex, client, pluginSettings, cryptoService);
         this.fromIndex = fromIndex;
         this.fromType = fromType;
         this.toIndex = toIndex;
