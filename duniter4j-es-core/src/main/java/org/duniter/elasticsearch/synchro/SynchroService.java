@@ -303,8 +303,6 @@ public class SynchroService extends AbstractService {
     protected boolean waitPeersReady() throws InterruptedException{
         final int sleepTime = 10 * 1000 /*10s*/;
 
-
-
         int maxWaitingDuration = 5 * 6 * sleepTime; // 5 min
         int waitingDuration = 0;
         while (!isReady() && !hasSomePeers()) {
@@ -326,7 +324,6 @@ public class SynchroService extends AbstractService {
 
     protected long getLastExecutionTime(Peer peer) {
         Preconditions.checkNotNull(peer);
-        Preconditions.checkNotNull(peer.getId());
 
         try {
             SynchroExecution execution = synchroExecutionDao.getLastExecution(peer);

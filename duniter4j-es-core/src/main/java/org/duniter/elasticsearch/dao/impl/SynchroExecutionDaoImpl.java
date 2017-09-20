@@ -88,16 +88,18 @@ public class SynchroExecutionDaoImpl extends AbstractDao implements SynchroExecu
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(peer.getCurrency());
         Preconditions.checkNotNull(peer.getId());
+        Preconditions.checkNotNull(peer.getApi());
 
         BoolQueryBuilder query = QueryBuilders.boolQuery()
-                .filter(QueryBuilders.termQuery(SynchroExecution.PROPERTY_PEER, peer.getId()));
+                .filter(QueryBuilders.termQuery(SynchroExecution.PROPERTY_PEER, peer.getId()))
+                .filter(QueryBuilders.termQuery(SynchroExecution.PROPERTY_API, peer.getApi()));
 
         SearchResponse response = client.prepareSearch(peer.getCurrency())
                 .setTypes(TYPE)
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
                 .setQuery(query)
                 .setFetchSource(true)
-                .setFrom(0).setSize(1)
+                .setSize(1)
                 .addSort(SynchroExecution.PROPERTY_TIME, SortOrder.DESC)
                 .get();
 
@@ -122,6 +124,12 @@ public class SynchroExecutionDaoImpl extends AbstractDao implements SynchroExecu
 
                     // peer
                     .startObject(SynchroExecution.PROPERTY_PEER)
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // peer
+                    .startObject(SynchroExecution.PROPERTY_API)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
