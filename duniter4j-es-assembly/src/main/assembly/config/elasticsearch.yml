@@ -166,7 +166,10 @@ duniter.security.enable: true
 #
 # Pass an initial list of hosts to perform synchronization when new node is started:
 #
-duniter.p2p.ping.endpoints: ["g1:ES_USER_API g1.data.duniter.fr 443"]
+duniter.p2p.ping.endpoints: [
+   "g1:ES_USER_API g1.data.duniter.fr 443",
+   "g1:ES_SUBSCRIPTION_API g1.data.duniter.fr 443"
+]
 #
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
