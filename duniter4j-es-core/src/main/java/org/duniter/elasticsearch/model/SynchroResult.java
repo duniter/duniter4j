@@ -99,6 +99,7 @@ public class SynchroResult implements Serializable {
         return deleteTotal;
     }
 
+
     public long getInvalidSignatures() {
         return invalidSignatureTotal;
     }
@@ -108,6 +109,18 @@ public class SynchroResult implements Serializable {
         return insertTotal + updateTotal + deleteTotal;
     }
 
+    public void setInserts(long inserts) {
+        this.insertTotal = inserts;
+    }
+    public void setDeletes(long deletes) {
+        this.deleteTotal = deletes;
+    }
+    public void setUpdates(long updates) {
+        this.updateTotal = updates;
+    }
+    public void setInvalidSignatures(long invalidSignatures) {
+        this.invalidSignatureTotal = invalidSignatures;
+    }
 
     public String toString() {
         return new StringBuilder()
