@@ -277,6 +277,6 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
         // Allow scroll search
         injector.getInstance(RestSecurityController.class)
-                .allow(RestRequest.Method.POST, "^_search/scroll$");
+                .allow(RestRequest.Method.POST, "^/_search/scroll$");
     }
 }
