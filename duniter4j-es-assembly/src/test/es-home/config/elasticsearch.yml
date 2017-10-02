@@ -162,7 +162,7 @@ duniter.security.enable: true
 #
 # Enable P2P synchronize between ES peers ? (default: true)
 #
-# duniter.p2p.enable: false
+# duniter.p2p.enable: true
 #
 # Enable P2P websocket direct synchronisation ? (default: true)
 #

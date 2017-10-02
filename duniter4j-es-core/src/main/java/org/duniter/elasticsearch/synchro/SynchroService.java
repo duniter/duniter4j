@@ -70,7 +70,7 @@ public class SynchroService extends AbstractService {
     private static final String WS_CHANGES_URL = "/ws/_changes";
 
     private HttpService httpService;
-    private NetworkService networkService;
+    //private NetworkService networkService;
     private final Set<EndpointApi> peerApiFilters = Sets.newHashSet();
     private final ThreadPool threadPool;
     private final PeerDao peerDao;
@@ -95,7 +95,7 @@ public class SynchroService extends AbstractService {
         this.synchroExecutionDao = synchroExecutionDao;
         threadPool.scheduleOnStarted(() -> {
             httpService = serviceLocator.getHttpService();
-            networkService = serviceLocator.getNetworkService();
+            //networkService = serviceLocator.getNetworkService();
             setIsReady(true);
         });
     }

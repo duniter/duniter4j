@@ -37,19 +37,19 @@ Duniter4j has tree main components :
 sudo apt-get install openjdk-8-jre 
 ```
 
-#### Install libsodium 
+### Install libsodium 
 
 [The Sodium crypto library (libsodium)](https://download.libsodium.org/doc/installation/) is a modern, easy-to-use software library for encryption, decryption, signatures, password hashing and more. 
 
-- Get libsodium
+- Get libsodium (version 1.0.11 or newer)
 ```
-    wget -kL https://github.com/jedisct1/libsodium/releases/download/1.0.11/libsodium-1.0.11.tar.gz
-    tar -xvf libsodium-1.0.11.tar.gz
+    wget -kL https://github.com/jedisct1/libsodium/releases/download/1.0.14/libsodium-1.0.14.tar.gz
+    tar -xvf libsodium-1.0.14.tar.gz
 ```
 
 - Installation:
 ```
-    cd libsodium-1.0.11
+    cd libsodium-1.0.14
     sudo apt-get install build-essential
     sudo ./configure
     sudo make && make check
