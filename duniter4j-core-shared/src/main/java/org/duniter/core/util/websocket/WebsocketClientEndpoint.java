@@ -64,11 +64,13 @@ public class WebsocketClientEndpoint implements Closeable {
 
     @Override
     public void close() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("[%s] Closing WebSocket session...", endpointURI));
+        if (userSession != null) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("[%s] Closing WebSocket session...", endpointURI));
+            }
+            userSession.close();
+            userSession = null;
         }
-        userSession.close();
-        userSession = null;
     }
 
     /**
@@ -116,7 +118,7 @@ public class WebsocketClientEndpoint implements Closeable {
                 log.debug("[%s] Received message: " + message);
             }
             synchronized (messageListeners) {
-                messageListeners.stream().forEach(messageListener -> {
+                messageListeners.forEach(messageListener -> {
                     try {
                         messageListener.onMessage(message);
                     } catch (Exception e) {

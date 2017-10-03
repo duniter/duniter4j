@@ -157,6 +157,11 @@ public class SynchroExecutionDaoImpl extends AbstractDao implements SynchroExecu
                     .field("index", "not_analyzed")
                     .endObject()
 
+                    // execution time
+                    .startObject(SynchroExecution.PROPERTY_EXECUTION_TIME)
+                    .field("type", "long")
+                    .endObject()
+
                     // result
                     .startObject(SynchroExecution.PROPERTY_RESULT)
                     .field("type", "nested")

@@ -58,7 +58,7 @@ public class EndpointDeserializer extends JsonDeserializer<NetworkPeering.Endpoi
                 log.warn(e.getMessage(), e); // link the exception
             }
             else {
-                log.warn(e.getMessage());
+                log.debug(e.getMessage());
             }
             return null;
         }

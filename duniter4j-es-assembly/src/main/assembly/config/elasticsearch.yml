@@ -156,19 +156,23 @@ duniter.security.enable: true
 #
 # duniter.p2p.enable: false
 #
-# Enable P2P websocket direct synchronisation ? (default: true)
+# Enable P2P synchronisation using websocket ? (default: true)
 #
 # duniter.p2p.ws.enable: false
 #
-# Max peer time offset, in seconds (max peer's clock error) - use to request peer's data. (default: 3600 = 1hour)
+# Time delay (in seconds) to request last documents to peer (e.g. if peer's clock is late). (default: 3600s = 1h)
 #
 # duniter.p2p.peerTimeOffset: 3600
 #
-# Pass an initial list of hosts to perform synchronization when new node is started:
+# Enable discovery on network peers, to automatically synchronize this peers (default: true)
 #
-duniter.p2p.ping.endpoints: [
-   "g1:ES_USER_API g1.data.duniter.fr 443",
-   "g1:ES_SUBSCRIPTION_API g1.data.duniter.fr 443"
+# duniter.p2p.discovery.enable: false
+#
+# Pass a list of hosts to always synchronize (default: <empty>)
+#
+duniter.p2p.includes.endpoints: [
+   "ES_USER_API g1.data.duniter.fr 443",
+   "ES_SUBSCRIPTION_API g1.data.duniter.fr 443"
 ]
 #
 # ---------------------------------- Duniter4j Mail module -----------------------

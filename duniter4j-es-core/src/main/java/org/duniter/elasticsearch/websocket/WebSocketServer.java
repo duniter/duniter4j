@@ -131,7 +131,7 @@ public class WebSocketServer {
         }
 
         if (started) {
-            logger.info(String.format("Websocket server started {%s:%s} on path [%s]", host, port, WS_PATH));
+            logger.info(String.format("Websocket server started {%s:%s%s}", host, port, WS_PATH));
         }
         else {
             String error = String.format("Failed to startScheduling Websocket server. Could not bind address {%s:%s}", host, port);

@@ -43,8 +43,11 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.joda.time.format.DateTimeFormat;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public abstract class AbstractSynchroAction extends AbstractService implements SynchroAction {
@@ -119,7 +122,14 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
         Preconditions.checkNotNull(result);
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s] [%s/%s] Synchronizing where [%s > %s]...", peer, toIndex, toType, versionFieldName, fromTime));
+            if (Record.PROPERTY_TIME.equals(versionFieldName)) {
+                logger.debug(String.format("[%s] [%s] [%s/%s] Synchronization {since %s}...", peer.getCurrency(), peer, toIndex, toType,
+                        DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM)
+                                .format(new Date(fromTime * 1000))));
+            }
+            else {
+                logger.debug(String.format("[%s] [%s] [%s/%s] Synchronization {where %s > %s}...", peer.getCurrency(), peer, toIndex, toType, versionFieldName, fromTime));
+            }
         }
 
         try {
@@ -489,12 +499,12 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
 
                     // Execute update
                     UpdateRequestBuilder request = client.prepareUpdate(toIndex, toType, id)
-                            .setRefresh(true)
-                            .setSource(objectMapper.writeValueAsBytes(source));
+                            .setDoc(objectMapper.writeValueAsBytes(source));
                     if (bulkRequest != null) {
                         bulkRequest.add(request);
                     }
                     else {
+                        request.setRefresh(true);
                         client.safeExecuteRequest(request, false);
                     }
 

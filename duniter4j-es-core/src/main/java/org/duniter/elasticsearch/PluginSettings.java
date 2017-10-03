@@ -230,10 +230,13 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.p2p.peerTimeOffset", 60*60/*=1hour*/);
     }
 
-    public String[] getSynchroPingEndpoints()  {
-        return settings.getAsArray("duniter.p2p.ping.endpoints");
+    public String[] getSynchroIncludesEndpoints()  {
+        return settings.getAsArray("duniter.p2p.includes.endpoints");
     }
 
+    public boolean enableSynchroDiscovery()  {
+        return settings.getAsBoolean("duniter.p2p.discovery.enable", true);
+    }
 
     public boolean isDevMode() {
         return settings.getAsBoolean("duniter.dev.enable", false);

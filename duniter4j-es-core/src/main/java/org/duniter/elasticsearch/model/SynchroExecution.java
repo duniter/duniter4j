@@ -8,11 +8,13 @@ public class SynchroExecution extends Record {
     public static final String PROPERTY_PEER = "peer";
     public static final String PROPERTY_API = "api";
     public static final String PROPERTY_RESULT = "result";
+    public static final String PROPERTY_EXECUTION_TIME = "executionTime";
 
 
     private String currency;
     private String peer;
     private String api;
+    private Long executionTime;
     private SynchroResult result;
 
     public String getCurrency() {
@@ -45,5 +47,13 @@ public class SynchroExecution extends Record {
 
     public void setApi(String api) {
         this.api = api;
+    }
+
+    public Long getExecutionTime() {
+        return executionTime;
+    }
+
+    public void setExecutionTime(Long executionTime) {
+        this.executionTime = executionTime;
     }
 }

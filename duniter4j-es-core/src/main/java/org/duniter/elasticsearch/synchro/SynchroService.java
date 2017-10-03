@@ -36,11 +36,11 @@ import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.HttpService;
-import org.duniter.core.client.service.local.NetworkService;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.DateUtils;
 import org.duniter.core.util.Preconditions;
+import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
@@ -56,6 +56,8 @@ import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.inject.Inject;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -154,7 +156,6 @@ public class SynchroService extends AbstractService {
     }
 
     public void synchronize() {
-        logger.info("Starting synchronization...");
 
         final boolean enableSynchroWebsocket = pluginSettings.enableSynchroWebsocket();
 
@@ -163,24 +164,37 @@ public class SynchroService extends AbstractService {
             closeWsClientEndpoints();
         }
 
-        if (CollectionUtils.isNotEmpty(peerApiFilters)) {
-
-            peerApiFilters.forEach(peerApiFilter -> {
-
-                // Get peers
-                List<Peer> peers = getPeersFromApi(peerApiFilter);
-                if (CollectionUtils.isNotEmpty(peers)) {
-                    peers.forEach(p -> synchronizePeer(p, enableSynchroWebsocket));
-                    logger.info("Synchronization [OK]");
-                } else {
-                    logger.info(String.format("Synchronization [OK] - no endpoint found for API [%s]", peerApiFilter.name()));
-                }
-            });
+        List<String> currencyIds;
+        try {
+            currencyIds = currencyDao.getCurrencyIds();
         }
+        catch (Exception e) {
+            logger.error("Could not retrieve indexed currencies", e);
+            currencyIds = null;
+        }
+
+        if (CollectionUtils.isEmpty(currencyIds) || CollectionUtils.isEmpty(peerApiFilters)) {
+            logger.warn("Skipping synchronization: no indexed currency or no API configured");
+            return;
+        }
+
+        currencyIds.forEach(currencyId -> peerApiFilters.forEach(peerApiFilter -> {
+
+            logger.info(String.format("[%s] [%s] Starting synchronization... {discovery: %s}", currencyId, peerApiFilter.name(), pluginSettings.enableSynchroDiscovery()));
+
+            // Get peers for currencies and API
+            List<Peer> peers = getPeersFromApi(currencyId, peerApiFilter);
+            if (CollectionUtils.isNotEmpty(peers)) {
+                peers.forEach(p -> synchronizePeer(p, enableSynchroWebsocket));
+                logger.info(String.format("[%s] [%s] Synchronization [OK]", currencyId, peerApiFilter.name()));
+            } else {
+                logger.info(String.format("[%s] [%s] Synchronization [OK] - no endpoint to synchronize", currencyId, peerApiFilter.name()));
+            }
+            }));
     }
 
     public SynchroResult synchronizePeer(final Peer peer, boolean enableSynchroWebsocket) {
-        long now = System.currentTimeMillis();
+        long startExecutionTime = System.currentTimeMillis();
 
         // Check if peer alive and valid
         boolean isAliveAndValid = isAliveAndValid(peer);
@@ -195,9 +209,29 @@ public class SynchroService extends AbstractService {
         // If not the first synchro, add a delay to last execution time
         // to avoid missing data because incorrect clock configuration
         long lastExecutionTime = getLastExecutionTime(peer);
+        if (logger.isDebugEnabled() && lastExecutionTime > 0) {
+            logger.debug(String.format("[%s] [%s] Found last synchronization execution at {%s}. Will apply time offset of {-%s ms}", peer.getCurrency(), peer,
+                    DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM)
+                            .format(new Date(lastExecutionTime * 1000)),
+                    pluginSettings.getSynchroTimeOffset()));
+        }
+
+        final long fromTime = lastExecutionTime > 0 ? lastExecutionTime - pluginSettings.getSynchroTimeOffset() : 0;
+
+        if (logger.isInfoEnabled()) {
+            if (fromTime == 0) {
+                logger.info(String.format("[%s] [%s] Synchronization {ALL}...", peer.getCurrency(), peer));
+            }
+            else {
+                logger.info(String.format("[%s] [%s] Synchronization delta since {%s}...",
+                        peer.getCurrency(),
+                        peer,
+                        DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM)
+                                .format(new Date(fromTime * 1000))));
+            }
+        }
 
         // Execute actions
-        final long fromTime = lastExecutionTime > 0 ? lastExecutionTime - pluginSettings.getSynchroTimeOffset() : 0;
         List<SynchroAction> executedActions = actions.stream()
                 .filter(a -> a.getEndPointApi().name().equals(peer.getApi()))
                 .map(a -> {
@@ -211,10 +245,10 @@ public class SynchroService extends AbstractService {
                 .collect(Collectors.toList());
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s] [%s] User data imported in %s ms: %s", peer.getCurrency(), peer, System.currentTimeMillis() - now, result.toString()));
+            logger.debug(String.format("[%s] [%s] Synchronized in %s ms: %s", peer.getCurrency(), peer, System.currentTimeMillis() - startExecutionTime, result.toString()));
         }
 
-        saveExecution(peer, result);
+        saveExecution(peer, result, startExecutionTime);
 
         // Start listen changes on this peer
         if (enableSynchroWebsocket) {
@@ -226,33 +260,34 @@ public class SynchroService extends AbstractService {
 
     /* -- protected methods -- */
 
-    protected List<Peer> getConfigPingPeers(List<String> currencyIds, final EndpointApi api) {
-        String[] endpoints = pluginSettings.getSynchroPingEndpoints();
+    protected List<Peer> getConfigIncludesPeers(final String currencyId, final EndpointApi api) {
+        Preconditions.checkNotNull(currencyId);
+        String[] endpoints = pluginSettings.getSynchroIncludesEndpoints();
         if (ArrayUtils.isEmpty(endpoints)) return null;
 
         List<Peer> peers = Lists.newArrayList();
         for (String endpoint: endpoints) {
             try {
                 String[] endpointPart = endpoint.split(":");
-
-                if (endpointPart.length == 2) {
-                    String currency = endpointPart[0];
-                    NetworkPeering.Endpoint ep = Endpoints.parse(endpointPart[1]);
-                    if (ep.api == api && currencyIds.contains(currency)) {
-                        Peer peer = Peer.newBuilder()
-                                .setEndpoint(ep)
-                                .setCurrency(currency)
-                                .build();
-
-                        String peerId = cryptoService.hash(peer.computeKey());
-                        peer.setId(peerId);
-
-                        peers.add(peer);
-                    }
+                if (endpointPart.length > 2) {
+                    logger.warn(String.format("Error in config: Unable to parse P2P endpoint [%s]: %s", endpoint));
                 }
-                else {
-                    logger.warn(String.format("Unable to parse P2P endpoint [%s]: %s", endpoint));
+                String epCurrencyId = (endpointPart.length == 2) ? endpointPart[0] : null /*optional*/;
+
+                NetworkPeering.Endpoint ep = (endpointPart.length == 2) ? Endpoints.parse(endpointPart[1]) : Endpoints.parse(endpoint);
+                if (ep.api == api && (epCurrencyId == null || currencyId.equals(epCurrencyId))) {
+                    Peer peer = Peer.newBuilder()
+                            .setEndpoint(ep)
+                            .setCurrency(currencyId)
+                            .build();
+
+                    String hash = cryptoService.hash(peer.computeKey());
+                    peer.setHash(hash);
+                    peer.setId(hash);
+
+                    peers.add(peer);
                 }
+
             } catch (IOException e) {
                 logger.warn(String.format("Unable to parse P2P endpoint [%s]: %s", endpoint, e.getMessage()));
             }
@@ -260,24 +295,28 @@ public class SynchroService extends AbstractService {
         return peers;
     }
 
-    protected List<Peer> getPeersFromApi(final EndpointApi api) {
+    protected List<Peer> getPeersFromApi(final String currencyId, final EndpointApi api) {
         Preconditions.checkNotNull(api);
+        Preconditions.checkArgument(StringUtils.isNotBlank(currencyId));
 
         try {
-            List<String> currencyIds = currencyDao.getCurrencyIds();
-            if (CollectionUtils.isEmpty(currencyIds)) return null;
 
             // Get default peer, defined in config option
-            List<Peer> peers = getConfigPingPeers(currencyIds, api);
+            List<Peer> peers = getConfigIncludesPeers(currencyId, api);
             if (peers == null) {
                 peers = Lists.newArrayList();
             }
 
-            peers.addAll(currencyIds.stream()
-                    .map(currencyId -> peerDao.getPeersByCurrencyIdAndApi(currencyId, api.name()))
-                    .filter(Objects::nonNull)
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList()));
+            // Add discovered peers
+            if (pluginSettings.enableSynchroDiscovery()) {
+                List<Peer> indexedPeers = peerDao.getPeersByCurrencyIdAndApi(currencyId, api.name());
+                if (CollectionUtils.isNotEmpty(indexedPeers)) {
+                    peers.addAll(indexedPeers
+                            .stream()
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList()));
+                }
+            }
 
             return peers;
         }
@@ -335,7 +374,7 @@ public class SynchroService extends AbstractService {
         }
     }
 
-    protected void saveExecution(Peer peer, SynchroResult result) {
+    protected void saveExecution(Peer peer, SynchroResult result, long startExecutionTime) {
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(peer.getId());
         Preconditions.checkNotNull(result);
@@ -344,11 +383,12 @@ public class SynchroService extends AbstractService {
             SynchroExecution execution = new SynchroExecution();
             execution.setCurrency(peer.getCurrency());
             execution.setPeer(peer.getId());
+            execution.setApi(peer.getApi());
+            execution.setExecutionTime(System.currentTimeMillis() - startExecutionTime);
             execution.setResult(result);
 
-            // Last execution time (in seconds)
-            long executionTime = System.currentTimeMillis()/1000;
-            execution.setTime(executionTime);
+            // Start execution time (in seconds)
+            execution.setTime(startExecutionTime/1000);
 
             synchroExecutionDao.save(execution);
         }
@@ -358,9 +398,11 @@ public class SynchroService extends AbstractService {
     }
 
     protected void closeWsClientEndpoints() {
-        // Closing all opened WS
-        wsClientEndpoints.forEach(IOUtils::closeQuietly);
-        wsClientEndpoints.clear();
+        synchronized(wsClientEndpoints) {
+            // Closing all opened WS
+            wsClientEndpoints.forEach(IOUtils::closeQuietly);
+            wsClientEndpoints.clear();
+        }
     }
 
     protected void startListenChangesOnPeer(final Peer peer,
@@ -414,7 +456,9 @@ public class SynchroService extends AbstractService {
         });
 
         // Add to list
-        wsClientEndpoints.add(wsClientEndPoint);
+        synchronized(wsClientEndpoints) {
+            wsClientEndpoints.add(wsClientEndPoint);
+        }
     }
 
     protected boolean isAliveAndValid(Peer peer) {
