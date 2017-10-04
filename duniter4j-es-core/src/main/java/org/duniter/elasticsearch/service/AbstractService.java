@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
+import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.elasticsearch.Records;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -56,6 +57,7 @@ public abstract class AbstractService implements Bean {
     protected CryptoService cryptoService;
     protected final int retryCount;
     protected final int retryWaitDuration;
+    protected final int documentMaxTimeDelta;
     protected boolean ready = false;
 
     public AbstractService(String loggerName, Duniter4jClient client, PluginSettings pluginSettings) {
@@ -78,6 +80,7 @@ public abstract class AbstractService implements Bean {
         this.cryptoService = cryptoService;
         this.retryCount = pluginSettings.getNodeRetryCount();
         this.retryWaitDuration = pluginSettings.getNodeRetryWaitDuration();
+        this.documentMaxTimeDelta = pluginSettings.getDocumentMaxTimeDelta();
     }
 
     /* -- protected methods --*/
@@ -151,6 +154,38 @@ public abstract class AbstractService implements Bean {
         // Remove hash and signature
         String recordJson = getObjectMapper().writeValueAsString(actualObj);
         readAndVerifyIssuerSignature(recordJson, actualObj, issuerFieldName);
+    }
+
+    protected void verifyTimeForUpdate(String index, String type, String id, JsonNode actualObj) {
+        verifyTimeForUpdate(index, type, id, actualObj, Record.PROPERTY_TIME);
+    }
+
+    protected void verifyTimeForUpdate(String index, String type, String id, JsonNode actualObj, String timeFieldName) {
+        // Check time has been increase - fix #27
+        int actualTime = getMandatoryField(actualObj, timeFieldName).asInt();
+        int existingTime = client.getTypedFieldById(index, type, id, timeFieldName);
+        if (actualTime <= existingTime) {
+            throw new InvalidFormatException(String.format("Invalid '%s' value: can not be less or equal to the previous value.", timeFieldName, timeFieldName));
+        }
+
+        // Check time has been increase - fix #27
+        if (Math.abs(System.currentTimeMillis()/1000 - actualTime) > documentMaxTimeDelta) {
+            throw new InvalidFormatException(String.format("Invalid '%s' value: too far from the UTC server time. Check your device's clock.", timeFieldName));
+        }
+    }
+
+    protected void verifyTimeForInsert(JsonNode actualObj) {
+        verifyTimeForInsert(actualObj, Record.PROPERTY_TIME);
+    }
+
+    protected void verifyTimeForInsert(JsonNode actualObj, String timeFieldName) {
+        // Check time has been increase - fix #27
+        int actualTime = getMandatoryField(actualObj, timeFieldName).asInt();
+
+        // Check time has been increase - fix #27
+        if (Math.abs(System.currentTimeMillis()/1000 - actualTime) > documentMaxTimeDelta) {
+            throw new InvalidFormatException(String.format("Invalid '%s' value: too far from the UTC server time. Check your device's clock.", timeFieldName));
+        }
     }
 
     protected String getIssuer(JsonNode actualObj) {

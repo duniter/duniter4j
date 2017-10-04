@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.util.Preconditions;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
@@ -32,6 +33,7 @@ import org.duniter.core.client.model.elasticsearch.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.AbstractService;
@@ -126,6 +128,9 @@ public class UserService extends AbstractService {
         JsonNode actualObj = readAndVerifyIssuerSignature(profileJson);
         String issuer = getIssuer(actualObj);
 
+        // Check time is valid - fix #27
+        verifyTimeForInsert(actualObj);
+
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a user profile from issuer [%s]", issuer.substring(0, 8)));
         }
@@ -148,8 +153,12 @@ public class UserService extends AbstractService {
         String issuer = getIssuer(actualObj);
 
         if (!Objects.equals(issuer, id)) {
-            throw new AccessDeniedException(String.format("Could not update this document: not issuer."));
+            throw new AccessDeniedException(String.format("Could not update this document: only the issuer can update."));
         }
+
+        // Check time is valid - fix #27
+        verifyTimeForUpdate(INDEX, PROFILE_TYPE, id, actualObj);
+
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Updating a user profile from issuer [%s]", issuer.substring(0, 8)));
         }
@@ -169,6 +178,9 @@ public class UserService extends AbstractService {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(settingsJson);
         String issuer = getIssuer(actualObj);
+
+        // Check time is valid - fix #27
+        verifyTimeForInsert(actualObj);
 
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a user settings from issuer [%s]", issuer.substring(0, 8)));
@@ -194,6 +206,10 @@ public class UserService extends AbstractService {
         if (!Objects.equals(issuer, id)) {
             throw new AccessDeniedException(String.format("Could not update this document: not issuer."));
         }
+
+        // Check time is valid - fix #27
+        verifyTimeForUpdate(INDEX, SETTINGS_TYPE, id, actualObj);
+
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a user settings from issuer [%s]", issuer.substring(0, 8)));
         }

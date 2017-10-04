@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.NotFoundException;
+import org.duniter.elasticsearch.synchro.SynchroActionResult;
 import org.duniter.elasticsearch.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
@@ -32,23 +33,22 @@ public class SynchroHistoryIndexAction extends AbstractSynchroAction {
 
     /* -- protected method -- */
 
-    protected void onValidate(String deleteId, JsonNode source) {
+    protected void onValidate(String deleteId, JsonNode source, SynchroActionResult result) {
         try {
             // Check if valid document
             service.checkIsValidDeletion(source);
-
-            // Delete the document
-            service.applyDocDelete(source);
 
         } catch(NotFoundException e) {
             // doc not exists: continue
         }
     }
 
-    protected void onInsert(String deleteId, JsonNode source) {
+    protected void onInsert(String deleteId, JsonNode source, SynchroActionResult result) {
         try {
             // Delete the document
             service.applyDocDelete(source);
+
+            result.addDelete();
 
         } catch(NotFoundException e) {
             // doc not exists: continue

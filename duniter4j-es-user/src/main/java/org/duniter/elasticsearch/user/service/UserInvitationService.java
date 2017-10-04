@@ -29,6 +29,8 @@ import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.model.SynchroResult;
+import org.duniter.elasticsearch.synchro.SynchroActionResult;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.Message;
 import org.duniter.elasticsearch.user.model.UserEvent;
@@ -108,6 +110,9 @@ public class UserInvitationService extends AbstractService {
     public String indexCertificationInvitationFromJson(String recordJson) {
 
         JsonNode source = readAndVerifyIssuerSignature(recordJson);
+
+        // Check time is valid - fix #27
+        verifyTimeForInsert(source);
 
         if (logger.isDebugEnabled()) {
             String issuer = getMandatoryField(source, Message.PROPERTY_ISSUER).asText();

@@ -31,8 +31,9 @@ import org.duniter.elasticsearch.service.ServiceLocator;
 import org.duniter.elasticsearch.service.changes.ChangeEvent;
 import org.duniter.elasticsearch.service.changes.ChangeEvents;
 import org.duniter.elasticsearch.service.changes.ChangeSource;
+import org.duniter.elasticsearch.synchro.impl.NullSynchroActionResult;
+import org.duniter.elasticsearch.synchro.impl.SynchroActionResultImpl;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.duniter.elasticsearch.util.bytes.BytesJsonNode;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -43,20 +44,16 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.joda.time.format.DateTimeFormat;
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public abstract class AbstractSynchroAction extends AbstractService implements SynchroAction {
 
     private static final String SCROLL_PARAM_VALUE = "1m";
 
-    public interface SourceConsumer {
-        void accept(String id, JsonNode source) throws Exception;
-    }
+    private static SynchroActionResult NULL_ACTION_RESULT = new NullSynchroActionResult();
 
     private String fromIndex;
     private String fromType;
@@ -210,25 +207,25 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
 
     /* -- protected methods -- */
 
-    protected void notifyInsertion(final String id, final JsonNode source) throws Exception {
+    protected void notifyInsertion(final String id, final JsonNode source, final SynchroActionResult actionResult) throws Exception {
         if (CollectionUtils.isNotEmpty(insertionListeners)) {
             for (SourceConsumer listener: insertionListeners) {
-                listener.accept(id, source);
+                listener.accept(id, source, actionResult);
             }
         }
     }
 
-    protected void notifyUpdate(final String id, final JsonNode source) throws Exception {
+    protected void notifyUpdate(final String id, final JsonNode source, final SynchroActionResult actionResult) throws Exception {
         if (CollectionUtils.isNotEmpty(updateListeners)) {
             for (SourceConsumer listener: updateListeners) {
-                listener.accept(id, source);
+                listener.accept(id, source, actionResult);
             }
         }
     }
 
     protected void notifyValidation(final String id,
                                     final JsonNode source,
-                                    final Iterator<Long> invalidSignatureHits,
+                                    final SynchroActionResult actionResult,
                                     final String logPrefix) throws Exception {
         if (enableSignatureValidation) {
             try {
@@ -236,7 +233,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
             } catch (InvalidSignatureException e) {
                 // FIXME: some user/profile document failed ! - see issue #11
                 // Il semble que le format JSON ne soit pas le même que celui qui a été signé
-                invalidSignatureHits.next();
+                actionResult.addInvalidSignature();
                 if (trace) {
                     logger.warn(String.format("%s %s.\n%s", logPrefix, e.getMessage(), source.toString()));
                 }
@@ -245,7 +242,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
 
         if (CollectionUtils.isNotEmpty(validationListeners)) {
             for (SourceConsumer listener : validationListeners) {
-                listener.accept(id, source);
+                listener.accept(id, source, actionResult);
             }
         }
     }
@@ -257,7 +254,8 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
     }
 
     private HttpPost createScrollRequest(Peer peer,
-                                         String fromIndex, String fromType,
+                                         String fromIndex,
+                                         String fromType,
                                          QueryBuilder query) {
         HttpPost httpPost = new HttpPost(httpService.getPath(peer, fromIndex, fromType, "_search?scroll=" + SCROLL_PARAM_VALUE));
         httpPost.setHeader("Content-Type", "application/json;charset=UTF-8");
@@ -321,6 +319,11 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
 
         ObjectMapper objectMapper = getObjectMapper();
 
+        // DEV ONLY: skip
+        if (!"user".equalsIgnoreCase(fromIndex) || !"profile".equalsIgnoreCase(fromType)) {
+            return;
+        }
+
         long counter = 0;
         boolean stop = false;
         String scrollId = null;
@@ -354,17 +357,14 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
     }
 
     private long fetchAndSave(final Peer peer,
-                              SearchScrollResponse response,
+                              final SearchScrollResponse response,
                               final ObjectMapper objectMapper,
-                              SynchroResult result) {
+                              final SynchroResult result) {
 
 
         long counter = 0;
 
-
-        PrimitiveIterators.OfLong insertHits = PrimitiveIterators.newLongSequence();
-        PrimitiveIterators.OfLong updateHits = PrimitiveIterators.newLongSequence();
-        PrimitiveIterators.OfLong invalidSignatureHits = PrimitiveIterators.newLongSequence();
+        SynchroActionResult actionResult = new SynchroActionResultImpl();
 
         BulkRequestBuilder bulkRequest = client.prepareBulk();
         bulkRequest.setRefresh(true);
@@ -386,9 +386,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                 save(id, source,
                      objectMapper,
                      bulkRequest,
-                     insertHits,
-                     updateHits,
-                     invalidSignatureHits,
+                     actionResult,
                      logPrefix);
             }
         }
@@ -415,26 +413,24 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
             }
         }
 
-        // update result stats
-        result.addInserts(toIndex, toType, insertHits.current());
-        result.addUpdates(toIndex, toType, updateHits.current());
-        result.addInvalidSignatures(toIndex, toType, invalidSignatureHits.current());
+        // update result
+        result.addInserts(toIndex, toType, actionResult.getInserts());
+        result.addUpdates(toIndex, toType, actionResult.getUpdates());
+        result.addDeletes(toIndex, toType, actionResult.getDeletes());
+        result.addInvalidSignatures(toIndex, toType, actionResult.getInvalidSignatures());
 
         return counter;
     }
 
     protected void save(String id, JsonNode source, String logPrefix) {
-        Iterator<Long> nullSeq = PrimitiveIterators.nullLongSequence();
-        save(id, source, getObjectMapper(), null, nullSeq, nullSeq, nullSeq, logPrefix);
+        save(id, source, getObjectMapper(), null, NULL_ACTION_RESULT, logPrefix);
     }
 
     protected void save(final String id,
                         final JsonNode source,
                         final ObjectMapper objectMapper,
                         final BulkRequestBuilder bulkRequest,
-                        final Iterator<Long> insertHits,
-                        final Iterator<Long> updateHits,
-                        final Iterator<Long> invalidSignatureHits,
+                        final SynchroActionResult actionResult,
                         final String logPrefix) {
 
         try {
@@ -458,7 +454,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                 }
 
                 // Validate doc
-                notifyValidation(id, source, invalidSignatureHits, logPrefix);
+                notifyValidation(id, source, actionResult, logPrefix);
 
                 // Execute insertion
                 IndexRequestBuilder request = client.prepareIndex(toIndex, toType, id)
@@ -471,9 +467,9 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                 }
 
                 // Notify insert listeners
-                notifyInsertion(id, source);
+                notifyInsertion(id, source, actionResult);
 
-                insertHits.next();
+                actionResult.addInsert();
             }
 
             // Existing doc: do update (if enable)
@@ -495,7 +491,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                     }
 
                     // Validate source
-                    notifyValidation(id, source, invalidSignatureHits, logPrefix);
+                    notifyValidation(id, source, actionResult, logPrefix);
 
                     // Execute update
                     UpdateRequestBuilder request = client.prepareUpdate(toIndex, toType, id)
@@ -509,9 +505,9 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                     }
 
                     // Notify insert listeners
-                    notifyUpdate(id, source);
+                    notifyUpdate(id, source, actionResult);
 
-                    updateHits.next();
+                    actionResult.addUpdate();
                 }
             }
 

@@ -120,6 +120,9 @@ public class GroupService extends AbstractService {
         String id = computeIdFromTitle(title);
         String issuer = getIssuer(actualObj);
 
+        // Check time is valid - fix #27
+        verifyTimeForInsert(actualObj);
+
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing group [%s] from issuer [%s]", id, issuer.substring(0, 8)));
         }
@@ -139,6 +142,9 @@ public class GroupService extends AbstractService {
     public ListenableActionFuture<UpdateResponse> updateRecordFromJson(String id, String recordJson) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
+
+        // Check time is valid - fix #27
+        verifyTimeForUpdate(INDEX, RECORD_TYPE, id, actualObj);
 
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Updating group [%s]", id));

@@ -106,6 +106,11 @@ public class AbstractCommentDaoImpl<T extends AbstractCommentDaoImpl> extends Ab
                     .field("index", "not_analyzed")
                     .endObject()
 
+                    // creationTime
+                    .startObject("creationTime")
+                    .field("type", "integer")
+                    .endObject()
+
                     // time
                     .startObject("time")
                     .field("type", "integer")

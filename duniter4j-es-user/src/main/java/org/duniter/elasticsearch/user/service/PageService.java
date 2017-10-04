@@ -76,6 +76,9 @@ public class PageService extends AbstractService {
         JsonNode actualObj = readAndVerifyIssuerSignature(json);
         String issuer = getIssuer(actualObj);
 
+        // Check time is valid - fix #27
+        verifyTimeForInsert(actualObj);
+
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Indexing a %s from issuer [%s]", recordDao.getType(), issuer.substring(0, 8)));
         }
@@ -89,6 +92,9 @@ public class PageService extends AbstractService {
 
         // Check same document issuer
         recordDao.checkSameDocumentIssuer(id, issuer);
+
+        // Check time is valid - fix #27
+        verifyTimeForUpdate(recordDao.getIndex(), recordDao.getType(), id, actualObj);
 
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Updating %s [%s] from issuer [%s]", recordDao.getType(), id, issuer.substring(0, 8)));
@@ -105,8 +111,11 @@ public class PageService extends AbstractService {
         String recordId = getMandatoryField(commentObj, RecordComment.PROPERTY_RECORD).asText();
         checkRecordExistsOrDeleted(recordId);
 
+        // Check time is valid - fix #27
+        verifyTimeForInsert(commentObj);
+
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a %s from issuer [%s]", commentDao.getType(), issuer.substring(0, 8)));
+            logger.debug(String.format("[%s] Indexing new %s, issuer {%s}", RegistryIndexDao.INDEX, commentDao.getType(), issuer.substring(0, 8)));
         }
         return commentDao.create(json);
     }
@@ -118,9 +127,12 @@ public class PageService extends AbstractService {
         String recordId = getMandatoryField(commentObj, RecordComment.PROPERTY_RECORD).asText();
         checkRecordExistsOrDeleted(recordId);
 
+        // Check time is valid - fix #27
+        verifyTimeForUpdate(commentDao.getIndex(), commentDao.getType(), id, commentObj);
+
         if (logger.isDebugEnabled()) {
             String issuer = getMandatoryField(commentObj, RecordComment.PROPERTY_ISSUER).asText();
-            logger.debug(String.format("[%s] Indexing a %s from issuer [%s] on [%s]", commentDao.getType(), commentDao.getType(), issuer.substring(0, 8)));
+            logger.debug(String.format("[%s] Updating existing %s {%s}, issuer {%s}", RegistryIndexDao.INDEX, commentDao.getType(), id, issuer.substring(0, 8)));
         }
 
         commentDao.update(id, json);

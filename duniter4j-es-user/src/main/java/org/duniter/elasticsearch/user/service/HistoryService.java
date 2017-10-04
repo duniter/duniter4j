@@ -159,6 +159,9 @@ public class HistoryService extends AbstractService {
             // Check same document issuer
             client.checkSameDocumentIssuer(index, type, id, issuer);
         }
+
+        // Check time is valid - fix #27
+        verifyTimeForInsert(actualObj);
     }
 
     public void applyDocDelete(JsonNode actualObj) {

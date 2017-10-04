@@ -286,6 +286,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.security.enable", true);
     }
 
+    public int getDocumentMaxTimeDelta() {
+        return settings.getAsInt("duniter.documentMaxTimeDelta", 7200); // in seconds = 2h
+    }
+
     public String getWebSocketHost()  {
         return settings.get("network.host", "locahost");
     }
