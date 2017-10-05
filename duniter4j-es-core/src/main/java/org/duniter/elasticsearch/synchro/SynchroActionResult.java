@@ -6,9 +6,11 @@ public interface SynchroActionResult {
     void addUpdate();
     void addDelete();
     void addInvalidSignature();
+    void addInvalidTime();
 
     long getInserts();
     long getUpdates();
     long getDeletes();
     long getInvalidSignatures();
+    long getInvalidTimes();
 }

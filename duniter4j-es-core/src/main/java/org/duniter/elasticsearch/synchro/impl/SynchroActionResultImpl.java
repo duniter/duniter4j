@@ -9,6 +9,7 @@ public class SynchroActionResultImpl implements SynchroActionResult {
     private final PrimitiveIterators.OfLong updateHits = PrimitiveIterators.newLongSequence();
     private final PrimitiveIterators.OfLong deleteHits = PrimitiveIterators.newLongSequence();
     private final PrimitiveIterators.OfLong invalidSignatureHits = PrimitiveIterators.newLongSequence();
+    private final PrimitiveIterators.OfLong invalidTimesHits = PrimitiveIterators.newLongSequence();
 
     @Override
     public void addInsert() {
@@ -29,6 +30,10 @@ public class SynchroActionResultImpl implements SynchroActionResult {
     public void addInvalidSignature() {
         invalidSignatureHits.nextLong();
     }
+    @Override
+    public void addInvalidTime() {
+        invalidTimesHits.nextLong();
+    }
 
     @Override
     public long getInserts() {
@@ -45,5 +50,9 @@ public class SynchroActionResultImpl implements SynchroActionResult {
     @Override
     public long getInvalidSignatures() {
         return invalidSignatureHits.current();
+    }
+    @Override
+    public long getInvalidTimes() {
+        return invalidTimesHits.current();
     }
 }

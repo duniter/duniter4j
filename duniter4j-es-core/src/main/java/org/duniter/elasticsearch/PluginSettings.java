@@ -234,6 +234,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsArray("duniter.p2p.includes.endpoints");
     }
 
+    public String[] getSynchroIncludesPubkeys()  {
+        return settings.getAsArray("duniter.p2p.includes.pubkeys");
+    }
+
     public boolean enableSynchroDiscovery()  {
         return settings.getAsBoolean("duniter.p2p.discovery.enable", true);
     }
@@ -286,8 +290,12 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.security.enable", true);
     }
 
-    public int getDocumentMaxTimeDelta() {
-        return settings.getAsInt("duniter.documentMaxTimeDelta", 7200); // in seconds = 2h
+    public int getDocumentTimeMaxPastDelta() {
+        return settings.getAsInt("duniter.document.time.maxPastDelta", 7200); // in seconds = 2h
+    }
+
+    public int getDocumentTimeMaxFutureDelta() {
+        return settings.getAsInt("duniter.document.time.maxFutureDelta", 600); // in seconds = 10min
     }
 
     public String getWebSocketHost()  {

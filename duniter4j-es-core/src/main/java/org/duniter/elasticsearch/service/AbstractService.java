@@ -37,6 +37,7 @@ import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.exception.InvalidSignatureException;
+import org.duniter.elasticsearch.exception.InvalidTimeException;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -57,7 +58,8 @@ public abstract class AbstractService implements Bean {
     protected CryptoService cryptoService;
     protected final int retryCount;
     protected final int retryWaitDuration;
-    protected final int documentMaxTimeDelta;
+    protected final int documentTimeMaxPastDelta;
+    protected final int documentTimeMaxFutureDelta;
     protected boolean ready = false;
 
     public AbstractService(String loggerName, Duniter4jClient client, PluginSettings pluginSettings) {
@@ -80,7 +82,8 @@ public abstract class AbstractService implements Bean {
         this.cryptoService = cryptoService;
         this.retryCount = pluginSettings.getNodeRetryCount();
         this.retryWaitDuration = pluginSettings.getNodeRetryWaitDuration();
-        this.documentMaxTimeDelta = pluginSettings.getDocumentMaxTimeDelta();
+        this.documentTimeMaxPastDelta = pluginSettings.getDocumentTimeMaxPastDelta();
+        this.documentTimeMaxFutureDelta = pluginSettings.getDocumentTimeMaxFutureDelta();
     }
 
     /* -- protected methods --*/
@@ -161,17 +164,18 @@ public abstract class AbstractService implements Bean {
     }
 
     protected void verifyTimeForUpdate(String index, String type, String id, JsonNode actualObj, String timeFieldName) {
+        verifyTimeForUpdate(index, type, id, actualObj, false, timeFieldName);
+    }
+
+    protected void verifyTimeForUpdate(String index, String type, String id, JsonNode actualObj, boolean allowOldDocuments, String timeFieldName) {
         // Check time has been increase - fix #27
         int actualTime = getMandatoryField(actualObj, timeFieldName).asInt();
         int existingTime = client.getTypedFieldById(index, type, id, timeFieldName);
         if (actualTime <= existingTime) {
-            throw new InvalidFormatException(String.format("Invalid '%s' value: can not be less or equal to the previous value.", timeFieldName, timeFieldName));
+            throw new InvalidTimeException(String.format("Invalid '%s' value: can not be less or equal to the previous value.", timeFieldName, timeFieldName));
         }
 
-        // Check time has been increase - fix #27
-        if (Math.abs(System.currentTimeMillis()/1000 - actualTime) > documentMaxTimeDelta) {
-            throw new InvalidFormatException(String.format("Invalid '%s' value: too far from the UTC server time. Check your device's clock.", timeFieldName));
-        }
+        verifyTime(actualTime, allowOldDocuments, timeFieldName);
     }
 
     protected void verifyTimeForInsert(JsonNode actualObj) {
@@ -179,12 +183,28 @@ public abstract class AbstractService implements Bean {
     }
 
     protected void verifyTimeForInsert(JsonNode actualObj, String timeFieldName) {
-        // Check time has been increase - fix #27
-        int actualTime = getMandatoryField(actualObj, timeFieldName).asInt();
+        verifyTime(actualObj, false, timeFieldName);
+    }
 
+    protected void verifyTime(JsonNode actualObj, boolean allowOldDocuments, String timeFieldName) {
+        int actualTime = getMandatoryField(actualObj, timeFieldName).asInt();
+        verifyTime(actualTime, allowOldDocuments, timeFieldName);
+    }
+
+    protected void verifyTime(int actualTime,
+                              boolean allowOldDocuments,
+                              String timeFieldName) {
         // Check time has been increase - fix #27
-        if (Math.abs(System.currentTimeMillis()/1000 - actualTime) > documentMaxTimeDelta) {
-            throw new InvalidFormatException(String.format("Invalid '%s' value: too far from the UTC server time. Check your device's clock.", timeFieldName));
+        long deltaTime = System.currentTimeMillis()/1000 - actualTime;
+
+        // Past time
+        if (!allowOldDocuments && (deltaTime > 0 && Math.abs(deltaTime) > documentTimeMaxPastDelta)) {
+            throw new InvalidTimeException(String.format("Invalid '%s' value: too far (in the past) from the UTC server time. Check your device's clock.", timeFieldName));
+        }
+
+        // Future time
+        if (deltaTime < 0 && Math.abs(deltaTime) > documentTimeMaxFutureDelta) {
+            throw new InvalidTimeException(String.format("Invalid '%s' value: too far (in the future) from the UTC server time. Check your device's clock.", timeFieldName));
         }
     }
 

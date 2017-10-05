@@ -148,6 +148,11 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
 
     @Override
     public List<Peer> getPeersByCurrencyIdAndApi(String currencyId, String endpointApi) {
+        return getPeersByCurrencyIdAndApiAndPubkeys(currencyId, endpointApi, null);
+    }
+
+    @Override
+    public List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] pubkeys) {
         Preconditions.checkNotNull(currencyId);
         Preconditions.checkNotNull(endpointApi);
 
@@ -158,12 +163,15 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
         // Query = filter on lastUpTime
         NestedQueryBuilder statusQuery = QueryBuilders.nestedQuery(Peer.PROPERTY_STATS,
                 QueryBuilders.boolQuery()
-                    .filter(QueryBuilders.termQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_STATUS, Peer.PeerStatus.UP.name())));
+                        .filter(QueryBuilders.termQuery(Peer.PROPERTY_STATS + "." + Peer.Stats.PROPERTY_STATUS, Peer.PeerStatus.UP.name())));
 
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
+                .filter(QueryBuilders.termQuery(Peer.PROPERTY_API, endpointApi));
+        if (CollectionUtils.isNotEmpty(pubkeys)) {
+            boolQuery.filter(QueryBuilders.termsQuery(Peer.PROPERTY_PUBKEY, pubkeys));
+        }
 
-        QueryBuilder apiQuery = QueryBuilders.boolQuery().filter(QueryBuilders.termQuery(Peer.PROPERTY_API, endpointApi));
-
-        request.setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.boolQuery().must(apiQuery).must(statusQuery)));
+        request.setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.boolQuery().must(boolQuery).must(statusQuery)));
 
         SearchResponse response = request.execute().actionGet();
         return toList(response, Peer.class);

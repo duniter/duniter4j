@@ -42,10 +42,12 @@ public class SynchroResult implements Serializable {
     private long updateTotal = 0;
     private long deleteTotal = 0;
     private long invalidSignatureTotal = 0;
+    private long invalidTimeTotal = 0;
     private Map<String, Long> insertHits = new HashMap<>();
     private Map<String, Long> updateHits = new HashMap<>();
     private Map<String, Long> deleteHits = new HashMap<>();
     private Map<String, Long> invalidSignatureHits = new HashMap<>();
+    private Map<String, Long> invalidTimeHits = new HashMap<>();
 
     public void addInserts(String index, String type, long nbHits) {
         insertHits.put(index + "/" + type, getInserts(index, type) + nbHits);
@@ -65,6 +67,12 @@ public class SynchroResult implements Serializable {
     public void addInvalidSignatures(String index, String type, long nbHits) {
         invalidSignatureHits.put(index + "/" + type, getDeletes(index, type) + nbHits);
         invalidSignatureTotal += nbHits;
+    }
+
+
+    public void addInvalidTimes(String index, String type, long nbHits) {
+        invalidTimeHits.put(index + "/" + type, getDeletes(index, type) + nbHits);
+        invalidTimeTotal += nbHits;
     }
 
     @JsonIgnore
@@ -99,9 +107,12 @@ public class SynchroResult implements Serializable {
         return deleteTotal;
     }
 
-
     public long getInvalidSignatures() {
         return invalidSignatureTotal;
+    }
+
+    public long getInvalidTimes() {
+        return invalidTimeTotal;
     }
 
     @JsonIgnore
@@ -120,6 +131,9 @@ public class SynchroResult implements Serializable {
     }
     public void setInvalidSignatures(long invalidSignatures) {
         this.invalidSignatureTotal = invalidSignatures;
+    }
+    public void setInvalidTimes(long invalidTimes) {
+        this.invalidTimeTotal = invalidTimes;
     }
 
     public String toString() {

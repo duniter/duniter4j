@@ -149,8 +149,8 @@ public class UserEventService extends AbstractService implements ChangeService.C
         // Generate json
         String eventJson = toJson(completeUserEvent);
 
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Indexing a event to recipient [%s]", event.getRecipient().substring(0, 8)));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Indexing a event to recipient [%s]", event.getRecipient().substring(0, 8)));
         }
 
         // do indexation
@@ -167,8 +167,8 @@ public class UserEventService extends AbstractService implements ChangeService.C
         if (checkSignature) {
             JsonNode jsonNode = readAndVerifyIssuerSignature(eventJson);
             String recipient = getMandatoryField(jsonNode, UserEvent.PROPERTY_ISSUER).asText();
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Indexing a event to recipient [%s]", recipient.substring(0, 8)));
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("Indexing a event to recipient [%s]", recipient.substring(0, 8)));
             }
         }
         if (logger.isTraceEnabled()) {

@@ -16,7 +16,6 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
-import org.duniter.core.util.PrimitiveIterators;
 import org.duniter.core.util.StringUtils;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
@@ -61,12 +60,14 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
     private String toType;
     private String issuerFieldName = Record.PROPERTY_ISSUER;
     private String versionFieldName = Record.PROPERTY_TIME;
+    private String timeFieldName = versionFieldName;
     private ChangeSource changeSource;
 
     private HttpService httpService;
 
     private boolean enableUpdate = false;
     private boolean enableSignatureValidation = true;
+    private boolean enableTimeValidation = true;
     private List<SourceConsumer> insertionListeners;
     private List<SourceConsumer> updateListeners;
     private List<SourceConsumer> validationListeners;
@@ -225,8 +226,11 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
 
     protected void notifyValidation(final String id,
                                     final JsonNode source,
+                                    final boolean allowOldDocuments,
                                     final SynchroActionResult actionResult,
                                     final String logPrefix) throws Exception {
+
+        // Validate signature
         if (enableSignatureValidation) {
             try {
                 readAndVerifyIssuerSignature(source, issuerFieldName);
@@ -236,6 +240,18 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                 actionResult.addInvalidSignature();
                 if (trace) {
                     logger.warn(String.format("%s %s.\n%s", logPrefix, e.getMessage(), source.toString()));
+                }
+            }
+        }
+
+        // Validate time
+        if (enableTimeValidation) {
+            try {
+                verifyTime(source, allowOldDocuments, timeFieldName);
+            } catch (InvalidSignatureException e) {
+                actionResult.addInvalidTime();
+                if (trace) {
+                    logger.warn(String.format("%s %s.", logPrefix, e.getMessage()));
                 }
             }
         }
@@ -320,9 +336,9 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
         ObjectMapper objectMapper = getObjectMapper();
 
         // DEV ONLY: skip
-        if (!"user".equalsIgnoreCase(fromIndex) || !"profile".equalsIgnoreCase(fromType)) {
-            return;
-        }
+        //if (!"user".equalsIgnoreCase(fromIndex) || !"profile".equalsIgnoreCase(fromType)) {
+        //    return;
+        //}
 
         long counter = 0;
         boolean stop = false;
@@ -386,6 +402,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                 save(id, source,
                      objectMapper,
                      bulkRequest,
+                     true, // allow old documents
                      actionResult,
                      logPrefix);
             }
@@ -418,18 +435,20 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
         result.addUpdates(toIndex, toType, actionResult.getUpdates());
         result.addDeletes(toIndex, toType, actionResult.getDeletes());
         result.addInvalidSignatures(toIndex, toType, actionResult.getInvalidSignatures());
+        result.addInvalidTimes(toIndex, toType, actionResult.getInvalidTimes());
 
         return counter;
     }
 
     protected void save(String id, JsonNode source, String logPrefix) {
-        save(id, source, getObjectMapper(), null, NULL_ACTION_RESULT, logPrefix);
+        save(id, source, getObjectMapper(), null, false, NULL_ACTION_RESULT, logPrefix);
     }
 
     protected void save(final String id,
                         final JsonNode source,
                         final ObjectMapper objectMapper,
                         final BulkRequestBuilder bulkRequest,
+                        final boolean allowOldDocuments,
                         final SynchroActionResult actionResult,
                         final String logPrefix) {
 
@@ -454,7 +473,7 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                 }
 
                 // Validate doc
-                notifyValidation(id, source, actionResult, logPrefix);
+                notifyValidation(id, source, allowOldDocuments, actionResult, logPrefix);
 
                 // Execute insertion
                 IndexRequestBuilder request = client.prepareIndex(toIndex, toType, id)
@@ -491,15 +510,16 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
                     }
 
                     // Validate source
-                    notifyValidation(id, source, actionResult, logPrefix);
+                    notifyValidation(id, source, allowOldDocuments, actionResult, logPrefix);
 
                     // Execute update
-                    UpdateRequestBuilder request = client.prepareUpdate(toIndex, toType, id)
-                            .setDoc(objectMapper.writeValueAsBytes(source));
+                    UpdateRequestBuilder request = client.prepareUpdate(toIndex, toType, id);
                     if (bulkRequest != null) {
+                        request.setDoc(objectMapper.writeValueAsBytes(source));
                         bulkRequest.add(request);
                     }
                     else {
+                        request.setSource(objectMapper.writeValueAsBytes(source));
                         request.setRefresh(true);
                         client.safeExecuteRequest(request, false);
                     }
@@ -532,6 +552,10 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
         this.versionFieldName = versionFieldName;
     }
 
+    protected void setTimeFieldName(String timeFieldName) {
+        this.timeFieldName = timeFieldName;
+    }
+
     protected ObjectMapper getObjectMapper() {
         return JacksonUtils.getThreadObjectMapper();
     }
@@ -544,5 +568,8 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
         this.enableSignatureValidation = enableSignatureValidation;
     }
 
+    protected void setEnableTimeValidation(boolean enableTimeValidation) {
+        this.enableTimeValidation = enableTimeValidation;
+    }
 
 }

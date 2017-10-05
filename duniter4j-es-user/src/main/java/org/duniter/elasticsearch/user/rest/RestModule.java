@@ -34,6 +34,7 @@ import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordGetAc
 import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordIndexAction;
 import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordMarkAsReadAction;
 import org.duniter.elasticsearch.user.rest.message.compat.RestMessageRecordSearchAction;
+import org.duniter.elasticsearch.user.rest.mixed.RestMixedSearchAction;
 import org.duniter.elasticsearch.user.rest.page.*;
 import org.duniter.elasticsearch.user.rest.user.*;
 import org.elasticsearch.common.inject.AbstractModule;
@@ -75,6 +76,9 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestRegistryCommentUpdateAction.class).asEagerSingleton();
         bind(RestRegistryCategoryAction.class).asEagerSingleton();
         bind(RestRegistryImageAction.class).asEagerSingleton();
+
+        // Mixed search
+        bind(RestMixedSearchAction.class).asEagerSingleton();
 
         // Backward compatibility
         {

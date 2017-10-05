@@ -35,7 +35,6 @@ import javax.mail.*;
 import javax.mail.internet.*;
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.stream.Collectors;

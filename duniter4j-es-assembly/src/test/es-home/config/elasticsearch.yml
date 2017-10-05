@@ -174,13 +174,19 @@ duniter.security.enable: true
 #
 # Enable discovery on network peers, to automatically synchronize this peers (default: true)
 #
-# duniter.p2p.discovery.enable: false
+duniter.p2p.discovery.enable: false
 #
 # Pass a list of hosts to always synchronize (default: <empty>)
 #
-duniter.p2p.includes.endpoints: [
-   "ES_USER_API g1.data.duniter.fr 443",
-   "ES_SUBSCRIPTION_API g1.data.duniter.fr 443"
+#duniter.p2p.includes.endpoints: [
+#   "ES_USER_API g1.data.duniter.fr 443",
+#   "ES_SUBSCRIPTION_API g1.data.duniter.fr 443"
+#]
+#
+# Pass a list of pubkeys to always synchronize (default: <empty>)
+#
+duniter.p2p.includes.pubkeys: [
+  "38MEAZN68Pz1DTvT3tqgxx4yQP6snJCQhPqEFxbDk4aE"
 ]
 #
 # ---------------------------------- Duniter4j Mail module -----------------------

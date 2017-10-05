@@ -37,6 +37,7 @@ import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.AbstractService;
+import org.elasticsearch.action.ActionWriteResponse;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
@@ -147,7 +148,7 @@ public class UserService extends AbstractService {
      * Update an user profile
      * @param profileJson
      */
-    public ListenableActionFuture<UpdateResponse> updateProfileFromJson(String id, String profileJson) {
+    public ListenableActionFuture<? extends ActionWriteResponse> updateProfileFromJson(String id, String profileJson) {
 
         JsonNode actualObj = readAndVerifyIssuerSignature(profileJson);
         String issuer = getIssuer(actualObj);
@@ -163,8 +164,13 @@ public class UserService extends AbstractService {
             logger.debug(String.format("Updating a user profile from issuer [%s]", issuer.substring(0, 8)));
         }
 
-        return client.prepareUpdate(INDEX, PROFILE_TYPE, issuer)
-                .setDoc(profileJson)
+        // First delete
+        client.prepareDelete(INDEX, PROFILE_TYPE, issuer)
+                .execute().actionGet();
+
+        // Then re-create
+        return client.prepareIndex(INDEX, PROFILE_TYPE, issuer)
+                .setSource(profileJson)
                 .execute();
     }
 

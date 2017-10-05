@@ -175,6 +175,10 @@ duniter.p2p.includes.endpoints: [
    "ES_SUBSCRIPTION_API g1.data.duniter.fr 443"
 ]
 #
+# Pass a list of pubkeys to always synchronize (default: <empty>)
+#
+# duniter.p2p.includes.pubkeys: [""]
+#
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
 # Enable mail module ?

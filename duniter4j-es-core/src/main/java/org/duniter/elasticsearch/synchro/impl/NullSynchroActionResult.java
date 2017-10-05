@@ -21,6 +21,11 @@ public class NullSynchroActionResult implements SynchroActionResult {
     }
 
     @Override
+    public void addInvalidTime() {
+
+    }
+
+    @Override
     public long getInserts() {
         return 0;
     }
@@ -37,6 +42,11 @@ public class NullSynchroActionResult implements SynchroActionResult {
 
     @Override
     public long getInvalidSignatures() {
+        return 0;
+    }
+
+    @Override
+    public long getInvalidTimes() {
         return 0;
     }
 }

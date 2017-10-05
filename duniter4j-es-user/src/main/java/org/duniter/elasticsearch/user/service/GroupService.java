@@ -244,24 +244,52 @@ public class GroupService extends AbstractService {
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // avatar
-                    .startObject("avatar")
-                        .field("type", "attachment")
-                        .startObject("fields") // fields
-                            .startObject("content") // content
-                                .field("index", "no")
-                            .endObject()
-                            .startObject("title") // title
-                                .field("type", "string")
-                                .field("store", "no")
-                            .endObject()
-                                .startObject("author") // author
-                                .field("store", "no")
-                            .endObject()
-                            .startObject("content_type") // content_type
-                                .field("store", "yes")
-                            .endObject()
-                        .endObject()
+                    // thumbnail
+                    .startObject("thumbnail")
+                    .field("type", "attachment")
+                    .startObject("fields") // src
+                    .startObject("content") // title
+                    .field("index", "no")
+                    .endObject()
+                    .startObject("title") // title
+                    .field("type", "string")
+                    .field("store", "no")
+                    .endObject()
+                    .startObject("author") // title
+                    .field("store", "no")
+                    .endObject()
+                    .startObject("content_type") // title
+                    .field("store", "yes")
+                    .endObject()
+                    .endObject()
+                    .endObject()
+
+                    // pictures
+                    .startObject("pictures")
+                    .field("type", "nested")
+                    .field("dynamic", "false")
+                    .startObject("properties")
+                    .startObject("file") // file
+                    .field("type", "attachment")
+                    .startObject("fields")
+                    .startObject("content") // content
+                    .field("index", "no")
+                    .endObject()
+                    .startObject("title") // title
+                    .field("type", "string")
+                    .field("store", "yes")
+                    .field("analyzer", stringAnalyzer)
+                    .endObject()
+                    .startObject("author") // author
+                    .field("type", "string")
+                    .field("store", "no")
+                    .endObject()
+                    .startObject("content_type") // content_type
+                    .field("store", "yes")
+                    .endObject()
+                    .endObject()
+                    .endObject()
+                    .endObject()
                     .endObject()
 
                     // social networks

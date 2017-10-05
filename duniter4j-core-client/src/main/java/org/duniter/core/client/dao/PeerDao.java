@@ -25,6 +25,7 @@ package org.duniter.core.client.dao;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -36,6 +37,8 @@ public interface PeerDao extends EntityDao<String, Peer> {
     List<Peer> getPeersByCurrencyId(String currencyId);
 
     List<Peer> getPeersByCurrencyIdAndApi(String currencyId, String endpointApi);
+
+    List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] pubkeys);
 
     boolean isExists(String currencyId, String peerId);
 

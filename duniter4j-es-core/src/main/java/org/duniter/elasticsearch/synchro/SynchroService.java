@@ -22,9 +22,7 @@ package org.duniter.elasticsearch.synchro;
  * #L%
  */
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.duniter.core.client.dao.CurrencyDao;
@@ -57,10 +55,7 @@ import org.elasticsearch.common.inject.Inject;
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -183,7 +178,7 @@ public class SynchroService extends AbstractService {
             logger.info(String.format("[%s] [%s] Starting synchronization... {discovery: %s}", currencyId, peerApiFilter.name(), pluginSettings.enableSynchroDiscovery()));
 
             // Get peers for currencies and API
-            List<Peer> peers = getPeersFromApi(currencyId, peerApiFilter);
+            Collection<Peer> peers = getPeersFromApi(currencyId, peerApiFilter);
             if (CollectionUtils.isNotEmpty(peers)) {
                 peers.forEach(p -> synchronizePeer(p, enableSynchroWebsocket));
                 logger.info(String.format("[%s] [%s] Synchronization [OK]", currencyId, peerApiFilter.name()));
@@ -295,30 +290,45 @@ public class SynchroService extends AbstractService {
         return peers;
     }
 
-    protected List<Peer> getPeersFromApi(final String currencyId, final EndpointApi api) {
+    protected Collection<Peer> getPeersFromApi(final String currencyId, final EndpointApi api) {
         Preconditions.checkNotNull(api);
         Preconditions.checkArgument(StringUtils.isNotBlank(currencyId));
 
         try {
 
-            // Get default peer, defined in config option
-            List<Peer> peers = getConfigIncludesPeers(currencyId, api);
-            if (peers == null) {
-                peers = Lists.newArrayList();
+            // Use map by URL, to avoid duplicated peer
+            Map<String, Peer> peersByUrls = Maps.newHashMap();
+
+            // Get peers from config
+            List<Peer> configPeers = getConfigIncludesPeers(currencyId, api);
+            if (CollectionUtils.isNotEmpty(configPeers)) {
+                configPeers.forEach(p -> peersByUrls.put(p.getUrl(), p));
+            }
+
+            // Get peers by pubkeys, from config
+            String[] includePubkeys = pluginSettings.getSynchroIncludesPubkeys();
+            if (ArrayUtils.isNotEmpty(includePubkeys)) {
+
+                // Get from DAO, by API and pubkeys
+                List<Peer> pubkeysPeers = peerDao.getPeersByCurrencyIdAndApiAndPubkeys(currencyId, api.name(), includePubkeys);
+                if (CollectionUtils.isNotEmpty(pubkeysPeers)) {
+                    pubkeysPeers.stream()
+                            .filter(Objects::nonNull)
+                            .forEach(p -> peersByUrls.put(p.getUrl(), p));
+                }
             }
 
             // Add discovered peers
             if (pluginSettings.enableSynchroDiscovery()) {
-                List<Peer> indexedPeers = peerDao.getPeersByCurrencyIdAndApi(currencyId, api.name());
-                if (CollectionUtils.isNotEmpty(indexedPeers)) {
-                    peers.addAll(indexedPeers
-                            .stream()
+                List<Peer> discoveredPeers = peerDao.getPeersByCurrencyIdAndApi(currencyId, api.name());
+                if (CollectionUtils.isNotEmpty(discoveredPeers)) {
+                    discoveredPeers.stream()
                             .filter(Objects::nonNull)
-                            .collect(Collectors.toList()));
+                            .forEach(p -> peersByUrls.put(p.getUrl(), p));
                 }
             }
 
-            return peers;
+            return peersByUrls.values();
         }
         catch (Exception e) {
             logger.error(String.format("Could not get peers for Api [%s]", api.name()), e);

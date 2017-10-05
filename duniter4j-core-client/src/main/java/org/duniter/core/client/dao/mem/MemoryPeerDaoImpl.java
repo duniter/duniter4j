@@ -22,6 +22,8 @@ package org.duniter.core.client.dao.mem;
  * #L%
  */
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
@@ -79,9 +81,31 @@ public class MemoryPeerDaoImpl implements PeerDao {
         Preconditions.checkNotNull(currencyId);
         Preconditions.checkNotNull(endpointApi);
         return peersByCurrencyId.values().stream()
-                .filter(peer -> currencyId.equals(peer.getCurrency()) &&
+                .filter(peer ->
+                        // Filter on currency
+                        currencyId.equals(peer.getCurrency()) &&
+                        // Filter on API
                         peer.getApi() != null &&
                         endpointApi.equals(peer.getApi()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] pubkeys) {
+        Preconditions.checkNotNull(currencyId);
+        Preconditions.checkNotNull(endpointApi);
+        List pubkeysAsList = ImmutableList.copyOf(pubkeys);
+
+        return peersByCurrencyId.values().stream()
+                .filter(peer ->
+                        // Filter on currency
+                        currencyId.equals(peer.getCurrency()) &&
+                        // Filter on API
+                        peer.getApi() != null &&
+                        endpointApi.equals(peer.getApi()) &&
+                        // Filter on pubkeys
+                        peer.getPubkey() != null &&
+                        pubkeysAsList.contains(peer.getPubkey()))
                 .collect(Collectors.toList());
     }
 
