@@ -22,24 +22,18 @@ package org.duniter.elasticsearch.user.rest.page;
  * #L%
  */
 
-import org.duniter.elasticsearch.user.dao.page.RegistryCommentDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
-import org.duniter.elasticsearch.user.service.PageService;
-import org.duniter.elasticsearch.rest.AbstractRestPostIndexAction;
+import org.duniter.elasticsearch.user.dao.RecordDao;
+import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
+import org.duniter.elasticsearch.user.dao.page.PageRecordDao;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.RestController;
 
-public class RestRegistryCommentIndexAction extends AbstractRestPostIndexAction {
+public class RestPageImageAction {
 
     @Inject
-    public RestRegistryCommentIndexAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
-                                          PageService service) {
-        super(settings, controller, client, securityController,
-                RegistryIndexDao.INDEX, RegistryCommentDao.TYPE,
-                json -> service.indexCommentFromJson(json));
-    }
+    public RestPageImageAction(RestSecurityController securityController) {
 
+        // Allow to get avatar
+        securityController.allowImageAttachment(PageIndexDao.INDEX, PageRecordDao.TYPE, RecordDao.PROPERTY_AVATAR);
+    }
 }

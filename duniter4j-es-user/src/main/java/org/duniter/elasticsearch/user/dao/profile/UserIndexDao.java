@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.user.dao.page;
+package org.duniter.elasticsearch.user.dao.profile;
 
 /*
  * #%L
@@ -27,7 +27,6 @@ import org.duniter.elasticsearch.dao.IndexDao;
 /**
  * Created by blavenie on 03/04/17.
  */
-public interface RegistryIndexDao extends IndexDao<RegistryIndexDao> {
-    String INDEX = "page";
-    String CATEGORY_TYPE = "category";
+public interface UserIndexDao extends IndexDao<UserIndexDao> {
+    String INDEX = "user";
 }

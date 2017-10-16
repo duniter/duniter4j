@@ -22,9 +22,7 @@ package org.duniter.elasticsearch.user.rest;
  * #L%
  */
 
-import org.duniter.elasticsearch.user.rest.group.RestGroupImageAction;
-import org.duniter.elasticsearch.user.rest.group.RestGroupIndexAction;
-import org.duniter.elasticsearch.user.rest.group.RestGroupUpdateAction;
+import org.duniter.elasticsearch.user.rest.group.*;
 import org.duniter.elasticsearch.user.rest.history.RestHistoryDeleteIndexAction;
 import org.duniter.elasticsearch.user.rest.invitation.RestInvitationCertificationIndexAction;
 import org.duniter.elasticsearch.user.rest.message.RestMessageInboxIndexAction;
@@ -56,6 +54,8 @@ public class RestModule extends AbstractModule implements Module {
         // Group
         bind(RestGroupIndexAction.class).asEagerSingleton();
         bind(RestGroupUpdateAction.class).asEagerSingleton();
+        bind(RestGroupCommentIndexAction.class).asEagerSingleton();
+        bind(RestGroupCommentUpdateAction.class).asEagerSingleton();
         bind(RestGroupImageAction.class).asEagerSingleton();
 
         // History
@@ -70,12 +70,12 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestInvitationCertificationIndexAction.class).asEagerSingleton();
 
         // Page
-        bind(RestRegistryRecordIndexAction.class).asEagerSingleton();
-        bind(RestRegistryRecordUpdateAction.class).asEagerSingleton();
-        bind(RestRegistryCommentIndexAction.class).asEagerSingleton();
-        bind(RestRegistryCommentUpdateAction.class).asEagerSingleton();
-        bind(RestRegistryCategoryAction.class).asEagerSingleton();
-        bind(RestRegistryImageAction.class).asEagerSingleton();
+        bind(RestPageRecordIndexAction.class).asEagerSingleton();
+        bind(RestPageRecordUpdateAction.class).asEagerSingleton();
+        bind(RestPageCommentIndexAction.class).asEagerSingleton();
+        bind(RestPageCommentUpdateAction.class).asEagerSingleton();
+        bind(RestPageCategoryAction.class).asEagerSingleton();
+        bind(RestPageImageAction.class).asEagerSingleton();
 
         // Mixed search
         bind(RestMixedSearchAction.class).asEagerSingleton();

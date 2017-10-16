@@ -29,11 +29,11 @@ import org.elasticsearch.common.inject.Inject;
 /**
  * Created by blavenie on 03/04/17.
  */
-public class RegistryCommentDaoImpl extends AbstractCommentDaoImpl implements RegistryCommentDao {
+public class PageCommentDaoImpl extends AbstractCommentDaoImpl implements PageCommentDao {
 
 
     @Inject
-    public RegistryCommentDaoImpl(PluginSettings pluginSettings) {
-        super(RegistryIndexDao.INDEX, pluginSettings);
+    public PageCommentDaoImpl(PluginSettings pluginSettings) {
+        super(PageIndexDao.INDEX, pluginSettings);
     }
 }

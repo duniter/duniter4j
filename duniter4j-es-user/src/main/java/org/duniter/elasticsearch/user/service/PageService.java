@@ -29,9 +29,9 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.user.PluginSettings;
-import org.duniter.elasticsearch.user.dao.page.RegistryCommentDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryRecordDao;
+import org.duniter.elasticsearch.user.dao.page.PageCommentDao;
+import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
+import org.duniter.elasticsearch.user.dao.page.PageRecordDao;
 import org.elasticsearch.common.inject.Inject;
 
 /**
@@ -39,9 +39,9 @@ import org.elasticsearch.common.inject.Inject;
  */
 public class PageService extends AbstractService {
 
-    private RegistryIndexDao indexDao;
-    private RegistryRecordDao recordDao;
-    private RegistryCommentDao commentDao;
+    private PageIndexDao indexDao;
+    private PageRecordDao recordDao;
+    private PageCommentDao commentDao;
     private HistoryService historyService;
 
     @Inject
@@ -49,11 +49,11 @@ public class PageService extends AbstractService {
                        PluginSettings settings,
                        CryptoService cryptoService,
                        HistoryService historyService,
-                       RegistryIndexDao registryIndexDao,
-                       RegistryCommentDao commentDao,
-                       RegistryRecordDao recordDao) {
+                       PageIndexDao indexDao,
+                       PageCommentDao commentDao,
+                       PageRecordDao recordDao) {
         super("duniter.page", client, settings, cryptoService);
-        this.indexDao = registryIndexDao;
+        this.indexDao = indexDao;
         this.commentDao = commentDao;
         this.recordDao = recordDao;
         this.historyService = historyService;
@@ -115,7 +115,7 @@ public class PageService extends AbstractService {
         verifyTimeForInsert(commentObj);
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s] Indexing new %s, issuer {%s}", RegistryIndexDao.INDEX, commentDao.getType(), issuer.substring(0, 8)));
+            logger.debug(String.format("[%s] Indexing new %s, issuer {%s}", PageIndexDao.INDEX, commentDao.getType(), issuer.substring(0, 8)));
         }
         return commentDao.create(json);
     }
@@ -132,7 +132,7 @@ public class PageService extends AbstractService {
 
         if (logger.isDebugEnabled()) {
             String issuer = getMandatoryField(commentObj, RecordComment.PROPERTY_ISSUER).asText();
-            logger.debug(String.format("[%s] Updating existing %s {%s}, issuer {%s}", RegistryIndexDao.INDEX, commentDao.getType(), id, issuer.substring(0, 8)));
+            logger.debug(String.format("[%s] Updating existing %s {%s}, issuer {%s}", PageIndexDao.INDEX, commentDao.getType(), id, issuer.substring(0, 8)));
         }
 
         commentDao.update(id, json);

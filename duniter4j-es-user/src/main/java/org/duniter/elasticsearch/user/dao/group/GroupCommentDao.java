@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.user.dao.page;
+package org.duniter.elasticsearch.user.dao.group;
 
 /*
  * #%L
@@ -27,5 +27,5 @@ import org.duniter.elasticsearch.user.dao.CommentDao;
 /**
  * Created by blavenie on 03/04/17.
  */
-public interface RegistryCommentDao extends CommentDao {
+public interface GroupCommentDao extends CommentDao {
 }

@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.user.rest.group;
+package org.duniter.elasticsearch.user.rest.page;
 
 /*
  * #%L
@@ -22,26 +22,24 @@ package org.duniter.elasticsearch.user.rest.group;
  * #L%
  */
 
-import org.duniter.elasticsearch.rest.AbstractRestPostUpdateAction;
+import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
+import org.duniter.elasticsearch.user.dao.page.PageRecordDao;
+import org.duniter.elasticsearch.user.service.PageService;
+import org.duniter.elasticsearch.rest.AbstractRestPostIndexAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.user.dao.group.GroupIndexDao;
-import org.duniter.elasticsearch.user.dao.group.GroupRecordDao;
-import org.duniter.elasticsearch.user.service.GroupService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestController;
 
-public class RestGroupUpdateAction extends AbstractRestPostUpdateAction {
+public class RestPageRecordIndexAction extends AbstractRestPostIndexAction {
+
 
     @Inject
-    public RestGroupUpdateAction(Settings settings, RestController controller, Client client,
-                                 RestSecurityController securityController,
-                                 GroupService service) {
+    public RestPageRecordIndexAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
+                                     PageService service) {
         super(settings, controller, client, securityController,
-                GroupIndexDao.INDEX,
-                GroupRecordDao.TYPE,
-                (id, json) -> service.updateRecordFromJson(id, json));
+                PageIndexDao.INDEX, PageRecordDao.TYPE,
+                json -> service.indexRecordFromJson(json));
     }
-
 }

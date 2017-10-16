@@ -22,17 +22,10 @@ package org.duniter.elasticsearch.user.dao.page;
  * #L%
  */
 
-import org.duniter.elasticsearch.user.PluginSettings;
-import org.duniter.elasticsearch.user.dao.AbstractRecordDaoImpl;
-import org.elasticsearch.common.inject.Inject;
+import org.duniter.elasticsearch.user.dao.CommentDao;
 
 /**
  * Created by blavenie on 03/04/17.
  */
-public class RegistryRecordDaoImpl extends AbstractRecordDaoImpl implements RegistryRecordDao {
-
-    @Inject
-    public RegistryRecordDaoImpl(PluginSettings pluginSettings) {
-        super(RegistryIndexDao.INDEX, pluginSettings);
-    }
+public interface PageCommentDao extends CommentDao {
 }

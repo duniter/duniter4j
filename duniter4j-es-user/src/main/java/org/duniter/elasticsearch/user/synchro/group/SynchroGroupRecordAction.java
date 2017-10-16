@@ -5,6 +5,8 @@ import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.synchro.SynchroService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
 import org.duniter.elasticsearch.user.PluginSettings;
+import org.duniter.elasticsearch.user.dao.group.GroupIndexDao;
+import org.duniter.elasticsearch.user.dao.group.GroupRecordDao;
 import org.duniter.elasticsearch.user.service.GroupService;
 import org.duniter.elasticsearch.synchro.AbstractSynchroAction;
 import org.elasticsearch.common.inject.Inject;
@@ -17,7 +19,7 @@ public class SynchroGroupRecordAction extends AbstractSynchroAction {
                                     CryptoService cryptoService,
                                     ThreadPool threadPool,
                                     SynchroService synchroService) {
-        super(GroupService.INDEX, GroupService.RECORD_TYPE, client, pluginSettings.getDelegate(), cryptoService, threadPool);
+        super(GroupIndexDao.INDEX, GroupRecordDao.TYPE, client, pluginSettings.getDelegate(), cryptoService, threadPool);
 
         setEnableUpdate(true); // with update
 

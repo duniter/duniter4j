@@ -27,5 +27,5 @@ import org.duniter.elasticsearch.user.dao.RecordDao;
 /**
  * Created by blavenie on 03/04/17.
  */
-public interface RegistryRecordDao extends RecordDao {
+public interface PageRecordDao extends RecordDao {
 }

@@ -1,10 +1,10 @@
-package org.duniter.elasticsearch.user.dao;
+package org.duniter.elasticsearch.user.dao.group;
 
 /*
  * #%L
- * UCoin Java Client :: Core API
+ * Ğchange Pod :: ElasticSearch plugin
  * %%
- * Copyright (C) 2014 - 2015 EIS
+ * Copyright (C) 2014 - 2017 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,22 +22,12 @@ package org.duniter.elasticsearch.user.dao;
  * #L%
  */
 
-
-import org.duniter.elasticsearch.dao.IndexTypeDao;
+import org.duniter.elasticsearch.dao.IndexDao;
 
 /**
- * Created by Benoit on 30/03/2015.
+ * Created by blavenie on 03/04/17.
  */
-public interface RecordDao<T extends RecordDao> extends IndexTypeDao<T> {
-
-    String TYPE = "record";
-
-    String PROPERTY_AVATAR = "avatar";
-
-    String create(final String json);
-
-    void update(final String id, final String json);
-
-    void checkSameDocumentIssuer(String id, String expectedIssuer);
-
+public interface GroupIndexDao extends IndexDao<GroupIndexDao> {
+    String INDEX = "group";
+    String CATEGORY_TYPE = "category";
 }

@@ -23,29 +23,22 @@ package org.duniter.elasticsearch.user.service;
  */
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.collections4.MapUtils;
+import org.duniter.core.client.model.elasticsearch.RecordComment;
 import org.duniter.core.client.model.elasticsearch.UserGroup;
-import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
-import org.duniter.elasticsearch.exception.AccessDeniedException;
-import org.duniter.elasticsearch.user.service.AbstractService;
+import org.duniter.elasticsearch.exception.NotFoundException;
+import org.duniter.elasticsearch.user.dao.group.GroupCommentDao;
+import org.duniter.elasticsearch.user.dao.group.GroupIndexDao;
+import org.duniter.elasticsearch.user.dao.group.GroupRecordDao;
+import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
 import org.duniter.elasticsearch.user.PluginSettings;
-import org.elasticsearch.action.ListenableActionFuture;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -53,69 +46,48 @@ import java.util.Set;
  */
 public class GroupService extends AbstractService {
 
-    public static final String INDEX = "group";
-    public static final String RECORD_TYPE = "record";
+    private GroupIndexDao indexDao;
+    private GroupCommentDao commentDao;
+    private GroupRecordDao recordDao;
+    private HistoryService historyService;
 
     @Inject
     public GroupService(Duniter4jClient client,
                         PluginSettings settings,
-                        CryptoService cryptoService) {
-        super("duniter." + INDEX, client, settings, cryptoService);
+                        CryptoService cryptoService,
+                        GroupIndexDao indexDao,
+                        GroupCommentDao commentDao,
+                        GroupRecordDao recordDao,
+                        HistoryService historyService) {
+        super("duniter.group", client, settings, cryptoService);
+        this.indexDao = indexDao;
+        this.commentDao = commentDao;
+        this.recordDao = recordDao;
+        this.historyService = historyService;
     }
 
     /**
-     * Create index need for blockchain mail, if need
+     * Create index need for blockchain registry, if need
      */
     public GroupService createIndexIfNotExists() {
-        try {
-            if (!client.existsIndex(INDEX)) {
-                createIndex();
-            }
-        }
-        catch(JsonProcessingException e) {
-            throw new TechnicalException(String.format("Error while creating index [%s]", INDEX));
-        }
-        return this;
-    }
-
-    /**
-     * Create index for mail
-     * @throws JsonProcessingException
-     */
-    public GroupService createIndex() throws JsonProcessingException {
-        logger.info(String.format("Creating index [%s]", INDEX));
-
-        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
-        org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
-                .put("number_of_shards", 3)
-                .put("number_of_replicas", 1)
-                //.put("analyzer", createDefaultAnalyzer())
-                .build();
-        createIndexRequestBuilder.setSettings(indexSettings);
-        createIndexRequestBuilder.addMapping(RECORD_TYPE, createRecordType());
-        createIndexRequestBuilder.execute().actionGet();
-
+        indexDao.createIndexIfNotExists();
         return this;
     }
 
     public GroupService deleteIndex() {
-        client.deleteIndexIfExists(INDEX);
+        indexDao.deleteIndex();
         return this;
-    }
-
-    public boolean existsIndex() {
-        return client.existsIndex(INDEX);
     }
 
     /**
      *
      * Index an record
-     * @param profileJson
+     * @param json
      * @return the record id
      */
-    public String indexRecordProfileFromJson(String profileJson) {
+    public String indexRecordProfileFromJson(String json) {
 
-        JsonNode actualObj = readAndVerifyIssuerSignature(profileJson);
+        JsonNode actualObj = readAndVerifyIssuerSignature(json);
         String title = getTitle(actualObj);
         String id = computeIdFromTitle(title);
         String issuer = getIssuer(actualObj);
@@ -127,44 +99,76 @@ public class GroupService extends AbstractService {
             logger.debug(String.format("Indexing group [%s] from issuer [%s]", id, issuer.substring(0, 8)));
         }
 
-        IndexResponse response = client.prepareIndex(INDEX, RECORD_TYPE)
-                .setSource(profileJson)
-                .setId(id)
-                .setRefresh(false)
-                .execute().actionGet();
-        return response.getId();
+        return recordDao.create(id, json);
     }
 
     /**
      * Update a record
-     * @param recordJson
+     * @param json
      */
-    public ListenableActionFuture<UpdateResponse> updateRecordFromJson(String id, String recordJson) {
+    public void updateRecordFromJson(String id, String json) {
 
-        JsonNode actualObj = readAndVerifyIssuerSignature(recordJson);
+        JsonNode actualObj = readAndVerifyIssuerSignature(json);
+        String issuer = getIssuer(actualObj);
+
+        // Check same document issuer
+        recordDao.checkSameDocumentIssuer(id, issuer);
 
         // Check time is valid - fix #27
-        verifyTimeForUpdate(INDEX, RECORD_TYPE, id, actualObj);
+        verifyTimeForUpdate(recordDao.getIndex(), recordDao.getType(), id, actualObj);
 
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Updating group [%s]", id));
+            logger.debug(String.format("Updating %s [%s] from issuer [%s]", recordDao.getType(), id, issuer.substring(0, 8)));
         }
 
-        return client.prepareUpdate(INDEX, RECORD_TYPE, id)
-                .setDoc(recordJson)
-                .execute();
+        recordDao.update(id, json);
+    }
+
+    public String indexCommentFromJson(String json) {
+        JsonNode commentObj = readAndVerifyIssuerSignature(json);
+        String issuer = getMandatoryField(commentObj, RecordComment.PROPERTY_ISSUER).asText();
+
+        // Check the record document exists
+        String recordId = getMandatoryField(commentObj, RecordComment.PROPERTY_RECORD).asText();
+        checkRecordExistsOrDeleted(recordId);
+
+        // Check time is valid - fix #27
+        verifyTimeForInsert(commentObj);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("[%s] Indexing new %s, issuer {%s}", PageIndexDao.INDEX, commentDao.getType(), issuer.substring(0, 8)));
+        }
+        return commentDao.create(json);
+    }
+
+    public void updateCommentFromJson(String id, String json) {
+        JsonNode commentObj = readAndVerifyIssuerSignature(json);
+
+        // Check the record document exists
+        String recordId = getMandatoryField(commentObj, RecordComment.PROPERTY_RECORD).asText();
+        checkRecordExistsOrDeleted(recordId);
+
+        // Check time is valid - fix #27
+        verifyTimeForUpdate(commentDao.getIndex(), commentDao.getType(), id, commentObj);
+
+        if (logger.isDebugEnabled()) {
+            String issuer = getMandatoryField(commentObj, RecordComment.PROPERTY_ISSUER).asText();
+            logger.debug(String.format("[%s] Updating existing %s {%s}, issuer {%s}", PageIndexDao.INDEX, commentDao.getType(), id, issuer.substring(0, 8)));
+        }
+
+        commentDao.update(id, json);
     }
 
     public String getTitleById(String id) {
 
-        Object title = client.getFieldById(INDEX, RECORD_TYPE, id, UserGroup.PROPERTY_TITLE);
+        Object title = client.getFieldById(recordDao.getIndex(), recordDao.getType(), id, UserGroup.PROPERTY_TITLE);
         if (title == null) return null;
         return title.toString();
     }
 
     public Map<String, String> getTitlesByNames(Set<String> ids) {
 
-        Map<String, Object> titles = client.getFieldByIds(INDEX, RECORD_TYPE, ids, UserGroup.PROPERTY_TITLE);
+        Map<String, Object> titles = client.getFieldByIds(recordDao.getIndex(), recordDao.getType(), ids, UserGroup.PROPERTY_TITLE);
         if (MapUtils.isEmpty(titles)) return null;
         Map<String, String> result = new HashMap<>();
         titles.entrySet().forEach((entry) -> result.put(entry.getKey(), entry.getValue().toString()));
@@ -185,145 +189,29 @@ public class GroupService extends AbstractService {
     protected String computeIdFromTitle(String title, int counter) {
 
         String id = title.replaceAll("\\s+", "");
-        id  = id.replaceAll("[^a-zA−Z_-]+", "");
+        id  = id.replaceAll("[^a-zA−Z0-9_-]+", "");
         if (counter > 0) {
             id += "_" + counter;
         }
 
-        if (!client.isDocumentExists(INDEX, RECORD_TYPE, id)) {
+        if (!recordDao.isExists(id)) {
             return id;
         }
 
         return computeIdFromTitle(title, counter+1);
     }
 
-    public XContentBuilder createRecordType() {
-        String stringAnalyzer = pluginSettings.getDefaultStringAnalyzer();
-
+    // Check the record document exists (or has been deleted)
+    private void checkRecordExistsOrDeleted(String id) {
+        boolean recordExists;
         try {
-            XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(RECORD_TYPE)
-                    .startObject("properties")
-
-                    // title
-                    .startObject("title")
-                    .field("type", "string")
-                    .field("analyzer", stringAnalyzer)
-                    .endObject()
-
-                    // description
-                    .startObject("description")
-                    .field("type", "string")
-                    .field("analyzer", stringAnalyzer)
-                    .endObject()
-
-                    // creationTime
-                    .startObject("creationTime")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // time
-                    .startObject("time")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // issuer
-                    .startObject("issuer")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // hash
-                    .startObject("hash")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // signature
-                    .startObject("signature")
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-
-                    // thumbnail
-                    .startObject("thumbnail")
-                    .field("type", "attachment")
-                    .startObject("fields") // src
-                    .startObject("content") // title
-                    .field("index", "no")
-                    .endObject()
-                    .startObject("title") // title
-                    .field("type", "string")
-                    .field("store", "no")
-                    .endObject()
-                    .startObject("author") // title
-                    .field("store", "no")
-                    .endObject()
-                    .startObject("content_type") // title
-                    .field("store", "yes")
-                    .endObject()
-                    .endObject()
-                    .endObject()
-
-                    // pictures
-                    .startObject("pictures")
-                    .field("type", "nested")
-                    .field("dynamic", "false")
-                    .startObject("properties")
-                    .startObject("file") // file
-                    .field("type", "attachment")
-                    .startObject("fields")
-                    .startObject("content") // content
-                    .field("index", "no")
-                    .endObject()
-                    .startObject("title") // title
-                    .field("type", "string")
-                    .field("store", "yes")
-                    .field("analyzer", stringAnalyzer)
-                    .endObject()
-                    .startObject("author") // author
-                    .field("type", "string")
-                    .field("store", "no")
-                    .endObject()
-                    .startObject("content_type") // content_type
-                    .field("store", "yes")
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-                    .endObject()
-
-                    // social networks
-                    .startObject("socials")
-                        .field("type", "nested")
-                        .field("dynamic", "false")
-                        .startObject("properties")
-                            .startObject("type") // type
-                                .field("type", "string")
-                                .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("url") // url
-                                .field("type", "string")
-                                .field("index", "not_analyzed")
-                            .endObject()
-                        .endObject()
-                    .endObject()
-
-                    // tags
-                    .startObject("tags")
-                        .field("type", "completion")
-                        .field("search_analyzer", "simple")
-                        .field("analyzer", "simple")
-                        .field("preserve_separators", "false")
-                    .endObject()
-
-                    .endObject()
-                    .endObject().endObject();
-
-            return mapping;
+            recordExists = recordDao.isExists(id);
+        } catch (NotFoundException e) {
+            // Check if exists in delete history
+            recordExists = historyService.existsInDeleteHistory(recordDao.getIndex(), recordDao.getType(), id);
         }
-        catch(IOException ioe) {
-            throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", INDEX, RECORD_TYPE, ioe.getMessage()), ioe);
+        if (!recordExists) {
+            throw new NotFoundException(String.format("Comment refers a non-existent document [%s/%s/%s].", recordDao.getIndex(), recordDao.getType(), id));
         }
     }
-
 }

@@ -1,10 +1,10 @@
-package org.duniter.elasticsearch.user.rest.page;
+package org.duniter.elasticsearch.user.dao.group;
 
 /*
  * #%L
- * duniter4j-elasticsearch-plugin
+ * Ğchange Pod :: ElasticSearch plugin
  * %%
- * Copyright (C) 2014 - 2016 EIS
+ * Copyright (C) 2014 - 2017 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,17 +22,18 @@ package org.duniter.elasticsearch.user.rest.page;
  * #L%
  */
 
-import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
-import org.duniter.elasticsearch.rest.security.RestSecurityController;
+import org.duniter.elasticsearch.user.PluginSettings;
+import org.duniter.elasticsearch.user.dao.AbstractCommentDaoImpl;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.rest.RestRequest;
 
-public class RestRegistryCategoryAction {
+/**
+ * Created by blavenie on 03/04/17.
+ */
+public class GroupCommentDaoImpl extends AbstractCommentDaoImpl implements GroupCommentDao {
+
 
     @Inject
-    public RestRegistryCategoryAction(RestSecurityController securityController) {
-        // Add security rule for category
-        securityController.allowIndexType(RestRequest.Method.GET, RegistryIndexDao.INDEX, RegistryIndexDao.CATEGORY_TYPE);
+    public GroupCommentDaoImpl(PluginSettings pluginSettings) {
+        super(GroupIndexDao.INDEX, pluginSettings);
     }
-
 }

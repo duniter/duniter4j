@@ -24,6 +24,8 @@ package org.duniter.elasticsearch.user.rest.group;
 
 import org.duniter.elasticsearch.rest.AbstractRestPostIndexAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
+import org.duniter.elasticsearch.user.dao.group.GroupIndexDao;
+import org.duniter.elasticsearch.user.dao.group.GroupRecordDao;
 import org.duniter.elasticsearch.user.service.GroupService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -37,8 +39,8 @@ public class RestGroupIndexAction extends AbstractRestPostIndexAction {
                                 RestSecurityController securityController,
                                 GroupService service) {
         super(settings, controller, client, securityController,
-                GroupService.INDEX,
-                GroupService.RECORD_TYPE,
+                GroupIndexDao.INDEX,
+                GroupRecordDao.TYPE,
                 json -> service.indexRecordProfileFromJson(json));
     }
 }

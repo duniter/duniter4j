@@ -22,7 +22,9 @@ package org.duniter.elasticsearch.user.dao;
  * #L%
  */
 
+import org.duniter.elasticsearch.user.dao.group.*;
 import org.duniter.elasticsearch.user.dao.page.*;
+import org.duniter.elasticsearch.user.dao.profile.*;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.Module;
 
@@ -30,10 +32,20 @@ public class DaoModule extends AbstractModule implements Module {
 
     @Override protected void configure() {
 
+        // User
+        bind(UserIndexDao.class).to(UserIndexDaoImpl.class).asEagerSingleton();
+        bind(UserProfileDao.class).to(UserProfileDaoImpl.class).asEagerSingleton();
+        bind(UserSettingsDao.class).to(UserSettingsDaoImpl.class).asEagerSingleton();
+
         // Page
-        bind(RegistryIndexDao.class).to(RegistryIndexDaoImpl.class).asEagerSingleton();
-        bind(RegistryCommentDao.class).to(RegistryCommentDaoImpl.class).asEagerSingleton();
-        bind(RegistryRecordDao.class).to(RegistryRecordDaoImpl.class).asEagerSingleton();
+        bind(PageIndexDao.class).to(PageIndexDaoImpl.class).asEagerSingleton();
+        bind(PageCommentDao.class).to(PageCommentDaoImpl.class).asEagerSingleton();
+        bind(PageRecordDao.class).to(PageRecordDaoImpl.class).asEagerSingleton();
+
+        // Group
+        bind(GroupIndexDao.class).to(GroupIndexDaoImpl.class).asEagerSingleton();
+        bind(GroupCommentDao.class).to(GroupCommentDaoImpl.class).asEagerSingleton();
+        bind(GroupRecordDao.class).to(GroupRecordDaoImpl.class).asEagerSingleton();
 
     }
 

@@ -41,8 +41,16 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
 
     protected PluginSettings pluginSettings;
 
+    private boolean isPubkeyFieldEnable = false;
+    private boolean isNestedPicturesEnable = false;
+    private boolean isNestedCategoryEnable = false;
+
     public AbstractRecordDaoImpl(String index, PluginSettings pluginSettings) {
-        super(index, RecordDao.TYPE);
+        this(index, RecordDao.TYPE, pluginSettings);
+    }
+
+    public AbstractRecordDaoImpl(String index, String type, PluginSettings pluginSettings) {
+        super(index, type);
         this.pluginSettings = pluginSettings;
     }
 
@@ -84,18 +92,24 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
                     .endObject()
 
                     // time
-                    .startObject("time")
+                    .startObject(Record.PROPERTY_TIME)
                     .field("type", "integer")
                     .endObject()
 
                     // issuer
-                    .startObject("issuer")
+                    .startObject(Record.PROPERTY_ISSUER)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // pubkey
-                    .startObject("pubkey")
+                    // hash
+                    .startObject(Record.PROPERTY_HASH)
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
+                    // signature
+                    .startObject(Record.PROPERTY_SIGNATURE)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
@@ -116,94 +130,136 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
                     .field("type", "geo_point")
                     .endObject()
 
-                    // thumbnail
-                    .startObject("thumbnail")
-                    .field("type", "attachment")
-                        .startObject("fields") // src
-                        .startObject("content") // title
-                            .field("index", "no")
-                        .endObject()
-                        .startObject("title") // title
-                            .field("type", "string")
-                            .field("store", "no")
-                        .endObject()
-                        .startObject("author") // title
-                            .field("store", "no")
-                        .endObject()
-                        .startObject("content_type") // title
-                            .field("store", "yes")
-                        .endObject()
-                    .endObject()
-                    .endObject()
-
-                    // pictures
-                    .startObject("pictures")
-                    .field("type", "nested")
-                    .field("dynamic", "false")
-                        .startObject("properties")
-                            .startObject("file") // file
-                                .field("type", "attachment")
-                                .startObject("fields")
-                                    .startObject("content") // content
-                                        .field("index", "no")
-                                    .endObject()
-                                    .startObject("title") // title
-                                        .field("type", "string")
-                                        .field("store", "yes")
-                                        .field("analyzer", stringAnalyzer)
-                                    .endObject()
-                                    .startObject("author") // author
-                                        .field("type", "string")
-                                        .field("store", "no")
-                                    .endObject()
-                                    .startObject("content_type") // content_type
-                                        .field("store", "yes")
-                                    .endObject()
-                                .endObject()
+                    // avatar
+                    .startObject("avatar")
+                        .field("type", "attachment")
+                        .startObject("fields") // fields
+                            .startObject("content") // content
+                                .field("index", "no")
+                            .endObject()
+                            .startObject("title") // title
+                                .field("type", "string")
+                                .field("store", "no")
+                            .endObject()
+                            .startObject("author") // author
+                                .field("store", "no")
+                            .endObject()
+                            .startObject("content_type") // content_type
+                                .field("store", "yes")
                             .endObject()
                         .endObject()
                     .endObject()
 
-                    // picturesCount
-                    .startObject("picturesCount")
-                    .field("type", "integer")
-                    .endObject()
-
-                    // category
-                    .startObject("category")
-                    .field("type", "nested")
-                    .field("dynamic", "false")
-                    .startObject("properties")
-                    .startObject("id") // id
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-                    .startObject("parent") // parent
-                    .field("type", "string")
-                    .field("index", "not_analyzed")
-                    .endObject()
-                    .startObject("name") // name
-                    .field("type", "string")
-                    .field("analyzer", stringAnalyzer)
-                    .endObject()
-                    .endObject()
-                    .endObject()
+                    // social networks
+                    .startObject("socials")
+                        .field("type", "nested")
+                        .field("dynamic", "false")
+                        .startObject("properties")
+                        .startObject("type") // type
+                        .field("type", "string")
+                        .field("index", "not_analyzed")
+                        .endObject()
+                        .startObject("url") // url
+                        .field("type", "string")
+                        .field("index", "not_analyzed")
+                        .endObject()
+                        .endObject()
+                        .endObject()
 
                     // tags
                     .startObject("tags")
-                    .field("type", "completion")
-                    .field("search_analyzer", "simple")
-                    .field("analyzer", "simple")
-                    .field("preserve_separators", "false")
-                    .endObject()
+                        .field("type", "completion")
+                        .field("search_analyzer", "simple")
+                        .field("analyzer", "simple")
+                        .field("preserve_separators", "false")
+                    .endObject();
 
-                    .endObject()
-                    .endObject().endObject();
+            // pubkey
+            if (isPubkeyFieldEnable) {
+                mapping.startObject("pubkey")
+                        .field("type", "string")
+                        .field("index", "not_analyzed")
+                        .endObject();
+            }
+
+            // pictures
+            if (isNestedPicturesEnable) {
+                mapping.startObject("pictures")
+                        .field("type", "nested")
+                        .field("dynamic", "false")
+                        .startObject("properties")
+                        .startObject("file") // file
+                        .field("type", "attachment")
+                        .startObject("fields")
+                        .startObject("content") // content
+                        .field("index", "no")
+                        .endObject()
+                        .startObject("title") // title
+                        .field("type", "string")
+                        .field("store", "yes")
+                        .field("analyzer", stringAnalyzer)
+                        .endObject()
+                        .startObject("author") // author
+                        .field("type", "string")
+                        .field("store", "no")
+                        .endObject()
+                        .startObject("content_type") // content_type
+                        .field("store", "yes")
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+
+                        // picturesCount
+                        .startObject("picturesCount")
+                        .field("type", "integer")
+                        .endObject();
+            }
+
+            // category
+            if (isNestedCategoryEnable) {
+                mapping.startObject("category")
+                        .field("type", "nested")
+                        .field("dynamic", "false")
+                        .startObject("properties")
+                        .startObject("id") // id
+                        .field("type", "string")
+                        .field("index", "not_analyzed")
+                        .endObject()
+                        .startObject("parent") // parent
+                        .field("type", "string")
+                        .field("index", "not_analyzed")
+                        .endObject()
+                        .startObject("name") // name
+                        .field("type", "string")
+                        .field("analyzer", stringAnalyzer)
+                        .endObject()
+                        .endObject()
+                        .endObject();
+            }
+
+            mapping.endObject()
+                .endObject().endObject();
 
             return mapping;
         }
         catch(IOException ioe) {
             throw new TechnicalException(String.format("Error while getting mapping for index [%s/%s]: %s", getIndex(), getType(), ioe.getMessage()), ioe);
         }
+    }
+
+    /* -- protected methods -- */
+
+    protected void setNestedPicturesEnable(boolean isPicturesEnable) {
+        this.isNestedPicturesEnable = isPicturesEnable;
+    }
+
+    protected void setNestedCategoryEnable(boolean isNestedCategoryEnable) {
+        this.isNestedCategoryEnable = isNestedCategoryEnable;
+    }
+
+    protected void setPubkeyFieldEnable(boolean isPubkeyFieldEnable) {
+        this.isPubkeyFieldEnable = isPubkeyFieldEnable;
     }
 }

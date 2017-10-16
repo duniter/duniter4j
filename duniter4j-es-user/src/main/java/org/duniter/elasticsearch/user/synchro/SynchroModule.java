@@ -25,6 +25,7 @@ package org.duniter.elasticsearch.user.synchro;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.elasticsearch.service.PeerService;
 import org.duniter.elasticsearch.user.PluginSettings;
+import org.duniter.elasticsearch.user.synchro.group.SynchroGroupCommentAction;
 import org.duniter.elasticsearch.user.synchro.group.SynchroGroupRecordAction;
 import org.duniter.elasticsearch.user.synchro.history.SynchroHistoryIndexAction;
 import org.duniter.elasticsearch.user.synchro.invitation.SynchroInvitationCertificationIndexAction;
@@ -67,10 +68,13 @@ public class SynchroModule extends AbstractModule implements Module {
         bind(SynchroMessageInboxIndexAction.class).asEagerSingleton();
         bind(SynchroMessageOutboxIndexAction.class).asEagerSingleton();
 
-        // Page and Group
-        bind(SynchroGroupRecordAction.class).asEagerSingleton();
+        // Page
         bind(SynchroPageRecordAction.class).asEagerSingleton();
         bind(SynchroPageCommentAction.class).asEagerSingleton();
+
+        // Group
+        bind(SynchroGroupRecordAction.class).asEagerSingleton();
+        bind(SynchroGroupCommentAction.class).asEagerSingleton();
 
         // Invitation
         bind(SynchroInvitationCertificationIndexAction.class).asEagerSingleton();

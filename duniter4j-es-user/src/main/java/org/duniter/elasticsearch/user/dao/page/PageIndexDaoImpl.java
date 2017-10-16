@@ -39,7 +39,7 @@ import java.io.IOException;
 /**
  * Created by blavenie on 03/04/17.
  */
-public class RegistryIndexDaoImpl extends AbstractIndexDao<RegistryIndexDao> implements RegistryIndexDao {
+public class PageIndexDaoImpl extends AbstractIndexDao<PageIndexDao> implements PageIndexDao {
 
 
     private static final String CATEGORIES_BULK_CLASSPATH_FILE = "page-categories-bulk-insert.json";
@@ -49,8 +49,8 @@ public class RegistryIndexDaoImpl extends AbstractIndexDao<RegistryIndexDao> imp
     private CommentDao commentDao;
 
     @Inject
-    public RegistryIndexDaoImpl(PluginSettings pluginSettings, RegistryRecordDao recordDao, RegistryCommentDao commentDao) {
-        super(RegistryIndexDao.INDEX);
+    public PageIndexDaoImpl(PluginSettings pluginSettings, PageRecordDao recordDao, PageCommentDao commentDao) {
+        super(INDEX);
 
         this.pluginSettings = pluginSettings;
         this.commentDao = commentDao;
@@ -60,9 +60,9 @@ public class RegistryIndexDaoImpl extends AbstractIndexDao<RegistryIndexDao> imp
 
     @Override
     protected void createIndex() throws JsonProcessingException {
-        logger.info(String.format("Creating index [%s]", INDEX));
+        logger.info(String.format("Creating index [%s]", getIndex()));
 
-        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(INDEX);
+        CreateIndexRequestBuilder createIndexRequestBuilder = client.admin().indices().prepareCreate(getIndex());
         org.elasticsearch.common.settings.Settings indexSettings = org.elasticsearch.common.settings.Settings.settingsBuilder()
                 .put("number_of_shards", 3)
                 .put("number_of_replicas", 1)
@@ -71,7 +71,7 @@ public class RegistryIndexDaoImpl extends AbstractIndexDao<RegistryIndexDao> imp
         createIndexRequestBuilder.setSettings(indexSettings);
         createIndexRequestBuilder.addMapping(recordDao.getType(), recordDao.createTypeMapping());
         createIndexRequestBuilder.addMapping(commentDao.getType(), commentDao.createTypeMapping());
-        createIndexRequestBuilder.addMapping(RegistryIndexDao.CATEGORY_TYPE, createCategoryTypeMapping());
+        createIndexRequestBuilder.addMapping(PageIndexDao.CATEGORY_TYPE, createCategoryTypeMapping());
         createIndexRequestBuilder.execute().actionGet();
 
         // Fill categories
@@ -80,13 +80,13 @@ public class RegistryIndexDaoImpl extends AbstractIndexDao<RegistryIndexDao> imp
 
     public void fillRecordCategories() {
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("[%s/%s] Fill data", INDEX, RegistryIndexDao.CATEGORY_TYPE));
+            logger.debug(String.format("[%s/%s] Fill data", getIndex(), PageIndexDao.CATEGORY_TYPE));
         }
 
         // Insert categories
         client.bulkFromClasspathFile(CATEGORIES_BULK_CLASSPATH_FILE,
-                RegistryIndexDao.INDEX,
-                RegistryIndexDao.CATEGORY_TYPE,
+                getIndex(),
+                PageIndexDao.CATEGORY_TYPE,
                 // Add order attribute
                 new AddSequenceAttributeHandler("order", "\\{.*\"name\".*\\}", 1));
     }

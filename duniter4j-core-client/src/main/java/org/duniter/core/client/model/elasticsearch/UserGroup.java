@@ -33,12 +33,12 @@ public class UserGroup extends Record {
     public static final String PROPERTY_TITLE="title";
     public static final String PROPERTY_DESCRIPTION="description";
     public static final String PROPERTY_CREATION_TIME="creationTime";
-    public static final String PROPERTY_THUMBNAIL="thumbnail";
+    public static final String PROPERTY_AVATAR="avatar";
 
     private String title;
     private String description;
     private Long creationTime;
-    private Map<String, String> thumbnail = new HashMap<>();
+    private Map<String, String> avatar = new HashMap<>();
 
     public String getTitle() {
         return title;
@@ -64,12 +64,12 @@ public class UserGroup extends Record {
         this.creationTime = creationTime;
     }
 
-    public Map<String, String> getThumbnail() {
-        return thumbnail;
+    public Map<String, String> getAvatar() {
+        return avatar;
     }
 
-    public void setThumbnail(Map<String, String> thumbnail) {
-        this.thumbnail = thumbnail;
+    public void setAvatar(Map<String, String> avatar) {
+        this.avatar = avatar;
     }
 
 }

@@ -24,7 +24,8 @@ package org.duniter.elasticsearch.user.rest.group;
 
 import org.duniter.core.client.model.elasticsearch.UserGroup;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.user.service.GroupService;
+import org.duniter.elasticsearch.user.dao.group.GroupIndexDao;
+import org.duniter.elasticsearch.user.dao.group.GroupRecordDao;
 import org.elasticsearch.common.inject.Inject;
 
 public class RestGroupImageAction {
@@ -32,9 +33,8 @@ public class RestGroupImageAction {
     @Inject
     public RestGroupImageAction(RestSecurityController securityController) {
 
-        // Allow to get thumbnail
-        securityController.allowImageAttachment(GroupService.INDEX, GroupService.RECORD_TYPE, UserGroup.PROPERTY_THUMBNAIL);
+        // Allow to get avatar
+        securityController.allowImageAttachment(GroupIndexDao.INDEX, GroupRecordDao.TYPE, UserGroup.PROPERTY_AVATAR);
 
-        // TODO : allow to get pictures
     }
 }

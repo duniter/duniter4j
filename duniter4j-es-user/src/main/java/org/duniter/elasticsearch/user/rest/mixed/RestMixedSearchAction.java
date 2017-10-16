@@ -23,8 +23,9 @@ package org.duniter.elasticsearch.user.rest.mixed;
  */
 
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryRecordDao;
+import org.duniter.elasticsearch.user.dao.group.GroupIndexDao;
+import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
+import org.duniter.elasticsearch.user.dao.page.PageRecordDao;
 import org.duniter.elasticsearch.user.service.GroupService;
 import org.duniter.elasticsearch.user.service.UserService;
 import org.elasticsearch.common.inject.Inject;
@@ -41,13 +42,13 @@ public class RestMixedSearchAction {
         String[] paths = {
             // Allow search on profile + page + group
             String.format("/%s,%s,%s/%s,%s/_search",
-                UserService.INDEX, RegistryIndexDao.INDEX, GroupService.INDEX,
-                UserService.PROFILE_TYPE, RegistryRecordDao.TYPE),
+                UserService.INDEX, PageIndexDao.INDEX, GroupIndexDao.INDEX,
+                UserService.PROFILE_TYPE, PageRecordDao.TYPE),
 
             // Allow search on profile + page
             String.format("/%s,%s/%s,%s/_search",
-                    UserService.INDEX, RegistryIndexDao.INDEX,
-                    UserService.PROFILE_TYPE, RegistryRecordDao.TYPE)
+                    UserService.INDEX, PageIndexDao.INDEX,
+                    UserService.PROFILE_TYPE, PageRecordDao.TYPE)
         };
 
         for(String path: paths) {

@@ -22,24 +22,17 @@ package org.duniter.elasticsearch.user.rest.page;
  * #L%
  */
 
-import org.duniter.elasticsearch.rest.AbstractRestPostUpdateAction;
+import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryRecordDao;
-import org.duniter.elasticsearch.user.service.PageService;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestRequest;
 
-public class RestRegistryRecordUpdateAction extends AbstractRestPostUpdateAction {
+public class RestPageCategoryAction {
 
     @Inject
-    public RestRegistryRecordUpdateAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
-                                          PageService service) {
-        super(settings, controller, client, securityController,
-                RegistryIndexDao.INDEX, RegistryRecordDao.TYPE,
-                (id, json) -> service.updateRecordFromJson(id, json));
+    public RestPageCategoryAction(RestSecurityController securityController) {
+        // Add security rule for category
+        securityController.allowIndexType(RestRequest.Method.GET, PageIndexDao.INDEX, PageIndexDao.CATEGORY_TYPE);
     }
 
 }

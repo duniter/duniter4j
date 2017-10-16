@@ -24,12 +24,15 @@ package org.duniter.elasticsearch.user;
 
 import org.duniter.elasticsearch.service.DocStatService;
 import org.duniter.elasticsearch.threadpool.ThreadPool;
-import org.duniter.elasticsearch.user.dao.page.RegistryCommentDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryRecordDao;
+import org.duniter.elasticsearch.user.dao.group.GroupCommentDao;
+import org.duniter.elasticsearch.user.dao.group.GroupIndexDao;
+import org.duniter.elasticsearch.user.dao.group.GroupRecordDao;
+import org.duniter.elasticsearch.user.dao.page.PageCommentDao;
+import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
+import org.duniter.elasticsearch.user.dao.page.PageRecordDao;
 import org.duniter.elasticsearch.user.model.UserEvent;
-import org.duniter.elasticsearch.user.service.*;
 import org.duniter.elasticsearch.user.model.UserEventCodes;
+import org.duniter.elasticsearch.user.service.*;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
@@ -154,9 +157,10 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
                     .registerIndex(MessageService.INDEX, MessageService.OUTBOX_TYPE)
                     .registerIndex(UserInvitationService.INDEX, UserInvitationService.CERTIFICATION_TYPE)
                     .registerIndex(UserEventService.INDEX, UserEventService.EVENT_TYPE)
-                    .registerIndex(RegistryIndexDao.INDEX, RegistryRecordDao.TYPE)
-                    .registerIndex(RegistryIndexDao.INDEX, RegistryCommentDao.TYPE)
-                    .registerIndex(GroupService.INDEX, GroupService.RECORD_TYPE)
+                    .registerIndex(PageIndexDao.INDEX, PageRecordDao.TYPE)
+                    .registerIndex(PageIndexDao.INDEX, PageCommentDao.TYPE)
+                    .registerIndex(GroupIndexDao.INDEX, GroupRecordDao.TYPE)
+                    .registerIndex(GroupIndexDao.INDEX, GroupCommentDao.TYPE)
                     .registerIndex(HistoryService.INDEX, HistoryService.DELETE_TYPE)
             ;
         }

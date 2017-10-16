@@ -1,10 +1,10 @@
-package org.duniter.elasticsearch.user.rest.page;
+package org.duniter.elasticsearch.user.dao.page;
 
 /*
  * #%L
- * duniter4j-elasticsearch-plugin
+ * Ğchange Pod :: ElasticSearch plugin
  * %%
- * Copyright (C) 2014 - 2016 EIS
+ * Copyright (C) 2014 - 2017 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,20 +22,21 @@ package org.duniter.elasticsearch.user.rest.page;
  * #L%
  */
 
-import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryRecordDao;
-import org.duniter.elasticsearch.rest.security.RestSecurityController;
-import org.duniter.elasticsearch.user.model.page.RegistryRecord;
+import org.duniter.elasticsearch.user.PluginSettings;
+import org.duniter.elasticsearch.user.dao.AbstractRecordDaoImpl;
 import org.elasticsearch.common.inject.Inject;
 
-public class RestRegistryImageAction {
+/**
+ * Created by blavenie on 03/04/17.
+ */
+public class PageRecordDaoImpl extends AbstractRecordDaoImpl implements PageRecordDao {
 
     @Inject
-    public RestRegistryImageAction(RestSecurityController securityController) {
+    public PageRecordDaoImpl(PluginSettings pluginSettings) {
+        super(PageIndexDao.INDEX, pluginSettings);
 
-        // Allow to get thumbnail
-        securityController.allowImageAttachment(RegistryIndexDao.INDEX, RegistryRecordDao.TYPE, RegistryRecord.PROPERTY_THUMBNAIL);
-
-        // TODO : allow to get pictures
+        setNestedPicturesEnable(true);
+        setNestedCategoryEnable(true);
+        setPubkeyFieldEnable(true);
     }
 }

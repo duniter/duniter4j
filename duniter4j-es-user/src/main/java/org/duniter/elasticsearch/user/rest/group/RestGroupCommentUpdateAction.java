@@ -1,4 +1,4 @@
-package org.duniter.elasticsearch.user.rest.page;
+package org.duniter.elasticsearch.user.rest.group;
 
 /*
  * #%L
@@ -22,23 +22,23 @@ package org.duniter.elasticsearch.user.rest.page;
  * #L%
  */
 
-import org.duniter.elasticsearch.user.dao.page.RegistryCommentDao;
-import org.duniter.elasticsearch.user.dao.page.RegistryIndexDao;
-import org.duniter.elasticsearch.user.service.PageService;
 import org.duniter.elasticsearch.rest.AbstractRestPostUpdateAction;
 import org.duniter.elasticsearch.rest.security.RestSecurityController;
+import org.duniter.elasticsearch.user.dao.group.GroupCommentDao;
+import org.duniter.elasticsearch.user.dao.group.GroupIndexDao;
+import org.duniter.elasticsearch.user.service.GroupService;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestController;
 
-public class RestRegistryCommentUpdateAction extends AbstractRestPostUpdateAction {
+public class RestGroupCommentUpdateAction extends AbstractRestPostUpdateAction {
 
     @Inject
-    public RestRegistryCommentUpdateAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
-                                           PageService service) {
+    public RestGroupCommentUpdateAction(Settings settings, RestController controller, Client client, RestSecurityController securityController,
+                                        GroupService service) {
         super(settings, controller, client, securityController,
-                RegistryIndexDao.INDEX, RegistryCommentDao.TYPE,
+                GroupIndexDao.INDEX, GroupCommentDao.TYPE,
                 (id, json) -> service.updateCommentFromJson(id, json));
     }
 
