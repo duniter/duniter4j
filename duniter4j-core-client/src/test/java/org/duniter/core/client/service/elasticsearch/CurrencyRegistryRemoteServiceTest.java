@@ -66,41 +66,4 @@ public class CurrencyRegistryRemoteServiceTest {
         Assert.assertTrue(isNodeAlive);
     }
 
-    @Test
-    public void getAllCurrencyNames() {
-        List<String> currencyNames = service.getAllCurrencyNames();
-        for (String currencyName: currencyNames) {
-            log.info("  - " + currencyName);
-        }
-    }
-
-    /* -- internal methods -- */
-
-    protected Wallet createTestWallet() {
-        Wallet wallet = new Wallet(
-                resource.getFixtures().getCurrency(),
-                resource.getFixtures().getUid(),
-                CryptoUtils.decodeBase58(resource.getFixtures().getUserPublicKey()),
-                CryptoUtils.decodeBase58(resource.getFixtures().getUserSecretKey()));
-
-        return wallet;
-    }
-
-    protected void assertResults(String queryText, List<Currency> result) {
-        log.info(String.format("Results for a search on [%s]", queryText));
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.size() > 0);
-        for (Currency currency: result) {
-            log.info("  - " + currency.getCurrencyName());
-        }
-    }
-
-    protected void assertSuggestions(String queryText, List<String> result) {
-        log.info(String.format("Suggestions for [%s]", queryText));
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.size() > 0);
-        for (String suggestion: result) {
-            log.info("  - " + suggestion);
-        }
-    }
 }

@@ -198,8 +198,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     }
 
     public String getPath(Peer peer, String... absolutePath) {
-        return pathJoiner.join(peer.getUrl(),
-                pathJoiner.skipNulls().join(absolutePath));
+        return peer.getUrl() + pathJoiner.skipNulls().join(absolutePath).replaceAll("//+", "/");
     }
 
 
