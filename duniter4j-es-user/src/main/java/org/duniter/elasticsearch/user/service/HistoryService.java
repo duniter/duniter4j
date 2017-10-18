@@ -29,6 +29,7 @@ import org.duniter.core.client.model.elasticsearch.DeleteRecord;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.exception.NotFoundException;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.model.Message;
@@ -46,6 +47,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Created by Benoit on 30/03/2015.
@@ -147,17 +149,33 @@ public class HistoryService extends AbstractService {
             throw new NotFoundException(String.format("Index [%s] not exists.", index));
         }
 
-        // Message: check if deletion issuer is the message recipient
-        if (MessageService.INDEX.equals(index) && MessageService.INBOX_TYPE.equals(type)) {
-            client.checkSameDocumentField(index, type, id, Message.PROPERTY_RECIPIENT, issuer);
+        try {
+            // Message: check if deletion issuer is the message recipient
+            if (MessageService.INDEX.equals(index) && MessageService.INBOX_TYPE.equals(type)) {
+                client.checkSameDocumentField(index, type, id, Message.PROPERTY_RECIPIENT, issuer);
+            }
+            // Invitation: check if deletion issuer is the invitation recipient
+            else if (UserInvitationService.INDEX.equals(index)) {
+
+                    client.checkSameDocumentField(index, type, id, Message.PROPERTY_RECIPIENT, issuer);
+
+            }
+            else {
+                // Check same document issuer
+                client.checkSameDocumentIssuer(index, type, id, issuer);
+            }
         }
-        // Invitation: check if deletion issuer is the invitation recipient
-        else if (UserInvitationService.INDEX.equals(index)) {
-            client.checkSameDocumentField(index, type, id, Message.PROPERTY_RECIPIENT, issuer);
-        }
-        else {
-            // Check same document issuer
-            client.checkSameDocumentIssuer(index, type, id, issuer);
+        catch(AccessDeniedException e) {
+            // Check if admin ask the deletion
+            // If deletion done by admin: continue if allow in settings
+            if (!pluginSettings.isRandomNodeKeypair()
+                    && pluginSettings.allowDocumentDeletionByAdmin()
+                    && Objects.equals(issuer, pluginSettings.getNodePubkey())) {
+                logger.warn(String.format("[%s/%s] Deletion forced by admin, on doc [%s]", index, type, id));
+            }
+            else {
+                throw e;
+            }
         }
 
         // Check time is valid - fix #27

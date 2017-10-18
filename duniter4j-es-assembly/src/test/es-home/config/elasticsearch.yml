@@ -188,6 +188,7 @@ duniter.p2p.discovery.enable: false
 duniter.p2p.includes.pubkeys: [
   "38MEAZN68Pz1DTvT3tqgxx4yQP6snJCQhPqEFxbDk4aE"
 ]
+#duniter.p2p.fullResyncAtStartup: true
 #
 # ---------------------------------- Duniter4j Mail module -----------------------
 #

@@ -75,6 +75,7 @@ public class SynchroService extends AbstractService {
     private final SynchroExecutionDao synchroExecutionDao;
     private List<WebsocketClientEndpoint> wsClientEndpoints = Lists.newArrayList();
     private List<SynchroAction> actions = Lists.newArrayList();
+    private boolean forceFullResync = false;
 
     @Inject
     public SynchroService(Duniter4jClient client,
@@ -124,7 +125,12 @@ public class SynchroService extends AbstractService {
 
             // If can be launched now: do it
             if (launchAtStartup) {
+
+                forceFullResync = pluginSettings.fullResyncAtStartup();
+
                 synchronize();
+
+                forceFullResync = false;
             }
 
             // Schedule next execution, to 5 min before each hour
@@ -185,7 +191,8 @@ public class SynchroService extends AbstractService {
             } else {
                 logger.info(String.format("[%s] [%s] Synchronization [OK] - no endpoint to synchronize", currencyId, peerApiFilter.name()));
             }
-            }));
+            }
+        ));
     }
 
     public SynchroResult synchronizePeer(final Peer peer, boolean enableSynchroWebsocket) {
@@ -203,7 +210,7 @@ public class SynchroService extends AbstractService {
         // Get the last execution time (or 0 is never synchronized)
         // If not the first synchro, add a delay to last execution time
         // to avoid missing data because incorrect clock configuration
-        long lastExecutionTime = getLastExecutionTime(peer);
+        long lastExecutionTime = forceFullResync ? 0 : getLastExecutionTime(peer);
         if (logger.isDebugEnabled() && lastExecutionTime > 0) {
             logger.debug(String.format("[%s] [%s] Found last synchronization execution at {%s}. Will apply time offset of {-%s ms}", peer.getCurrency(), peer,
                     DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM)
@@ -212,6 +219,7 @@ public class SynchroService extends AbstractService {
         }
 
         final long fromTime = lastExecutionTime > 0 ? lastExecutionTime - pluginSettings.getSynchroTimeOffset() : 0;
+
 
         if (logger.isInfoEnabled()) {
             if (fromTime == 0) {

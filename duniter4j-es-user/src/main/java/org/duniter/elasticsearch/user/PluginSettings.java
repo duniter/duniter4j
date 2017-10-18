@@ -185,6 +185,9 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return delegate.getKeyringSecretKey();
     }
 
+    public boolean allowDocumentDeletionByAdmin() {
+        return delegate.allowDocumentDeletionByAdmin();
+    }
 
     public void addI18nBundleName(String bundleName) {
         delegate.addI18nBundleName(bundleName);
@@ -208,6 +211,8 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         initNodeKeyring();
         return this.nodePubkey;
     }
+
+
 
 
     /* -- protected methods -- */

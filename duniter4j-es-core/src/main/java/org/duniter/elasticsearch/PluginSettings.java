@@ -226,6 +226,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsBoolean("duniter.p2p.ws.enable", true);
     }
 
+    public boolean fullResyncAtStartup()  {
+        return settings.getAsBoolean("duniter.p2p.fullResyncAtStartup", false);
+    }
+
     public int getSynchroTimeOffset()  {
         return settings.getAsInt("duniter.p2p.peerTimeOffset", 60*60/*=1hour*/);
     }
@@ -296,6 +300,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
 
     public int getDocumentTimeMaxFutureDelta() {
         return settings.getAsInt("duniter.document.time.maxFutureDelta", 600); // in seconds = 10min
+    }
+
+    public boolean allowDocumentDeletionByAdmin() {
+        return settings.getAsBoolean("duniter.document.allowAdminDeletion", true); //
     }
 
     public String getWebSocketHost()  {
