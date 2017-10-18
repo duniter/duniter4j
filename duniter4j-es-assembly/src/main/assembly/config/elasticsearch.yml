@@ -179,6 +179,20 @@ duniter.p2p.includes.endpoints: [
 #
 # duniter.p2p.includes.pubkeys: [""]
 #
+# ---------------------------------- Duniter4j document moderation ---------------
+#
+# Filter too old document, if time older that 'maxPastDelta' (in seconds). Default: 7200 (=2h)
+#
+# duniter.document.time.maxPastDelta: 7200
+#
+# Filter document in the futur, if time greater that 'maxFutureDelta' (in seconds). Default: 600 (10m)
+#
+# duniter.document.time.maxFutureDelta: 600
+#
+# Allow admin (define in duniter.keyring) to delete documents ? Default: false
+#
+# duniter.document.allowAdminDeletion: true
+#
 # ---------------------------------- Duniter4j Mail module -----------------------
 #
 # Enable mail module ?
