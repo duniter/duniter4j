@@ -170,7 +170,7 @@ public abstract class AbstractService implements Bean {
     protected void verifyTimeForUpdate(String index, String type, String id, JsonNode actualObj, boolean allowOldDocuments, String timeFieldName) {
         // Check time has been increase - fix #27
         int actualTime = getMandatoryField(actualObj, timeFieldName).asInt();
-        int existingTime = client.getTypedFieldById(index, type, id, timeFieldName);
+        int existingTime = client.getMandatoryTypedFieldById(index, type, id, timeFieldName);
         if (actualTime <= existingTime) {
             throw new InvalidTimeException(String.format("Invalid '%s' value: can not be less or equal to the previous value.", timeFieldName, timeFieldName));
         }

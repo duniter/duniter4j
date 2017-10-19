@@ -62,6 +62,8 @@ public interface Duniter4jClient extends Bean, Client {
 
     Map<String, Object> getMandatoryFieldsById(String index, String type, String docId, String... fieldNames);
 
+    <T> T getMandatoryTypedFieldById(String index, String type, String docId, String fieldName);
+
     String indexDocumentFromJson(String index, String type, String json);
 
     void updateDocumentFromJson(String index, String type, String id, String json);

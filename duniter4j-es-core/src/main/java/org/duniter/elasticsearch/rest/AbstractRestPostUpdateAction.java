@@ -50,7 +50,7 @@ public abstract class AbstractRestPostUpdateAction extends BaseRestHandler {
                                         String typeName,
                                         JsonUpdater updater) {
         super(settings, controller, client);
-        log = Loggers.getLogger("duniter.rest" + indexName, settings, String.format("[%s]", indexName));
+        log = Loggers.getLogger("duniter.rest." + indexName, settings, String.format("[%s]", indexName));
         controller.registerHandler(POST,
                 String.format("/%s/%s/{id}/_update", indexName, typeName),
                 this);

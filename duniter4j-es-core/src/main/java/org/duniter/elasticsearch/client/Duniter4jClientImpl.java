@@ -325,6 +325,15 @@ public class Duniter4jClientImpl implements Duniter4jClient {
         return (T)getFieldById(index, type, docId, fieldName);
     }
 
+    @Override
+    public <T> T getMandatoryTypedFieldById(String index, String type, String docId, String fieldName) {
+        Object result = getFieldById(index, type, docId, fieldName);
+        if (result == null) {
+            throw new NotFoundException(String.format("Document [%s/%s/%s] missing value for mandatory field [%s].", index, type, docId, fieldName));
+        }
+        return (T)result;
+    }
+
     /**
      * Retrieve a document by id (safe mode)
      * @param docId
