@@ -33,6 +33,7 @@ import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.elasticsearch.Records;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
+import org.duniter.core.util.json.JsonAttributeParser;
 import org.duniter.elasticsearch.PluginSettings;
 import org.duniter.elasticsearch.client.Duniter4jClient;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
@@ -44,6 +45,7 @@ import org.elasticsearch.common.logging.Loggers;
 import org.nuiton.i18n.I18n;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -51,16 +53,20 @@ import java.util.Set;
  */
 public abstract class AbstractService implements Bean {
 
-    protected final ESLogger logger;
+    protected static JsonAttributeParser<String> PARSER_HASH = new JsonAttributeParser<>(Record.PROPERTY_HASH, String.class);
+    protected static JsonAttributeParser<String> PARSER_SIGNATURE = new JsonAttributeParser<>(Record.PROPERTY_SIGNATURE, String.class);
+    protected static JsonAttributeParser<String> PARSER_READ_SIGNATURE = new JsonAttributeParser<>(Records.PROPERTY_READ_SIGNATURE, String.class);
 
+    protected final ESLogger logger;
     protected Duniter4jClient client;
     protected PluginSettings pluginSettings;
     protected CryptoService cryptoService;
-    protected final int retryCount;
-    protected final int retryWaitDuration;
-    protected final int documentTimeMaxPastDelta;
-    protected final int documentTimeMaxFutureDelta;
-    protected boolean ready = false;
+
+    private boolean ready = false;
+    private final int retryCount;
+    private final int retryWaitDuration;
+    private final int documentTimeMaxPastDelta;
+    private final int documentTimeMaxFutureDelta;
 
     public AbstractService(String loggerName, Duniter4jClient client, PluginSettings pluginSettings) {
         this(loggerName, client, pluginSettings, null);
@@ -212,6 +218,14 @@ public abstract class AbstractService implements Bean {
         return  getMandatoryField(actualObj, Records.PROPERTY_ISSUER).asText();
     }
 
+    protected int getVersion(JsonNode actualObj) {
+        JsonNode value = actualObj.get(Records.PROPERTY_VERSION);
+        if (value == null || value.isMissingNode()) {
+            return 1; // first version
+        }
+        return  value.asInt();
+    }
+
     protected JsonNode getMandatoryField(JsonNode actualObj, String fieldName) {
         JsonNode value = actualObj.get(fieldName);
         if (value.isMissingNode()) {
@@ -236,26 +250,47 @@ public abstract class AbstractService implements Bean {
         }
         String issuer = getMandatoryField(recordObj, issuerFieldName).asText();
         String signature = getMandatoryField(recordObj, Records.PROPERTY_SIGNATURE).asText();
+        String hash = getMandatoryField(recordObj, Records.PROPERTY_HASH).asText();
+        int version = getVersion(recordObj);
+
+        boolean validSignature = false;
 
         // Remove hash and signature
-        recordJson = JacksonUtils.removeAttribute(recordJson, Records.PROPERTY_SIGNATURE);
-        recordJson = JacksonUtils.removeAttribute(recordJson, Records.PROPERTY_HASH);
+        recordJson = PARSER_SIGNATURE.removeFromJson(recordJson);
+        recordJson = PARSER_HASH.removeFromJson(recordJson);
 
         // Remove 'read_signature' attribute if exists (added AFTER signature)
+        String readSignature = null;
         if (fieldNames.contains(Records.PROPERTY_READ_SIGNATURE)) {
-            recordJson = JacksonUtils.removeAttribute(recordJson, Records.PROPERTY_READ_SIGNATURE);
+            readSignature = getMandatoryField(recordObj, Records.PROPERTY_READ_SIGNATURE).asText();
+            recordJson = PARSER_READ_SIGNATURE.removeFromJson(recordJson);
         }
 
-        if (!cryptoService.verify(recordJson, signature, issuer)) {
+        // Doc version == 1
+        if (version == 1) {
+            validSignature = cryptoService.verify(recordJson, signature, issuer);
+        }
 
-            if (recordJson.contains("\"socials\":[]")) {
-                recordJson = recordJson.replaceAll(",\"socials\":\\[\\]", "");
-                if (cryptoService.verify(recordJson, signature, issuer)) {
-                    return; // ok
-                }
+        // Doc version > 1
+        else {
+            // Remove hash and signature
+            boolean validHash = Objects.equals(cryptoService.hash(recordJson), hash);
+            if (!validHash) {
+                throw new InvalidSignatureException("Invalid hash of JSON document");
             }
 
+            // Validate signature on hash
+            validSignature = cryptoService.verify(hash, signature, issuer);
+        }
+
+        if (!validSignature) {
+
             throw new InvalidSignatureException("Invalid signature of JSON string");
+        }
+
+        // Validate read signature on hash
+        if (readSignature != null) {
+            // TODO: validate read signature / recipient ?
         }
 
         // TODO: check issuer is in the WOT ?

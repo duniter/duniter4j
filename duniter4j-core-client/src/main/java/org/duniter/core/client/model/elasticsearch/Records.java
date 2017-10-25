@@ -31,6 +31,7 @@ public final class Records {
     public static final String PROPERTY_ISSUER="issuer";
     public static final String PROPERTY_HASH="hash";
     public static final String PROPERTY_SIGNATURE="signature";
+    public static final String PROPERTY_VERSION="version";
     public static final String PROPERTY_TIME="time";
     public static final String PROPERTY_READ_SIGNATURE="read_signature";
 

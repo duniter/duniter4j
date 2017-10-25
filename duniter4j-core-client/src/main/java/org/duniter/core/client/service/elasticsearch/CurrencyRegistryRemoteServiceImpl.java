@@ -26,10 +26,10 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BaseRemoteServiceImpl;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.json.JsonAttributeParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,8 +83,8 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         String jsonResponse;
         try {
             jsonResponse = executeRequest(peer, URL_STATUS, String.class);
-            int statusCode = JacksonUtils.getValueFromJSONAsInt(jsonResponse, "status");
-            return statusCode == HttpStatus.SC_OK;
+            Integer statusCode = new JsonAttributeParser<>("status", Integer.class).getValue(jsonResponse);
+            return statusCode != null && statusCode == HttpStatus.SC_OK;
         }
         catch(TechnicalException e) {
             if (log.isDebugEnabled()) {
@@ -104,7 +104,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         String path = getPath(peer, URL_ALL_CURRENCY_NAMES);
         String jsonResponse = executeRequest(new HttpGet(path), String.class);
 
-        List<String> currencyNames = JacksonUtils.getValuesFromJSONAsString(jsonResponse, "currencyName");
+        List<String> currencyNames = new JsonAttributeParser<>("currencyName", String.class).getValues(jsonResponse);
 
         // Sort into alphabetical order
         Collections.sort(currencyNames);

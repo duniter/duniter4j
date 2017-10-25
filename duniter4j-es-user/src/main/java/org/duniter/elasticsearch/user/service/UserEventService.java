@@ -93,7 +93,7 @@ public class UserEventService extends AbstractService implements ChangeService.C
     }
 
     private final ThreadPool threadPool;
-    public final boolean trace;
+    private final boolean trace;
 
     @Inject
     public UserEventService(final Duniter4jClient client,
@@ -450,8 +450,8 @@ public class UserEventService extends AbstractService implements ChangeService.C
         try {
             String json = getObjectMapper().writeValueAsString(userEvent);
             if (cleanHashAndSignature) {
-                json = JacksonUtils.removeAttribute(json, Record.PROPERTY_SIGNATURE);
-                json = JacksonUtils.removeAttribute(json, Record.PROPERTY_HASH);
+                json = PARSER_SIGNATURE.removeFromJson(json);
+                json = PARSER_HASH.removeFromJson(json);
             }
             return json;
         } catch(JsonProcessingException e) {

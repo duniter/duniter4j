@@ -1,4 +1,4 @@
-package org.duniter.core.client.model.bma.json;
+package org.duniter.core.util.json;
 
 /*
  * #%L
@@ -22,7 +22,6 @@ package org.duniter.core.client.model.bma.json;
  * #L%
  */
 
-import org.duniter.core.util.json.JsonArrayParser;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,19 +30,21 @@ import org.junit.Test;
  */
 public class JsonArrayParserTest {
 
+    private static String OBJ_JSON = "{'id':'joe','ts':'2014-12-02T13:58:23.801+0100','foo':{'bar':{'v1':50019820,'v2':0,     'v3':0.001, 'v4':-100, 'v5':0.000001, 'v6':0.0, 'b':true}}}".replace("'", "\"");
+
     @Test
-    public void getValues() {
-        String obj = "{'id':'joe','ts':'2014-12-02T13:58:23.801+0100','foo':{'bar':{'v1':50019820,'v2':0,     'v3':0.001, 'v4':-100, 'v5':0.000001, 'v6':0.0, 'b':true}}}".replace("'", "\"");
-        String string = String.format("[%s,%s,%s,%s]", obj , obj , obj , obj );
+    public void getValuesAsArray() {
+        String jsonString = String.format("[%s,%s,%s,%s]", OBJ_JSON , OBJ_JSON , OBJ_JSON , OBJ_JSON );
 
         JsonArrayParser parser = new JsonArrayParser();
-        String[] result = parser.getValuesAsArray(string);
+        String[] result = parser.getValuesAsArray(jsonString);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(4, result.length);
-        Assert.assertEquals(obj, result[0]);
+        Assert.assertEquals(OBJ_JSON, result[0]);
 
         result = parser.getValuesAsArray("[]");
         Assert.assertNull(result);
     }
+
 }

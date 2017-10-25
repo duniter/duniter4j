@@ -119,7 +119,7 @@ security.manager.enabled: false
 #
 duniter.string.analyzer: french
 #
-# Enabling blockchain synchronization
+# Enabling blockchain synchronization (default: false)
 #
 duniter.blockchain.enable: true
 #
@@ -181,15 +181,15 @@ duniter.p2p.includes.endpoints: [
 #
 # ---------------------------------- Duniter4j document moderation ---------------
 #
-# Filter too old document, if time older that 'maxPastDelta' (in seconds). Default: 7200 (=2h)
+# Filter too old document, if time older that 'maxPastDelta' (in seconds). (default: 7200 =2h)
 #
 # duniter.document.time.maxPastDelta: 7200
 #
-# Filter document in the futur, if time greater that 'maxFutureDelta' (in seconds). Default: 600 (10m)
+# Filter document in the futur, if time greater that 'maxFutureDelta' (in seconds). (default: 600 =10min)
 #
 # duniter.document.time.maxFutureDelta: 600
 #
-# Allow admin (define in duniter.keyring) to delete documents ? Default: false
+# Allow admin (define in duniter.keyring) to delete documents ? (default: true)
 #
 # duniter.document.allowAdminDeletion: true
 #

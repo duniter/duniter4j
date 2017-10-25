@@ -25,6 +25,8 @@ package org.duniter.core.util.json;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
 
+import javax.print.DocFlavor;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -32,69 +34,163 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class JsonAttributeParser {
+public class JsonAttributeParser<T extends Object> {
 
-        public static final String REGEX_ATTRIBUTE_STRING_VALUE = "\\\"%s\\\"\\s*:\\s*\"([^\"]+)\\\"";
-        public static final String REGEX_ATTRIBUTE_NUMERIC_VALUE = "\\\"%s\\\"\\s*:\\s*([\\d]+(?:[.][\\d]+)?)";
+    public enum Type {
+        INTEGER,
+        LONG,
+        DOUBLE,
+        BIGDECIMAL,
+        BOOLEAN,
+        STRING
+    }
 
-        private Pattern pattern;
-        private Pattern numericPattern;
-        private DecimalFormat decimalFormat;
-        private String attributeName;
+    public static final String REGEX_ATTRIBUTE_STRING_VALUE = "\\\"%s\\\"\\s*:\\s*\"([^\"]+)\\\"";
+    public static final String REGEX_ATTRIBUTE_NUMERIC_VALUE = "\\\"%s\\\"\\s*:\\s*([\\d]+(?:[.][\\d]+)?)";
+    public static final String REGEX_ATTRIBUTE_BOOLEAN_VALUE = "\\\"%s\\\"\\s*:\\s*(true|false)";
 
-        public JsonAttributeParser(String attributeName) {
-            Preconditions.checkNotNull(attributeName);
+    private Type type;
+    private Pattern pattern;
+    private DecimalFormat decimalFormat;
+    private String attributeName;
 
-            this.attributeName = attributeName;
-            this.numericPattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_NUMERIC_VALUE, attributeName));
+    public JsonAttributeParser(String attributeName, Class<? extends T> clazz) {
+        Preconditions.checkNotNull(attributeName);
+
+        this.attributeName = attributeName;
+
+        // String
+        if (String.class.isAssignableFrom(clazz)) {
+            type = Type.STRING;
             this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_STRING_VALUE, attributeName));
+        }
+        // Integer
+        else if (Integer.class.isAssignableFrom(clazz)) {
+            type = Type.INTEGER;
+            this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_NUMERIC_VALUE, attributeName));
+            this.decimalFormat = new DecimalFormat();
+            this.decimalFormat.setParseIntegerOnly(true);
+        }
+        // Long
+        else if (Long.class.isAssignableFrom(clazz)) {
+            type = Type.LONG;
+            this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_NUMERIC_VALUE, attributeName));
+            this.decimalFormat = new DecimalFormat();
+        }
+        // Double
+        else if (Double.class.isAssignableFrom(clazz)) {
+            type = Type.DOUBLE;
+            this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_NUMERIC_VALUE, attributeName));
             this.decimalFormat = new DecimalFormat();
             this.decimalFormat.getDecimalFormatSymbols().setDecimalSeparator('.');
         }
-
-        public Number getValueAsNumber(String jsonString) {
-            Preconditions.checkNotNull(jsonString);
-
-            Matcher matcher = numericPattern.matcher(jsonString);
-
-            if (!matcher.find()) {
-                return null;
-            }
-            String group = matcher.group(1);
-            try {
-                Number result = decimalFormat.parse(group);
-                return result;
-            } catch (ParseException e) {
-                throw new TechnicalException(String.format("Error while parsing json numeric value, for attribute [%s]: %s", attributeName,e.getMessage()), e);
-            }
+        // BigDecimal
+        else if (BigDecimal.class.isAssignableFrom(clazz)) {
+            type = Type.BIGDECIMAL;
+            this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_NUMERIC_VALUE, attributeName));
+            this.decimalFormat = new DecimalFormat();
+            this.decimalFormat.setParseBigDecimal(true); // allow big decimal
+            this.decimalFormat.getDecimalFormatSymbols().setDecimalSeparator('.');
         }
-
-        public int getValueAsInt(String jsonString) {
-            Number numberValue = getValueAsNumber(jsonString);
-            if (numberValue == null) {
-                return 0;
-            }
-            return numberValue.intValue();
+        // Boolean
+        else if (Boolean.class.isAssignableFrom(clazz)) {
+            type = Type.BOOLEAN;
+            this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_BOOLEAN_VALUE, attributeName));
         }
-
-        public String getValueAsString(String jsonString) {
-            Matcher matcher = pattern.matcher(jsonString);
-            if (!matcher.find()) {
-                return null;
-            }
-
-            return matcher.group(1);
+        else {
+            throw new IllegalArgumentException("Invalid attribute class " + clazz.getCanonicalName());
         }
-
-        public List<String> getValues(String jsonString) {
-            Matcher matcher = pattern.matcher(jsonString);
-            List<String> result = new ArrayList<>();
-            while (matcher.find()) {
-                String group = matcher.group(1);
-                result.add(group);
-            }
-
-            return result;
-        }
-
     }
+
+    public T getValue(String jsonString) {
+        Preconditions.checkNotNull(jsonString);
+
+        Matcher matcher = pattern.matcher(jsonString);
+
+        if (!matcher.find()) {
+            return null;
+        }
+
+        return parseValue(matcher.group(1));
+    }
+
+    public List<T> getValues(String jsonString) {
+        Preconditions.checkArgument(type == Type.STRING);
+
+        Matcher matcher = pattern.matcher(jsonString);
+        List<T> result = new ArrayList<T>();
+        while (matcher.find()) {
+            String strValue = matcher.group(1);
+            result.add(parseValue(strValue));
+        }
+
+        return result;
+    }
+
+    public String removeFromJson(final String jsonString) {
+        Matcher matcher = pattern.matcher(jsonString);
+        if (!matcher.find()) {
+            return jsonString;
+        }
+
+        int start = matcher.start();
+        int end = matcher.end();
+
+        char before = jsonString.charAt(start-1);
+        while (before == ',' || before == ' ' || before == '\t' || before == '\n') {
+            before = jsonString.charAt(--start-1);
+        }
+        char after = jsonString.charAt(end);
+        while (after == ',' || after == ' ' || after == '\t' || after == '\n') {
+            after = jsonString.charAt(++end);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(jsonString.substring(0, start));
+        sb.append(jsonString.substring(end));
+        return sb.toString();
+    }
+
+    /* -- private methods -- */
+
+    private T parseValue(String attributeValue) {
+
+        switch(type) {
+            case STRING:
+                return (T)attributeValue;
+            case INTEGER:
+                try {
+                    Number result = decimalFormat.parse(attributeValue);
+                    return (T)new Integer(result.intValue());
+                } catch (ParseException e) {
+                    throw new TechnicalException(String.format("Error while parsing json numeric value, for attribute [%s]: %s", attributeName,e.getMessage()), e);
+                }
+            case LONG:
+                try {
+                    Number result = decimalFormat.parse(attributeValue);
+                    return (T)new Long(result.longValue());
+                } catch (ParseException e) {
+                    throw new TechnicalException(String.format("Error while parsing json numeric value, for attribute [%s]: %s", attributeName,e.getMessage()), e);
+                }
+            case DOUBLE:
+                try {
+                    Number result = decimalFormat.parse(attributeValue);
+                    return (T)new Double(result.doubleValue());
+                } catch (ParseException e) {
+                    throw new TechnicalException(String.format("Error while parsing json numeric value, for attribute [%s]: %s", attributeName,e.getMessage()), e);
+                }
+            case BIGDECIMAL:
+                try {
+                    Number result = decimalFormat.parse(attributeValue);
+                    return (T)result;
+                } catch (ParseException e) {
+                    throw new TechnicalException(String.format("Error while parsing json numeric value, for attribute [%s]: %s", attributeName,e.getMessage()), e);
+                }
+            case BOOLEAN:
+                return (T)new Boolean(attributeValue);
+        }
+
+        return null;
+    }
+
+}

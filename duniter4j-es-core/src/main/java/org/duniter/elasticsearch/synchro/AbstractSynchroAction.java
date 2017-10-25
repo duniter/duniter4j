@@ -514,12 +514,11 @@ public abstract class AbstractSynchroAction extends AbstractService implements S
 
                     // Execute update
                     UpdateRequestBuilder request = client.prepareUpdate(toIndex, toType, id);
+                    request.setDoc(objectMapper.writeValueAsBytes(source));
                     if (bulkRequest != null) {
-                        request.setDoc(objectMapper.writeValueAsBytes(source));
                         bulkRequest.add(request);
                     }
                     else {
-                        request.setSource(objectMapper.writeValueAsBytes(source));
                         request.setRefresh(true);
                         client.safeExecuteRequest(request, false);
                     }

@@ -73,10 +73,10 @@ public class BlockchainService extends AbstractService {
     private List<WebsocketClientEndpoint.ConnectionListener> connectionListeners = new ArrayList<>();
     private final WebsocketClientEndpoint.ConnectionListener dispatchConnectionListener;
 
-    private final JsonAttributeParser blockNumberParser = new JsonAttributeParser("number");
-    private final JsonAttributeParser blockCurrencyParser = new JsonAttributeParser("currency");
-    private final JsonAttributeParser blockHashParser = new JsonAttributeParser("hash");
-    private final JsonAttributeParser blockPreviousHashParser = new JsonAttributeParser("previousHash");
+    private final JsonAttributeParser<Integer> blockNumberParser = new JsonAttributeParser<>("number", Integer.class);
+    private final JsonAttributeParser<String> blockCurrencyParser = new JsonAttributeParser<>("currency", String.class);
+    private final JsonAttributeParser<String> blockHashParser = new JsonAttributeParser<>("hash", String.class);
+    private final JsonAttributeParser<String> blockPreviousHashParser = new JsonAttributeParser<>("previousHash", String.class);
 
     private BlockDao blockDao;
 
@@ -307,10 +307,11 @@ public class BlockchainService extends AbstractService {
         Preconditions.checkNotNull(json);
         Preconditions.checkArgument(json.length() > 0);
 
-        String currencyName = blockCurrencyParser.getValueAsString(json);
-        int number = blockNumberParser.getValueAsInt(json);
-        String hash = blockHashParser.getValueAsString(json);
+        String currencyName = blockCurrencyParser.getValue(json);
+        Integer number = blockNumberParser.getValue(json);
+        String hash = blockHashParser.getValue(json);
 
+        Preconditions.checkNotNull(number);
         logger.info(I18n.t("duniter4j.blockIndexerService.indexBlock", currencyName, peer, number, hash));
         if (logger.isTraceEnabled()) {
             logger.trace(json);
@@ -318,7 +319,7 @@ public class BlockchainService extends AbstractService {
 
         // Detecting fork and rollback is necessary
         if (detectFork) {
-            String previousHash = blockPreviousHashParser.getValueAsString(json);
+            String previousHash = blockPreviousHashParser.getValue(json);
             boolean resolved = detectAndResolveFork(peer, currencyName, previousHash, number - 1);
             if (!resolved) {
                 // Bad blockchain ! Skipping block indexation
@@ -404,7 +405,7 @@ public class BlockchainService extends AbstractService {
 
     /* -- Internal methods -- */
 
-    protected Collection<String> indexBlocksNoBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
+    private Collection<String> indexBlocksNoBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
         Set<String> missingBlockNumbers = new LinkedHashSet<>();
 
         for (int curNumber = firstNumber; curNumber <= lastNumber; curNumber++) {
@@ -442,7 +443,7 @@ public class BlockchainService extends AbstractService {
         return missingBlockNumbers;
     }
 
-    protected Collection<String> indexBlocksUsingBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
+    private Collection<String> indexBlocksUsingBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
         Set<String> missingBlockNumbers = new LinkedHashSet<>();
 
         boolean debug = logger.isDebugEnabled();
@@ -486,16 +487,16 @@ public class BlockchainService extends AbstractService {
                 List<Integer> processedBlockNumbers = Lists.newArrayList();
                 BulkRequestBuilder bulkRequest = client.prepareBulk();
                 for (String blockAsJson : blocksAsJson) {
-                    int itemNumber = blockNumberParser.getValueAsInt(blockAsJson);
+                    Integer itemNumber = blockNumberParser.getValue(blockAsJson);
 
                     // update curNumber with max number;
                     if (itemNumber > batchFirstNumber) {
                         batchFirstNumber = itemNumber;
                     }
 
-                    if (!processedBlockNumbers.contains(itemNumber)) {
+                    if (itemNumber != null && !processedBlockNumbers.contains(itemNumber)) {
                         // Add to bulk
-                        bulkRequest.add(client.prepareIndex(currencyName, BLOCK_TYPE, String.valueOf(itemNumber))
+                        bulkRequest.add(client.prepareIndex(currencyName, BLOCK_TYPE, itemNumber.toString())
                                 .setRefresh(false) // recommended for heavy indexing
                                 .setSource(blockAsJson)
                         );
@@ -552,7 +553,7 @@ public class BlockchainService extends AbstractService {
      * @param sortedMissingBlocks
      * @param tryCounter
      */
-    protected Collection<String> indexMissingBlocksFromOtherPeers(Peer peer, BlockchainBlock currentBlock, Collection<String> sortedMissingBlocks, int tryCounter) {
+    private Collection<String> indexMissingBlocksFromOtherPeers(Peer peer, BlockchainBlock currentBlock, Collection<String> sortedMissingBlocks, int tryCounter) {
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(currentBlock);
         Preconditions.checkNotNull(currentBlock.getHash());
@@ -668,7 +669,7 @@ public class BlockchainService extends AbstractService {
         return indexMissingBlocksFromOtherPeers(peer, newCurrentBlock, newMissingBlocks, tryCounter);
     }
 
-    protected void reportIndexBlocksProgress(ProgressionModel progressionModel, String currencyName, Peer peer, int firstNumber, int lastNumber, int curNumber) {
+    private void reportIndexBlocksProgress(ProgressionModel progressionModel, String currencyName, Peer peer, int firstNumber, int lastNumber, int curNumber) {
         int pct = (curNumber - firstNumber) * 100 / (lastNumber - firstNumber);
         progressionModel.setCurrent(pct);
 
@@ -679,7 +680,7 @@ public class BlockchainService extends AbstractService {
 
     }
 
-    protected boolean isBlockIndexed(String currencyName, int number, String hash) {
+    private boolean isBlockIndexed(String currencyName, int number, String hash) {
         Preconditions.checkNotNull(currencyName);
         Preconditions.checkNotNull(hash);
         // Check if previous block exists
@@ -691,7 +692,7 @@ public class BlockchainService extends AbstractService {
         return ObjectUtils.equals(block.getHash(), hash);
     }
 
-    protected boolean detectAndResolveFork(Peer peer, final String currencyName, final String hash, final int number){
+    private boolean detectAndResolveFork(Peer peer, final String currencyName, final String hash, final int number){
         int forkResyncWindow = pluginSettings.getNodeForkResyncWindow();
         String forkOriginHash = hash;
         int forkOriginNumber = number;
@@ -711,7 +712,7 @@ public class BlockchainService extends AbstractService {
                 final int currentNumberFinal = forkOriginNumber;
                 String testBlock = executeWithRetry(() ->
                     blockchainRemoteService.getBlockAsJson(peer, currentNumberFinal));
-                forkOriginHash = blockHashParser.getValueAsString(testBlock);
+                forkOriginHash = blockHashParser.getValue(testBlock);
 
                 // Check is exists on ES index
                 sameBlockIndexed = isBlockIndexed(currencyName, forkOriginNumber, forkOriginHash);
@@ -738,7 +739,7 @@ public class BlockchainService extends AbstractService {
     }
 
 
-    protected String getBlockId(int number) {
+    private String getBlockId(int number) {
         return number == -1 ? CURRENT_BLOCK_ID : String.valueOf(number);
     }
 }

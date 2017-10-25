@@ -198,7 +198,7 @@ public class Duniter4jClientImpl implements Duniter4jClient {
     public void checkSameDocumentIssuer(String index, String type, String id, String expectedIssuer) {
         String issuer = getMandatoryFieldsById(index, type, id, Record.PROPERTY_ISSUER).get(Record.PROPERTY_ISSUER).toString();
         if (!ObjectUtils.equals(expectedIssuer, issuer)) {
-            throw new TechnicalException("Not same issuer");
+            throw new AccessDeniedException("Not same issuer");
         }
     }
 
