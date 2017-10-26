@@ -439,8 +439,8 @@ public class SubscriptionService extends AbstractService {
         try {
             String json = getObjectMapper().writeValueAsString(record);
             if (cleanHashAndSignature) {
-                json = JacksonUtils.removeAttribute(json, Record.PROPERTY_SIGNATURE);
-                json = JacksonUtils.removeAttribute(json, Record.PROPERTY_HASH);
+                json = PARSER_SIGNATURE.removeFromJson(json);
+                json = PARSER_HASH.removeFromJson(json);
             }
             return json;
         } catch(JsonProcessingException e) {
