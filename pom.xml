@@ -3,7 +3,7 @@
 
   <groupId>org.duniter</groupId>
   <artifactId>duniter4j</artifactId>
-  <version>1.0.0-RC1</version>
+  <version>1.0.0-RC2-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Duniter4j : a Duniter Java Client API</name>
 
@@ -118,7 +118,7 @@
     <url>https://github.com/duniter/duniter4j.git</url>
     <connection>scm:git:https://github.com/duniter/duniter4j.git</connection>
     <developerConnection>scm:git:https://github.com/duniter/duniter4j.git</developerConnection>
-    <tag>duniter4j-1.0.0-RC1</tag>
+    <tag>duniter4j-1.0.0</tag>
   </scm>
 
   <issueManagement>
