@@ -2,7 +2,7 @@ package org.duniter.elasticsearch.exception;
 
 /*
  * #%L
- * UCoin Java Client :: Web
+ * Duniter4j :: Web
  * %%
  * Copyright (C) 2014 - 2015 EIS
  * %%

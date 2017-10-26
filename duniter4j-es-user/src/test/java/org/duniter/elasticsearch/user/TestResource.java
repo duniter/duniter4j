@@ -1,6 +1,6 @@
 package org.duniter.elasticsearch.user;/*
  * #%L
- * UCoin Java Client :: Core API
+ * Duniter4j :: Core API
  * %%
  * Copyright (C) 2014 - 2015 EIS
  * %%

@@ -1,6 +1,6 @@
 package org.duniter.elasticsearch.user;/*
  * #%L
- * UCoin Java Client :: ElasticSearch Indexer
+ * Duniter4j :: ElasticSearch Indexer
  * %%
  * Copyright (C) 2014 - 2016 EIS
  * %%

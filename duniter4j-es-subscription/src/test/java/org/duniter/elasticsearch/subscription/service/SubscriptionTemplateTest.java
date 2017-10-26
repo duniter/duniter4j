@@ -2,7 +2,7 @@ package org.duniter.elasticsearch.subscription.service;
 
 /*
  * #%L
- * UCoin Java Client :: ElasticSearch Indexer
+ * Duniter4j :: ElasticSearch Indexer
  * %%
  * Copyright (C) 2014 - 2016 EIS
  * %%

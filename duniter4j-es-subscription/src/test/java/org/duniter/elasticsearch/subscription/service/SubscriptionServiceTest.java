@@ -2,7 +2,7 @@ package org.duniter.elasticsearch.subscription.service;
 
 /*
  * #%L
- * UCoin Java Client :: ElasticSearch Indexer
+ * Duniter4j :: ElasticSearch Indexer
  * %%
  * Copyright (C) 2014 - 2016 EIS
  * %%
@@ -34,6 +34,7 @@ import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
+import org.duniter.core.util.json.JsonAttributeParser;
 import org.duniter.core.util.url.URLs;
 import org.duniter.elasticsearch.subscription.TestResource;
 import org.duniter.elasticsearch.subscription.model.email.EmailSubscription;
@@ -165,8 +166,8 @@ public class SubscriptionServiceTest {
         // Fill hash + signature
         String json = objectMapper.writeValueAsString(subscription);
 
-        json = JacksonUtils.removeAttribute(json, Record.PROPERTY_SIGNATURE);
-        json = JacksonUtils.removeAttribute(json, Record.PROPERTY_HASH);
+        json = JsonAttributeParser.newStringParser(Record.PROPERTY_SIGNATURE).removeFromJson(json);
+        json = JsonAttributeParser.newStringParser(Record.PROPERTY_HASH).removeFromJson(json);
 
         subscription.setHash(cryptoService.hash(json));
         subscription.setSignature(cryptoService.sign(json, wallet.getSecKey()));

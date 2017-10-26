@@ -2,7 +2,7 @@ package org.duniter.core.beans;
 
 /*
  * #%L
- * UCoin Java Client :: Core API
+ * Duniter4j :: Core API
  * %%
  * Copyright (C) 2014 - 2015 EIS
  * %%

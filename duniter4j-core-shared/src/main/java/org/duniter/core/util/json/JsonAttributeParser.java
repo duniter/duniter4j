@@ -49,6 +49,10 @@ public class JsonAttributeParser<T extends Object> {
     public static final String REGEX_ATTRIBUTE_NUMERIC_VALUE = "\\\"%s\\\"\\s*:\\s*([\\d]+(?:[.][\\d]+)?)";
     public static final String REGEX_ATTRIBUTE_BOOLEAN_VALUE = "\\\"%s\\\"\\s*:\\s*(true|false)";
 
+    public static JsonAttributeParser<String> newStringParser(final String attributeName){
+        return new JsonAttributeParser<>(attributeName, String.class);
+    }
+
     private Type type;
     private Pattern pattern;
     private DecimalFormat decimalFormat;
