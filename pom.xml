@@ -3,7 +3,7 @@
 
   <groupId>org.duniter</groupId>
   <artifactId>duniter4j</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.0-RC1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Duniter4j : a Duniter Java Client API</name>
 
