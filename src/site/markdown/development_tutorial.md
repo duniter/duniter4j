@@ -401,15 +401,17 @@ Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, com
 
 > La document de l'API HTTP est disponible [ici](../API.md).
 
-### Requêtes sur `data.duniter.fr`
+### Requêtes sur `g1-test.data.duniter.fr`
 
-> **Note** : ce noeud a activer la couche de sécurité duniter4j. Les accès sur des URL non autorisés renverront une page vide  
+Nous allons requêter le noeud `g1-test.data.duniter.fr` déployé sur la monnaie `Ğ1-test`.
+
+> **Note** : Ce noeud est configuré AVEC la couche de sécurité Duniter4j. Les accès sur des URL non autorisés renverront une page vide (erreur HTTP 404).  
 
 #### Requêtes GET
 
-- [GET-5] Liste des pages avec le mot `cours` : [/page/record/_search?pretty&q=cours](https://g1.data.duniter.fr/page/record/_search?pretty&amp;q=cours)
+- [GET-5] Liste des pages avec le mot `boulangerie` : [/page/record/_search?pretty&q=boulangerie](https://g1-test.data.duniter.fr/page/record/_search?pretty&amp;q=boulangerie)
 
-- [GET-5] Liste des messages à destination de la clef `38MEAZN68Pz1DTvT3tqgxx4yQP6snJCQhPqEFxbDk4aE` : [/message/inbox/_search?pretty&receiver=38MEAS...](https://g1.data.duniter.fr/message/inbox/_search?pretty&amp;receiver=38MEAZN68Pz1DTvT3tqgxx4yQP6snJCQhPqEFxbDk4aE)
+- [GET-5] Liste des messages à destination de la clef `5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of` : [/message/inbox/_search?pretty&receiver=38MEAS...](https://g1-test.data.duniter.fr/message/inbox/_search?pretty&amp;receiver=5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of)
 
 > Observez que le contenu des messages est chiffré. Seul le destinataire (`recipient`) peut y accéder.
 
@@ -417,16 +419,16 @@ Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, com
 #### Requêtes POST
 
 
-- [POST-3] Liste des [pages soumises par Michele T](https://g1.duniter.fr/#/app/wot/2getXnbrRRYFUoEdgAdV4xniCxNERdBFoLvu6xZcsjRW/Turbin,%20Mich%C3%A8le) (pubkey=`2getXnbrRRYFUoEdgAdV4xniCxNERdBFoLvu6xZcsjRW`)
+- [POST-3] Liste des [pages soumises par kimamila](https://g1-test.duniter.fr/#/app/wot/5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of/kimamila) (pubkey=`5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of`)
 
 ```bash
-curl -XPOST "https://g1.data.duniter.fr/page/record/_search?pretty" -d'
+curl -XPOST "https://g1-test.data.duniter.fr/page/record/_search?pretty" -d'
 {
   "query": {        
         "bool":{
             "filter": [
                 {"term":{
-                        "issuer":"2getXnbrRRYFUoEdgAdV4xniCxNERdBFoLvu6xZcsjRW"
+                        "issuer":"5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
                     }
                 }                
             ]
@@ -440,12 +442,12 @@ curl -XPOST "https://g1.data.duniter.fr/page/record/_search?pretty" -d'
 
 Normalement, vous devriez récupérer **au moins une page**.
 
-> **Note** : Dans Cesium+, ce même contenu est [visible ici](https://g1.duniter.fr/#/app/page/view/AV-XoXFcMEOHZ8iLvso3/michle-turbin-architecte)   
+> **Note** : Dans Cesium+, ce même contenu est [visible ici](http://g1-test.duniter.fr/#/app/page/view/AV9fErJAW0KLAFOJm34y/boulangerie-chez-marcel-test)   
 > Notez que l'option dans cette adresse utilise `q=` pour la recherche `full text`.
 
 Copiez la valeur du champ `_id`, et utilisez la dans la prochaine requête :
 
-- [POST-4] : Récupérez les commentaires [de la page](https://g1.duniter.fr/#/app/page/view/AV-XoXFcMEOHZ8iLvso3/michle-turbin-architecte) : 
+- [POST-4] : Récupérez les commentaires [de la page](http://g1-test.duniter.fr/#/app/page/view/AV9fErJAW0KLAFOJm34y/boulangerie-chez-marcel-test) : 
 
 ```bash
 curl -XPOST "https://g1.data.duniter.fr/page/comment/_search?pretty" -d'
