@@ -158,19 +158,11 @@ curl -XGET 'http://localhost:9200/gtest/block/_search' -d '{
 
 More documentation here :
 
-  - ElasticSearch [official web site](http://www.elastic.co/guide/en/elasticsearch/reference/1.3/docs-get.html#get-source-filtering)
+- [a development tutorial](./development_tutorial.html) (french);
   
-  - a good [tutorial](http://okfnlabs.org/blog/2013/07/01/elasticsearch-query-tutorial.html) 
-
-
-
-## Roadmap
-
- - Maintain a updated list of peers  
- 
- - Add a new index for TX, with validation percentage 
- 
- - Enable P2P synchronisation between Duniter4j ES nodes
+- [ElasticSearch official web site](http://www.elastic.co/guide/en/elasticsearch/reference/1.3/docs-get.html#get-source-filtering)
+  
+- [a good tutorial on ES query](http://okfnlabs.org/blog/2013/07/01/elasticsearch-query-tutorial.html) 
 
 
 ## Troubleshooting

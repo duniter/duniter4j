@@ -18,4 +18,4 @@ Duniter4j has tree main modules :
    
    * It comes with an [HTTP API](./ES_API.html) to store and retrieve all this data.
    
-   * This API is used by [Cesium+](https://www.github.com/duniter/cesium) (a Duniter wallet client software).  
+   * This API is used by [Cesium+](https://www.github.com/duniter/cesium) (a Duniter wallet).  
