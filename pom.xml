@@ -153,7 +153,7 @@
     <url>https://github.com/duniter/duniter4j.git</url>
     <connection>scm:git:https://github.com/duniter/duniter4j.git</connection>
     <developerConnection>scm:git:https://github.com/duniter/duniter4j.git</developerConnection>
-    <tag>duniter4j-1.0.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
