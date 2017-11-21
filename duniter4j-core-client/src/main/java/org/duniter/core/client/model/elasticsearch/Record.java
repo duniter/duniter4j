@@ -30,11 +30,13 @@ import org.duniter.core.client.model.local.LocalEntity;
  */
 public class Record implements LocalEntity<String> {
 
+    public static final String PROPERTY_VERSION="version";
     public static final String PROPERTY_ISSUER="issuer";
     public static final String PROPERTY_HASH="hash";
     public static final String PROPERTY_SIGNATURE="signature";
     public static final String PROPERTY_TIME="time";
 
+    private String version;
     private String id;
     private String issuer;
     private String hash;
@@ -45,11 +47,20 @@ public class Record implements LocalEntity<String> {
     }
 
     public Record(Record another) {
+        this.version = another.getVersion();
         this.id = another.getId();
         this.issuer = another.getIssuer();
         this.hash = another.getHash();
         this.signature = another.getSignature();
         this.time = another.getTime();
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     @JsonIgnore

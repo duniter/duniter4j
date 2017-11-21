@@ -31,15 +31,18 @@ public class UserProfile extends Record {
 
     public static final String PROPERTY_TITLE = "title";
     public static final String PROPERTY_DESCRIPTION="description";
-    public static final String PROPERTY_CITY="city";
     public static final String PROPERTY_EMAIL="email";
     public static final String PROPERTY_LOCALE="locale";
     public static final String PROPERTY_AVATAR="avatar";
+    public static final String PROPERTY_ADDRESS="address";
+    public static final String PROPERTY_CITY="city";
 
     private String title;
     private String description;
     private String email;
     private String locale;
+    private String address;
+    private String city;
 
     public String getTitle() {
         return title;
@@ -71,5 +74,21 @@ public class UserProfile extends Record {
 
     public void setLocale(String locale) {
         this.locale = locale;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
     }
 }

@@ -25,6 +25,8 @@ package org.duniter.elasticsearch.user.dao;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.duniter.core.client.model.elasticsearch.Record;
+import org.duniter.core.client.model.elasticsearch.Records;
+import org.duniter.elasticsearch.user.model.UserProfile;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.elasticsearch.dao.AbstractIndexTypeDao;
@@ -74,20 +76,25 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(getType())
                     .startObject("properties")
 
+                    // version
+                    .startObject(Record.PROPERTY_VERSION)
+                    .field("type", "integer")
+                    .endObject()
+
                     // title
-                    .startObject("title")
+                    .startObject(Records.PROPERTY_TITLE)
                     .field("type", "string")
                     .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // description
-                    .startObject("description")
+                    .startObject(Records.PROPERTY_DESCRIPTION)
                     .field("type", "string")
                     .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // creationTime
-                    .startObject("creationTime")
+                    .startObject(Records.PROPERTY_CREATION_TIME)
                     .field("type", "integer")
                     .endObject()
 
@@ -115,23 +122,23 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
                     .endObject()
 
                     // address
-                    .startObject("address")
+                    .startObject(Records.PROPERTY_ADDRESS)
                     .field("type", "string")
                     .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // city
-                    .startObject("city")
+                    .startObject(Records.PROPERTY_CITY)
                     .field("type", "string")
                     .endObject()
 
                     // geoPoint
-                    .startObject("geoPoint")
+                    .startObject(Records.PROPERTY_GEO_POINT)
                     .field("type", "geo_point")
                     .endObject()
 
                     // avatar
-                    .startObject("avatar")
+                    .startObject(Records.PROPERTY_AVATAR)
                         .field("type", "attachment")
                         .startObject("fields") // fields
                             .startObject("content") // content
@@ -151,7 +158,7 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
                     .endObject()
 
                     // social networks
-                    .startObject("socials")
+                    .startObject(Records.PROPERTY_SOCIALS)
                         .field("type", "nested")
                         .field("dynamic", "false")
                         .startObject("properties")
@@ -167,7 +174,7 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
                         .endObject()
 
                     // tags
-                    .startObject("tags")
+                    .startObject(Records.PROPERTY_TAGS)
                         .field("type", "completion")
                         .field("search_analyzer", "simple")
                         .field("analyzer", "simple")
@@ -184,7 +191,7 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
 
             // pictures
             if (isNestedPicturesEnable) {
-                mapping.startObject("pictures")
+                mapping.startObject(Records.PROPERTY_PICTURES)
                         .field("type", "nested")
                         .field("dynamic", "false")
                         .startObject("properties")
@@ -212,14 +219,14 @@ public class AbstractRecordDaoImpl<T extends AbstractRecordDaoImpl> extends Abst
                         .endObject()
 
                         // picturesCount
-                        .startObject("picturesCount")
+                        .startObject(Records.PROPERTY_PICTURES_COUNT)
                         .field("type", "integer")
                         .endObject();
             }
 
             // category
             if (isNestedCategoryEnable) {
-                mapping.startObject("category")
+                mapping.startObject(Records.PROPERTY_CATEGORY)
                         .field("type", "nested")
                         .field("dynamic", "false")
                         .startObject("properties")

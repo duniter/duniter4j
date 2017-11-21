@@ -22,6 +22,7 @@ package org.duniter.elasticsearch.subscription.dao.record;
  * #L%
  */
 
+import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.elasticsearch.subscription.PluginSettings;
@@ -86,53 +87,63 @@ public class SubscriptionRecordDaoImpl extends AbstractSubscriptionIndexTypeDao<
                     .startObject(getType())
                     .startObject("properties")
 
+                    // version
+                    .startObject(SubscriptionRecord.PROPERTY_VERSION)
+                    .field("type", "integer")
+                    .endObject()
+
+                    // type
+                    .startObject(SubscriptionRecord.PROPERTY_TYPE)
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+
                     // issuer
-                    .startObject("issuer")
+                    .startObject(SubscriptionRecord.PROPERTY_ISSUER)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // recipient
-                    .startObject("recipient")
+                    .startObject(SubscriptionRecord.PROPERTY_RECIPIENT)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // time
-                    .startObject("time")
+                    .startObject(SubscriptionRecord.PROPERTY_TIME)
                     .field("type", "integer")
                     .endObject()
 
                     // nonce
-                    .startObject("nonce")
+                    .startObject(SubscriptionRecord.PROPERTY_NONCE)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
-                    // issuer content
-                    .startObject("issuer_content")
+                    // issuerContent
+                    .startObject(SubscriptionRecord.PROPERTY_ISSUER_CONTENT)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // receiver content
-                    .startObject("receiver_content")
+                    .startObject(SubscriptionRecord.PROPERTY_RECIPIENT_CONTENT)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // hash
-                    .startObject("hash")
+                    .startObject(SubscriptionRecord.PROPERTY_HASH)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // signature
-                    .startObject("signature")
+                    .startObject(SubscriptionRecord.PROPERTY_SIGNATURE)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
-
 
                     .endObject()
                     .endObject().endObject();

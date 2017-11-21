@@ -24,7 +24,9 @@ package org.duniter.elasticsearch.user.dao;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.duniter.core.client.model.elasticsearch.Record;
 import org.duniter.core.client.model.elasticsearch.RecordComment;
+import org.duniter.core.client.model.elasticsearch.Records;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.elasticsearch.dao.AbstractIndexTypeDao;
 import org.duniter.elasticsearch.user.PluginSettings;
@@ -100,19 +102,24 @@ public class AbstractCommentDaoImpl<T extends AbstractCommentDaoImpl> extends Ab
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(getType())
                     .startObject("properties")
 
+                    // version
+                    .startObject(Record.PROPERTY_VERSION)
+                    .field("type", "integer")
+                    .endObject()
+
                     // issuer
-                    .startObject("issuer")
+                    .startObject(Record.PROPERTY_ISSUER)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // creationTime
-                    .startObject("creationTime")
+                    .startObject(Records.PROPERTY_CREATION_TIME)
                     .field("type", "integer")
                     .endObject()
 
                     // time
-                    .startObject("time")
+                    .startObject(Record.PROPERTY_TIME)
                     .field("type", "integer")
                     .endObject()
 

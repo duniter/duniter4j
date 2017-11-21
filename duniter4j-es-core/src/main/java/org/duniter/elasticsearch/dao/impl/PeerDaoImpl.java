@@ -373,7 +373,7 @@ public class PeerDaoImpl extends AbstractDao implements PeerDao {
                     .startObject("properties")
 
                         // stats.version
-                        .startObject("version")
+                        .startObject(Peer.Stats.PROPERTY_VERSION)
                         .field("type", "string")
                         .endObject()
 

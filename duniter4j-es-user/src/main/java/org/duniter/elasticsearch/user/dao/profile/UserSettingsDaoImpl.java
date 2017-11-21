@@ -92,13 +92,18 @@ public class UserSettingsDaoImpl extends AbstractIndexTypeDao<UserSettingsDaoImp
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(getType())
                     .startObject("properties")
 
+                    // version
+                    .startObject(Record.PROPERTY_VERSION)
+                    .field("type", "integer")
+                    .endObject()
+
                     // time
-                    .startObject("time")
+                    .startObject(Record.PROPERTY_TIME)
                     .field("type", "integer")
                     .endObject()
 
                     // issuer
-                    .startObject("issuer")
+                    .startObject(Record.PROPERTY_ISSUER)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()

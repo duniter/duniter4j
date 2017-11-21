@@ -403,6 +403,7 @@ public class Peer implements LocalEntity<String>, Serializable {
     }
 
     public static class Stats {
+        public static final String PROPERTY_VERSION = "version";
         public static final String PROPERTY_STATUS = "status";
         public static final String PROPERTY_LAST_UP_TIME = "lastUpTime";
         public static final String PROPERTY_UID = "uid";

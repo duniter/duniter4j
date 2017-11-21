@@ -25,12 +25,14 @@ package org.duniter.elasticsearch.user.dao.profile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.duniter.core.client.model.elasticsearch.Record;
+import org.duniter.core.client.model.elasticsearch.Records;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.elasticsearch.dao.AbstractIndexTypeDao;
 import org.duniter.elasticsearch.exception.InvalidFormatException;
 import org.duniter.elasticsearch.user.PluginSettings;
+import org.duniter.elasticsearch.user.model.UserProfile;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -96,46 +98,51 @@ public class UserProfileDaoImpl extends AbstractIndexTypeDao<UserProfileDaoImpl>
             XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject(getType())
                     .startObject("properties")
 
+                    // version
+                    .startObject(UserProfile.PROPERTY_VERSION)
+                    .field("type", "integer")
+                    .endObject()
+
                     // title
-                    .startObject("title")
+                    .startObject(UserProfile.PROPERTY_TITLE)
                     .field("type", "string")
                     .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // description
-                    .startObject("description")
+                    .startObject(UserProfile.PROPERTY_DESCRIPTION)
                     .field("type", "string")
                     .field("analyzer", stringAnalyzer)
                     .endObject()
 
                     // time
-                    .startObject("time")
+                    .startObject(UserProfile.PROPERTY_TIME)
                     .field("type", "integer")
                     .endObject()
 
                     // issuer
-                    .startObject("issuer")
+                    .startObject(UserProfile.PROPERTY_ISSUER)
                     .field("type", "string")
                     .field("index", "not_analyzed")
                     .endObject()
 
                     // city
-                    .startObject("city")
+                    .startObject(UserProfile.PROPERTY_CITY)
                     .field("type", "string")
                     .endObject()
 
                     // address
-                    .startObject("address")
+                    .startObject(UserProfile.PROPERTY_ADDRESS)
                     .field("type", "string")
                     .endObject()
 
                     // geoPoint
-                    .startObject("geoPoint")
+                    .startObject(Records.PROPERTY_GEO_POINT)
                     .field("type", "geo_point")
                     .endObject()
 
                     // avatar
-                    .startObject("avatar")
+                    .startObject(Records.PROPERTY_AVATAR)
                     .field("type", "attachment")
                     .startObject("fields") // fields
                     .startObject("content") // content
@@ -155,7 +162,7 @@ public class UserProfileDaoImpl extends AbstractIndexTypeDao<UserProfileDaoImpl>
                     .endObject()
 
                     // social networks
-                    .startObject("socials")
+                    .startObject(Records.PROPERTY_SOCIALS)
                     .field("type", "nested")
                     .field("dynamic", "false")
                     .startObject("properties")
@@ -171,7 +178,7 @@ public class UserProfileDaoImpl extends AbstractIndexTypeDao<UserProfileDaoImpl>
                     .endObject()
 
                     // tags
-                    .startObject("tags")
+                    .startObject(Records.PROPERTY_TAGS)
                     .field("type", "completion")
                     .field("search_analyzer", "simple")
                     .field("analyzer", "simple")
