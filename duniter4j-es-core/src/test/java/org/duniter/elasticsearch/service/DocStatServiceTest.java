@@ -28,10 +28,13 @@ import org.duniter.core.client.model.local.Peer;
 import org.duniter.elasticsearch.TestResource;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// Ignore (it's work but too long)
+@Ignore
 public class DocStatServiceTest {
 
 	private static final Logger log = LoggerFactory.getLogger(DocStatServiceTest.class);

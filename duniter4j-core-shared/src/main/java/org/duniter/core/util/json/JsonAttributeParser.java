@@ -45,9 +45,9 @@ public class JsonAttributeParser<T extends Object> {
         STRING
     }
 
-    public static final String REGEX_ATTRIBUTE_STRING_VALUE = "\\\"%s\\\"\\s*:\\s*\"([^\"]+)\\\"";
-    public static final String REGEX_ATTRIBUTE_NUMERIC_VALUE = "\\\"%s\\\"\\s*:\\s*([\\d]+(?:[.][\\d]+)?)";
-    public static final String REGEX_ATTRIBUTE_BOOLEAN_VALUE = "\\\"%s\\\"\\s*:\\s*(true|false)";
+    public static final String REGEX_ATTRIBUTE_STRING_VALUE = "\\\"%s\\\"\\s*:\\s*(?:\"([^\"]+)\\\"|null)";
+    public static final String REGEX_ATTRIBUTE_NUMERIC_VALUE = "\\\"%s\\\"\\s*:\\s*(?:([\\d]+(?:[.][\\d]+)?)|null)";
+    public static final String REGEX_ATTRIBUTE_BOOLEAN_VALUE = "\\\"%s\\\"\\s*:\\s*(?:(true|false)|null)";
 
     public static JsonAttributeParser<String> newStringParser(final String attributeName){
         return new JsonAttributeParser<>(attributeName, String.class);
@@ -141,11 +141,13 @@ public class JsonAttributeParser<T extends Object> {
         int end = matcher.end();
 
         char before = jsonString.charAt(start-1);
+        boolean hasCommaBefore = before == ',';
         while (before == ',' || before == ' ' || before == '\t' || before == '\n') {
             before = jsonString.charAt(--start-1);
+            hasCommaBefore = hasCommaBefore || (before == ',');
         }
         char after = jsonString.charAt(end);
-        while (after == ',' || after == ' ' || after == '\t' || after == '\n') {
+        while ((!hasCommaBefore && after == ',') || after == ' ' || after == '\t' || after == '\n') {
             after = jsonString.charAt(++end);
         }
 

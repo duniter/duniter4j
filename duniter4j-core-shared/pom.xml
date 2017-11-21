@@ -10,6 +10,7 @@
   <artifactId>duniter4j-core-shared</artifactId>
   <packaging>jar</packaging>
   <name>Duniter4j :: Core Shared</name>
+  <description>Common library used by all Duniter4j modules</description>
 
   <properties>
     <i18n.bundleOutputName>duniter4j-core-i18n</i18n.bundleOutputName>

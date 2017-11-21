@@ -8,8 +8,9 @@
   </parent>
 
   <artifactId>duniter4j-es-assembly</artifactId>
-  <name>Duniter4j :: ElasticSearch Assembly</name>
   <packaging>pom</packaging>
+  <name>Duniter4j :: ElasticSearch Assembly</name>
+  <description>Build a ElasticSearch releases with all Duniter4j plugins</description>
 
   <properties>
     <!-- bundle configuration -->

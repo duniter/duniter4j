@@ -147,9 +147,11 @@ public class SubscriptionServiceTest {
         ObjectMapper objectMapper = JacksonUtils.getThreadObjectMapper();
 
         EmailSubscription subscription = new EmailSubscription();
+        subscription.setVersion(2);
         subscription.setIssuer(wallet.getPubKeyHash());
         subscription.setTime(System.currentTimeMillis()/1000);
         subscription.setRecipient(resource.getPluginSettings().getNodePubkey());
+        subscription.setType(EmailSubscription.TYPE);
 
         // Encrypt email then fill
         String email = resource.getPluginSettings().getMailAdmin();
@@ -157,6 +159,7 @@ public class SubscriptionServiceTest {
 
         EmailSubscription.Content content = EmailSubscription.newContent();
         content.setEmail(email);
+        //content.setFrequency(EmailSubscription.Frequency.daily);
         String jsonContent = objectMapper.writeValueAsString(content);
 
         String cypherContent = cryptoService.box(jsonContent, nonce, wallet.getSecKey(), wallet.getPubKey());
@@ -169,8 +172,9 @@ public class SubscriptionServiceTest {
         json = JsonAttributeParser.newStringParser(Record.PROPERTY_SIGNATURE).removeFromJson(json);
         json = JsonAttributeParser.newStringParser(Record.PROPERTY_HASH).removeFromJson(json);
 
-        subscription.setHash(cryptoService.hash(json));
-        subscription.setSignature(cryptoService.sign(json, wallet.getSecKey()));
+        String hash = cryptoService.hash(json);
+        subscription.setHash(hash);
+        subscription.setSignature(cryptoService.sign(hash, wallet.getSecKey()));
 
         return subscription;
     }

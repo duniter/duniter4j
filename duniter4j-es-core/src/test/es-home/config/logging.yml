@@ -14,20 +14,22 @@ logger:
   com.amazonaws.jmx.SdkMBeanRegistrySupport: ERROR
   com.amazonaws.metrics.AwsSdkMetrics: ERROR
 
-  org.apache.http: INFO
-
+  # Duniter4j levels
   org.duniter: INFO
-
-  org.duniter.elasticsearch: DEBUG
-
-  duniter : DEBUG
+  #org.duniter.elasticsearch: DEBUG
+  duniter : INFO
   #duniter.network.p2p: TRACE
 
-  security: DEBUG
+  security: INFO
   cluster.routing.allocation: ERROR
 
   org.nuiton.i18n: WARN
   org.nuiton.config: WARN
+  org.nuiton.converter: WARN
+  org.apache.http: WARN
+  org.apache.http.client: ERROR
+  org.glassfish.grizzly: WARN
+  org.glassfish.tyrus: WARN
 
   # gateway
   #gateway: DEBUG

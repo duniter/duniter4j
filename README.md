@@ -1,7 +1,7 @@
-duniter4j
-======
+Duniter4j
+=========
 
-duniter4j is a Java Client API for [Duniter](http://duniter.org).
+Duniter4j is a Java Client API for [Duniter](http://duniter.org).
 
 ## Components
 

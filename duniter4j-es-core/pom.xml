@@ -10,6 +10,7 @@
   <artifactId>duniter4j-es-core</artifactId>
   <packaging>jar</packaging>
   <name>Duniter4j :: ElasticSearch Core plugin</name>
+  <description>A ElasticSearch plugin that can index data from a Duniter currency</description>
 
   <properties>
     <!-- i18n configuration -->

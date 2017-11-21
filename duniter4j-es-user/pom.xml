@@ -10,6 +10,7 @@
     <artifactId>duniter4j-es-user</artifactId>
     <packaging>jar</packaging>
     <name>Duniter4j :: ElasticSearch User plugin</name>
+    <description>A ElasticSearch plugin used to store user data, such as profiles, private messages and pages</description>
 
     <dependencies>
         <dependency>
@@ -33,6 +34,12 @@
         </dependency>
 
         <!-- Unit test -->
+        <dependency>
+            <groupId>org.elasticsearch.plugin</groupId>
+            <artifactId>mapper-attachments</artifactId>
+            <version>${elasticsearch.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>

@@ -10,6 +10,7 @@
   <artifactId>duniter4j-core-client</artifactId>
   <packaging>jar</packaging>
   <name>Duniter4j :: Core Client API</name>
+  <description>A useful API to communicate with a Duniter network</description>
 
   <properties>
     <i18n.bundleOutputName>duniter4j-core-client-i18n</i18n.bundleOutputName>

@@ -2,16 +2,16 @@
 
 ## Installation
 
- - Download the file `duniter4j-client-<version>-full-<platform>.zip` from the [lastest releases page](https://www.github.com/duniter/duniter4j/releases)
+ - Download the file `duniter4j-client-<version>-full-<platform>.zip` from the [latest releases page](https://www.github.com/duniter/duniter4j/releases)
  
  - Unzip the archive;
    
  - The open a terminal and execute the script `duniter4j.sh` (or `duniter4j.bat`) :
  
- ```bash
+```bash
  cd duniter4j-client-<version>
  ./duniter4j.sh --help
- ```
+```
  
 
 ## Usage
@@ -21,20 +21,20 @@
 To send money to a pubkey, execute this command :
 
 ```bash
- > ./duniter4j.sh transaction --auth-scrypt --amount 10 --output 2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ --comment "Thks for Duniter"
+ ./duniter4j.sh transaction --auth-scrypt --amount 10 --output 2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ --comment "Thks for Duniter"
 ```   
  
 ### Help
 
- ```bash
- > ./duniter4j.sh --help
+```bash
+ ./duniter4j.sh --help
  Usage: <main class> [options] [command] [command options]
    Options:
      --config
        Fichier de configuration
        Default: duniter-client.config
      --help
-       Affichage de l'aide
+       Affichage de l''aide
        Default: false
      -debug
        Activer les logs de dÃ©buggage
@@ -85,4 +85,4 @@ To send money to a pubkey, execute this command :
            --timeout
              HTTP request timeout, in millisecond
 
- ```
+```

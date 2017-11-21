@@ -37,7 +37,7 @@ Rendez-vous sur https://github.com (site en anglais). Renseigner les 3 champs pr
 * E-mail
 * Mot de passe
 
-<img src="https://forum.duniter.org/uploads/default/original/1X/13ade346327b73bbf1acc97027af147eeb4e9089.png" width="346" height="325">
+<img src="https://forum.duniter.org/uploads/default/original/1X/13ade346327b73bbf1acc97027af147eeb4e9089.png" width="346" height="325"/>
 
 Vous recevrez probablement un e-mail de confirmation qu'il vous faudra valider. Une fois cette étape passée, vous devriez disposer d'un compte GitHub .
 
@@ -45,7 +45,7 @@ Vous recevrez probablement un e-mail de confirmation qu'il vous faudra valider. 
 
 Rendez-vous à l'adresse https://github.com/duniter/duniter4j. Cliquez sur le bouton « Fork » en dans le coin supérieur droit de la page :
 
-<img src="https://forum.duniter.org/uploads/default/original/1X/3b9228c664520496d6a7e86e3f9c4c438f111914.png" width="388" height="98">
+<img src="https://forum.duniter.org/uploads/default/original/1X/3b9228c664520496d6a7e86e3f9c4c438f111914.png" width="388" height="98"/>
 
 ### Installer Git
 
@@ -62,7 +62,7 @@ Pour récupérer le code source, lancez Git en mode console.
 * Sous Linux et MacOS, ouvrez tout simplement le Terminal
 * Sous Windows lancez le programme *Git Bash* :
 
-<img src="https://forum.duniter.org/uploads/default/original/1X/6fc638dc0a22d88da7e84dbf0371e69747767f78.png" width="432" height="80">
+<img src="https://forum.duniter.org/uploads/default/original/1X/6fc638dc0a22d88da7e84dbf0371e69747767f78.png" width="432" height="80"/>
 
 #### Clonez votre fork, en ligne de commande
 
@@ -249,7 +249,7 @@ Vous devriez avoir maintenant :
 [2016-11-17 13:29:41,655][INFO ][cluster.routing.allocation] [Att-Lass] Cluster health status changed from [RED] to [YELLOW] (reason: [shards started [[registry][1], [registry][1]] ...]).
 [2016-11-17 13:29:45,756][INFO ][node                     ] Checking Duniter indices...
 [2016-11-17 13:29:45,766][INFO ][node                     ] Checking Duniter indices... [OK]
-[2016-11-17 13:29:58,052][INFO ][duniter.blockchain       ] [gtest] [cgeek.fr:9330] Indexing last blocks...
+[2016-11-17 13:29:58,052][INFO ][duniter.blockchain       ] [g1-test] [cgeek.fr:9330] Indexing last blocks...
 ```
 
 ### Vérifier le fonctionnement
@@ -257,7 +257,7 @@ Vous devriez avoir maintenant :
 Pour vérifier le bon fonctionnement de votre noeud ES, ouvrez un navigateur à l'adresse suivante : http://127.0.0.1:9200  (il s'agit de l'adresse par défaut d'ElasticSearch).
 
 Vous devriez voir le contenu suivant : 
-<img src="https://forum.duniter.org/uploads/default/original/2X/f/fb3d42bb463334b4223d40c1a45a16caa8f589a2.png" width="506" height="260">
+<img src="https://forum.duniter.org/uploads/default/original/2X/f/fb3d42bb463334b4223d40c1a45a16caa8f589a2.png" width="506" height="260"/>
 
 Bravo, votre noeud ElasticSearch Duniter4j est fonctionnel !
 
@@ -299,11 +299,11 @@ Dans le répertoire `duniter4j-core-client/src/main/java`, cherchez et répérez
 
 ### Aller plus loin dans le code
 
-Duniter4j s'appuie sur ElasticSearch **en version 2.3**. D'excellentes documentations sont présentes sur le web : https://www.elastic.co/guide/en/elasticsearch/reference/2.3/index.html.
+Duniter4j s'appuie sur ElasticSearch **en version 2.4**. D'excellentes documentations sont présentes sur le web : https://www.elastic.co/guide/en/elasticsearch/reference/2.3/index.html.
 
 ## Niveau V : Requêtage sur ES API
 
-Nous allons requeter l'indexation de la BlockChain `gtest`, qui s'est fait dès le démarrage de votre noeud ElastiSearch. Nous appellons cette indexation l'**ES API**. 
+Nous allons requeter l'indexation de la BlockChain `g1-test`, qui s'est fait dès le démarrage de votre noeud ElastiSearch. Nous appellons cette indexation l'**ES API**. 
 
 Il existe plusieurs manière de requéter un noeud ES : 
 
@@ -314,25 +314,25 @@ Il existe plusieurs manière de requéter un noeud ES :
 
 En utilisant un navigateur, vous allez requêter .
 
-- [GET-1] Visualisez un bloc quelconque (par exemple le premier #0): http://localhost:9200/gtest/block/0
+- [GET-1] Visualisez un bloc quelconque (par exemple le premier #0): http://localhost:9200/g1-test/block/0
   
 Etudiez ensuite le format du résultat : 
 ```json
-{"_index":"gtest","_type":"block","_id":"0","_version":1,"found":true,"_source":{
+{"_index":"g1-test","_type":"block","_id":"0","_version":1,"found":true,"_source":{
  ...
 }
 ```
 > Observez qu'ElasticSeach a ajouté des informations : `_index`, `_type`, etc.
 
-- [GET-2] Pour éviter d'avoir les informations additionnelles, ajoutez `/_source` : http://localhost:9200/gtest/block/0/_source
+- [GET-2] Pour éviter d'avoir les informations additionnelles, ajoutez `/_source` : http://localhost:9200/g1-test/block/0/_source
 
-> Notez que le bloc courant est accessible en `/gtest/block/current`
+> Notez que le bloc courant est accessible en `/g1-test/block/current`
         
-- [GET-3] Récupérer **uniquement** les champs `hash`, `dividend` et `memberCount`, pour le bloc #125 : http://localhost:9200/gtest/block/125/_source?_source=number,hash,dividend,membersCount
+- [GET-3] Récupérer **uniquement** les champs `hash`, `dividend` et `memberCount`, pour le bloc #125 : http://localhost:9200/g1-test/block/125/_source?_source=number,hash,dividend,membersCount
 
 > Notez que vous pouvez avoir une meilleure présentation en ajoutant "`&pretty`" dans l'adresse;
 
-- [GET-4] Les blocks qui référence une clef publique (recherche full text) : http://localhost:9200/gtest/block/_search?q=8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU
+- [GET-4] Les blocks qui référence une clef publique (recherche full text) : http://localhost:9200/g1-test/block/_search?q=8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU
 
 > Vous pouvez rechercher sur n'importe quelle chaine (recherche `full-text`), via cet option "`q=`" 
 
@@ -351,7 +351,7 @@ Dans un terminal, exécuter les commandes suivantes :
 
 - [POST-1] Récupérez les blocs ayant un dividende universel, en sélectionnant **quelques champs** uniquement (dividend, number, hash). : 
 ```bash
-curl -XGET 'http://localhost:9200/gtest/block/_search?pretty' -d '{
+curl -XGET 'http://localhost:9200/g1-test/block/_search?pretty' -d '{
 "query": {
         "filtered" : {
             "filter": {
@@ -367,7 +367,7 @@ curl -XGET 'http://localhost:9200/gtest/block/_search?pretty' -d '{
 - [POST-2] Récupérez tous les blocs de #0 à #100 :
 
 ```bash
-curl -XGET 'http://localhost:9200/gtest/block/_search' -d '{
+curl -XGET 'http://localhost:9200/g1-test/block/_search' -d '{
     "query": {
        "bool": {
            "should": {
@@ -389,16 +389,15 @@ Voici la documentation pour aller plus loin :
 - ElasticSearch [official web site](http://www.elastic.co/guide/en/elasticsearch/reference/1.3/docs-get.html#get-source-filtering)
 - un bon [tutoriel](http://okfnlabs.org/blog/2013/07/01/elasticsearch-query-tutorial.html) 
 
-## Niveau VI : Requêtage sur Cesium+ API et Ğchange API
+## Niveau VI : Requêtage sur Cesium+ API
 
-Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, comme celles utilisées par Cesium+ et ĞChange : 
+Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, comme celles utilisées par Cesium+ : 
 
 - `/user/profile` : les profiles utilisateurs (nom complet, réseaux sociaux, avatar, etc.)   
-- `/message/inbox` : les messages privées envoyés    
-- `/mail/record` : les annonces de la [place de maché](http://cesium.duniter.fr/#/app/market/lg) Ğchange;   
-  * `/mail/record` : les commentaires sur les annonces
-- `/mail/record` : les référencement de l'[annuaire pro](http://cesium.duniter.fr/#/app/registry/lg) Ğchange;   
-  * `/mail/comment` : les commentaires sur les référencements
+- `/message/inbox` : les messages privées recus    
+- `/message/outbox` : les messages privées envoyés    
+- `/page/record` : les pages de l'[annuaire des pages Cesium+](https://g1.duniter.fr/#/app/wot/page/lg);   
+  * `/page/comment` : les commentaires sur les annonces
 
 > La document de l'API HTTP est disponible [ici](../API.md).
 
@@ -408,61 +407,54 @@ Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, com
 
 #### Requêtes GET
 
-- [GET-5] Liste des annonces avec le mot `rml8` : http://data.duniter.fr/market/record/_search?pretty&q=rml8
+- [GET-5] Liste des pages avec le mot `cours` : [/page/record/_search?pretty&q=cours](https://g1.data.duniter.fr/page/record/_search?pretty&amp;q=cours)
 
-- [GET-5] Liste des messages à destination de la clef `` : data.duniter.fr/message/record/_search?pretty&receiver=5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of
+- [GET-5] Liste des messages à destination de la clef `38MEAZN68Pz1DTvT3tqgxx4yQP6snJCQhPqEFxbDk4aE` : [/message/inbox/_search?pretty&receiver=38MEAS...](https://g1.data.duniter.fr/message/inbox/_search?pretty&amp;receiver=38MEAZN68Pz1DTvT3tqgxx4yQP6snJCQhPqEFxbDk4aE)
 
-> Observez que le contenu des messages est chiffré. Seul sont destinataire peut y accéder.
+> Observez que le contenu des messages est chiffré. Seul le destinataire (`recipient`) peut y accéder.
 
 
 #### Requêtes POST
 
 
-- [POST-3] Liste des [annonces soumises par Sybille](http://cesium.duniter.fr/#/app/market/lg?q=GzfTB21AnTmbVfNANZmPGSXVtYE4YNnvA9E9ovokttZr) (pubkey=`GzfTB21AnTmbVfNANZmPGSXVtYE4YNnvA9E9ovokttZr`)
+- [POST-3] Liste des [pages soumises par Michele T](https://g1.duniter.fr/#/app/wot/2getXnbrRRYFUoEdgAdV4xniCxNERdBFoLvu6xZcsjRW/Turbin,%20Mich%C3%A8le) (pubkey=`2getXnbrRRYFUoEdgAdV4xniCxNERdBFoLvu6xZcsjRW`)
 
 ```bash
-curl -XPOST "http://data.duniter.fr/market/record/_search?pretty" -d'
+curl -XPOST "https://g1.data.duniter.fr/page/record/_search?pretty" -d'
 {
-  "query": {
-        
+  "query": {        
         "bool":{
-            "should": {
-                "range":{
-                    "price":{
-                        "gte":0
-                    }
-                }
-            },
             "filter": [
                 {"term":{
-                        "issuer":"GzfTB21AnTmbVfNANZmPGSXVtYE4YNnvA9E9ovokttZr"
+                        "issuer":"2getXnbrRRYFUoEdgAdV4xniCxNERdBFoLvu6xZcsjRW"
                     }
                 }                
             ]
         }
   },
-  "_source": ["title", "description", "price", "time", "unit", "type"],
+  "_source": ["title", "description", "time"],
   "from":0,
   "size":100
 }'
 ```
 
-Normalement, vous devriez récupérer **une annonce**.
+Normalement, vous devriez récupérer **au moins une page**.
 
-> **Note** : Dans Cesium (dans la partie qui deviendra ĞChange), ce même contenu est visible ici : http://cesium.duniter.fr/#/app/market/lg?q=GzfTB21AnTmbVfNANZmPGSXVtYE4YNnvA9E9ovokttZr  
+> **Note** : Dans Cesium+, ce même contenu est [visible ici](https://g1.duniter.fr/#/app/page/view/AV-XoXFcMEOHZ8iLvso3/michle-turbin-architecte)   
 > Notez que l'option dans cette adresse utilise `q=` pour la recherche `full text`.
 
 Copiez la valeur du champ `_id`, et utilisez la dans la prochaine requête :
 
- - [POST-4] : Récupérez les commentaires [de l'annonce précédente](http://cesium.duniter.fr/#/app/market/view/AVbieTIAup9uzWgKipsC/animation-geconomicus) : 
+- [POST-4] : Récupérez les commentaires [de la page](https://g1.duniter.fr/#/app/page/view/AV-XoXFcMEOHZ8iLvso3/michle-turbin-architecte) : 
+
 ```bash
-curl -XPOST "http://data.duniter.fr/market/comment/_search?pretty" -d'
+curl -XPOST "https://g1.data.duniter.fr/page/comment/_search?pretty" -d'
 {
   "query": {
         "bool":{
             "filter": [
                 {"term":{
-                        "record": "  ...   "   <-- mettre ici l'identifiant (id) de l'annonce
+                        "record": "  ...   "   <-- mettre ICI la valeur [_id] de la page
                     }
                 }
             ]
@@ -470,7 +462,4 @@ curl -XPOST "http://data.duniter.fr/market/comment/_search?pretty" -d'
   }
 }'
 ```
-
-> **Note** : Dans Cesium (dans la partie qui deviendra ĞChange), le contenu de cette requete est visible ici : [http://cesium.duniter.fr/#/app/market/view/AVbieTIAup...](http://cesium.duniter.fr/#/app/market/view/AVbieTIAup9uzWgKipsC/animation-geconomicus/AVbkYjuR?u=kimamila)
-> (notez que l'identifiant de l'annonce est également présent dans cette adresse).
 

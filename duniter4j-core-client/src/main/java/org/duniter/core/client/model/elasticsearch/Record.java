@@ -36,7 +36,7 @@ public class Record implements LocalEntity<String> {
     public static final String PROPERTY_SIGNATURE="signature";
     public static final String PROPERTY_TIME="time";
 
-    private String version;
+    private Integer version;
     private String id;
     private String issuer;
     private String hash;
@@ -55,11 +55,11 @@ public class Record implements LocalEntity<String> {
         this.time = another.getTime();
     }
 
-    public String getVersion() {
+    public Integer getVersion() {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(Integer version) {
         this.version = version;
     }
 

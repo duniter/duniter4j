@@ -10,6 +10,7 @@
   <artifactId>duniter4j-es-subscription</artifactId>
   <packaging>jar</packaging>
   <name>Duniter4j :: ElasticSearch Subscription plugin</name>
+  <description>A ElasticSearch plugin that can send email notifications to end users</description>
 
   <properties>
 
@@ -44,6 +45,8 @@
     <dependency>
       <groupId>org.antlr</groupId>
       <artifactId>stringtemplate</artifactId>
+      <version>${stringtemplate.version}</version>
+      <scope>compile</scope>
     </dependency>
 
     <!-- Unit test -->
