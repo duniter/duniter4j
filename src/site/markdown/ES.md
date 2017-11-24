@@ -21,18 +21,20 @@ sudo apt-get install openjdk-8-jre
 [The Sodium crypto library (libsodium)](https://download.libsodium.org/doc/installation/) is a modern, easy-to-use software library for encryption, decryption, signatures, password hashing and more. 
 
 - Get libsodium (version 1.0.11 or newer)
-```
-    wget -kL https://github.com/jedisct1/libsodium/releases/download/1.0.14/libsodium-1.0.14.tar.gz
-    tar -xvf libsodium-1.0.14.tar.gz
+
+```bash
+wget -kL https://github.com/jedisct1/libsodium/releases/download/1.0.14/libsodium-1.0.14.tar.gz
+tar -xvf libsodium-1.0.14.tar.gz
 ```
 
 - Installation:
-```
-    cd libsodium-1.0.14
-    sudo apt-get install build-essential
-    sudo ./configure
-    sudo make && make check
-    sudo make install        
+
+```bash
+cd libsodium-1.0.14
+sudo apt-get install build-essential
+sudo ./configure
+sudo make && make check
+sudo make install        
 ```
 
 ### Install bundle (ElasticSearch + Duniter4j)  
@@ -48,7 +50,7 @@ cd duniter4j-es-X.Y/config
 
  - Edit the configuration file `config/elasticsearch.yml`, in particular this properties:
 
-```bash
+```yml
 # Your ES cluster name
 cluster.name: duniter4j-elasticsearch
 
@@ -171,7 +173,7 @@ More documentation here :
 
 Message:
 
-```
+```bash
 java.lang.RuntimeException: java.lang.RuntimeException: Could not find an implementation class.
         at org.duniter.core.util.websocket.WebsocketClientEndpoint.<init>(WebsocketClientEndpoint.java:56)
         at org.duniter.core.client.service.bma.BlockchainRemoteServiceImpl.addNewBlockListener(BlockchainRemoteServiceImpl.java:545)
@@ -187,7 +189,7 @@ Solution :
 
 Move Tyrus libraries into elasticsearch `lib/` directory :
 
-```
+```bash
     cd <ES_HOME>
     mv plugins/duniter4j-elasticsearch/tyrus-*.jar lib
     mv plugins/duniter4j-elasticsearch/javax.websocket-api-*.jar lib
