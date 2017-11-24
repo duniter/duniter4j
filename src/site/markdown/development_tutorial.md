@@ -16,7 +16,7 @@ Le projet Duniter4j est composé de plusieurs sous-modules :
  - `duniter4j-es-*`: Les plugins ElasticSearch, qui implémentent : 
   * `duniter4j-es-core`: Indexation de BlockChain  Duniter (ESA ou ES API);
   * `duniter4j-es-user`: Indexation de données utilisateurs (profils, des messages privées, paramètres chiffrés) (ESUA ou ES USER API);
-  * `duniter4j-es-subscription`: Indexation des abonnement en ligne (notifications par email);
+  * `duniter4j-es-subscription`: Indexation des abonnements en ligne (notifications par email);
   * `duniter4j-es-assembly`: gestion des livrables (packaging).
 
 ## Niveau I : récupérer le code source
@@ -100,7 +100,7 @@ Si l'application se lance, vous aurez dores et déjà un environnement entièrem
  - Sous Linux (Debian) : Lancez la commande suivante :
 
 ```bash
-sudo apt-get install openjdk-8-jre 
+sudo apt-get install openjdk-8-jdk
 ```
 
 ### Installer LibSodium
@@ -222,6 +222,7 @@ Bravo, vous avez compilé le projet avec succès !
 #### Compiler sans les tests unitaires
 
 Par la suite, vous pourrez **ignorer les tests unitaires**, de cette manière : 
+
 ```bash
 mvn install -DskipTests
 ```
@@ -350,6 +351,7 @@ sudo apt-get install curl
 Dans un terminal, exécuter les commandes suivantes :
 
 - [POST-1] Récupérez les blocs ayant un dividende universel, en sélectionnant **quelques champs** uniquement (dividend, number, hash). : 
+
 ```bash
 curl -XGET 'http://localhost:9200/g1-test/block/_search?pretty' -d '{
 "query": {
@@ -397,7 +399,8 @@ Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, com
 - `/message/inbox` : les messages privées recus    
 - `/message/outbox` : les messages privées envoyés    
 - `/page/record` : les pages de l'[annuaire des pages Cesium+](https://g1.duniter.fr/#/app/wot/page/lg);   
-  * `/page/comment` : les commentaires sur les annonces
+- `/page/comment` : les commentaires sur les annonces
+- `/subscription/record` : les abonnements aux services en ligne (par exemple les notifications par email)
 
 > La document de l'API HTTP est disponible [ici](../API.md).
 
