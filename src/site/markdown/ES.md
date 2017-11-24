@@ -68,9 +68,10 @@ duniter.host: g1-test.duniter.org
 duniter.port: 10900
 
 # Initial list of hosts to perform synchronization
-duniter.p2p.ping.endpoints: [
-   "g1-test:ES_USER_API g1-test.data.duniter.fr 443",
-   "g1-test:ES_SUBSCRIPTION_API g1-test.data.duniter.fr 443"
+duniter.p2p.includes.endpoints: [
+   "ES_CORE_API g1-test.data.duniter.fr 443",
+   "ES_USER_API g1-test.data.duniter.fr 443",
+   "ES_SUBSCRIPTION_API g1-test.data.duniter.fr 443"
 ]
 
 ```
