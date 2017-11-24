@@ -33,7 +33,7 @@ tar -xvf libsodium-1.0.14.tar.gz
 cd libsodium-1.0.14
 sudo apt-get install build-essential
 sudo ./configure
-sudo make && make check
+sudo make && sudo make check
 sudo make install        
 ```
 
