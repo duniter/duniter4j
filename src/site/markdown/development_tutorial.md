@@ -9,23 +9,29 @@ A la fin de ce tutoriel, vous serez donc *capable de modifier le logiciel*.
 
 Le projet Duniter4j est composé de plusieurs sous-modules :
 
- - `duniter4j-core-shared`: Classes utilitaires Java. Réutilisable dans d'autres projets Java autour de Duniter.
+- `duniter4j-core-shared`: Classes utilitaires Java. Réutilisable dans d'autres projets Java autour de Duniter.
  
- - `duniter4j-core-client`: Ensemble de services Java permettant d'accéder à un réseau Duniter (c'est à dire une API Java client Duniter) . Cette partie est **réutilisable dans d'autres applications Java**.
+- `duniter4j-core-client`: Ensemble de services Java permettant d'accéder à un réseau Duniter (c'est à dire une API Java client Duniter) . Cette partie est **réutilisable dans d'autres applications Java**.
    
- - `duniter4j-es-*`: Les plugins ElasticSearch, qui implémentent : 
-  * `duniter4j-es-core`: Indexation de BlockChain  Duniter (ESA ou ES API);
-  * `duniter4j-es-user`: Indexation de données utilisateurs (profils, des messages privées, paramètres chiffrés) (ESUA ou ES USER API);
-  * `duniter4j-es-subscription`: Indexation des abonnements en ligne (notifications par email);
-  * `duniter4j-es-assembly`: gestion des livrables (packaging).
+- `duniter4j-es-*`: Les plugins ElasticSearch, qui implémentent : 
+ 
+   * `duniter4j-es-core`: Indexation de BlockChain  Duniter (ESA ou ES API);
+
+   * `duniter4j-es-user`: Indexation de données utilisateurs (profils, des messages privées, paramètres chiffrés) (ESUA ou ES USER API);
+
+   * `duniter4j-es-subscription`: Indexation des abonnements en ligne (notifications par email);
+
+   * `duniter4j-es-assembly`: gestion des livrables (packaging).
 
 ## Niveau I : récupérer le code source
 
 Ce premier niveau consiste à créer *votre propre version* des sources du logiciel et de récupérer cette copie sur votre ordinateur. Vous y produirez : 
 
-* votre propre compte *GitHub*
-* votre propre version du logiciel, votre *fork*
-* une copie locale des fichiers de code source provenant de votre *fork*
+- Votre propre compte *GitHub*
+
+- Votre propre version du logiciel, votre *fork*
+
+- Une copie locale des fichiers de code source provenant de votre *fork*
 
 ### Créez un compte GitHub
 
@@ -33,9 +39,11 @@ Ce premier niveau consiste à créer *votre propre version* des sources du logic
 
 Rendez-vous sur https://github.com (site en anglais). Renseigner les 3 champs proposés :
 
-* Nom d'utilisateur
-* E-mail
-* Mot de passe
+- Nom d'utilisateur
+
+- E-mail
+
+- Mot de passe
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/13ade346327b73bbf1acc97027af147eeb4e9089.png" width="346" height="325"/>
 
@@ -59,8 +67,9 @@ A ce stade, vous êtes en mesure de récupérer votre version du code source (vo
 
 Pour récupérer le code source, lancez Git en mode console.
 
-* Sous Linux et MacOS, ouvrez tout simplement le Terminal
-* Sous Windows lancez le programme *Git Bash* :
+- Sous Linux et MacOS, ouvrez tout simplement le Terminal
+
+- Sous Windows lancez le programme *Git Bash* :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/6fc638dc0a22d88da7e84dbf0371e69747767f78.png" width="432" height="80"/>
 
@@ -88,16 +97,19 @@ Si vous êtes arrivés à un comportement similaire, **bravo**, vous posséder d
 
 Ce second niveau vise à obtenir les outils de base pour exécuter le code source, et vérifier son bon fonctionnement. Vous y réaliserez : 
 
-* l'installation de Java Development Kit (JDK);
-* la compilation du code;
-* la vérification du bon fonctionnement du code source *via* le lancement de l'application, dans un terminal.
+- l'installation de Java Development Kit (JDK);
+
+- la compilation du code;
+
+- la vérification du bon fonctionnement du code source *via* le lancement de l'application, dans un terminal.
 
 Si l'application se lance, vous aurez dores et déjà un environnement entièrement **fonctionnel** !
 
 ### Installer JDK
 
- - Sous Windows : Téléchargez puis installez un JDK (version 8 ou +) depuis le [site web d'Oracle](http://oracle.com/java/index.html)
- - Sous Linux (Debian) : Lancez la commande suivante :
+- Sous Windows : Téléchargez puis installez un JDK (version 8 ou +) depuis le [site web d'Oracle](http://oracle.com/java/index.html)
+
+- Sous Linux (Debian) : Lancez la commande suivante :
 
 ```bash
 sudo apt-get install openjdk-8-jdk
@@ -107,21 +119,24 @@ sudo apt-get install openjdk-8-jdk
 
 [libsodium](https://download.libsodium.org/doc/index.html) est une librairie de cryptographie.
 
- - Sous Windows : Aucune instalation nécessaire (fichier `sodium.dll` déjà présent dans `duniter4j-core-shared/lib`);
+- Sous Windows : Aucune instalation nécessaire (fichier `sodium.dll` déjà présent dans `duniter4j-core-shared/lib`);
  
- - Sous Linux : suivre [les notes d'installation](https://download.libsodium.org/doc/installation/index.html) (anglais).
-    * Après installation, vérifiez que le fichier `libsodium.so` existe bien dans `/usr/local/lib` ou `/opt/local/lib`.
-    * S'il existe, mais à une autre eplacement, veuillez créez un lien symbolique à l'un ou l'autre de ces emplacements.
+- Sous Linux : suivre [les notes d'installation](https://download.libsodium.org/doc/installation/index.html) (anglais).
+
+   * Après installation, vérifiez que le fichier `libsodium.so` existe bien dans `/usr/local/lib` ou `/opt/local/lib`.
+
+   * S'il existe, mais à une autre eplacement, veuillez créez un lien symbolique à l'un ou l'autre de ces emplacements.
 
 
 ### Installer Apache Maven 3
 
 Installer les outils nécessaires pour la compilation :
 
-  - Installez [Apache Maven 3](http://maven.apache.org)
-    * Sous Windows : [téléchargez](http://maven.apache.org/download.cgi) (version 3.x) puis installez en suivant [ces instructions](http://maven.apache.org/install.html).
-    * Sous Linux : Lancez la commande :
-```
+- Installez [Apache Maven 3](http://maven.apache.org)
+   * Sous Windows : [téléchargez](http://maven.apache.org/download.cgi) (version 3.x) puis installez en suivant [ces instructions](http://maven.apache.org/install.html).
+   * Sous Linux : Lancez la commande :
+
+```bash
     sudo apt-get install maven
 ```
 
@@ -129,16 +144,18 @@ Installer les outils nécessaires pour la compilation :
 
 Pour développer en Java, vous pouvez utiliser l'IDE de votre choix, par exemple :
 
- * Sublime Text (non libre) : https://www.sublimetext.com/
- * Autre possibilité : [Idea](https://www.jetbrains.com/idea/download/) (non libre mais fonctionnement très avancé).
+- Sublime Text (non libre) : https://www.sublimetext.com/
+- Autre possibilité : [Idea](https://www.jetbrains.com/idea/download/) (non libre mais fonctionnement très avancé).
 
 ## Niveau III : maîtriser les commandes usuelles
 
 Ce troisième niveau permet de découvrir les quelques commandes que vous utiliserez tout le temps si vous développez sur Duniter4j. Vous y apprendrez : 
 
-* à configurer le projet, notamment les paramètres réseau (du noeud ES, du noeud Duniter, etc.);
-* à compiler le projet;
-* à lancer votre noeud ElasticSearch avec le plugin Duniter4j;
+- à configurer le projet, notamment les paramètres réseau (du noeud ES, du noeud Duniter, etc.);
+
+- à compiler le projet;
+
+- à lancer votre noeud ElasticSearch avec le plugin Duniter4j;
 
 ### Configurer le projet
 
@@ -291,7 +308,9 @@ Ouvrir votre IDE, et ouvrir le projet Duniter4j.
 Dans le répertoire `duniter4j-es-core/src/main/java`, cherchez et répérez dans le code : 
 
 - les controlleurs REST : package `org.duniter.elasticsearch.rest`
+
 - les services d'indexation : package `org.duniter.elasticsearch.service`.
+
   * Il existe un service d'indexation par type de stockage. Par exemple : `BlockchainService`, `UserService`, etc.
 
 Dans le répertoire `duniter4j-core-client/src/main/java`, cherchez et répérez dans le code : 
@@ -308,8 +327,9 @@ Nous allons requeter l'indexation de la BlockChain `g1-test`, qui s'est fait dè
 
 Il existe plusieurs manière de requéter un noeud ES : 
 
- - Requêtes HTTP GET
- - Requêtes HTTP POST
+- Requêtes HTTP GET
+
+- Requêtes HTTP POST
 
 ### Requêtes GET
 
@@ -391,6 +411,7 @@ Voici la documentation pour aller plus loin :
 - ElasticSearch [official web site](http://www.elastic.co/guide/en/elasticsearch/reference/1.3/docs-get.html#get-source-filtering)
 - un bon [tutoriel](http://okfnlabs.org/blog/2013/07/01/elasticsearch-query-tutorial.html) 
 
+
 ## Niveau VI : Requêtage sur Cesium+ API
 
 Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, comme celles utilisées par Cesium+ : 
@@ -402,13 +423,14 @@ Duniter4j permet aussi de stocker et d'indexer les données hors BlockChain, com
 - `/page/comment` : les commentaires sur les annonces
 - `/subscription/record` : les abonnements aux services en ligne (par exemple les notifications par email)
 
-> La document de l'API HTTP est disponible [ici](../API.md).
+> La document de l'API HTTP est disponible [ici](./ES_API.html).
 
 ### Requêtes sur `g1-test.data.duniter.fr`
 
 Nous allons requêter le noeud `g1-test.data.duniter.fr` déployé sur la monnaie `Ğ1-test`.
 
 > **Note** : Ce noeud est configuré AVEC la couche de sécurité Duniter4j. Les accès sur des URL non autorisés renverront une page vide (erreur HTTP 404).  
+
 
 #### Requêtes GET
 

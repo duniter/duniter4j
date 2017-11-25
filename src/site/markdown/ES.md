@@ -20,7 +20,7 @@ sudo apt-get install openjdk-8-jre
 
 [The Sodium crypto library (libsodium)](https://download.libsodium.org/doc/installation/) is a modern, easy-to-use software library for encryption, decryption, signatures, password hashing and more. 
 
-- Get libsodium (version 1.0.11 or newer)
+- Get libsodium (version 1.0.14 or newer)
 
 ```bash
 wget -kL https://github.com/jedisct1/libsodium/releases/download/1.0.14/libsodium-1.0.14.tar.gz
@@ -191,7 +191,7 @@ Solution :
 Move Tyrus libraries into elasticsearch `lib/` directory :
 
 ```bash
-    cd <ES_HOME>
-    mv plugins/duniter4j-elasticsearch/tyrus-*.jar lib
-    mv plugins/duniter4j-elasticsearch/javax.websocket-api-*.jar lib
+cd <ES_HOME>
+mv plugins/duniter4j-elasticsearch/tyrus-*.jar lib
+mv plugins/duniter4j-elasticsearch/javax.websocket-api-*.jar lib
 ```
