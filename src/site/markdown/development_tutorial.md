@@ -200,12 +200,14 @@ La compilation du projet utilise Maven, par la commande  `mvn` (à ne pas confon
 
 #### Tout compiler
 
-Executez la commande suivante pour compiler l'ensemble du projet : 
+Executez la commande suivante pour compiler l'ensemble du projet :
+
 ```bash
 mvn install
 ```
 
-Si tout c'est bien passé, vous devriez obtenir quelque chose qui ressemble à cela : 
+Si tout c'est bien passé, vous devriez obtenir quelque chose qui ressemble à cela :
+
 ```bash
 (...)
 [INFO] Building zip: /home/eis/git/duniter/duniter4j/duniter4j-es-assembly/target/duniter4j-es-0.3.5-SNAPSHOT-standalone.zip
@@ -243,6 +245,7 @@ Par la suite, vous pourrez **ignorer les tests unitaires**, de cette manière :
 ```bash
 mvn install -DskipTests
 ```
+
 Cela permet une compilation plus rapide.
  
 ### Lancer un noeud ElasticSearch
@@ -338,11 +341,21 @@ En utilisant un navigateur, vous allez requêter .
 - [GET-1] Visualisez un bloc quelconque (par exemple le premier #0): http://localhost:9200/g1-test/block/0
   
 Etudiez ensuite le format du résultat : 
+
 ```json
-{"_index":"g1-test","_type":"block","_id":"0","_version":1,"found":true,"_source":{
- ...
+{
+  "_index":"g1-test",
+  "_type":"block",
+  "_id":"0",
+  "_version":1,
+  "found":true,
+  "_source": {
+    "number": 0,
+    "...": "..."
+  }
 }
 ```
+
 > Observez qu'ElasticSeach a ajouté des informations : `_index`, `_type`, etc.
 
 - [GET-2] Pour éviter d'avoir les informations additionnelles, ajoutez `/_source` : http://localhost:9200/g1-test/block/0/_source

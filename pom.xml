@@ -118,8 +118,9 @@
     <!-- distribution management -->
     <projectId>${project.artifactId}</projectId>
     <site.server>eis-public-reports</site.server>
-    <distribution.site.host>doc.e-is.pro</distribution.site.host>
-    <site.repository>scpexe://${distribution.site.host}/var/www/doc.e-is.pro/duniter4j</site.repository>
+    <site.host>doc.e-is.pro</site.host>
+    <site.path>/var/www/doc.e-is.pro/duniter4j</site.path>
+    <site.repository>scpexe://${site.host}${site.path}</site.repository>
     <release.server>eis-nexus-deploy</release.server>
     <release.repository>http://nexus.e-is.pro/nexus/content/repositories/duniter4j-releases</release.repository>
     <snapshot.server>eis-nexus-deploy</snapshot.server>

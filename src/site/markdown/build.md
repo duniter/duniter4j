@@ -2,19 +2,48 @@
 # Build from source
 
 ## Get source and compile
- 
-Install required dependencies:
- 
-- Install Java JDK (8 or more) 
 
-- Install [libsodium](http://doc.libsodium.org/installation/index.html)
+### Install Java JDK
 
-   * Linux: after [installation](http://doc.libsodium.org/installation/index.html), make sure the file 'libsodium.so' exists on: `/usr/local/lib` or `/opt/local/lib`.
-     If not, create a symbolic link.
+- Linux (Debian, Ubuntu): 
+
+```bash
+sudo apt-get install openjdk-8-jdk
+```
+
+- Windows: download then unzip  JDK (8 ou +) from [Oracle web site](http://oracle.com/java/index.html)
+
+
+### Install LibSodium
+
+ 
+- Linux : follow [this instructions](https://download.libsodium.org/doc/installation/index.html) (anglais).
+
+   * After install, check that the file `libsodium.so` exists inside directory `/usr/local/lib` or `/opt/local/lib`.
+
+   * If not exists, but at another location, please create a symbolic link under directory `/usr/local/lib` or `/opt/local/lib`.
+
+- Windows : Aucune instalation nécessaire (fichier `sodium.dll` déjà présent dans `duniter4j-core-shared/lib`);
 
    * Windows: copy the file 'sodium.dll' into directory 'duniter4j-core/lib/'
 
+
+### Installer Apache Maven 3
+
+Install [Apache Maven 3](http://maven.apache.org):
+
+- Linux (Debian, Ubuntu): 
+
+```bash
+    sudo apt-get install maven
+```
+
+- Windows : [download here](http://maven.apache.org/download.cgi) (version 3.x) then install using [this instructions](http://maven.apache.org/install.html).
+
+
 - Install [Maven 3](http://maven.apache.org/): `sudo apt-get install maven`
+
+### Get source the compile
 
 - Get the source code, then compile using Maven:
 
