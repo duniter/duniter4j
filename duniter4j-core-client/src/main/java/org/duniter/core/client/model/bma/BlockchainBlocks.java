@@ -89,10 +89,18 @@ public final class BlockchainBlocks {
                             .sum();
 
                     long outputSum = Arrays.stream(tx.getOutputs())
-                            .map(TX_OUTPUT_PATTERN::matcher)
-                            .filter(Matcher::matches)
-                            .filter(matcher -> issuer.equals(matcher.group(3)))
-                            .mapToLong(matcher -> powBase(Long.parseLong(matcher.group(1)), Integer.parseInt(matcher.group(2))))
+                            .mapToLong(outputStr -> {
+                                try {
+                                    TxOutput txOutput = parseOutput(outputStr);
+                                    if (issuer.equals(txOutput.recipient)) {
+                                        return powBase(txOutput.amount, txOutput.unitbase);
+                                    }
+                                }
+                                catch (InvalidFormatException e) {
+                                    // not a simple unlock condition
+                                }
+                                return 0;
+                            })
                             .sum();
 
                     return (inputSum - outputSum);

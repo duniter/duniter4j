@@ -65,4 +65,15 @@ public class MovementsTest {
         }
 
     }
+
+    @Test
+    public void getMovements_issue30() {
+
+        // This test should detect when TX.inputs format is invalid - see #19
+        BlockchainBlock block = BlockFileUtils.readBlockFile("block_issue_30.json");
+        List<Movement> mov = Movements.getMovements(block);
+        Assert.assertEquals(1, mov.size());
+        Assert.assertEquals(72000l, mov.get(0).getAmount());
+
+    }
 }
