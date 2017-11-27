@@ -21,6 +21,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <file.encoding>UTF-8</file.encoding>
 
     <!-- Project properties -->
     <javaVersion>1.8</javaVersion>
@@ -28,7 +29,6 @@
     <signatureVersion>1.0</signatureVersion>
 
     <!-- Commons versions -->
-    <file.encoding>UTF-8</file.encoding>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.5</slf4j.version>
     <guava.version>22.0</guava.version>
