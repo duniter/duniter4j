@@ -201,6 +201,9 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     public int reloadBlockchainIndicesFrom()  {
         return settings.getAsInt("duniter.blockchain.reload.from", 0);
     }
+    public int reloadBlockchainIndicesTo()  {
+        return settings.getAsInt("duniter.blockchain.reload.to", -1);
+    }
 
     public File getTempDirectory() {
         return Configuration.instance().getTempDirectory();

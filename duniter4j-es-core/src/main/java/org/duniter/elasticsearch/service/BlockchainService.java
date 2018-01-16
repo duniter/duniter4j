@@ -198,8 +198,8 @@ public class BlockchainService extends AbstractService {
 
                 if (startNumber <= peerCurrentBlockNumber) {
                     Collection<String> missingBlocks = bulkIndex
-                            ? indexBlocksUsingBulk(peer, currencyName, startNumber, peerCurrentBlockNumber, progressionModel)
-                            : indexBlocksNoBulk(peer, currencyName, startNumber, peerCurrentBlockNumber, progressionModel);
+                            ? indexBlocksUsingBulk(peer, currencyName, startNumber, peerCurrentBlockNumber, progressionModel, true)
+                            : indexBlocksNoBulk(peer, currencyName, startNumber, peerCurrentBlockNumber, progressionModel, true);
 
                     // If some blocks are missing, try to get it using other peers
                     if (CollectionUtils.isNotEmpty(missingBlocks)) {
@@ -212,7 +212,7 @@ public class BlockchainService extends AbstractService {
                         progressionModel.setStatus(ProgressionModel.Status.SUCCESS);
                     }
                     else {
-                        logger.warn(String.format("[%s] [%s] Could not indexed allOfToList blocks. Missing %s blocks.", currencyName, peer, missingBlocks.size()));
+                        logger.warn(String.format("[%s] [%s] Could not indexed some blocks. Missing %s blocks.", currencyName, peer, missingBlocks.size()));
                         progressionModel.setStatus(ProgressionModel.Status.FAILED);
                     }
                 }
@@ -224,7 +224,83 @@ public class BlockchainService extends AbstractService {
                 }
             }
         } catch(Exception e) {
-            logger.error("Error during indexBlocksFromNode: " + e.getMessage(), e);
+            logger.error("Error during indexLastBlocks: " + e.getMessage(), e);
+            progressionModel.setStatus(ProgressionModel.Status.FAILED);
+        }
+
+        return this;
+    }
+
+    public BlockchainService indexBlocksRange(Peer peer, int firstNumber, int lastNumber) {
+        indexBlocksRange(peer, nullProgressionModel, firstNumber, lastNumber);
+        return this;
+    }
+
+    public BlockchainService indexBlocksRange(Peer peer, ProgressionModel progressionModel, int firstNumber, int lastNumber) {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(progressionModel);
+        Preconditions.checkArgument(firstNumber < lastNumber);
+
+        boolean bulkIndex = pluginSettings.isIndexBulkEnable();
+
+        progressionModel.setStatus(ProgressionModel.Status.RUNNING);
+        progressionModel.setTotal(100);
+        long timeStart = System.currentTimeMillis();
+
+        try {
+            // Get the blockchain name from node
+            BlockchainParameters parameter = blockchainRemoteService.getParameters(peer);
+            if (parameter == null) {
+                progressionModel.setStatus(ProgressionModel.Status.FAILED);
+                logger.error(I18n.t("duniter4j.blockIndexerService.indexBlocksRange.remoteParametersError",peer));
+                return this;
+            }
+            String currencyName = parameter.getCurrency();
+
+            progressionModel.setTask(I18n.t("duniter4j.blockIndexerService.indexBlocksRange.task", currencyName, peer, firstNumber, lastNumber));
+            logger.info(I18n.t("duniter4j.blockIndexerService.indexBlocksRange.task", currencyName, peer, firstNumber, lastNumber));
+
+            // Then index allOfToList blocks
+            BlockchainBlock peerCurrentBlock = blockchainRemoteService.getCurrentBlock(peer);
+
+            if (peerCurrentBlock != null) {
+                final int peerCurrentBlockNumber = peerCurrentBlock.getNumber();
+
+
+                boolean isLastCurrent = lastNumber >= peerCurrentBlockNumber;
+                if (lastNumber > peerCurrentBlockNumber) {
+                    lastNumber = peerCurrentBlockNumber;
+                }
+
+                if (firstNumber <= peerCurrentBlockNumber) {
+                    Collection<String> missingBlocks = bulkIndex
+                            ? indexBlocksUsingBulk(peer, currencyName, firstNumber, lastNumber, progressionModel, isLastCurrent)
+                            : indexBlocksNoBulk(peer, currencyName, firstNumber, lastNumber, progressionModel, isLastCurrent);
+
+                    // If some blocks are missing, try to get it using other peers
+                    if (CollectionUtils.isNotEmpty(missingBlocks)) {
+                        progressionModel.setTask(I18n.t("duniter4j.blockIndexerService.indexLastBlocks.otherPeers.task", currencyName));
+                        missingBlocks = indexMissingBlocksFromOtherPeers(peer, peerCurrentBlock, missingBlocks, 1);
+                    }
+
+                    if (CollectionUtils.isEmpty(missingBlocks)) {
+                        logger.info(I18n.t("duniter4j.blockIndexerService.indexBlocksRange.succeed", currencyName, peer, firstNumber, lastNumber, (System.currentTimeMillis() - timeStart)));
+                        progressionModel.setStatus(ProgressionModel.Status.SUCCESS);
+                    }
+                    else {
+                        logger.warn(String.format("[%s] [%s] Could not indexed some blocks from range [%s-%s]. Missing %s blocks.", currencyName, peer, firstNumber, lastNumber, missingBlocks.size()));
+                        progressionModel.setStatus(ProgressionModel.Status.FAILED);
+                    }
+                }
+                else {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(String.format("[%s] [%s] Invalid block range [%s-%s]. Current block number is #%s", currencyName, peer, firstNumber, lastNumber, peerCurrentBlockNumber));
+                    }
+                    progressionModel.setStatus(ProgressionModel.Status.SUCCESS);
+                }
+            }
+        } catch(Exception e) {
+            logger.error("Error during indexBlocksRange: " + e.getMessage(), e);
             progressionModel.setStatus(ProgressionModel.Status.FAILED);
         }
 
@@ -403,9 +479,24 @@ public class BlockchainService extends AbstractService {
 
     }
 
+
+    public void deleteRange(final String currencyName, final int fromBlock, int toBlock) {
+        int maxBlock = blockDao.getMaxBlockNumber(currencyName);
+
+        boolean isLastBlock = toBlock >= maxBlock;
+
+        blockDao.deleteRange(currencyName, fromBlock, (isLastBlock ? maxBlock : toBlock));
+
+        // Delete current also, if last block
+        if (isLastBlock) {
+            blockDao.deleteById(currencyName, CURRENT_BLOCK_ID);
+        }
+
+    }
+
     /* -- Internal methods -- */
 
-    private Collection<String> indexBlocksNoBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
+    private Collection<String> indexBlocksNoBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel, boolean isLastCurrent) {
         Set<String> missingBlockNumbers = new LinkedHashSet<>();
 
         for (int curNumber = firstNumber; curNumber <= lastNumber; curNumber++) {
@@ -429,7 +520,7 @@ public class BlockchainService extends AbstractService {
                 blockDao.create(currencyName, getBlockId(curNumber), blockAsJson.getBytes(), true /*wait*/);
 
                 // If last block
-                if (curNumber == lastNumber - 1) {
+                if (isLastCurrent && curNumber == lastNumber - 1) {
                     // update the current block
                     indexCurrentBlockFromJson(currencyName, blockAsJson, true /*wait*/);
                 }
@@ -443,7 +534,8 @@ public class BlockchainService extends AbstractService {
         return missingBlockNumbers;
     }
 
-    private Collection<String> indexBlocksUsingBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel) {
+    private Collection<String> indexBlocksUsingBulk(Peer peer, String currencyName, int firstNumber, int lastNumber, ProgressionModel progressionModel,
+                                                    boolean isLastCurrentNumber) {
         Set<String> missingBlockNumbers = new LinkedHashSet<>();
 
         boolean debug = logger.isDebugEnabled();
@@ -504,7 +596,7 @@ public class BlockchainService extends AbstractService {
                     }
 
                     // If last block : also update the current block
-                    if (itemNumber == lastNumber) {
+                    if (isLastCurrentNumber && itemNumber == lastNumber) {
                         currentBlockJson = blockAsJson;
                     }
                 }
@@ -599,7 +691,7 @@ public class BlockchainService extends AbstractService {
                         // Remove current blocks range
                         newMissingBlocks.remove(blockNumberStr);
 
-                        Collection<String> bulkMissingBlocks = indexBlocksUsingBulk(childPeer, currencyName, firstNumber, lastNumber, new ProgressionModelImpl());
+                        Collection<String> bulkMissingBlocks = indexBlocksUsingBulk(childPeer, currencyName, firstNumber, lastNumber, new ProgressionModelImpl(), true);
 
                         // Re add if new missing blocks
                         if (CollectionUtils.isNotEmpty(bulkMissingBlocks)) {
@@ -732,7 +824,7 @@ public class BlockchainService extends AbstractService {
             blockDao.deleteRange(currencyName, forkOriginNumber/*from*/, number+forkResyncWindow/*to*/);
 
             // Re-indexing blocks
-            indexBlocksUsingBulk(peer, currencyName, forkOriginNumber/*from*/, number, nullProgressionModel);
+            indexBlocksUsingBulk(peer, currencyName, forkOriginNumber/*from*/, number, nullProgressionModel, true);
         }
 
         return true; // sync OK

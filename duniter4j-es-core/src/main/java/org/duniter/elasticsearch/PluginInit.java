@@ -207,12 +207,27 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
             // If partial reload (from a block)
             if (pluginSettings.reloadBlockchainIndices() && pluginSettings.reloadBlockchainIndicesFrom() > 0) {
-                if (logger.isWarnEnabled()) {
-                    logger.warn(String.format("/!\\ Re-indexing blockchain from block #%s...", pluginSettings.reloadBlockchainIndicesFrom()));
-                }
+                // Delete blocs range [from,to]
+                if (pluginSettings.reloadBlockchainIndicesTo() > pluginSettings.reloadBlockchainIndicesFrom()) {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn(String.format("/!\\ Re-indexing blockchain range [%s-%s]...",
+                                pluginSettings.reloadBlockchainIndicesFrom(),
+                                pluginSettings.reloadBlockchainIndicesTo()));
+                    }
 
-                injector.getInstance(BlockchainService.class)
-                        .deleteFrom(currencyName, pluginSettings.reloadBlockchainIndicesFrom());
+                    injector.getInstance(BlockchainService.class)
+                            .deleteRange(currencyName,
+                                    pluginSettings.reloadBlockchainIndicesFrom(),
+                                    pluginSettings.reloadBlockchainIndicesTo());
+                }
+                else {
+                    if (logger.isWarnEnabled()) {
+                        logger.warn(String.format("/!\\ Re-indexing blockchain from block #%s...", pluginSettings.reloadBlockchainIndicesFrom()));
+                    }
+
+                    injector.getInstance(BlockchainService.class)
+                            .deleteFrom(currencyName, pluginSettings.reloadBlockchainIndicesFrom());
+                }
             }
             else {
                 if (logger.isInfoEnabled()) {
@@ -223,6 +238,16 @@ public class PluginInit extends AbstractLifecycleComponent<PluginInit> {
 
             // Wait end of currency index creation, then index blocks
             threadPool.scheduleOnClusterReady(() -> {
+
+                // Reindex range
+                if (pluginSettings.reloadBlockchainIndices()
+                        && pluginSettings.reloadBlockchainIndicesFrom() > 0
+                        && pluginSettings.reloadBlockchainIndicesTo() > pluginSettings.reloadBlockchainIndicesFrom()) {
+                        injector.getInstance(BlockchainService.class)
+                                .indexBlocksRange(peer,
+                                        pluginSettings.reloadBlockchainIndicesFrom(),
+                                        pluginSettings.reloadBlockchainIndicesTo());
+                }
 
                 try {
                     // Index blocks (and listen if new block appear)
