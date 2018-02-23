@@ -497,7 +497,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 addEndpointsAsPeers(peer, result, leaf, filterEndpoints);
 
             } catch(HttpNotFoundException | TechnicalException e) {
-                log.warn("Peer not found for leaf=" + leaf);
+                log.debug("Peer not found for leaf=" + leaf);
                 // skip
             }
         }
