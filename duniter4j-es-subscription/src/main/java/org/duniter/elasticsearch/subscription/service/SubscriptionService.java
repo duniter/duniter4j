@@ -51,6 +51,7 @@ import org.duniter.elasticsearch.user.service.AdminService;
 import org.duniter.elasticsearch.user.service.MailService;
 import org.duniter.elasticsearch.user.service.UserEventService;
 import org.duniter.elasticsearch.user.service.UserService;
+import org.duniter.elasticsearch.util.springtemplate.STUtils;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.unit.TimeValue;
 import org.nuiton.i18n.I18n;
@@ -76,6 +77,7 @@ public class SubscriptionService extends AbstractService {
     private UserEventService userEventService;
     private UserService userService;
     private String emailSubjectPrefix;
+    private STGroup templates;
 
     @Inject
     public SubscriptionService(Duniter4jClient client,
@@ -100,6 +102,11 @@ public class SubscriptionService extends AbstractService {
         if (StringUtils.isNotBlank(emailSubjectPrefix)) {
             emailSubjectPrefix += " "; // add one trailing space
         }
+
+        // Configure springtemplate engine
+        templates = STUtils.newSTGroup("org/duniter/elasticsearch/subscription/templates");
+        Preconditions.checkNotNull(templates.getInstanceOf("text_email"), "Missing ST template {text_email}");
+        Preconditions.checkNotNull(templates.getInstanceOf("html_email_content"), "Missing ST template {html_email_content}");
     }
 
     public String create(String json) {
@@ -308,11 +315,7 @@ public class SubscriptionService extends AbstractService {
                 subscription.getContent().getLocale().split("-") : new String[]{"en", "GB"};
         Locale issuerLocale = localParts.length >= 2 ? new Locale(localParts[0].toLowerCase(), localParts[1].toUpperCase()) : new Locale(localParts[0].toLowerCase());
 
-        // Configure templates engine
-        STGroup templates = new STGroupDir("templates", '$', '$');
-        templates.registerRenderer(Date.class, new DateRenderer());
-        templates.registerRenderer(String.class, new StringRenderer());
-        //templates.registerRenderer(Number.class, new NumberRenderer());
+
 
         // Compute text content
         final String text = fillTemplate(

@@ -252,3 +252,18 @@ duniter.subscription.enable: true
 # Email subscription: URL to a Cesium site, for links in the email content (default: https://g1.duniter.fr)
 #
 #duniter.subscription.email.cesium.url: 'https://domain.com/cesium'
+#
+# ---------------------------------- Duniter4j User (profile, message) module -------------------
+#
+#
+# Share link: og:site_name (default: 'Cesium')
+#
+# duniter.user.share.site.name: 'Cesium - Ğ1'
+#
+# Share link : URL to a Cesium site, for links in the email content (default: https://g1.duniter.fr)
+#
+#duniter.share.cesium.url: 'https://domain.com/cesium'
+#
+# Share link : Base URL of cluster, to resolve image (default: none => /!\ Will use relative image path)
+#
+#duniter.share.base.url: 'http://localhost:9200'

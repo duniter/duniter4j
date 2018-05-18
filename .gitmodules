@@ -1,6 +1,3 @@
-[submodule "duniter4j-cesium/src/main/cesium"]
-	path = duniter4j-cesium/src/main/cesium
-	url = git://github.com/duniter/cesium.git
 [submodule "duniter4j-elasticsearch/src/main/resources/cities"]
 	path = duniter4j-elasticsearch/src/main/resources/cities
 	url = git://github.com/David-Haim/CountriesToCitiesJSON.git

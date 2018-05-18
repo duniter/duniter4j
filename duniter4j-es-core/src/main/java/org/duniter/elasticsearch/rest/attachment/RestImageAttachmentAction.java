@@ -95,4 +95,17 @@ public class RestImageAttachmentAction extends BaseRestHandler {
             }
         });
     }
+
+
+    public static String computeImageUrl(String index,
+                                         String type,
+                                         String id,
+                                         String imageField,
+                                         String contentType) {
+
+        int lastSlashIndex = contentType  != null ? contentType.lastIndexOf('/') : -1;
+        String extension = (lastSlashIndex >= 0) ? contentType.substring(lastSlashIndex+1) : contentType;
+
+        return String.format("/%s/%s/%s/_image/%s.%s", index, type, id, imageField, extension);
+    }
 }

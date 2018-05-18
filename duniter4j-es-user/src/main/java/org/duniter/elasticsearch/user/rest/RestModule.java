@@ -50,6 +50,7 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestUserEventMarkAsReadAction.class).asEagerSingleton();
         bind(RestUserEventSearchAction.class).asEagerSingleton();
         bind(RestUserAvatarAction.class).asEagerSingleton();
+        bind(RestUserShareLinkAction.class).asEagerSingleton();
 
         // Group
         bind(RestGroupIndexAction.class).asEagerSingleton();
@@ -76,6 +77,7 @@ public class RestModule extends AbstractModule implements Module {
         bind(RestPageCommentUpdateAction.class).asEagerSingleton();
         bind(RestPageCategoryAction.class).asEagerSingleton();
         bind(RestPageImageAction.class).asEagerSingleton();
+        bind(RestPageShareLinkAction.class).asEagerSingleton();
 
         // Mixed search
         bind(RestMixedSearchAction.class).asEagerSingleton();

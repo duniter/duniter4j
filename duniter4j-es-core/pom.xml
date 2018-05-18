@@ -76,6 +76,14 @@
       <artifactId>jackson-databind</artifactId>
     </dependency>
 
+
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>stringtemplate</artifactId>
+      <version>${stringtemplate.version}</version>
+      <scope>compile</scope>
+    </dependency>
+
     <!-- JNA (need for OS shutdown hook) -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>

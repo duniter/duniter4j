@@ -43,6 +43,7 @@ public class UserProfile extends Record {
     private String locale;
     private String address;
     private String city;
+    private Attachment avatar;
 
     public String getTitle() {
         return title;
@@ -90,5 +91,13 @@ public class UserProfile extends Record {
 
     public void setCity(String city) {
         this.city = city;
+    }
+
+    public Attachment getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(Attachment avatar) {
+        this.avatar = avatar;
     }
 }

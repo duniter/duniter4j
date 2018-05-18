@@ -212,8 +212,17 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return this.nodePubkey;
     }
 
+    public String getCesiumUrl() {
+        return this.settings.get("duniter.share.cesium.url", "https://g1.duniter.fr");
+    }
 
+    public String getShareSiteName() {
+        return this.settings.get("duniter.user.share.site.name", "Cesium");
+    }
 
+    public String getBaseUrl() {
+        return settings.get("duniter.share.base.url");
+    }
 
     /* -- protected methods -- */
 

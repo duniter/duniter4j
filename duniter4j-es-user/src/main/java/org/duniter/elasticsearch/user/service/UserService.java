@@ -24,19 +24,26 @@ package org.duniter.elasticsearch.user.service;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.lucene.queryparser.flexible.core.util.StringUtils;
 import org.duniter.core.util.Preconditions;
 import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
-import org.duniter.core.client.model.elasticsearch.UserProfile;
+import org.duniter.elasticsearch.user.model.Attachment;
+import org.duniter.elasticsearch.user.model.UserProfile;
 import org.duniter.core.service.CryptoService;
 import org.duniter.elasticsearch.client.Duniter4jClient;
+import org.duniter.elasticsearch.rest.attachment.RestImageAttachmentAction;
+import org.duniter.elasticsearch.rest.share.AbstractRestShareLinkAction;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.exception.AccessDeniedException;
 import org.duniter.elasticsearch.service.AbstractService;
 import org.duniter.elasticsearch.user.dao.profile.UserIndexDao;
 import org.duniter.elasticsearch.user.dao.profile.UserProfileDao;
 import org.duniter.elasticsearch.user.dao.profile.UserSettingsDao;
+import org.duniter.elasticsearch.util.opengraph.OGData;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.rest.BytesRestResponse;
+import org.elasticsearch.rest.RestStatus;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -224,6 +231,15 @@ public class UserService extends AbstractService {
         });
 
         return sb.substring(separator.length());
+    }
+
+    public UserProfile getUserProfileForSharing(String id) {
+
+        return client.getSourceByIdOrNull(INDEX, PROFILE_TYPE, id, UserProfile.class,
+                UserProfile.PROPERTY_TITLE,
+                UserProfile.PROPERTY_DESCRIPTION,
+                UserProfile.PROPERTY_LOCALE,
+                UserProfile.PROPERTY_AVATAR);
     }
 
     /* -- Internal methods -- */

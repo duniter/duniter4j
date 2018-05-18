@@ -32,6 +32,8 @@ import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.dao.page.PageCommentDao;
 import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
 import org.duniter.elasticsearch.user.dao.page.PageRecordDao;
+import org.duniter.elasticsearch.user.model.UserProfile;
+import org.duniter.elasticsearch.user.model.page.RegistryRecord;
 import org.elasticsearch.common.inject.Inject;
 
 /**
@@ -138,6 +140,13 @@ public class PageService extends AbstractService {
         commentDao.update(id, json);
     }
 
+    public RegistryRecord getPageForSharing(String id) {
+
+        return client.getSourceByIdOrNull(recordDao.getIndex(), recordDao.getType(), id, RegistryRecord.class,
+                RegistryRecord.PROPERTY_TITLE,
+                RegistryRecord.PROPERTY_DESCRIPTION,
+                RegistryRecord.PROPERTY_THUMBNAIL);
+    }
 
     /* -- Internal methods -- */
 
