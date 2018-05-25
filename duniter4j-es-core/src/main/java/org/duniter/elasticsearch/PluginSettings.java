@@ -310,7 +310,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
     }
 
     public String getWebSocketHost()  {
-        return settings.get("network.host", "locahost");
+        return settings.get("network.host", "localhost");
     }
 
     public String getWebSocketPort()  {
