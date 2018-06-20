@@ -10,10 +10,8 @@ import org.duniter.elasticsearch.rest.share.AbstractRestShareLinkAction;
 import org.duniter.elasticsearch.user.PluginSettings;
 import org.duniter.elasticsearch.user.dao.page.PageIndexDao;
 import org.duniter.elasticsearch.user.dao.page.PageRecordDao;
-import org.duniter.elasticsearch.user.model.UserProfile;
 import org.duniter.elasticsearch.user.model.page.RegistryRecord;
 import org.duniter.elasticsearch.user.service.PageService;
-import org.duniter.elasticsearch.user.service.UserService;
 import org.duniter.elasticsearch.util.opengraph.OGData;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -23,7 +21,6 @@ import org.nuiton.i18n.I18n;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Locale;
 
 public class RestPageShareLinkAction extends AbstractRestShareLinkAction {
 
@@ -32,6 +29,7 @@ public class RestPageShareLinkAction extends AbstractRestShareLinkAction {
                                    final PluginSettings pluginSettings,
                                    final PageService service) {
         super(settings, controller, client, PageIndexDao.INDEX, PageRecordDao.TYPE,
+                pluginSettings.getShareBaseUrl(),
                 createResolver(pluginSettings, service));
     }
 
@@ -60,9 +58,13 @@ public class RestPageShareLinkAction extends AbstractRestShareLinkAction {
 
                     // og:image
                     if (record.getThumbnail() != null && StringUtils.isNotBlank(record.getThumbnail().get("_content_type"))) {
-                        String baseUrl = pluginSettings.getBaseUrl();
+                        String baseUrl = pluginSettings.getShareBaseUrl();
                         data.image = StringUtils.isBlank(baseUrl) ? "" : baseUrl;
                         data.image += RestImageAttachmentAction.computeImageUrl(PageIndexDao.INDEX, PageRecordDao.TYPE, id, RegistryRecord.PROPERTY_THUMBNAIL, record.getThumbnail().get("_content_type"));
+
+                        // FIXME : use a greater image ? at least 200px x 200px for FaceBook
+                        data.imageHeight = 100;
+                        data.imageWidth = 100;
                     }
 
                     // og:url
@@ -94,8 +96,10 @@ public class RestPageShareLinkAction extends AbstractRestShareLinkAction {
 
                 // default og:image
                 if (StringUtils.isBlank(data.image)) {
-                    data.image = pluginSettings.getCesiumUrl() + "/img/logo_128px.png";
+                    data.image = pluginSettings.getCesiumUrl() + "/img/logo_200px.png";
                     data.imageType = "image/png";
+                    data.imageHeight = 200;
+                    data.imageWidth = 200;
                 }
 
                 return data;

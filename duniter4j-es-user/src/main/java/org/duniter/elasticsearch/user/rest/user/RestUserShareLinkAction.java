@@ -1,6 +1,5 @@
 package org.duniter.elasticsearch.user.rest.user;
 
-import com.google.common.collect.Maps;
 import com.google.common.html.HtmlEscapers;
 import org.duniter.core.exception.BusinessException;
 import org.duniter.core.exception.TechnicalException;
@@ -29,9 +28,10 @@ public class RestUserShareLinkAction extends AbstractRestShareLinkAction {
                                    final PluginSettings pluginSettings,
                                    final UserService userService) {
         super(settings, controller, client, UserService.INDEX, UserService.PROFILE_TYPE,
+                pluginSettings.getShareBaseUrl(),
                 createResolver(pluginSettings, userService));
 
-        if (StringUtils.isBlank(pluginSettings.getBaseUrl())) {
+        if (StringUtils.isBlank(pluginSettings.getShareBaseUrl())) {
             log.warn(I18n.t("duniter4j.es.share.error.noBaseUrl", "duniter.share.base.url"));
         }
     }
@@ -57,6 +57,7 @@ public class RestUserShareLinkAction extends AbstractRestShareLinkAction {
                     else {
                         locale = I18n.getDefaultLocale();
                     }
+                    data.locale = locale.toString();
 
                     String pubkey = I18n.l(locale, "duniter.user.share.pubkey", id);
 
@@ -81,9 +82,11 @@ public class RestUserShareLinkAction extends AbstractRestShareLinkAction {
 
                     // og:image
                     if (profile.getAvatar() != null && StringUtils.isNotBlank(profile.getAvatar().getContentType())) {
-                        String baseUrl = pluginSettings.getBaseUrl();
+                        String baseUrl = pluginSettings.getShareBaseUrl();
                         data.image = StringUtils.isBlank(baseUrl) ? "" : baseUrl;
                         data.image += RestImageAttachmentAction.computeImageUrl(UserService.INDEX, UserService.PROFILE_TYPE, id, UserProfile.PROPERTY_AVATAR, profile.getAvatar().getContentType());
+                        data.imageHeight = 100;
+                        data.imageWidth = 100;
                     }
 
                     // og:url
@@ -116,8 +119,10 @@ public class RestUserShareLinkAction extends AbstractRestShareLinkAction {
 
                 // default og:image
                 if (StringUtils.isBlank(data.image)) {
-                    data.image = pluginSettings.getCesiumUrl() + "/img/logo_128px.png";
+                    data.image = pluginSettings.getCesiumUrl() + "/img/logo_200px.png";
                     data.imageType = "image/png";
+                    data.imageHeight = 200;
+                    data.imageWidth = 200;
                 }
 
                 return data;

@@ -261,6 +261,10 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return settings.getAsInt("duniter.retry.waitDuration", 5000);
     }
 
+    public String getShareBaseUrl() {
+        return settings.get("duniter.share.base.url");
+    }
+
     public Peer checkAndGetPeer() {
         if (StringUtils.isBlank(getNodeBmaHost())) {
             logger.error("ERROR: node host is required");

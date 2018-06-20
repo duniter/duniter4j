@@ -1,4 +1,5 @@
-html_share(type, title, summary, description, image, siteName, locale, url, redirectMessage) ::= <<
+html_share(type, title, summary, description, image, imageHeight, imageWidth, siteName, locale, url, redirectUrl, redirectMessage) ::= <<
+<!DOCTYPE html>
 <html prefix="og: http://ogp.me/ns#">
     <head>
         <meta charset="UTF-8">
@@ -30,17 +31,28 @@ html_share(type, title, summary, description, image, siteName, locale, url, redi
     $if(image)$
         <meta property="og:image" content="$image$" />
     $endif$
+    $if(imageHeight)$
+        <meta property="og:image:height" content="$imageHeight$" />
+    $endif$
+    $if(imageWidth)$
+        <meta property="og:image:width" content="$imageWidth$" />
+    $endif$
 
     $if(locale)$
         <meta property="og:locale" content="$locale$" />
     $endif$
 
     $if(url)$
-        <meta property="og:url" content="$url$" />
+        <meta property="og:url" content="$url$"/>
+    $endif$
+
+    $if(redirectUrl)$
+
         <script type="text/javascript">
-            window.location.href = "$url$"
+            window.location.href = "$redirectUrl$"
         </script>
-        <META HTTP-EQUIV="Refresh" CONTENT="0; URL=$url$">
+        <!--<META HTTP-EQUIV="Refresh" CONTENT="0; URL=$redirectUrl$">
+        -->
     $endif$
     </head>
     <body>
@@ -54,9 +66,9 @@ html_share(type, title, summary, description, image, siteName, locale, url, redi
 
         <p>$description$</p>
 
-        $if(url)$
+        $if(redirectUrl)$
         <p>
-            $redirectMessage$ <a href='$url$'>$title$</a>.
+            $redirectMessage$ <a href='$redirectUrl$'>$title$</a>.
         </p>
         $endif$
     </body>

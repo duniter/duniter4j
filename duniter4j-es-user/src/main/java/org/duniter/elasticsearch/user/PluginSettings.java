@@ -220,7 +220,7 @@ public class PluginSettings extends AbstractLifecycleComponent<PluginSettings> {
         return this.settings.get("duniter.user.share.site.name", "Cesium");
     }
 
-    public String getBaseUrl() {
+    public String getShareBaseUrl() {
         return settings.get("duniter.share.base.url");
     }
 

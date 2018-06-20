@@ -10,4 +10,7 @@ public class OGData {
     public String imageType;
     public String siteName;
 
+    public Integer imageHeight;
+    public Integer imageWidth;
+
 }

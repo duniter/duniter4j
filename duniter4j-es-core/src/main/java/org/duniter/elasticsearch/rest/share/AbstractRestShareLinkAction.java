@@ -14,7 +14,8 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.*;
 import org.nuiton.i18n.I18n;
-import org.stringtemplate.v4.*;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
 
 import java.util.Locale;
 
@@ -31,23 +32,27 @@ public abstract class AbstractRestShareLinkAction extends BaseRestHandler {
 
     private OGDataResolver resolver;
     private STGroup templates;
+    private String urlPattern;
 
     public AbstractRestShareLinkAction(Settings settings, RestController controller, Client client,
                                        String indexName,
                                        String typeName,
+                                       String shareBaseUrl,
                                        OGDataResolver resolver
                                         ) {
         super(settings, controller, client);
         log = Loggers.getLogger("duniter.rest." + indexName, settings, String.format("[%s]", indexName));
+
+        String pathPattern = String.format("/%s/%s/%s/_share", indexName, typeName, "%s");
         controller.registerHandler(GET,
-                String.format("/%s/%s/{id}/_share", indexName, typeName),
+                String.format(pathPattern, "{id}"),
                 this);
+        this.urlPattern = (shareBaseUrl != null ? shareBaseUrl : "") + pathPattern;
         this.resolver = resolver;
 
         // Configure springtemplate engine
         this.templates = STUtils.newSTGroup("org/duniter/elasticsearch/templates");
         Preconditions.checkNotNull(this.templates.getInstanceOf("html_share"), "Unable to load ST template for share page");
-
     }
 
     @Override
@@ -68,8 +73,11 @@ public abstract class AbstractRestShareLinkAction extends BaseRestHandler {
             template.add("description", data.description);
             template.add("siteName", data.siteName);
             template.add("image", data.image);
-            template.add("url", data.url);
+            template.add("url", String.format(urlPattern, id));
+            template.add("redirectUrl", data.url);
             template.add("locale", data.locale);
+            template.add("imageHeight", data.imageHeight);
+            template.add("imageWidth", data.imageWidth);
             if (StringUtils.isNotBlank(data.url)) {
                 Locale locale = data.locale != null ? new Locale(data.locale) : I18n.getDefaultLocale();
                 template.add("redirectMessage", I18n.l(locale, "duniter4j.share.redirection.help"));
