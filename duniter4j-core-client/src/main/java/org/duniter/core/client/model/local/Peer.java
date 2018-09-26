@@ -149,9 +149,9 @@ public class Peer implements LocalEntity<String>, Serializable {
 
         public Peer build() {
             int port = this.port != null ? this.port : 80;
-            boolean useSsl = this.useSsl != null ? this.useSsl :
-                    (port == 443 || this.api == EndpointApi.BMAS.name());
             String api = this.api != null ? this.api : EndpointApi.BASIC_MERKLED_API.name();
+            boolean useSsl = this.useSsl != null ? this.useSsl :
+                    (port == 443 || EndpointApi.BMAS.name().equals(this.api));
             Peer ep = new Peer(api, dns, ipv4, ipv6, port, useSsl);
             if (StringUtils.isNotBlank(this.epId)) {
                 ep.setEpId(this.epId);

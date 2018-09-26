@@ -47,6 +47,7 @@ public class NetworkPeers implements Serializable {
         public String version;
         public String currency;
         public String status;
+        public Long statusTS;
         public String block;
         public String signature;
         public String pubkey;
@@ -77,6 +78,16 @@ public class NetworkPeers implements Serializable {
 
         public void setStatus(String status) {
             this.status = status;
+        }
+
+        @JsonGetter("statusTS")
+        public Long getStatusTS() {
+            return statusTS;
+        }
+
+        @JsonSetter("statusTS")
+        public void setStatusTS(Long statusTS) {
+            this.statusTS = statusTS;
         }
 
         public String getBlock() {

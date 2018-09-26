@@ -22,6 +22,8 @@ package org.duniter.core.client.model.bma.jackson;
  * #L%
  */
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.duniter.core.client.model.bma.BlockchainBlock;
@@ -63,7 +65,8 @@ public abstract class JacksonUtils extends SimpleModule {
         objectMapper.registerModule(module);
 
         // Adding features
-        //objectMapper.getFactory().configure(JsonGenerator.Feature., true);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        //objectMapper.getFactory().configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
 
         return objectMapper;
     }

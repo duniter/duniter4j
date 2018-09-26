@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
 import java.util.Set;
@@ -274,6 +275,17 @@ public class Configuration  {
     }
 
     public URL getNodeElasticSearchUrl() {
-        return applicationConfig.getOptionAsURL(ConfigurationOption.NODE_ELASTICSEARCH_URL.getKey());
+        // Force SSL for 443 port
+        if (getNodeElasticSearchPort() == 443) {
+            try {
+                return new URL(applicationConfig.getOption(ConfigurationOption.NODE_ELASTICSEARCH_URL.getKey())
+                        .replaceAll("http://", "https://"));
+            } catch(MalformedURLException e) {
+                return applicationConfig.getOptionAsURL(ConfigurationOption.NODE_ELASTICSEARCH_URL.getKey());
+            }
+        }
+        else {
+            return applicationConfig.getOptionAsURL(ConfigurationOption.NODE_ELASTICSEARCH_URL.getKey());
+        }
     }
 }

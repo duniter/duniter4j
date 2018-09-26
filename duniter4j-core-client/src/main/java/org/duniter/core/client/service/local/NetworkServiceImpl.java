@@ -272,7 +272,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         Filter filterDef = new Filter();
         filterDef.filterType = null;
         filterDef.filterStatus = Peer.PeerStatus.UP;
-        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name());
+        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name(), EndpointApi.WS2P.name());
         filterDef.currency = parameters.getCurrency();
 
         // Default sort
@@ -451,7 +451,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         List<Peer> result = new ArrayList<>();
 
         // If less than 100 node, get it in ONE call
-        if (leaves.size() < 100) {
+        if (leaves.size() <= 2000) {
             List<Peer> peers = networkRemoteService.getPeers(peer);
 
             if (CollectionUtils.isNotEmpty(peers)) {
@@ -496,8 +496,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 NetworkPeers.Peer peer = networkRemoteService.getPeerLeaf(requestedPeer, leaf);
                 addEndpointsAsPeers(peer, result, leaf, filterEndpoints);
 
-            } catch(HttpNotFoundException | TechnicalException e) {
+            } catch(HttpNotFoundException hnfe) {
                 log.debug("Peer not found for leaf=" + leaf);
+                // skip
+            } catch(TechnicalException e) {
+                log.warn("Error while getting peer leaf=" + leaf, e.getMessage());
                 // skip
             }
         }

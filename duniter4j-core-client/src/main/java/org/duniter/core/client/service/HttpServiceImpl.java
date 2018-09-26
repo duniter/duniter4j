@@ -51,6 +51,7 @@ import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BmaTechnicalException;
 import org.duniter.core.client.service.exception.*;
+import org.duniter.core.exception.BusinessException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.StringUtils;
@@ -349,7 +350,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         catch (SocketTimeoutException | ConnectTimeoutException e) {
             throw new HttpTimeoutException(I18n.t("duniter4j.client.core.timeout"), e);
         }
-        catch (TechnicalException e) {
+        catch (TechnicalException | BusinessException e) {
             throw e;
         }
         catch (Throwable e) {
