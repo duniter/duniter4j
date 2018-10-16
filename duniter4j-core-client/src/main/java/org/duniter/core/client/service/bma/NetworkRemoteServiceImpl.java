@@ -23,17 +23,23 @@ package org.duniter.core.client.service.bma;
  */
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
@@ -166,6 +172,38 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
         wsClientEndPoint.registerListener(listener);
 
         return wsClientEndPoint;
+    }
+
+    @Override
+    public String postPeering(Peer peer, NetworkPeering peering) {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(peering);
+
+        // http post /tx/process
+        HttpPost httpPost = new HttpPost(getPath(peer, URL_PEERING_PEERS));
+
+        String document = peering.toString();
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(
+                    "Will send peering document: \n------\n%s------",
+                    document));
+        }
+
+        List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+        urlParameters.add(new BasicNameValuePair("peer", document));
+
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(urlParameters));
+        } catch (UnsupportedEncodingException e) {
+            throw new TechnicalException(e);
+        }
+
+        String result = executeRequest(httpPost, String.class);
+        if (log.isDebugEnabled()) {
+            log.debug("Received from " + URL_PEERING_PEERS + " (POST): " + result);
+        }
+        return result;
     }
 
     /* -- Internal methods -- */

@@ -37,5 +37,7 @@ public interface Protocol {
 
     String TYPE_TRANSACTION = "Transaction";
 
+    String TYPE_PEER = "Peer";
+
     String BMA_API = "BASIC_MERKLED_API";
 }

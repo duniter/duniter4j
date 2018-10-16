@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  */
 public class Endpoints {
 
-    public static final String EP_END_REGEXP = "(?:[ ]+([a-z0-9-_]+[.][a-z0-9-_.]*))?(?:[ ]+([0-9.]+))?(?:[ ]+([0-9a-f:]+))?(?:[ ]+([0-9]+))$";
+    public static final String EP_END_REGEXP = "(?:[ ]+([a-z0-9-_]+[.][a-z0-9-_.]*))?(?:[ ]+([0-9.]+))?(?:[ ]+([0-9a-f:]+))?(?:[ ]+([0-9]+))(?:[ ]+(/[^/]+))?$";
     public static final String BMA_API_REGEXP = "^BASIC_MERKLED_API" + EP_END_REGEXP;
     public static final String BMAS_API_REGEXP = "^BMAS" + EP_END_REGEXP;
     public static final String WS2P_API_REGEXP = "^WS2P[ ]+([a-z0-9]+)[ ]+" + EP_END_REGEXP;
@@ -104,8 +104,10 @@ public class Endpoints {
                     endpoint.ipv4 = word;
                 } else if (InetAddressUtils.isIPv6Address(word)) {
                     endpoint.ipv6 = word;
-                } else if (i == matcher.groupCount() && word.matches("\\d+")){
+                } else if (i == matcher.groupCount() || (i == matcher.groupCount() -1) && word.matches("\\d+")){
                     endpoint.port = Integer.parseInt(word);
+                } else if (word.startsWith("/")) {
+                    endpoint.path = word;
                 } else {
                     endpoint.dns = word;
                 }

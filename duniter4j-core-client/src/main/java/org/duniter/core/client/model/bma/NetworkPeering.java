@@ -23,6 +23,8 @@ package org.duniter.core.client.model.bma;
  */
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.StringUtils;
 
 import java.io.Serializable;
 
@@ -108,17 +110,28 @@ public class NetworkPeering implements Serializable {
     }
 
     public String toString() {
-        String s = "version=" + version + "\n" +
-                "currency=" + currency + "\n" +
-                "pubkey=" + pubkey + "\n" +
-                "signature=" + signature + "\n" +
-                "status=" + status + "\n" +
-                "block=" + block + "\n";
-        for(Endpoint endpoint : endpoints) {
-            s += endpoint.toString() + "\n";
+        StringBuilder sb = new StringBuilder();
+        // Version
+        sb.append("Version: ").append(Protocol.VERSION).append("\n");
+        // Type
+        sb.append("Type: ").append(Protocol.TYPE_PEER).append("\n");
+        // Type
+        sb.append("Currency: ").append(currency).append("\n");
+        // PublicKey
+        sb.append("PublicKey: ").append(pubkey).append("\n");
+        // Block
+        sb.append("Block: ").append(block).append("\n");
+        // Endpoints
+        sb.append("Endpoints:\n");
+        if (CollectionUtils.isNotEmpty(endpoints)) {
+            for (Endpoint ep: endpoints) {
+                sb.append(ep.toString()).append("\n");
+            }
         }
-        return s;
-
+        if (StringUtils.isNotBlank(signature)) {
+            sb.append(signature).append("\n");
+        }
+        return sb.toString();
     }
 
     public static class Endpoint implements Serializable {
@@ -128,6 +141,7 @@ public class NetworkPeering implements Serializable {
         public String ipv6;
         public Integer port;
         public String id;
+        public String path;
 
         public EndpointApi getApi() {
             return api;
@@ -177,15 +191,46 @@ public class NetworkPeering implements Serializable {
             this.id = id;
         }
 
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
         @Override
         public String toString() {
-            String s = "api=" + api.name() + "\n" +
-                    (id != null ? ("id=" + id + "\n") : "" ) +
-                    "dns=" + dns + "\n" +
-                    "ipv4=" + ipv4 + "\n" +
-                    "ipv6=" + ipv6 + "\n" +
-                    "port=" + port + "\n";
-            return s;
+
+            StringBuilder sb = new StringBuilder();
+            // API
+            sb.append(api.name());
+
+            // Id (use for WS2P)
+            if (StringUtils.isNotBlank(id)) {
+                sb.append(" ").append(id);
+            }
+            // DNS
+            if (StringUtils.isNotBlank(dns)) {
+                sb.append(" ").append(dns);
+            }
+            // IPv4
+            if (StringUtils.isNotBlank(ipv4)) {
+                sb.append(" ").append(ipv4);
+            }
+            // IPv6
+            if (StringUtils.isNotBlank(ipv6)) {
+                sb.append(" ").append(ipv6);
+            }
+            // Port
+            if (port != null) {
+                sb.append(" ").append(port);
+            }
+            // path
+            if (StringUtils.isNotBlank(path)) {
+                sb.append(" ").append(path);
+            }
+            return sb.toString();
         }
     }
 

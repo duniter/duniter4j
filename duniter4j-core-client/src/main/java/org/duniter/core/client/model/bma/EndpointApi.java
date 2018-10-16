@@ -32,5 +32,7 @@ public enum EndpointApi {
     ES_USER_API,
     ES_SUBSCRIPTION_API,
     MONIT_API,
-    UNDEFINED
+    UNDEFINED,
+    // TODO: remove this ?
+    GCHANGE_API
 }
