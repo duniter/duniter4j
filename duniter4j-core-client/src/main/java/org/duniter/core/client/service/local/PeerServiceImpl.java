@@ -195,25 +195,27 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     public void save(String currencyId, List<Peer> peers, boolean isFullUpList) {
 
         int peerDownTimeoutMs = config.getPeerUpMaxAge();
-        final long nowInSec = System.currentTimeMillis()/1000;
+        final long now = System.currentTimeMillis();
 
         if (CollectionUtils.isNotEmpty(peers)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("[%s] Updating peers (%s endpoints found)", currencyId, peers.size()));
             }
 
-            // On each UP peers: set last UP time
-            peers.stream().map(Peer::getStats)
-                    .filter(Peer.Stats::isReacheable)
-                    .forEach(stats -> stats.setLastUpTime(nowInSec));
-
-            peers.forEach(this::save);
+            peers.forEach(peer -> {
+                // On each UP peers: set last UP time
+                if (peer.getStats() != null && peer.getStats().isReacheable()) {
+                    peer.getStats().setLastUpTime(now / 1000);
+                }
+                // Save
+                save(peer);
+            });
         }
 
         // Mark old peers as DOWN
         if (isFullUpList && peerDownTimeoutMs > 0) {
-            Date oldDate = new Date(nowInSec * 1000 - peerDownTimeoutMs);
-            peerDao.updatePeersAsDown(currencyId, oldDate.getTime() / 1000);
+            long maxUpTimeInMs = now - peerDownTimeoutMs;
+            peerDao.updatePeersAsDown(currencyId, maxUpTimeInMs / 1000);
         }
     }
 
