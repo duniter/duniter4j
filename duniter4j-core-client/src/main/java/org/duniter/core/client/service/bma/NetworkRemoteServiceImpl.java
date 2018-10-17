@@ -176,22 +176,26 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
     @Override
     public String postPeering(Peer peer, NetworkPeering peering) {
-        Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(peering);
+        return postPeering(peer, peering.toString());
+    }
+
+    @Override
+    public String postPeering(Peer peer, String peeringDocument) {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(peeringDocument);
 
         // http post /tx/process
         HttpPost httpPost = new HttpPost(getPath(peer, URL_PEERING_PEERS));
 
-        String document = peering.toString();
-
         if (log.isDebugEnabled()) {
             log.debug(String.format(
                     "Will send peering document: \n------\n%s------",
-                    document));
+                    peeringDocument));
         }
 
         List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-        urlParameters.add(new BasicNameValuePair("peer", document));
+        urlParameters.add(new BasicNameValuePair("peer", peeringDocument));
 
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(urlParameters));

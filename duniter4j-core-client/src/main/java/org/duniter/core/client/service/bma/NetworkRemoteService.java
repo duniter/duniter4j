@@ -51,4 +51,6 @@ public interface NetworkRemoteService extends Service {
     WebsocketClientEndpoint addPeerListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 
     String postPeering(Peer peer, NetworkPeering peering);
+
+    String postPeering(Peer peer, String peeringDocument);
 }
