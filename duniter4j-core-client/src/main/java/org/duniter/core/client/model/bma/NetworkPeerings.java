@@ -74,17 +74,19 @@ public class NetworkPeerings {
             for (; i < lines.length - 1; ) {
                 line = lines[i++].trim();
                 NetworkPeering.Endpoint ep = Endpoints.parse(line);
-                Preconditions.checkNotNull(ep, "Unaparsable endpoint: " + line);
+                Preconditions.checkNotNull(ep, "Unable to parse endpoint: " + line);
                 endpoints.add(ep);
             }
             result.setEndpoints(endpoints.toArray(new NetworkPeering.Endpoint[endpoints.size()]));
 
             result.setSignature(lines[lines.length - 1]);
 
+            result.setStatus("UP");
+
             return result;
         }
         catch(Exception e) {
-            throw new IOException(e.getMessage());
+            throw new IOException(e.getMessage(), e);
         }
     }
 

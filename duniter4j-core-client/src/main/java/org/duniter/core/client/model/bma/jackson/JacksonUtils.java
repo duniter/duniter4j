@@ -61,6 +61,7 @@ public abstract class JacksonUtils extends SimpleModule {
 
         // Network
         module.addDeserializer(NetworkPeering.Endpoint.class, new EndpointDeserializer());
+        module.addSerializer(NetworkPeering.Endpoint.class, new EndpointSerializer());
 
         objectMapper.registerModule(module);
 
