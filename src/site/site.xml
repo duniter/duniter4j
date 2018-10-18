@@ -83,12 +83,10 @@
 
     <menu name="User manual" inherit="top">
       <item name="Command line tools" href="./CLI.html"/>
-      <item name="ES node" href="./ES.html"/>
     </menu>
 
     <menu name="Technical documentation" inherit="top">
       <item name="Java API" href="./Java_API.html"/>
-      <item name="ES API" href="./ES_API.html"/>
       <item name="Build from source" href="./build.html"/>
       <item name="Development tutorial (french)" href="./development_tutorial.html"/>
     </menu>
