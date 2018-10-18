@@ -2,9 +2,11 @@
 
 Welcome to Duniter4j web site !
 
-Duniter4j is a Java Client API for [Duniter](http://duniter.org) network (e.g. crypto-crurency Ğ1).
+Duniter4j is a Java Toolkit for [Duniter](http://duniter.org) network (e.g. crypto-crurency Ğ1).
 
 <img src="./images/logos/logo_duniter.png"/>
+
+The Java API is used by projects such as [Cesium+ pod](http://doc.e-is.pro/cesium-plus-pod/).
 
 ## Modules
 

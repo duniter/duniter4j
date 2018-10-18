@@ -68,7 +68,8 @@
 
     <links>
       <item name="Duniter" href="http://duniter.org"/>
-      <item name="Github project" href="https://github.com/duniter/duniter4"/>
+      <item name="Cesium+ pod" href="http://doc.e-is.pro/cesium-plus-pod/"/>
+      <item name="Source code" href="https://git.duniter.org/clients/java/duniter4j"/>
     </links>
 
     <breadcrumbs>
@@ -95,9 +96,9 @@
 
     <menu name="Community" inherit="bottom">
       <item name="Source code"
-            href="https://github.com/duniter/duniter4"/>
+            href="https://git.duniter.org/clients/java/duniter4j"/>
       <item name="Issue Tracking"
-            href="https://github.com/duniter/duniter4/issues"/>
+            href="https://git.duniter.org/clients/java/duniter4j/issues"/>
       <item name="Forum"
             href="https://forum.duniter.org"/>
     </menu>
