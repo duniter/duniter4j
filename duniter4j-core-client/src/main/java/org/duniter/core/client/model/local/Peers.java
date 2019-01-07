@@ -51,4 +51,8 @@ public final class Peers {
         return hasEndPointAPI(peer, EndpointApi.BASIC_MERKLED_API) ||
                hasEndPointAPI(peer, EndpointApi.BMAS);
     }
+
+    public static boolean hasEsCoreEndpoint(Peer peer) {
+        return hasEndPointAPI(peer, EndpointApi.ES_CORE_API);
+    }
 }

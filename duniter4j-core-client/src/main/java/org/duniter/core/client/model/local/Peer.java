@@ -275,7 +275,7 @@ public class Peer implements LocalEntity<String>, Serializable {
 
     @JsonIgnore
     public String computeKey()  {
-        return Joiner.on('-').skipNulls().join(pubkey, dns, ipv4, ipv6, port, useSsl);
+        return Joiner.on('-').skipNulls().join(pubkey, dns, ipv4, ipv6, port, useSsl, api);
     }
 
     public String getApi() {
@@ -403,11 +403,13 @@ public class Peer implements LocalEntity<String>, Serializable {
     }
 
     public static class Stats {
+        public static final String PROPERTY_SOFTWARE = "software";
         public static final String PROPERTY_VERSION = "version";
         public static final String PROPERTY_STATUS = "status";
         public static final String PROPERTY_LAST_UP_TIME = "lastUpTime";
         public static final String PROPERTY_UID = "uid";
 
+        private String software;
         private String version;
         private PeerStatus status = PeerStatus.UP; // default
         private Integer blockNumber;
@@ -444,6 +446,14 @@ public class Peer implements LocalEntity<String>, Serializable {
 
         public void setError(String error) {
             this.error = error;
+        }
+
+        public String getSoftware() {
+            return software;
+        }
+
+        public void setSoftware(String software) {
+            this.software = software;
         }
 
         public String getVersion() {

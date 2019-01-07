@@ -22,6 +22,9 @@ package org.duniter.core.util;
  * #L%
  */
 
+import com.google.common.collect.Lists;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -94,5 +97,16 @@ public class CollectionUtils {
         } else {
             throw new IllegalArgumentException("Can extract singleton only when collection size == 1");
         }
+    }
+
+    public static <C> Collection<C> union(Collection<C> c1, Collection<C> c2) {
+        if (isEmpty(c1)) return c2;
+        if (isEmpty(c2)) return c1;
+        ArrayList<C> result = Lists.newArrayList();
+        result.addAll(c1);
+        c2.forEach(i -> {
+            if (!result.contains(i)) result.add(i);
+        });
+        return result;
     }
 }

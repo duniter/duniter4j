@@ -42,6 +42,13 @@ public interface PeerService extends Service {
     Peer getActivePeerByCurrencyId(String currencyId);
 
     /**
+     * Save the active (default) peer, for a given currency id
+     * @param currencyId
+     * @param peer
+     */
+    void setCurrencyMainPeer(String currency, Peer peer);
+
+    /**
      * Return a (cached) peer list, by currency id
      * @param currencyId
      * @return

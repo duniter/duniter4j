@@ -63,6 +63,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     private final static String BMA_URL_STATUS = "/node/summary";
     private final static String BMA_URL_BLOCKCHAIN_CURRENT = "/blockchain/current";
     private final static String BMA_URL_BLOCKCHAIN_HARDSHIP = "/blockchain/hardship/";
+    private final static String ES_URL_BLOCKCHAIN_CURRENT = "/blockchain/current";
 
     private NetworkRemoteService networkRemoteService;
     private WotRemoteService wotRemoteService;
@@ -185,9 +186,10 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 });
     }
 
+
     public CompletableFuture<Peer> asyncRefreshPeer(final Peer peer, final Map<String, String> memberUids, final ExecutorService pool) {
         return CompletableFuture.supplyAsync(() -> fillVersion(peer), pool)
-                .thenApply(p -> Peers.hasBmaEndpoint(p) ? fillCurrentBlock(p) : p)
+                .thenApply(p -> fillCurrentBlock(p))
                 .exceptionally(throwable -> {
                     peer.getStats().setStatus(Peer.PeerStatus.DOWN);
                     if(!(throwable instanceof HttpConnectException)) {
@@ -219,6 +221,18 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     peer.getStats().setHardshipLevel(0);
                     return peer;
                 });
+    }
+
+
+    public CompletableFuture<List<Peer>> asyncRefreshPeers(final Peer mainPeer, final List<Peer> peers, final ExecutorService pool) {
+        return CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool)
+                // Refresh all endpoints
+                .thenApply(memberUids ->
+                        peers.stream().map(peer ->
+                                asyncRefreshPeer(peer, memberUids, pool))
+                                .collect(Collectors.toList())
+                )
+                .thenCompose(CompletableFutures::allOfToList);
     }
 
     public List<Peer> fillPeerStatsConsensus(final List<Peer> peers) {
@@ -433,11 +447,26 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     public String getVersion(final Peer peer) {
-        JsonNode json = get(peer, BMA_URL_STATUS);
+        return getVersion(getNodeSummary(peer));
+    }
+
+    public JsonNode getNodeSummary(final Peer peer) {
+        return get(peer, BMA_URL_STATUS);
+    }
+
+    public String getVersion(JsonNode json) {
         json = json.get("duniter");
         if (json.isMissingNode()) throw new TechnicalException(String.format("Invalid format of [%s] response", BMA_URL_STATUS));
         json = json.get("version");
         if (json.isMissingNode()) throw new TechnicalException(String.format("No version attribute found in [%s] response", BMA_URL_STATUS));
+        return json.asText();
+    }
+
+    public String getSoftware(JsonNode json) {
+        json = json.get("duniter");
+        if (json.isMissingNode()) throw new TechnicalException(String.format("Invalid format of [%s] response", BMA_URL_STATUS));
+        json = json.get("software");
+        if (json.isMissingNode()) throw new TechnicalException(String.format("No software attribute found in [%s] response", BMA_URL_STATUS));
         return json.asText();
     }
 
@@ -561,28 +590,32 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     protected Peer fillVersion(final Peer peer) {
-        String version = getVersion(peer);
-        peer.getStats().setVersion(version);
+        if (!Peers.hasBmaEndpoint(peer) && !Peers.hasEsCoreEndpoint(peer)) return peer;
+        JsonNode summary = getNodeSummary(peer);
+        peer.getStats().setVersion(getVersion(summary));
+        peer.getStats().setSoftware(getSoftware(summary));
         return peer;
     }
 
     protected Peer fillCurrentBlock(final Peer peer) {
-        JsonNode json = get(peer, BMA_URL_BLOCKCHAIN_CURRENT);
+        if (Peers.hasBmaEndpoint(peer) || Peers.hasEsCoreEndpoint(peer)) {
+            JsonNode json = get(peer, BMA_URL_BLOCKCHAIN_CURRENT);
 
-        String currency = json.has("currency") ? json.get("currency").asText() : null;
-        peer.setCurrency(currency);
+            String currency = json.has("currency") ? json.get("currency").asText() : null;
+            peer.setCurrency(currency);
 
-        Integer number = json.has("number") ? json.get("number").asInt() : null;
-        peer.getStats().setBlockNumber(number);
+            Integer number = json.has("number") ? json.get("number").asInt() : null;
+            peer.getStats().setBlockNumber(number);
 
-        String hash = json.has("hash") ? json.get("hash").asText() : null;
-        peer.getStats().setBlockHash(hash);
+            String hash = json.has("hash") ? json.get("hash").asText() : null;
+            peer.getStats().setBlockHash(hash);
 
-        Long medianTime = json.has("medianTime") ? json.get("medianTime").asLong() : null;
-        peer.getStats().setMedianTime(medianTime);
+            Long medianTime = json.has("medianTime") ? json.get("medianTime").asLong() : null;
+            peer.getStats().setMedianTime(medianTime);
 
-        if (log.isTraceEnabled()) {
-            log.trace(String.format("[%s] current block [%s-%s]", peer.toString(), number, hash));
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("[%s] current block [%s-%s]", peer.toString(), number, hash));
+            }
         }
 
         return peer;

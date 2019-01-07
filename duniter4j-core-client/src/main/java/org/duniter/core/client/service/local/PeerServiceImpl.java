@@ -60,6 +60,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
     public PeerServiceImpl() {
         super();
+
     }
 
     @Override
@@ -68,6 +69,12 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         this.peerDao = ServiceLocator.instance().getBean(PeerDao.class);
         this.config = Configuration.instance();
         this.cryptoService = ServiceLocator.instance().getCryptoService();
+        this.activePeerByCurrencyIdCache = new SimpleCache<String, Peer>() {
+            @Override
+            public Peer load(String currencyId) {
+                return loadDefaultPeer(currencyId);
+            }
+        };
     }
 
     @Override
@@ -126,26 +133,12 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
      * @return
      */
     public Peer getActivePeerByCurrencyId(String currencyId) {
-        // Check if cache as been loaded
-        if (activePeerByCurrencyIdCache == null) {
-
-            activePeerByCurrencyIdCache = new SimpleCache<String, Peer>() {
-                @Override
-                public Peer load(String currencyId) {
-                    List<Peer> peers = peerDao.getPeersByCurrencyId(currencyId);
-                    if (CollectionUtils.isEmpty(peers)) {
-                        String currencyName = currencyService.getCurrencyNameById(currencyId);
-                        throw new TechnicalException(String.format(
-                                "No peers configure for currency [%s]",
-                                currencyName != null ? currencyName : currencyId));
-                    }
-
-                    return peers.get(0);
-                }
-            };
-        }
-
         return activePeerByCurrencyIdCache.get(currencyId);
+    }
+
+    @Override
+    public void setCurrencyMainPeer(String currencyId, Peer peer) {
+        activePeerByCurrencyIdCache.put(currencyId, peer);
     }
 
     /**
@@ -222,5 +215,17 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     @Override
     public boolean isExists(String currencyId, String peerId) {
         return peerDao.isExists(currencyId, peerId);
+    }
+
+    protected Peer loadDefaultPeer(String currencyId) {
+        List<Peer> peers = peerDao.getPeersByCurrencyId(currencyId);
+        if (CollectionUtils.isEmpty(peers)) {
+            String currencyName = currencyService.getCurrencyNameById(currencyId);
+            throw new TechnicalException(String.format(
+                    "No peers configure for currency [%s]",
+                    currencyName != null ? currencyName : currencyId));
+        }
+
+        return peers.get(0);
     }
 }

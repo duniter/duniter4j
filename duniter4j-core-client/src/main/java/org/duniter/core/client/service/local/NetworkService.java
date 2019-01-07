@@ -28,6 +28,7 @@ import org.duniter.core.client.model.local.Peer;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -90,6 +91,7 @@ public interface NetworkService extends Service {
                                 final Filter filter, final Sort sort, final boolean autoreconnect,
                                 final ExecutorService executor);
 
+    CompletableFuture<List<Peer>> asyncRefreshPeers(final Peer mainPeer, final List<Peer> peers, final ExecutorService pool);
 
     String getVersion(final Peer peer);
 }
