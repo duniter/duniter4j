@@ -239,7 +239,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         if (CollectionUtils.isEmpty(peers)) return peers;
 
         final Map<String,Long> peerCountByBuid = peers.stream()
-                .filter(peer -> peer.getStats() != null && peer.getStats().isReacheable() && Peers.hasBmaEndpoint(peer))
+                .filter(peer -> Peers.isReacheable(peer) && Peers.hasDuniterEndpoint(peer))
                 .map(Peers::buid)
                 .filter(b -> b != null)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
@@ -266,7 +266,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     String buid = Peers.buid(stats);
 
                     // Set consensus stats on each peers
-                    if (buid != null) {
+                    if (buid != null && Peers.hasDuniterEndpoint(peer)) {
                         boolean isMainConsensus = buid.equals(mainBuid);
                         stats.setMainConsensus(isMainConsensus);
 

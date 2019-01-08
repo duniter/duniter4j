@@ -52,7 +52,21 @@ public final class Peers {
                hasEndPointAPI(peer, EndpointApi.BMAS);
     }
 
+    public static boolean hasWs2pEndpoint(Peer peer) {
+        return hasEndPointAPI(peer, EndpointApi.WS2P);
+    }
+
+    public static boolean hasDuniterEndpoint(Peer peer) {
+        return hasBmaEndpoint(peer) ||
+                hasWs2pEndpoint(peer);
+    }
+
     public static boolean hasEsCoreEndpoint(Peer peer) {
         return hasEndPointAPI(peer, EndpointApi.ES_CORE_API);
     }
+
+    public static boolean isReacheable(Peer peer) {
+        return peer.getStats() != null && peer.getStats().isReacheable();
+    }
+
 }

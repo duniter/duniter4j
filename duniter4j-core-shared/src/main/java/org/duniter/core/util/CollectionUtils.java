@@ -109,4 +109,12 @@ public class CollectionUtils {
         });
         return result;
     }
+
+    public static <C> Collection<C> union(Collection<C> c1, Collection<C>... cols) {
+        Collection<C> result = c1;
+        for (Collection<C> c2 : cols) {
+            result = union(result, c2);
+        }
+        return result;
+    }
 }
