@@ -309,14 +309,14 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                 HttpClientContext clientContext = HttpClientContext.adapt(context);
                 HttpRequest request = clientContext.getRequest();
                 if (!retrying) {
-                    log.debug("Failed request to " + request.getRequestLine() + ": " + exception.getMessage());
+                    if (debug) log.debug("Failed request to " + request.getRequestLine() + ": " + exception.getMessage());
                     return false;
                 }
 
                 boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
                 if (idempotent) {
                     // Retry if the request is considered idempotent
-                    log.debug("Failed (but will retry) request to " + request.getRequestLine() + ": " + exception.getMessage());
+                    if (debug) log.debug("Failed (but will retry) request to " + request.getRequestLine() + ": " + exception.getMessage());
                     return true;
                 }
                 return false;
@@ -429,7 +429,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         // HTTP requests limit exceed, retry when possible
         if (retry) {
             if (retryCount > 0) {
-                log.debug(String.format("Service unavailable: waiting [%s ms] before retrying...", Constants.Config.TOO_MANY_REQUEST_RETRY_TIME));
+                if (debug) log.debug(String.format("Service unavailable: waiting [%s ms] before retrying...", Constants.Config.TOO_MANY_REQUEST_RETRY_TIME));
                 try {
                     Thread.sleep(Constants.Config.TOO_MANY_REQUEST_RETRY_TIME);
                 } catch (InterruptedException e) {
@@ -464,7 +464,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
             try {
                 String stringContent = getContentAsString(content);
                 // Add a debug before returning the result
-                if (log.isDebugEnabled()) {
+                if (debug) {
                     log.debug("Parsing response:\n" + stringContent);
                 }
                 return stringContent;
@@ -529,7 +529,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     protected boolean executeRequest(HttpClient httpClient, HttpUriRequest request)  {
 
-        if (log.isDebugEnabled()) {
+        if (debug) {
             log.debug("Executing request : " + request.getRequestLine());
         }
 
