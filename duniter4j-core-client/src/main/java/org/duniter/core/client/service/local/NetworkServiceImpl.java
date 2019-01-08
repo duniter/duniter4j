@@ -236,10 +236,12 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     public List<Peer> fillPeerStatsConsensus(final List<Peer> peers) {
+        if (CollectionUtils.isEmpty(peers)) return peers;
 
         final Map<String,Long> peerCountByBuid = peers.stream()
-                .filter(peer -> peer.getStats().isReacheable() && Peers.hasBmaEndpoint(peer))
+                .filter(peer -> peer.getStats() != null && peer.getStats().isReacheable() && Peers.hasBmaEndpoint(peer))
                 .map(Peers::buid)
+                .filter(b -> b != null)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         // Compute main consensus buid
