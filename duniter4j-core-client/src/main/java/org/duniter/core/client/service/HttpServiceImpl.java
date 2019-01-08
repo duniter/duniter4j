@@ -26,14 +26,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ConnectTimeoutException;
@@ -41,6 +45,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
@@ -61,11 +66,9 @@ import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.io.*;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,6 +91,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     protected Joiner pathJoiner = Joiner.on('/');
     protected SimpleCache<Integer, RequestConfig> requestConfigCache;
     protected SimpleCache<Integer, HttpClient> httpClientCache;
+    protected int defaultTimeout;
 
     protected Map<URI, WebsocketClientEndpoint> wsEndPoints = new HashMap<>();
 
@@ -111,7 +115,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     protected void initCaches() {
         Configuration config = Configuration.instance();
         int cacheTimeInMillis = config.getNetworkCacheTimeInMillis();
-        final int defaultTimeout = config.getNetworkTimeout() > 0 ?
+        defaultTimeout = config.getNetworkTimeout() > 0 ?
                 config.getNetworkTimeout() :
                 Integer.parseInt(ConfigurationOption.NETWORK_TIMEOUT.getDefaultValue());
 
@@ -263,7 +267,54 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         return HttpClients.custom()
                 .setConnectionManager(connectionManager)
                 .setDefaultRequestConfig(requestConfigCache.get(timeout))
+                .setRetryHandler(createRetryHandler(timeout))
                 .build();
+    }
+
+    protected HttpRequestRetryHandler createRetryHandler(int timeout) {
+        if (timeout <= 0) timeout = defaultTimeout;
+        final int maxRetryCount = (timeout < defaultTimeout) ? 2 : 3;
+        return new HttpRequestRetryHandler() {
+            public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+
+                boolean retrying = true;
+                if (exception instanceof NoRouteToHostException) {
+                    // Bad DNS name
+                    retrying =false;
+                }
+                else if (exception instanceof InterruptedIOException) {
+                    // Timeout
+                    retrying = false;
+                }
+                else if (exception instanceof UnknownHostException) {
+                    // Unknown host
+                    retrying = false;
+                }
+                else if (exception instanceof SSLException) {
+                    // SSL handshake exception
+                    retrying = false;
+                }
+                if (retrying && executionCount >= maxRetryCount) {
+                    // Do not retry if over max retry count
+                    return false;
+                }
+
+                HttpClientContext clientContext = HttpClientContext.adapt(context);
+                HttpRequest request = clientContext.getRequest();
+                if (!retrying) {
+                    log.debug("Failed request to " + request.getRequestLine() + ": " + exception.getMessage());
+                    return false;
+                }
+
+                boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
+                if (idempotent) {
+                    // Retry if the request is considered idempotent
+                    log.debug("Failed (but will retry) request to " + request.getRequestLine() + ": " + exception.getMessage());
+                    return true;
+                }
+                return false;
+            }
+        };
     }
 
     protected RequestConfig createRequestConfig(int timeout) {
