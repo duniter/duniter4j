@@ -270,7 +270,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                         boolean isMainConsensus = buid.equals(mainBuid);
                         stats.setMainConsensus(isMainConsensus);
 
-                        boolean isForkConsensus = !isMainConsensus && peerCountByBuid.get(buid) > 1;
+                        boolean isForkConsensus = !isMainConsensus && peerCountByBuid.containsKey(buid) && peerCountByBuid.get(buid) > 1;
                         stats.setForkConsensus(isForkConsensus);
 
                         stats.setConsensusPct(isMainConsensus || isForkConsensus ? buidsPct.get(buid) : 0d);
