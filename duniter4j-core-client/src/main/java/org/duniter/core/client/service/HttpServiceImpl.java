@@ -41,6 +41,7 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -294,10 +295,16 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
                     // SSL handshake exception
                     retrying = false;
                 }
+                else if (exception instanceof HttpHostConnectException) {
+                    // Host connect error
+                    retrying = false;
+                }
+
                 if (retrying && executionCount >= maxRetryCount) {
                     // Do not retry if over max retry count
                     return false;
                 }
+
 
                 HttpClientContext clientContext = HttpClientContext.adapt(context);
                 HttpRequest request = clientContext.getRequest();
@@ -331,7 +338,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     @SuppressWarnings("unchecked")
     protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass)  {
-        return executeRequest(httpClient, request, resultClass, errorClass, 5);
+        return executeRequest(httpClient, request, resultClass, errorClass, 1);
     }
 
     protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass, int retryCount)  {
