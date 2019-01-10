@@ -29,6 +29,9 @@ public abstract class HttpClients {
     private static ThreadLocal<HttpClientConnectionManager> connectionManagerMapper = new ThreadLocal<HttpClientConnectionManager>() {
         @Override
         public HttpClientConnectionManager initialValue() {
+
+            if (log.isDebugEnabled()) log.debug("[HttpClients] Creating new HttpClientConnectionManager, for thread [%s]", Thread.currentThread().getId());
+
             Configuration config = Configuration.instance();
 
             return createConnectionManager(
@@ -42,7 +45,13 @@ public abstract class HttpClients {
         @Override
         public HttpClient initialValue() {
             HttpClientConnectionManager connectionManager= connectionManagerMapper.get();
+            if (log.isDebugEnabled()) log.debug("[HttpClients] Creating new HttpClient, for thread [%s]", Thread.currentThread().getId());
             return createHttpClient(connectionManager, 0);
+        }
+
+        @Override
+        public void remove() {
+            super.remove();
         }
     };
 
@@ -58,14 +67,18 @@ public abstract class HttpClients {
     }
 
     /**
-     * Remlove client from the thread
+     * Remove client from the thread
      */
     public static void remove() {
         connectionManagerMapper.remove();
         httpClientsMapper.remove();
     }
 
-    protected static HttpClient createHttpClient(HttpClientConnectionManager connectionManager, int timeout) {
+    public static HttpClient createHttpClient(int timeout) {
+        return createHttpClient(null,timeout);
+    }
+
+    public static HttpClient createHttpClient(HttpClientConnectionManager connectionManager, int timeout) {
         if (timeout <= 0)  {
             Configuration config = Configuration.instance();
             timeout = config.getNetworkTimeout();
@@ -79,7 +92,7 @@ public abstract class HttpClients {
     }
 
 
-    protected static PoolingHttpClientConnectionManager createConnectionManager(
+    public static PoolingHttpClientConnectionManager createConnectionManager(
             int maxTotalConnections,
             int maxConnectionsPerRoute,
             int timeout) {
@@ -92,7 +105,7 @@ public abstract class HttpClients {
         return connectionManager;
     }
 
-    protected static RequestConfig createRequestConfig(int timeout) {
+    public static RequestConfig createRequestConfig(int timeout) {
         return RequestConfig.custom()
                 .setSocketTimeout(timeout).setConnectTimeout(timeout)
                 .setMaxRedirects(1)
