@@ -26,48 +26,35 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.HttpRequestRetryHandler;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.model.bma.Constants;
 import org.duniter.core.client.model.bma.Error;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.bma.BmaTechnicalException;
 import org.duniter.core.client.service.exception.*;
+import org.duniter.core.client.util.http.HttpClients;
 import org.duniter.core.exception.BusinessException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.cache.SimpleCache;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.nuiton.i18n.I18n;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLException;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -84,15 +71,10 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     public static final String URL_PEER_ALIVE = "/blockchain/parameters";
 
-    private PoolingHttpClientConnectionManager connectionManager;
-
     protected ObjectMapper objectMapper;
     protected Peer defaultPeer;
     private boolean debug;
     protected Joiner pathJoiner = Joiner.on('/');
-    protected SimpleCache<Integer, RequestConfig> requestConfigCache;
-    protected SimpleCache<Integer, HttpClient> httpClientCache;
-    protected int defaultTimeout;
 
     protected Map<URI, WebsocketClientEndpoint> wsEndPoints = new HashMap<>();
 
@@ -115,30 +97,6 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
      */
     protected void initCaches() {
         Configuration config = Configuration.instance();
-        int cacheTimeInMillis = config.getNetworkCacheTimeInMillis();
-        defaultTimeout = config.getNetworkTimeout() > 0 ?
-                config.getNetworkTimeout() :
-                Integer.parseInt(ConfigurationOption.NETWORK_TIMEOUT.getDefaultValue());
-
-        requestConfigCache = new SimpleCache<Integer, RequestConfig>(cacheTimeInMillis*100) {
-            @Override
-            public RequestConfig load(Integer timeout) {
-                // Use config default timeout, if 0
-                if (timeout <= 0) timeout = defaultTimeout;
-                return createRequestConfig(timeout);
-            }
-        };
-
-        httpClientCache = new SimpleCache<Integer, HttpClient>(cacheTimeInMillis*100) {
-            @Override
-            public HttpClient load(Integer timeout) {
-                return createHttpClient(timeout);
-            }
-        };
-        httpClientCache.registerRemoveListener(item -> {
-            log.debug("Closing HttpClient...");
-            closeQuietly(item);
-        });
     }
 
     public void connect(Peer peer) throws PeerConnectionException {
@@ -152,7 +110,7 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         HttpGet httpGet = new HttpGet(getPath(peer, URL_PEER_ALIVE));
         boolean isPeerAlive;
         try {
-            isPeerAlive = executeRequest(httpClientCache.get(0/*=default timeout*/), httpGet);
+            isPeerAlive = executeRequest(HttpClients.getThreadHttpClient(0), httpGet);
         } catch(TechnicalException e) {
            this.defaultPeer = null;
            throw new PeerConnectionException(e);
@@ -170,37 +128,40 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
 
     @Override
     public void close() throws IOException {
-        httpClientCache.clear();
-        requestConfigCache.clear();
-
-        if (wsEndPoints.size() != 0) {
-            for (WebsocketClientEndpoint clientEndPoint: wsEndPoints.values()) {
-                clientEndPoint.close();
-            }
-            wsEndPoints.clear();
-        }
-
-        connectionManager.close();
+        HttpClients.getThreadHttpClient()
+//        httpClientCache.clear();
+//        requestConfigCache.clear();
+//
+//        if (wsEndPoints.size() != 0) {
+//            for (WebsocketClientEndpoint clientEndPoint: wsEndPoints.values()) {
+//                clientEndPoint.close();
+//            }
+//            wsEndPoints.clear();
+//        }
+//
+//        if (connectionManager != null) {
+//            connectionManager.close();
+//        }
     }
 
     public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass)  {
-        return executeRequest(httpClientCache.get(0), request, resultClass);
+        return executeRequest(HttpClients.getThreadHttpClient(0), request, resultClass);
     }
 
     public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass, Class<?> errorClass)  {
-        //return executeRequest(httpClientCache.get(0), request, resultClass, errorClass);
-        return executeRequest( createHttpClient(0), request, resultClass, errorClass);
+        //return executeRequest(HttpClients.getThreadHttpClient(0), request, resultClass, errorClass);
+        return executeRequest( HttpClients.getThreadHttpClient(0), request, resultClass, errorClass);
 
     }
 
     public <T> T executeRequest(String absolutePath, Class<? extends T> resultClass)  {
         HttpGet httpGet = new HttpGet(getPath(absolutePath));
-        return executeRequest(httpClientCache.get(0), httpGet, resultClass);
+        return executeRequest(HttpClients.getThreadHttpClient(0), httpGet, resultClass);
     }
 
     public <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass)  {
         HttpGet httpGet = new HttpGet(peer.getUrl() + absolutePath);
-        return executeRequest(httpClientCache.get(0), httpGet, resultClass);
+        return executeRequest(HttpClients.getThreadHttpClient(0), httpGet, resultClass);
     }
 
     public String getPath(Peer peer, String... absolutePath) {
@@ -243,94 +204,96 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
         }
     }
 
-    protected PoolingHttpClientConnectionManager createConnectionManager(
-            int maxTotalConnections,
-            int maxConnectionsPerRoute,
-            int timeout) {
-        PoolingHttpClientConnectionManager connectionManager
-                = new PoolingHttpClientConnectionManager();
-        connectionManager.setMaxTotal(maxTotalConnections);
-        connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
-        connectionManager.setDefaultSocketConfig(SocketConfig.custom()
-                .setSoTimeout(timeout).build());
-        return connectionManager;
-    }
-
-    protected HttpClient createHttpClient(int timeout) {
-        if (connectionManager == null) {
-            Configuration config = Configuration.instance();
-            connectionManager = createConnectionManager(
-                    config.getNetworkMaxTotalConnections(),
-                    config.getNetworkMaxConnectionsPerRoute(),
-                    config.getNetworkTimeout());
-        }
-
-        return HttpClients.custom()
-                .setConnectionManager(connectionManager)
-                .setDefaultRequestConfig(requestConfigCache.get(timeout))
-                .setRetryHandler(createRetryHandler(timeout))
-                .build();
-    }
-
-    protected HttpRequestRetryHandler createRetryHandler(int timeout) {
-        if (timeout <= 0) timeout = defaultTimeout;
-        final int maxRetryCount = (timeout < defaultTimeout) ? 2 : 3;
-        return new HttpRequestRetryHandler() {
-            public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
-
-                boolean retrying = true;
-                if (exception instanceof NoRouteToHostException) {
-                    // Bad DNS name
-                    retrying =false;
-                }
-                else if (exception instanceof InterruptedIOException) {
-                    // Timeout
-                    retrying = false;
-                }
-                else if (exception instanceof UnknownHostException) {
-                    // Unknown host
-                    retrying = false;
-                }
-                else if (exception instanceof SSLException) {
-                    // SSL handshake exception
-                    retrying = false;
-                }
-                else if (exception instanceof HttpHostConnectException) {
-                    // Host connect error
-                    retrying = false;
-                }
-
-                if (retrying && executionCount >= maxRetryCount) {
-                    // Do not retry if over max retry count
-                    return false;
-                }
-
-
-                HttpClientContext clientContext = HttpClientContext.adapt(context);
-                HttpRequest request = clientContext.getRequest();
-                if (!retrying) {
-                    if (debug) log.debug("Failed request to " + request.getRequestLine() + ": " + exception.getMessage());
-                    return false;
-                }
-
-                boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
-                if (idempotent) {
-                    // Retry if the request is considered idempotent
-                    if (debug) log.debug("Failed (but will retry) request to " + request.getRequestLine() + ": " + exception.getMessage());
-                    return true;
-                }
-                return false;
-            }
-        };
-    }
-
-    protected RequestConfig createRequestConfig(int timeout) {
-        return RequestConfig.custom()
-                .setSocketTimeout(timeout).setConnectTimeout(timeout)
-                .setMaxRedirects(1)
-                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
-                .build();
-    }
+//    protected PoolingHttpClientConnectionManager createConnectionManager(
+//            int maxTotalConnections,
+//            int maxConnectionsPerRoute,
+//            int timeout) {
+//        PoolingHttpClientConnectionManager connectionManager
+//                = new PoolingHttpClientConnectionManager();
+//        connectionManager.setMaxTotal(maxTotalConnections);
+//        connectionManager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
+//        connectionManager.setDefaultSocketConfig(SocketConfig.custom()
+//                .setSoTimeout(timeout).build());
+//        return connectionManager;
+//    }
+//
+//    protected HttpClient createHttpClient(int timeout) {
+//        if (connectionManager == null) {
+//            Configuration config = Configuration.instance();
+//            connectionManager = createConnectionManager(
+//                    config.getNetworkMaxTotalConnections(),
+//                    config.getNetworkMaxConnectionsPerRoute(),
+//                    config.getNetworkTimeout());
+//        }
+//
+//        return HttpClients.custom()
+//                .setConnectionManager(connectionManager)
+//                .setDefaultRequestConfig(requestConfigCache.get(timeout))
+//                .setRetryHandler(httpRetryHandlerCache.get(timeout))
+//                .build();
+//    }
+//
+//    protected HttpRequestRetryHandler createRetryHandler(int timeout) {
+//        if (timeout <= 0) timeout = defaultTimeout;
+//        final int maxRetryCount = (timeout < defaultTimeout) ? 2 : 3;
+//        return new HttpRequestRetryHandler() {
+//            public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+//
+//                log.warn("Failed request: " + exception.getMessage());
+//
+//                boolean retrying = true;
+//                if (exception instanceof NoRouteToHostException) {
+//                    // Bad DNS name
+//                    retrying =false;
+//                }
+//                else if (exception instanceof InterruptedIOException) {
+//                    // Timeout
+//                    retrying = false;
+//                }
+//                else if (exception instanceof UnknownHostException) {
+//                    // Unknown host
+//                    retrying = false;
+//                }
+//                else if (exception instanceof SSLException) {
+//                    // SSL handshake exception
+//                    retrying = false;
+//                }
+//                else if (exception instanceof HttpHostConnectException) {
+//                    // Host connect error
+//                    retrying = false;
+//                }
+//
+//                if (retrying && executionCount >= maxRetryCount) {
+//                    // Do not retry if over max retry count
+//                    return false;
+//                }
+//
+//
+//                HttpClientContext clientContext = HttpClientContext.adapt(context);
+//                HttpRequest request = clientContext.getRequest();
+//                if (!retrying) {
+//                    if (debug) log.debug("Failed request to " + request.getRequestLine() + ": " + exception.getMessage());
+//                    return false;
+//                }
+//
+//                boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
+//                if (idempotent) {
+//                    // Retry if the request is considered idempotent
+//                    if (debug) log.debug("Failed (but will retry) request to " + request.getRequestLine() + ": " + exception.getMessage());
+//                    return true;
+//                }
+//                return false;
+//            }
+//        };
+//    }
+//
+//    protected RequestConfig createRequestConfig(int timeout) {
+//        return RequestConfig.custom()
+//                .setSocketTimeout(timeout).setConnectTimeout(timeout)
+//                .setMaxRedirects(1)
+//                .setCookieSpec(CookieSpecs.IGNORE_COOKIES)
+//                .build();
+//    }
 
     protected <T> T executeRequest(HttpClient httpClient, HttpUriRequest request, Class<? extends T> resultClass)  {
         return executeRequest(httpClient, request, resultClass, Error.class);

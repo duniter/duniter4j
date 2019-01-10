@@ -41,6 +41,17 @@ import java.math.BigInteger;
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class BlockchainBlock implements Serializable {
 
+    public static final String PROPERTY_NUMBER = "number";
+    public static final String PROPERTY_DIVIDEND = "dividend";
+    public static final String PROPERTY_IDENTITIES = "identities";
+    public static final String PROPERTY_JOINERS = "joiners";
+    public static final String PROPERTY_ACTIVES = "actives";
+    public static final String PROPERTY_LEAVERS = "leavers";
+    public static final String PROPERTY_REVOKED = "revoked";
+    public static final String PROPERTY_EXCLUDED = "excluded";
+    public static final String PROPERTY_MEDIAN_TIME = "medianTime";
+
+
     private static final long serialVersionUID = -5598140972293452669L;
     
     private Integer version;

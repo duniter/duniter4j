@@ -94,8 +94,10 @@ public class NetworkAction extends AbstractAction {
         NetworkService service = ServiceLocator.instance().getNetworkService();
 
         if (!autoRefresh) {
+            Long now = System.currentTimeMillis();
             List<Peer> peers = service.getPeers(mainPeer);
             showPeersTable(peers, false);
+            log.info(I18n.t("duniter4j.client.network.executionTime", -System.currentTimeMillis() - now));
         }
         else {
             service.addPeersChangeListener(mainPeer, peers -> showPeersTable(peers, true));

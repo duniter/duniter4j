@@ -115,8 +115,6 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     @Override
     public List<Peer> getPeers(final Peer mainPeer, Filter filter, Sort sort) {
-        //int availableProcessors = Math.min(32, Runtime.getRuntime().availableProcessors());
-        //ExecutorService pool = new ScheduledThreadPoolExecutor(availableProcessors);
         return getPeers(mainPeer, filter, sort, null);
     }
 
@@ -148,7 +146,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     @Override
     public Comparator<Peer> peerComparator(final Sort sort) {
-        return Comparator.comparing(peer -> computePeerStatsScore(peer, sort), (score1, score2) -> score2.compareTo(score1));
+        return Comparator.comparing(peer -> computePeerStatsScore(peer, sort), Comparator.reverseOrder());
     }
 
     @Override
