@@ -42,8 +42,8 @@ public class JsonAttributeParserTest {
     public void getValueAsString() {
         String jsonString = String.format("%s", OBJ_JSON);
 
-        JsonAttributeParser<String> isAttribute = new JsonAttributeParser<>(PROPERTY_ID, String.class);
-        String idValue = isAttribute.getValue(jsonString);
+        JsonAttributeParser<String> idAttribute = new JsonAttributeParser<>(PROPERTY_ID, String.class);
+        String idValue = idAttribute.getValue(jsonString);
         Assert.assertEquals("joe", idValue);
 
     }

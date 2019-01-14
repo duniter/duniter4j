@@ -42,6 +42,7 @@ import java.math.BigInteger;
 public class BlockchainBlock implements Serializable {
 
     public static final String PROPERTY_NUMBER = "number";
+    public static final String PROPERTY_HASH = "hash";
     public static final String PROPERTY_DIVIDEND = "dividend";
     public static final String PROPERTY_IDENTITIES = "identities";
     public static final String PROPERTY_JOINERS = "joiners";
