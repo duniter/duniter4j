@@ -186,7 +186,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
         Preconditions.checkNotNull(peeringDocument);
 
         // http post /tx/process
-        HttpPost httpPost = new HttpPost(getPath(peer, URL_PEERING));
+        HttpPost httpPost = new HttpPost(getPath(peer, URL_PEERING_PEERS));
 
         if (log.isDebugEnabled()) {
             log.debug(String.format(
