@@ -77,7 +77,7 @@ public interface NetworkService extends Service {
 
     List<Peer> getPeers(Peer mainPeer, Filter filter, Sort sort, ExecutorService pool);
 
-    CompletableFuture<List<CompletableFuture<Peer>>> asyncGetPeers(Peer mainPeer, List<String> filterEndpoints, ExecutorService pool) throws ExecutionException, InterruptedException;
+    CompletableFuture<List<Peer>> getPeersAsync(Peer mainPeer, List<String> filterEndpoints, ExecutorService pool) throws ExecutionException, InterruptedException;
 
     List<Peer> fillPeerStatsConsensus(final List<Peer> peers);
 

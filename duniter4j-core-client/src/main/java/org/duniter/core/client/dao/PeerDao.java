@@ -26,6 +26,7 @@ import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.client.model.local.Peer;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -59,7 +60,7 @@ public interface PeerDao extends EntityDao<String, Peer> {
 
     Long getMaxLastUpTime(String currencyId);
 
-    void updatePeersAsDown(String currencyId, long upTimeLimitInSec);
+    void updatePeersAsDown(String currencyId, long upTimeLimitInSec, Collection<String> endpointApis);
 
-    boolean hasPeersUpWithApi(String currencyId, Set<EndpointApi> api);
+    boolean hasPeersUpWithApi(String currencyId, Set<EndpointApi> endpointApis);
 }

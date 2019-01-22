@@ -25,6 +25,7 @@ package org.duniter.core.client.service.local;
 import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Peer;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -55,7 +56,11 @@ public interface PeerService extends Service {
      */
     List<Peer> getPeersByCurrencyId(String currencyId);
 
-    void save(String currencyId, List<Peer> peers, boolean isFullUpList);
+    void save(String currencyId, List<Peer> peers);
+
+    void updatePeersAsDown(String currencyId, Collection<String> filterApis);
+
+    void updatePeersAsDown(String currencyId, long maxUpTimeInSec, Collection<String> filterApis);
 
     boolean isExists(String currencyId, String peerId);
 }

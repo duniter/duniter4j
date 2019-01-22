@@ -32,7 +32,9 @@ import org.duniter.client.actions.utils.Formatters;
 import org.apache.commons.io.IOUtils;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.config.ConfigurationOption;
+import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.model.local.Peers;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.local.NetworkService;
 import org.duniter.core.util.CollectionUtils;
@@ -97,7 +99,7 @@ public class NetworkAction extends AbstractAction {
             Long now = System.currentTimeMillis();
             List<Peer> peers = service.getPeers(mainPeer);
             showPeersTable(peers, false);
-            log.info(I18n.t("duniter4j.client.network.executionTime", -System.currentTimeMillis() - now));
+            log.info(I18n.t("duniter4j.client.network.executionTime", System.currentTimeMillis() - now));
         }
         else {
             service.addPeersChangeListener(mainPeer, peers -> showPeersTable(peers, true));
@@ -171,7 +173,7 @@ public class NetworkAction extends AbstractAction {
                     Formatters.formatPubkey(peer.getPubkey()),
                     peer.getHost() + ":" + peer.getPort(),
                     peer.getStats().getStatus().name(),
-                    isUp && peer.isUseSsl() ? I18n.t("duniter4j.client.network.ssl") : "",
+                    isUp ? formatApi(peer) : "",
                     isUp ? peer.getStats().getVersion() : "",
                     (isUp && peer.getStats().getHardshipLevel() != null) ? peer.getStats().getHardshipLevel() : I18n.t("duniter4j.client.network.mirror"),
                     isUp ? formatBuid(peer.getStats()) : ""
@@ -237,6 +239,18 @@ public class NetworkAction extends AbstractAction {
     }
 
     protected String formatBuid(Peer.Stats stats) {
+        if (stats.getBlockNumber() == null) return "";
         return Formatters.formatBuid(stats.getBlockNumber() + "-" + stats.getBlockHash());
+    }
+
+    protected String formatApi(Peer peer) {
+        if (Peers.hasBmaEndpoint(peer)) {
+          return peer.isUseSsl() ? I18n.t("duniter4j.client.network.ssl") : "";
+        }
+        if (Peers.hasWs2pEndpoint(peer)) {
+            return "WS2P";
+        }
+
+        return peer.getApi();
     }
 }

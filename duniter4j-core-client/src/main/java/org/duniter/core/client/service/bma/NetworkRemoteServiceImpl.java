@@ -142,6 +142,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
                                 .setCurrency(remotePeer.getCurrency())
                                 .setPubkey(remotePeer.getPubkey())
                                 .setEndpoint(endpoint)
+                                .setPeering(remotePeer)
                                 .build();
                         result.add(childPeer);
                     }

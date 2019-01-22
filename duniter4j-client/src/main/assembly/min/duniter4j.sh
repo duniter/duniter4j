@@ -1,7 +1,7 @@
 #!/bin/bash
 
 READLINK=`which readlink`
-if [ -z "$READLINK"  ]; then
+if [[ -z "$READLINK"  ]]; then
   message "Required tool 'readlink' is missing. Please install before launch \"$0\" file."
   exit 1
 fi
@@ -10,8 +10,8 @@ fi
 # Ensure BASEDIR points to the directory where the soft is installed.
 # ------------------------------------------------------------------
 SCRIPT_LOCATION=$0
-if [ -x "$READLINK" ]; then
-  while [ -L "$SCRIPT_LOCATION" ]; do
+if [[ -x "$READLINK" ]]; then
+  while [[ -L "$SCRIPT_LOCATION" ]]; do
     SCRIPT_LOCATION=`"$READLINK" -e "$SCRIPT_LOCATION"`
   done
 fi
@@ -22,11 +22,11 @@ export JAR="$JARDIR/${project.build.finalName}.${project.packaging}"
 export I18N_DIR="$APPDIR/i18n"
 
 # Retrieve the JAVA installation
-if [ "$JAVA_HOME~" == "~" ]; then
+if [[ "$JAVA_HOME~" == "~" ]]; then
     export JAVA_HOME="$APPDIR/jre"
     export JAVA_COMMAND="$JAVA_HOME/bin/java"
 
-    if [ -f "$JAVA_HOME/bin/java" ]; then
+    if [[ -f "$JAVA_HOME/bin/java" ]]; then
         # If embedded JRE exists, make sure java is executable
         chmod +x "$JAVA_COMMAND"
     else
@@ -37,7 +37,7 @@ else
     export JAVA_COMMAND="$JAVA_HOME/bin/java"
 fi
 
-if [ -d "$HOME" ]; then
+if [[ -d "$HOME" ]]; then
     export BASEDIR="$HOME/.config/duniter4j"
     export CONFIG_DIR="$BASEDIR/config"
     export CONFIG_FILE="$CONFIG_DIR/duniter4j-client.config"
@@ -48,14 +48,21 @@ else
     export CONFIG_FILE="$CONFIG_DIR/config/duniter4j-client.config"
     export LOG_FILE="$APPDIR/logs/${project.build.finalName}.log"
 
-    echo "Using base"
+    echo "Using basedir: $APPDIR"
 fi
+
+if [[ "$JAVA_OPTS~" == "~" ]]; then
+    # Configuring apache simplelog to use Log4j
+    JAVA_OPTS="-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Log4JLogger"
+    exprt ${JAVA_OPTS}
+fi
+
 
 # Create the config dir if need
 mkdir -p "$CONFIG_DIR"
 
 # Create the config file (if need)
-if [ ! -f "$CONFIG_FILE" ]; then
+if [[ ! -f "$CONFIG_FILE" ]]; then
     echo "INFO - Initialized configuration file: $CONFIG_FILE"
     cp -u $JARDIR/duniter4j-client.config $CONFIG_FILE
 fi
@@ -68,12 +75,12 @@ while true; do
   $JAVA_COMMAND $JAVA_OPTS -Dduniter4j.log.file=$LOG_FILE -Dduniter4j.i18n.directory=$I18N_DIR -jar $JAR --basedir $BASEDIR --config $CONFIG_FILE $*
   exitcode=$?
 
-  if [ ! "$exitcode" -eq  "130" ]; then
+  if [[ ! "$exitcode" -eq  "130" ]]; then
     echo "INFO - Application stopped with exitcode: $exitcode"
   fi
 
   ## Continue only if exitcode=88 (will restart the application)
-  if [ ! "$exitcode" -eq  "88" ]; then
+  if [[ ! "$exitcode" -eq  "88" ]]; then
     # quit now!
     exit $exitcode
   fi

@@ -143,10 +143,14 @@ public class MemoryPeerDaoImpl implements PeerDao {
     }
 
     @Override
-    public void updatePeersAsDown(String currencyId, long upTimeLimitInSec) {
+    public void updatePeersAsDown(String currencyId, long upTimeLimitInSec, Collection<String> endpointApis) {
 
         getPeersByCurrencyId(currencyId).stream()
-                .filter(peer -> peer.getStats() != null && peer.getStats().getLastUpTime() <= upTimeLimitInSec)
+                .filter(peer ->
+                        peer.getStats() != null
+                        && peer.getStats().getLastUpTime() < upTimeLimitInSec
+                        && (endpointApis == null || endpointApis.contains(peer.getApi()))
+                )
                 .forEach(peer -> peer.getStats().setStatus(Peer.PeerStatus.DOWN));
 
     }

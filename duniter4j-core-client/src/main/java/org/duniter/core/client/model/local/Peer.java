@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.http.InetAddressUtils;
@@ -53,6 +54,8 @@ public class Peer implements LocalEntity<String>, Serializable {
         private String hash;
         private String currency;
         private String path;
+
+        private Peering peering;
 
         public Builder() {
 
@@ -127,6 +130,9 @@ public class Peer implements LocalEntity<String>, Serializable {
             if (source.api != null) {
                setApi(source.api.name());
             }
+            if (StringUtils.isNotBlank(source.id)) {
+                setEpId(source.id);
+            }
             if (StringUtils.isNotBlank(source.dns)) {
                setDns(source.dns);
             }
@@ -142,9 +148,27 @@ public class Peer implements LocalEntity<String>, Serializable {
             if (source.port != null) {
                setPort(source.port);
             }
-            if (StringUtils.isNotBlank(source.id)) {
-                setEpId(source.id);
+            if (StringUtils.isNotBlank(source.path)) {
+                setPath(source.path);
             }
+            return this;
+        }
+
+        public Builder setPeering(NetworkPeers.Peer remotePeer) {
+            this.peering = this.peering != null ? this.peering : new Peering();
+
+            this.peering.setVersion(remotePeer.getVersion());
+            this.peering.setSignature(remotePeer.getSignature());
+
+            // Block number+hash
+            if (remotePeer.getBlock() != null) {
+                String[] blockParts = remotePeer.getBlock().split("-");
+                if (blockParts.length == 2) {
+                    this.peering.setBlockNumber(Integer.parseInt(blockParts[0]));
+                    this.peering.setBlockHash(blockParts[1]);
+                }
+            }
+
             return this;
         }
 
@@ -173,6 +197,10 @@ public class Peer implements LocalEntity<String>, Serializable {
             if (StringUtils.isNotBlank(this.path)) {
                 ep.setPath(this.path);
             }
+            // Peering
+            if (this.peering != null) {
+                ep.setPeering(this.peering);
+            }
             return ep;
         }
 
@@ -187,6 +215,7 @@ public class Peer implements LocalEntity<String>, Serializable {
     public static final String PROPERTY_IPV6 = "ipv6";
     public static final String PROPERTY_EP_ID = "epId";
     public static final String PROPERTY_STATS = "stats";
+    public static final String PROPERTY_PEERING = "peering";
 
     private String id;
 
@@ -205,6 +234,7 @@ public class Peer implements LocalEntity<String>, Serializable {
     private String currency;
 
     private Stats stats = new Stats();
+    private Peering peering = new Peering();
 
     private int port;
     private boolean useSsl;
@@ -388,6 +418,14 @@ public class Peer implements LocalEntity<String>, Serializable {
         this.stats = stats;
     }
 
+    public Peering getPeering() {
+        return peering;
+    }
+
+    public void setPeering(Peering peering) {
+        this.peering = peering;
+    }
+
     public String toString() {
         StringJoiner joiner = new StringJoiner(" ");
         if (api != null) {
@@ -420,6 +458,60 @@ public class Peer implements LocalEntity<String>, Serializable {
         UP,
         DOWN,
         ERROR
+    }
+
+    public static class Peering {
+        public static final String PROPERTY_VERSION = "version";
+        public static final String PROPERTY_SIGNATURE = "signature";
+        public static final String PROPERTY_BLOCK_NUMBER = "blockNumber";
+        public static final String PROPERTY_BLOCK_HASH = "blockHash";
+        public static final String PROPERTY_RAW = "raw";
+
+        private String version;
+        private String signature;
+        private Integer blockNumber;
+        private String blockHash;
+        private String raw;
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public String getSignature() {
+            return signature;
+        }
+
+        public void setSignature(String signature) {
+            this.signature = signature;
+        }
+
+        public Integer getBlockNumber() {
+            return blockNumber;
+        }
+
+        public void setBlockNumber(Integer blockNumber) {
+            this.blockNumber = blockNumber;
+        }
+
+        public String getBlockHash() {
+            return blockHash;
+        }
+
+        public void setBlockHash(String blockHash) {
+            this.blockHash = blockHash;
+        }
+
+        public String getRaw() {
+            return raw;
+        }
+
+        public void setRaw(String raw) {
+            this.raw = raw;
+        }
     }
 
     public static class Stats {

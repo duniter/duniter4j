@@ -40,9 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by eis on 07/02/15.
@@ -87,7 +85,6 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     }
 
 
-
     public Peer save(final Peer peer) {
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(peer.getCurrency());
@@ -118,8 +115,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
                 peers = new ArrayList<>();
                 peersByCurrencyIdCache.put(peer.getCurrency(), peers);
                 peers.add(peer);
-            }
-            else if (!peers.contains(peer)) {
+            } else if (!peers.contains(peer)) {
                 peers.add(peer);
             }
         }
@@ -127,8 +123,9 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         return result;
     }
 
-   /**
+    /**
      * Return a (cached) active peer, by currency id
+     *
      * @param currencyId
      * @return
      */
@@ -143,6 +140,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
     /**
      * Return a (cached) peer list, by currency id
+     *
      * @param currencyId
      * @return
      */
@@ -157,6 +155,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
     /**
      * Fill allOfToList cache need for currencies
+     *
      * @param accountId
      */
     public void loadCache(long accountId) {
@@ -185,36 +184,49 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     }
 
     @Override
-    public void save(String currencyId, List<Peer> peers, boolean isFullUpList) {
+    public void save(String currencyId, List<Peer> peers) {
 
-        int peerDownTimeoutMs = config.getPeerUpMaxAge();
-        final long now = System.currentTimeMillis();
 
         if (CollectionUtils.isNotEmpty(peers)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("[%s] Updating peers (%s endpoints found)", currencyId, peers.size()));
             }
 
+            final long upTime = System.currentTimeMillis() / 1000;
+
             peers.forEach(peer -> {
                 // On each UP peers: set last UP time
                 if (peer.getStats() != null && peer.getStats().isReacheable()) {
-                    peer.getStats().setLastUpTime(now / 1000);
+                    peer.getStats().setLastUpTime(upTime);
                 }
                 // Save
                 save(peer);
             });
-        }
-
-        // Mark old peers as DOWN
-        if (isFullUpList && peerDownTimeoutMs > 0) {
-            long maxUpTimeInMs = now - peerDownTimeoutMs;
-            peerDao.updatePeersAsDown(currencyId, maxUpTimeInMs / 1000);
         }
     }
 
     @Override
     public boolean isExists(String currencyId, String peerId) {
         return peerDao.isExists(currencyId, peerId);
+    }
+
+
+    @Override
+    public void updatePeersAsDown(String currencyId, Collection<String> filterApis) {
+        int peerDownTimeoutMs = config.getPeerUpMaxAge();
+        // Mark old peers as DOWN
+        if (peerDownTimeoutMs >0) {
+            long maxUpTimeInSec = Math.round((System.currentTimeMillis() - peerDownTimeoutMs) / 1000);
+            updatePeersAsDown(currencyId, maxUpTimeInSec, filterApis);
+        }
+    }
+
+    @Override
+    public void updatePeersAsDown(String currencyId, long maxUpTimeInSec, Collection<String> filterApis) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("[%s] %s Setting peers as DOWN, if older than [%s]...", currencyId, filterApis, new Date(maxUpTimeInSec*1000)));
+        }
+        peerDao.updatePeersAsDown(currencyId, maxUpTimeInSec, filterApis);
     }
 
     protected Peer loadDefaultPeer(String currencyId) {
@@ -228,4 +240,5 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
         return peers.get(0);
     }
+
 }

@@ -104,7 +104,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         Filter filterDef = new Filter();
         filterDef.filterType = null;
         filterDef.filterStatus = Peer.PeerStatus.UP;
-        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name());
+        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name(), EndpointApi.WS2P.name());
 
         // Default sort
         Sort sortDef = new Sort();
@@ -122,17 +122,17 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     public List<Peer> getPeers(final Peer mainPeer, Filter filter, Sort sort, ExecutorService executor) {
 
         try {
-            return asyncGetPeers(mainPeer, (filter != null ? filter.filterEndpoints : null), executor)
-                .thenCompose(CompletableFutures::allOfToList)
-                .thenApply(this::fillPeerStatsConsensus)
-                .thenApply(peers -> peers.stream()
+            return getPeersAsync(mainPeer, (filter != null ? filter.filterEndpoints : null), executor)
+                //.thenComposeAsync(CompletableFutures::allOfToList)
+                .thenApplyAsync(this::fillPeerStatsConsensus)
+                .thenApplyAsync(peers -> peers.stream()
                         // Filter on currency
                         .filter(peer -> mainPeer.getCurrency() == null || ObjectUtils.equals(mainPeer.getCurrency(), peer.getCurrency()))
                         // filter, then sort
                         .filter(peerFilter(filter))
                         .sorted(peerComparator(sort))
                         .collect(Collectors.toList()))
-                .thenApply(this::logPeers)
+                .thenApplyAsync(this::logPeers)
                 .get();
         } catch (InterruptedException | ExecutionException e) {
             throw new TechnicalException("Error while loading peers: " + e.getMessage(), e);
@@ -150,7 +150,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     @Override
-    public CompletableFuture<List<CompletableFuture<Peer>>> asyncGetPeers(final Peer mainPeer, List<String> filterEndpoints, ExecutorService executor) throws ExecutionException, InterruptedException {
+    public CompletableFuture<List<Peer>> getPeersAsync(final Peer mainPeer, List<String> filterEndpoints, ExecutorService executor) throws ExecutionException, InterruptedException {
         Preconditions.checkNotNull(mainPeer);
 
         log.debug("Loading network peers...");
@@ -160,9 +160,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         return CompletableFuture.allOf(
                 new CompletableFuture[] {peersFuture, memberUidsFuture})
-                .thenApply(v -> {
+                .thenComposeAsync(v -> {
                     final Map<String, String> memberUids = memberUidsFuture.join();
-                    return peersFuture.join().stream()
+                    List<Peer> peers = peersFuture.join();
+
+                    List<CompletableFuture<Peer>> list = peers.stream()
                             .map(peer -> {
                                 // For if same as main peer,
                                 if (mainPeer.getUrl().equals(peer.getUrl())) {
@@ -186,15 +188,16 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
                                 return asyncRefreshPeer(peer, memberUids, pool);
                             })
-                            .filter(Objects::nonNull)
                             .collect(Collectors.toList());
+                    return CompletableFutures.allOfToList(list);
                 });
     }
 
 
     public CompletableFuture<Peer> asyncRefreshPeer(final Peer peer, final Map<String, String> memberUids, final ExecutorService pool) {
-        return CompletableFuture.supplyAsync(() -> fillVersion(peer), pool)
-                .thenApply(p -> fillCurrentBlock(p))
+        System.out.println("Refreshing peer: " + peer.toString());
+        return CompletableFuture.supplyAsync(() -> fillNodeSummary(peer), pool)
+                .thenApplyAsync(this::fillCurrentBlock)
                 .exceptionally(throwable -> {
                     peer.getStats().setStatus(Peer.PeerStatus.DOWN);
                     if(!(throwable instanceof HttpConnectException)) {
@@ -210,7 +213,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     else if (log.isTraceEnabled()) log.debug(String.format("[%s] is DOWN", peer));
                     return peer;
                 })
-                .thenApply(p -> {
+                .thenApplyAsync(p -> {
                     String uid = StringUtils.isNotBlank(p.getPubkey()) ? memberUids.get(p.getPubkey()) : null;
                     p.getStats().setUid(uid);
                     if (p.getStats().isReacheable() && Peers.hasBmaEndpoint(p)) {
@@ -315,6 +318,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         final Predicate<Peer> peerFilter = peerFilter(filter);
         final Comparator<Peer> peerComparator = peerComparator(sort);
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
+        final int peerDownTimeoutMs = config.getPeerUpMaxAge();
 
         // Refreshing one peer (e.g. received from WS)
         Consumer<List<Peer>> updateKnownBlocks = (updatedPeers) ->
@@ -330,13 +334,27 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
             try {
                 if (lockManager.tryLock(PEERS_UPDATE_LOCK_NAME, 1, TimeUnit.MINUTES)) {
                     try {
+                        long now = System.currentTimeMillis();
                         List<Peer> result = getPeers(mainPeer, filter, sort, pool);
+
+                        // Mark old peers as DOWN
+                        long maxUpTimeInSec = Math.round((System.currentTimeMillis() - peerDownTimeoutMs) / 1000);
 
                         knownBlocks.clear();
                         updateKnownBlocks.accept(result);
 
                         // Save update peers
-                        peerService.save(currency, result, false/*not the full UP list*/);
+                        peerService.save(currency, result);
+
+                        // Set old peers as DOWN (with a delay)
+                        peerService.updatePeersAsDown(currency, maxUpTimeInSec, filter.filterEndpoints);
+
+                        long duration = System.currentTimeMillis() - now;
+
+                        // If took more than 2 min => warning
+                        if (duration /1000/60 > 2) {
+                            log.warn(String.format("Refreshing peers took %s seconds", Math.round(duration/1000)));
+                        }
 
                         // Send full list listener
                         listener.onChanges(result);
@@ -381,18 +399,18 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                             // filter, to keep only existing peer, or expected by filter
                             List<Peer> changedPeers = refreshedPeers.stream()
                                     .filter(refreshedPeer -> {
-                                String peerId = refreshedPeer.toString();
-                                boolean exists = knownPeers.containsKey(peerId);
-                                if (exists){
-                                    knownPeers.remove(peerId);
-                                }
-                                // If include, add it to full list
-                                boolean include = peerFilter.test(refreshedPeer);
-                                if (include) {
-                                    knownPeers.put(peerId, refreshedPeer);
-                                }
-                                return include;
-                            }).collect(Collectors.toList());
+                                        String peerId = refreshedPeer.toString();
+                                        boolean exists = knownPeers.containsKey(peerId);
+                                        if (exists){
+                                            knownPeers.remove(peerId);
+                                        }
+                                        // If include, add it to full list
+                                        boolean include = peerFilter.test(refreshedPeer);
+                                        if (include) {
+                                            knownPeers.put(peerId, refreshedPeer);
+                                        }
+                                        return include;
+                                    }).collect(Collectors.toList());
 
                             // If something changes
                             if (CollectionUtils.isNotEmpty(changedPeers)) {
@@ -402,8 +420,8 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
                                 updateKnownBlocks.accept(changedPeers);
 
-                                // Save update peers
-                                peerService.save(currency, changedPeers, false/*not the full UP list*/);
+                                // Save updated peers
+                                peerService.save(currency, changedPeers);
 
                                 listener.onChanges(result);
                             }
@@ -596,7 +614,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return true;
     }
 
-    protected Peer fillVersion(final Peer peer) {
+    protected Peer fillNodeSummary(final Peer peer) {
         if (!Peers.hasBmaEndpoint(peer) && !Peers.hasEsCoreEndpoint(peer)) return peer;
         JsonNode summary = getNodeSummary(peer);
         peer.getStats().setVersion(getVersion(summary));
