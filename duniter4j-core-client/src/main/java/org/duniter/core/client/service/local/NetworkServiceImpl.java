@@ -176,14 +176,9 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                                     peer = mainPeer;
                                 }
 
-                                // Exclude peer with only a local IPv4 address
-                                else if (InetAddressUtils.isLocalIPv4Address(peer.getHost())) {
-                                  return null;
-                                }
-
-                                // Exclude localhost address
-                                else if ("localhost".equalsIgnoreCase(peer.getHost())) {
-                                    return null;
+                                // Exclude peer with only a local IPv4 address (or localhost)
+                                else if (InetAddressUtils.isLocalAddress(peer.getHost())) {
+                                    return CompletableFuture.<Peer>completedFuture(null);
                                 }
 
                                 return asyncRefreshPeer(peer, memberUids, pool);
@@ -195,7 +190,8 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
 
     public CompletableFuture<Peer> asyncRefreshPeer(final Peer peer, final Map<String, String> memberUids, final ExecutorService pool) {
-        System.out.println("Refreshing peer: " + peer.toString());
+        if (log.isDebugEnabled()) log.debug(String.format("[%s] Refreshing peer status", peer.toString()));
+
         return CompletableFuture.supplyAsync(() -> fillNodeSummary(peer), pool)
                 .thenApplyAsync(this::fillCurrentBlock)
                 .exceptionally(throwable -> {
@@ -615,32 +611,36 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     }
 
     protected Peer fillNodeSummary(final Peer peer) {
+        // Skip if no BMA, BMAS or ES_CORE_API
         if (!Peers.hasBmaEndpoint(peer) && !Peers.hasEsCoreEndpoint(peer)) return peer;
+
         JsonNode summary = getNodeSummary(peer);
         peer.getStats().setVersion(getVersion(summary));
         peer.getStats().setSoftware(getSoftware(summary));
+
         return peer;
     }
 
     protected Peer fillCurrentBlock(final Peer peer) {
-        if (Peers.hasBmaEndpoint(peer) || Peers.hasEsCoreEndpoint(peer)) {
-            JsonNode json = get(peer, BMA_URL_BLOCKCHAIN_CURRENT);
+        // Skip if no BMA, BMAS or ES_CORE_API
+        if (!Peers.hasBmaEndpoint(peer) && !Peers.hasEsCoreEndpoint(peer)) return peer;
 
-            String currency = json.has("currency") ? json.get("currency").asText() : null;
-            peer.setCurrency(currency);
+        JsonNode json = get(peer, BMA_URL_BLOCKCHAIN_CURRENT);
 
-            Integer number = json.has("number") ? json.get("number").asInt() : null;
-            peer.getStats().setBlockNumber(number);
+        String currency = json.has("currency") ? json.get("currency").asText() : null;
+        peer.setCurrency(currency);
 
-            String hash = json.has("hash") ? json.get("hash").asText() : null;
-            peer.getStats().setBlockHash(hash);
+        Integer number = json.has("number") ? json.get("number").asInt() : null;
+        peer.getStats().setBlockNumber(number);
 
-            Long medianTime = json.has("medianTime") ? json.get("medianTime").asLong() : null;
-            peer.getStats().setMedianTime(medianTime);
+        String hash = json.has("hash") ? json.get("hash").asText() : null;
+        peer.getStats().setBlockHash(hash);
 
-            if (log.isTraceEnabled()) {
-                log.trace(String.format("[%s] current block [%s-%s]", peer.toString(), number, hash));
-            }
+        Long medianTime = json.has("medianTime") ? json.get("medianTime").asLong() : null;
+        peer.getStats().setMedianTime(medianTime);
+
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("[%s] current block [%s-%s]", peer.toString(), number, hash));
         }
 
         return peer;
@@ -675,17 +675,16 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 peers.forEach(peerFound -> {
                     if (peerFound.getStats().getStatus() == Peer.PeerStatus.DOWN) {
                         String error = peerFound.getStats().getError();
-                        log.trace(String.format(" peer [%s] [%s] %s",
+                        log.trace(String.format(" [%s] status is %s %s",
                                 peerFound.toString(),
-                                peerFound.getStats().getStatus().name(),
-                                error != null ? error : ""));
+                                Peer.PeerStatus.DOWN.name(),
+                                error != null ? (":" + error) : ""));
                     } else {
-                        log.trace(String.format(" peer [%s] [%s] [v%s] block [%s]", peerFound.toString(),
+                        log.trace(String.format(" [%s] status %s: [v%s] block [%s]", peerFound.toString(),
                                 peerFound.getStats().getStatus().name(),
                                 peerFound.getStats().getVersion(),
                                 peerFound.getStats().getBlockNumber()
                         ));
-
                     }
                 });
             }

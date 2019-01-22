@@ -51,4 +51,12 @@ public class InetAddressUtils {
     public static boolean isIPv6Address(String input) {
         return org.apache.http.conn.util.InetAddressUtils.isIPv6Address(input);
     }
+
+    public static boolean isLocalAddress(String input) {
+        return isLocalIPv4Address(input) || "localhost".equalsIgnoreCase(input);
+    }
+
+    public static boolean isNotLocalAddress(String input) {
+        return !isLocalAddress(input);
+    }
 }

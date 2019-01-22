@@ -22,8 +22,6 @@ package org.duniter.core.util.concurrent;
  * #L%
  */
 
-import org.apache.commons.collections4.CollectionUtils;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -40,7 +38,6 @@ public class CompletableFutures {
     }
 
     public static <T> CompletableFuture<List<T>> allOfToList(List<CompletableFuture<T>> futures) {
-        CollectionUtils.filter(futures, Objects::nonNull);
         CompletableFuture<Void> allDoneFuture =
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
         return allDoneFuture.thenApply(v ->
@@ -57,8 +54,10 @@ public class CompletableFutures {
         return allDoneFuture.thenApply(v ->
                 futures.stream()
                         .map(future -> future.join())
+                        .filter(Objects::nonNull) // skip empty result
                         .filter(filter)
                         .collect(Collectors.toList())
         );
     }
+
 }

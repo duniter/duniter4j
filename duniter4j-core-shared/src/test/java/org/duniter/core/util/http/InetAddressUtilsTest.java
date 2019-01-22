@@ -44,6 +44,15 @@ public class InetAddressUtilsTest {
 
         boolean check = InetAddressUtils.isLocalIPv4Address("192.168.1.11");
         Assert.assertTrue(check);
+
+        check = InetAddressUtils.isLocalIPv4Address("127.0.0.1");
+        Assert.assertTrue(check);
     }
 
+    @Test
+    public void isLocalAddress() {
+
+        boolean check = InetAddressUtils.isLocalAddress("localhost");
+        Assert.assertTrue(check);
+    }
 }
