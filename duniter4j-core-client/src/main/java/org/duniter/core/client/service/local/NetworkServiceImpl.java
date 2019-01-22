@@ -179,6 +179,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                                   return null;
                                 }
 
+                                // Exclude localhost address
+                                else if ("localhost".equalsIgnoreCase(peer.getHost())) {
+                                    return null;
+                                }
+
                                 return asyncRefreshPeer(peer, memberUids, pool);
                             })
                             .filter(Objects::nonNull)
