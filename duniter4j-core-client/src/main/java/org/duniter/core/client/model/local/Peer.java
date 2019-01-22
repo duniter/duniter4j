@@ -52,6 +52,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         private String pubkey;
         private String hash;
         private String currency;
+        private String path;
 
         public Builder() {
 
@@ -147,6 +148,10 @@ public class Peer implements LocalEntity<String>, Serializable {
             return this;
         }
 
+        public void setPath(String path) {
+            this.path = path;
+        }
+
         public Peer build() {
             int port = this.port != null ? this.port : 80;
             String api = this.api != null ? this.api : EndpointApi.BASIC_MERKLED_API.name();
@@ -164,6 +169,9 @@ public class Peer implements LocalEntity<String>, Serializable {
             }
             if (StringUtils.isNotBlank(this.hash)) {
                 ep.setHash(this.hash);
+            }
+            if (StringUtils.isNotBlank(this.path)) {
+                ep.setPath(this.path);
             }
             return ep;
         }
@@ -183,10 +191,11 @@ public class Peer implements LocalEntity<String>, Serializable {
     private String id;
 
     private String api;
+    private String epId;
     private String dns;
     private String ipv4;
     private String ipv6;
-    private String epId;
+    private String path;
 
     private String url;
     private String host;
@@ -249,8 +258,8 @@ public class Peer implements LocalEntity<String>, Serializable {
         if (StringUtils.isBlank(host) && ipv4 != null && InetAddressUtils.isIPv4Address(ipv4)) {
             host = ipv4;
         }
-        String protocol = (port == 443 || useSsl) ? "https" : "http";
-        this.url = protocol + "://" + host + (port != 80 ? (":" + port) : "");
+        String protocol = ((port == 443 || useSsl) ? "https" : "http");
+        this.url = protocol + "://" + host + (port != 80 ? (":" + port) : "") + (StringUtils.isNotBlank(path) ? path : "");
     }
 
     @JsonIgnore
@@ -275,7 +284,7 @@ public class Peer implements LocalEntity<String>, Serializable {
 
     @JsonIgnore
     public String computeKey()  {
-        return Joiner.on('-').skipNulls().join(pubkey, dns, ipv4, ipv6, port, useSsl, api);
+        return Joiner.on('-').skipNulls().join(pubkey, dns, ipv4, ipv6, port, useSsl, api, path);
     }
 
     public String getApi() {
@@ -311,6 +320,14 @@ public class Peer implements LocalEntity<String>, Serializable {
     public void setIpv6(String ipv6) {
         this.ipv6 = ipv6;
         init();
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public int getPort() {
@@ -390,6 +407,9 @@ public class Peer implements LocalEntity<String>, Serializable {
         }
         if (port != 80) {
             joiner.add(String.valueOf(port));
+        }
+        if (StringUtils.isNotBlank(path)) {
+            joiner.add(path);
         }
         return joiner.toString();
     }

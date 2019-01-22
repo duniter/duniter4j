@@ -23,10 +23,11 @@ package org.duniter.core.client.dao.mem;
  */
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.EndpointApi;
+import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.model.local.Peers;
 import org.duniter.core.util.Preconditions;
 
 import java.util.*;
@@ -94,20 +95,32 @@ public class MemoryPeerDaoImpl implements PeerDao {
     public List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] pubkeys) {
         Preconditions.checkNotNull(currencyId);
         Preconditions.checkNotNull(endpointApi);
-        List pubkeysAsList = ImmutableList.copyOf(pubkeys);
+        List pubkeysAsList = pubkeys != null ? ImmutableList.copyOf(pubkeys) : null;
 
         return peersByCurrencyId.values().stream()
                 .filter(peer ->
                         // Filter on currency
                         currencyId.equals(peer.getCurrency()) &&
                         // Filter on API
-                        peer.getApi() != null &&
-                        endpointApi.equals(peer.getApi()) &&
+                        (endpointApi == null || (
+                                peer.getApi() != null &&
+                                endpointApi.equals(peer.getApi()))
+                        ) &&
                         // Filter on pubkeys
-                        peer.getPubkey() != null &&
-                        pubkeysAsList.contains(peer.getPubkey()))
+                        (pubkeysAsList == null || (
+                                peer.getPubkey() != null &&
+                                pubkeysAsList.contains(peer.getPubkey()))
+                        ))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<NetworkPeers.Peer> getBmaPeersByCurrencyId(String currencyId, String[] pubkeys) {
+        Preconditions.checkNotNull(currencyId);
+
+        return Peers.toBmaPeers(getPeersByCurrencyIdAndApiAndPubkeys(currencyId, null, pubkeys));
+    }
+
 
     @Override
     public boolean isExists(final String currencyId, final  String peerId) {
@@ -148,4 +161,7 @@ public class MemoryPeerDaoImpl implements PeerDao {
                             Peer.PeerStatus.UP.equals(p.getStats().getStatus())
                 );
     }
+
+    /* -- protected methods -- */
+
 }

@@ -22,7 +22,19 @@ package org.duniter.core.client.model.local;
  * #L%
  */
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.duniter.core.client.model.bma.EndpointApi;
+import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.client.model.bma.NetworkPeers;
+import org.duniter.core.client.model.bma.Protocol;
+import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.StringUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Created by blavenie on 12/09/17.
@@ -69,4 +81,93 @@ public final class Peers {
         return peer.getStats() != null && peer.getStats().isReacheable();
     }
 
+    public static List<NetworkPeers.Peer> toBmaPeers(List<Peer> peers) {
+        if (CollectionUtils.isEmpty(peers)) return null;
+
+        // Group endpoint by pubkey
+        Map<String, List<Peer>> epByPubkeys = Maps.newHashMap();
+        peers.stream().forEach(peer -> {
+            String pubkey = peer.getPubkey();
+            if (StringUtils.isNotBlank(pubkey)) {
+                List<Peer> endpoints = epByPubkeys.get(pubkey);
+                if (endpoints == null) {
+                    endpoints = Lists.newArrayList();
+                    epByPubkeys.put(pubkey, endpoints);
+                }
+                endpoints.add(peer);
+            }
+        });
+
+        return epByPubkeys.values().stream().map(endpoints -> {
+            Peer firstEp = endpoints.get(0);
+            NetworkPeers.Peer result = new NetworkPeers.Peer();
+            result.setCurrency(firstEp.getCurrency());
+            result.setPubkey(firstEp.getPubkey());
+
+            result.setBlock(getBlockStamp(firstEp));
+
+            // Compute status (=UP is at least one endpoint is UP)
+            String status = endpoints.stream()
+                    .map(Peers::getStatus)
+                    .filter(s -> s == Peer.PeerStatus.UP)
+                    .findAny()
+                    .orElse(Peer.PeerStatus.DOWN).name();
+            result.setStatus(status);
+
+            // Default values (not stored yet)
+            result.setVersion(Protocol.VERSION); // TODO: get it from the storage (DB, ES, etc.) ?
+            result.setStatusTS(0L); // TODO make sure this is used by clients ?
+
+            // Compute endpoints list
+            List<NetworkPeering.Endpoint> bmaEps = endpoints.stream()
+                    .map(Peers::toBmaEndpoint)
+                    .collect(Collectors.toList());
+            result.setEndpoints(bmaEps.toArray(new NetworkPeering.Endpoint[bmaEps.size()]));
+
+            // Compute last try
+            Long lastUpTime =  endpoints.stream()
+                    .map(Peers::getLastUpTime)
+                    .filter(Objects::nonNull)
+                    .max(Long::compare)
+                    .orElse(null);
+
+            // Compute last try
+            result.setLastTry(lastUpTime);
+
+            return result;
+        }).collect(Collectors.toList());
+    }
+
+
+    public static  Peer.PeerStatus getStatus(final Peer peer) {
+        return peer.getStats() != null &&
+                peer.getStats().getStatus() != null ?
+                peer.getStats().getStatus() : null;
+    }
+
+    public static Long getLastUpTime(final Peer peer) {
+        return peer.getStats() != null &&
+                peer.getStats().getLastUpTime() != null ?
+                peer.getStats().getLastUpTime() : null;
+    }
+
+
+    public static String getBlockStamp(final Peer peer) {
+        return peer.getStats() != null &&
+                peer.getStats().getBlockNumber() != null &&
+                peer.getStats().getBlockHash() != null
+                ? (peer.getStats().getBlockNumber() + "-" + peer.getStats().getBlockHash()) : null;
+    }
+
+    public static NetworkPeering.Endpoint toBmaEndpoint(Peer ep) {
+        NetworkPeering.Endpoint bmaEp = new NetworkPeering.Endpoint();
+        bmaEp.setApi(EndpointApi.valueOf(ep.getApi()));
+        bmaEp.setId(ep.getEpId());
+        bmaEp.setDns(ep.getDns());
+        bmaEp.setPort(ep.getPort());
+        bmaEp.setIpv4(ep.getIpv4());
+        bmaEp.setIpv6(ep.getIpv6());
+        bmaEp.setPath(ep.getPath());
+        return bmaEp;
+    }
 }

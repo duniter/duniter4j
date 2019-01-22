@@ -23,9 +23,9 @@ package org.duniter.core.client.dao;
  */
 
 import org.duniter.core.client.model.bma.EndpointApi;
+import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.client.model.local.Peer;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -38,7 +38,22 @@ public interface PeerDao extends EntityDao<String, Peer> {
 
     List<Peer> getPeersByCurrencyIdAndApi(String currencyId, String endpointApi);
 
+    /**
+     *
+     * @param currencyId
+     * @param endpointApi
+     * @param pubkeys
+     * @return
+     */
     List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] pubkeys);
+
+    /**
+     * Get peers as BMA /network/peers format
+     * @param currencyId
+     * @param pubkeys use to filter on specific pubkeys. If null, not filtering
+     * @return
+     */
+    List<NetworkPeers.Peer> getBmaPeersByCurrencyId(String currencyId, String[] pubkeys);
 
     boolean isExists(String currencyId, String peerId);
 

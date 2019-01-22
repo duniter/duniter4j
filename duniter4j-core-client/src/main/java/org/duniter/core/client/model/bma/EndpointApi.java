@@ -24,6 +24,7 @@ package org.duniter.core.client.model.bma;
 
 
 public enum EndpointApi {
+
     BASIC_MERKLED_API,
     BMAS,
     BMATOR,
@@ -34,5 +35,13 @@ public enum EndpointApi {
     MONIT_API,
     UNDEFINED,
     // TODO: remove this ?
-    GCHANGE_API
+    GCHANGE_API;
+
+    public boolean useHttpProtocol(String api) {
+        return !useWebSocketProtocol(api);
+    }
+
+    public static boolean useWebSocketProtocol(String api) {
+        return WS2P.name().equals(api);
+    }
 }
