@@ -104,7 +104,20 @@ public final class Peers {
             result.setCurrency(firstEp.getCurrency());
             result.setPubkey(firstEp.getPubkey());
 
-            result.setBlock(getBlockStamp(firstEp));
+            if (firstEp.getPeering() != null) {
+                result.setBlock(getPeeringBlockStamp(firstEp));
+                result.setSignature(firstEp.getPeering().getSignature());
+                result.setVersion(firstEp.getPeering().getVersion());
+            }
+            else {
+                result.setVersion(Protocol.VERSION);
+                result.setBlock(getStatsBlockStamp(firstEp));
+                result.setSignature(null);
+            }
+
+            // Default values (not stored yet)
+            // TODO check if still used by clients
+            result.setStatusTS(0L);
 
             // Compute status (=UP is at least one endpoint is UP)
             String status = endpoints.stream()
@@ -113,10 +126,6 @@ public final class Peers {
                     .findAny()
                     .orElse(Peer.PeerStatus.DOWN).name();
             result.setStatus(status);
-
-            // Default values (not stored yet)
-            result.setVersion(Protocol.VERSION); // TODO: get it from the storage (DB, ES, etc.) ?
-            result.setStatusTS(0L); // TODO make sure this is used by clients ?
 
             // Compute endpoints list
             List<NetworkPeering.Endpoint> bmaEps = endpoints.stream()
@@ -152,7 +161,14 @@ public final class Peers {
     }
 
 
-    public static String getBlockStamp(final Peer peer) {
+    public static String getPeeringBlockStamp(final Peer peer) {
+        return peer.getPeering() != null &&
+                peer.getPeering().getBlockNumber() != null &&
+                peer.getPeering().getBlockHash() != null
+                ? (peer.getPeering().getBlockNumber() + "-" + peer.getPeering().getBlockHash()) : null;
+    }
+
+    public static String getStatsBlockStamp(final Peer peer) {
         return peer.getStats() != null &&
                 peer.getStats().getBlockNumber() != null &&
                 peer.getStats().getBlockHash() != null

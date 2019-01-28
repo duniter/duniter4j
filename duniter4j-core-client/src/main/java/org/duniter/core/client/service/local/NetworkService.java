@@ -91,7 +91,7 @@ public interface NetworkService extends Service {
                                 final Filter filter, final Sort sort, final boolean autoreconnect,
                                 final ExecutorService executor);
 
-    CompletableFuture<List<Peer>> asyncRefreshPeers(final Peer mainPeer, final List<Peer> peers, final ExecutorService pool);
+    CompletableFuture<List<Peer>> refreshPeersAsync(final Peer mainPeer, final List<Peer> peers, final ExecutorService pool);
 
     String getVersion(final Peer peer);
 }

@@ -155,44 +155,50 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         log.debug("Loading network peers...");
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
-        CompletableFuture<List<Peer>> peersFuture = CompletableFuture.supplyAsync(() -> loadPeerLeafs(mainPeer, filterEndpoints), pool);
-        CompletableFuture<Map<String, String>> memberUidsFuture = CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool);
 
-        return CompletableFuture.allOf(
-                new CompletableFuture[] {peersFuture, memberUidsFuture})
-                .thenComposeAsync(v -> {
-                    final Map<String, String> memberUids = memberUidsFuture.join();
-                    List<Peer> peers = peersFuture.join();
+        return CompletableFuture.supplyAsync(() -> loadPeerLeafs(mainPeer, filterEndpoints), pool)
+                .thenApply(peers ->
+                    peers.stream()
+                    .map(peer -> {
+                        // For if same as main peer,
+                        if (mainPeer.getUrl().equals(peer.getUrl())) {
+                            // Update properties
+                            mainPeer.setPubkey(peer.getPubkey());
+                            mainPeer.setHash(peer.getHash());
+                            mainPeer.setCurrency(peer.getCurrency());
+                            // reuse instance
+                            peer = mainPeer;
+                        }
 
-                    List<CompletableFuture<Peer>> list = peers.stream()
-                            .map(peer -> {
-                                // For if same as main peer,
-                                if (mainPeer.getUrl().equals(peer.getUrl())) {
-                                    // Update properties
-                                    mainPeer.setPubkey(peer.getPubkey());
-                                    mainPeer.setHash(peer.getHash());
-                                    mainPeer.setCurrency(peer.getCurrency());
-                                    // reuse instance
-                                    peer = mainPeer;
-                                }
+                        // Exclude peer with only a local IPv4 address (or localhost)
+                        else if (InetAddressUtils.isLocalAddress(peer.getHost())) {
+                            return null;
+                        }
 
-                                // Exclude peer with only a local IPv4 address (or localhost)
-                                else if (InetAddressUtils.isLocalAddress(peer.getHost())) {
-                                    return CompletableFuture.<Peer>completedFuture(null);
-                                }
-
-                                return asyncRefreshPeer(peer, memberUids, pool);
-                            })
-                            .collect(Collectors.toList());
-                    return CompletableFutures.allOfToList(list);
-                });
+                        return peer;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList())
+        )
+         .thenCompose(peers -> this.refreshPeersAsync(mainPeer, peers, pool));
     }
 
 
-    public CompletableFuture<Peer> asyncRefreshPeer(final Peer peer, final Map<String, String> memberUids, final ExecutorService pool) {
+    public CompletableFuture<Peer> refreshPeerAsync(final Peer peer,
+                                                    final Map<String, String> memberUids,
+                                                    final List<Ws2pHead> ws2pHeads,
+                                                    final ExecutorService pool) {
         if (log.isDebugEnabled()) log.debug(String.format("[%s] Refreshing peer status", peer.toString()));
 
-        return CompletableFuture.supplyAsync(() -> fillNodeSummary(peer), pool)
+        // WS2P: refresh using heads
+        if (Peers.hasWs2pEndpoint(peer)) {
+            return CompletableFuture.supplyAsync(() -> fillWs2pPeer(peer, memberUids, ws2pHeads), pool);
+        }
+
+        // BMA or ES_CORE
+        if (Peers.hasBmaEndpoint(peer) || Peers.hasEsCoreEndpoint(peer)) {
+
+            return CompletableFuture.supplyAsync(() -> fillNodeSummary(peer), pool)
                 .thenApplyAsync(this::fillCurrentBlock)
                 .exceptionally(throwable -> {
                     peer.getStats().setStatus(Peer.PeerStatus.DOWN);
@@ -225,18 +231,72 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     peer.getStats().setHardshipLevel(0);
                     return peer;
                 });
+        }
+
+        // Unknown API: just return the peer
+        return CompletableFuture.completedFuture(peer);
     }
 
+    public Peer fillWs2pPeer(final Peer peer, final Map<String, String> memberUids, List<Ws2pHead> ws2pHeads) {
+        if (log.isDebugEnabled()) log.debug(String.format("[%s] Refreshing WS2P peer status", peer.toString()));
 
-    public CompletableFuture<List<Peer>> asyncRefreshPeers(final Peer mainPeer, final List<Peer> peers, final ExecutorService pool) {
-        return CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool)
-                // Refresh all endpoints
-                .thenApply(memberUids ->
-                        peers.stream().map(peer ->
-                                asyncRefreshPeer(peer, memberUids, pool))
-                                .collect(Collectors.toList())
+        if (StringUtils.isBlank(peer.getPubkey()) || StringUtils.isBlank(peer.getEpId())) return peer;
+
+        Ws2pHead ws2pHead = ws2pHeads.stream().filter(head ->
+                peer.getPubkey().equals(head.getPubkey())
+                && peer.getEpId().equals(head.getWs2pid()
                 )
+        ).findFirst().orElse(null);
+
+        if (ws2pHead != null) {
+            if (ws2pHead.getBlock() != null) {
+                String[] blockParts = ws2pHead.getBlock().split("-");
+                if (blockParts.length == 2) {
+                    peer.getStats().setBlockNumber(Integer.parseInt(blockParts[0]));
+                    peer.getStats().setBlockHash(blockParts[1]);
+                }
+            }
+            peer.getStats().setSoftware(ws2pHead.getSoftware());
+            peer.getStats().setVersion(ws2pHead.getSoftwareVersion());
+        }
+        else {
+            peer.getStats().setStatus(Peer.PeerStatus.DOWN);
+        }
+
+        // Set uid
+        String uid = memberUids.get(peer.getPubkey());
+        peer.getStats().setUid(uid);
+
+        if (uid != null) {
+            // Could not known hardship, so fill 0 if member (=can compute)
+            peer.getStats().setHardshipLevel(0);
+        }
+        else {
+            peer.getStats().setHardshipLevel(null);
+        }
+
+        return peer;
+    }
+
+    public CompletableFuture<List<Peer>> refreshPeersAsync(final Peer mainPeer,final  List<Peer> peers, final ExecutorService pool) {
+
+        if (CollectionUtils.isEmpty(peers)) return CompletableFuture.completedFuture(null);
+
+        CompletableFuture<Map<String, String>> memberUidsFuture = CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool);
+        CompletableFuture<List<Ws2pHead>> ws2pHeadsFuture = CompletableFuture.supplyAsync(() -> networkRemoteService.getWs2pHeads(mainPeer), pool);
+
+        return CompletableFuture.allOf(memberUidsFuture, ws2pHeadsFuture)
+
+                // Refresh all endpoints
+                .thenApply(v -> {
+                    final Map<String, String> memberUids = memberUidsFuture.join();
+                    final List<Ws2pHead> ws2pHeads = ws2pHeadsFuture.join();
+                    return peers.stream().map(peer ->
+                            refreshPeerAsync(peer, memberUids, ws2pHeads, pool))
+                            .collect(Collectors.toList());
+                })
                 .thenCompose(CompletableFutures::allOfToList);
+
     }
 
     public List<Peer> fillPeerStatsConsensus(final List<Peer> peers) {
@@ -245,7 +305,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         final Map<String,Long> peerCountByBuid = peers.stream()
                 .filter(peer -> Peers.isReacheable(peer) && Peers.hasDuniterEndpoint(peer))
                 .map(Peers::buid)
-                .filter(b -> b != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
         // Compute main consensus buid
@@ -253,7 +313,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 .sorted(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()))
                 .findFirst();
 
-        final String mainBuid = maxPeerCountEntry.isPresent() ? maxPeerCountEntry.get().getKey() : null;;
+        final String mainBuid = maxPeerCountEntry.isPresent() ? maxPeerCountEntry.get().getKey() : null;
 
         // Compute total of UP peers
         final Long peersUpTotal = peerCountByBuid.values().stream().mapToLong(Long::longValue).sum();
@@ -372,17 +432,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     final List<Peer> newPeers = new ArrayList<>();
                     addEndpointsAsPeers(bmaPeer, newPeers, null, filter.filterEndpoints);
 
-                    CompletableFuture<List<CompletableFuture<Peer>>> jobs =
-                            CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool)
-
-                                    // Refresh all endpoints
-                                    .thenApply(memberUids ->
-                                            newPeers.stream().map(peer ->
-                                                    asyncRefreshPeer(peer, memberUids, pool))
-                                                    .collect(Collectors.toList())
-                                    );
-
-                    jobs.thenCompose(CompletableFutures::allOfToList)
+                    refreshPeersAsync(mainPeer, newPeers, executor)
                         .thenAccept(refreshedPeers -> {
                             if (CollectionUtils.isEmpty(refreshedPeers)) return;
 
@@ -749,4 +799,6 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
             });
         }
     }
+
+
 }

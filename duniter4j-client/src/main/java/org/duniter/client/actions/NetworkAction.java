@@ -175,7 +175,7 @@ public class NetworkAction extends AbstractAction {
                     peer.getStats().getStatus().name(),
                     isUp ? formatApi(peer) : "",
                     isUp ? peer.getStats().getVersion() : "",
-                    (isUp && peer.getStats().getHardshipLevel() != null) ? peer.getStats().getHardshipLevel() : I18n.t("duniter4j.client.network.mirror"),
+                    (isUp && peer.getStats().getHardshipLevel() != null) ? peer.getStats().getHardshipLevel() : (peer.getStats().getUid() == null ? I18n.t("duniter4j.client.network.mirror") : ""),
                     isUp ? formatBuid(peer.getStats()) : ""
             };
         })

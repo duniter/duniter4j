@@ -30,13 +30,12 @@ import java.util.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
-import org.duniter.core.client.model.bma.EndpointApi;
-import org.duniter.core.client.model.bma.NetworkPeering;
-import org.duniter.core.client.model.bma.NetworkPeers;
+import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
@@ -67,6 +66,10 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     public static final String URL_PEERING_PEERS_LEAF = URL_PEERING_PEERS + "?leaf=";
 
     public static final String URL_WS_PEER = "/ws/peer";
+
+    public static final String URL_WS2P = URL_BASE + "/ws2p";
+
+    public static final String URL_WS2P_HEADS = URL_WS2P + "/heads";
 
     public NetworkRemoteServiceImpl() {
         super();
@@ -154,6 +157,26 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
         return result;
     }
 
+    @Override
+    public List<Ws2pHead> getWs2pHeads(Peer peer) {
+        Preconditions.checkNotNull(peer);
+
+        NetworkWs2pHeads remoteResult = httpService.executeRequest(peer, URL_WS2P_HEADS, NetworkWs2pHeads.class);
+
+        List<Ws2pHead> result = Lists.newArrayList();
+
+        for (NetworkWs2pHeads.Head remoteWs2pHead: remoteResult.heads) {
+
+            Ws2pHead head = remoteWs2pHead.getMessage();
+            if (head != null) {
+                head.setSignature(remoteWs2pHead.getSig());
+
+                result.add(head);
+            }
+        }
+
+        return result;
+    }
 
     @Override
     public WebsocketClientEndpoint addPeerListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {

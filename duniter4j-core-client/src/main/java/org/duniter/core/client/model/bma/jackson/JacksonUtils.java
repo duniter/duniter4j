@@ -28,6 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.client.model.bma.NetworkWs2pHeads;
+import org.duniter.core.client.model.bma.Ws2pHead;
 
 /**
  * Created by blavenie on 07/12/16.
@@ -62,6 +64,8 @@ public abstract class JacksonUtils extends SimpleModule {
         // Network
         module.addDeserializer(NetworkPeering.Endpoint.class, new EndpointDeserializer());
         module.addSerializer(NetworkPeering.Endpoint.class, new EndpointSerializer());
+        module.addDeserializer(Ws2pHead.class, new Ws2pHeadDeserializer());
+        module.addSerializer(Ws2pHead.class, new Ws2pHeadSerializer());
 
         objectMapper.registerModule(module);
 

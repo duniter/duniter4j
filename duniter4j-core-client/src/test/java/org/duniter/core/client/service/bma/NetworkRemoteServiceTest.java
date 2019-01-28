@@ -27,6 +27,7 @@ import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.client.model.bma.Ws2pHead;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.ServiceLocator;
 import org.junit.Assert;
@@ -82,6 +83,20 @@ public class NetworkRemoteServiceTest {
 
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.size() > 0);
+	}
+
+	@Test
+	public void getWs2pHeads() throws Exception {
+
+		List<Ws2pHead> result = service.getWs2pHeads(peer);
+
+		Assert.assertNotNull(result);
+		Assert.assertTrue(result.size() > 0);
+
+		// log
+		//result.stream().forEach(head ->
+		//		System.out.println(head.toString())
+		//);
 	}
 
 	/* -- internal methods */
