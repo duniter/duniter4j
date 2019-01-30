@@ -58,15 +58,29 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
         peerService = null;
     }
 
+    @Deprecated
     public <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass)  {
         return httpService.executeRequest(peer, absolutePath, resultClass);
     }
 
+    @Deprecated
+    public <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass, int timeout)  {
+        return httpService.executeRequest(peer, absolutePath, resultClass, timeout);
+    }
+
+    @Deprecated
     public <T> T executeRequest(String currencyId, String absolutePath, Class<? extends T> resultClass)  {
         Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
         return httpService.executeRequest(peer, absolutePath, resultClass);
     }
 
+    @Deprecated
+    public <T> T executeRequest(String currencyId, String absolutePath, Class<? extends T> resultClass, int timeout)  {
+        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+        return httpService.executeRequest(peer, absolutePath, resultClass, timeout);
+    }
+
+    @Deprecated
     public <T> T executeRequest(HttpUriRequest request, Class<? extends T> resultClass)  {
         return httpService.executeRequest(request, resultClass);
     }
@@ -76,14 +90,17 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
         return httpService.getPath(peer, aPath);
     }
 
+    @Deprecated
     public String getPath(Peer peer, String aPath) {
         return httpService.getPath(peer, aPath);
     }
 
+    @Deprecated
     public URIBuilder getURIBuilder(URI baseUri, String... path) {
         return httpService.getURIBuilder(baseUri, path);
     }
 
+    @Deprecated
     public URIBuilder getURIBuilder(URL baseUrl, String... path) {
         try {
             return httpService.getURIBuilder(baseUrl.toURI(), path);

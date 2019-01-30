@@ -51,6 +51,7 @@ public class BlockchainBlock implements Serializable {
     public static final String PROPERTY_REVOKED = "revoked";
     public static final String PROPERTY_EXCLUDED = "excluded";
     public static final String PROPERTY_MEDIAN_TIME = "medianTime";
+    public static final String PROPERTY_ISSUER = "issuer";
 
 
     private static final long serialVersionUID = -5598140972293452669L;

@@ -24,6 +24,7 @@ package org.duniter.core.client.dao;
 
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeers;
+import org.duniter.core.client.model.bma.NetworkWs2pHeads;
 import org.duniter.core.client.model.local.Peer;
 
 import java.util.Collection;
@@ -55,6 +56,14 @@ public interface PeerDao extends EntityDao<String, Peer> {
      * @return
      */
     List<NetworkPeers.Peer> getBmaPeersByCurrencyId(String currencyId, String[] pubkeys);
+
+    /**
+     * Get WS2p heads as BMA /network/ws2p/head format
+     * @param currencyId
+     * @param pubkeys use to filter on specific pubkeys. If null, not filtering
+     * @return
+     */
+    List<NetworkWs2pHeads.Head> getWs2pPeersByCurrencyId(String currencyId, String[] pubkeys);
 
     boolean isExists(String currencyId, String peerId);
 

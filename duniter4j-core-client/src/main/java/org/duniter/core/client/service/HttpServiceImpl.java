@@ -152,8 +152,12 @@ public class HttpServiceImpl implements HttpService, Closeable, InitializingBean
     }
 
     public <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass)  {
+        return executeRequest(peer, absolutePath, resultClass, 0);
+    }
+
+    public <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass, int timeout)  {
         HttpGet httpGet = new HttpGet(peer.getUrl() + absolutePath);
-        return executeRequest(HttpClients.getThreadHttpClient(0), httpGet, resultClass);
+        return executeRequest(HttpClients.getThreadHttpClient(timeout), httpGet, resultClass);
     }
 
     public String getPath(Peer peer, String... absolutePath) {

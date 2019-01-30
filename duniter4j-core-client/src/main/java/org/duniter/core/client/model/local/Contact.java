@@ -113,7 +113,7 @@ public class Contact implements LocalEntity<Long>, Serializable {
 
     public boolean hasIdentityForCurrency(String currencyId) {
         return identities.stream()
-                .anyMatch(identity -> identity.getCurrencyId() != null
-                        && currencyId.equals(identity.getCurrencyId()));
+                .anyMatch(identity -> identity.getCurrency() != null
+                        && currencyId.equals(identity.getCurrency()));
     }
 }

@@ -23,29 +23,23 @@ package org.duniter.core.client.model.local;
  */
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.duniter.core.client.model.BasicIdentity;
 
 public class Identity extends BasicIdentity {
 
     private static final long serialVersionUID = -7451079677730158794L;
 
+    public static final String PROPERTY_IS_MEMBER = "isMember";
+    public static final String PROPERTY_WAS_MEMBER = "wasMember";
+
     private String timestamp = null;
 
     private Boolean isMember = null;
 
-    private String currencyId;
+    private Boolean wasMember = null;
 
-    /**
-     * The timestamp value of the signature date (a BLOCK_UID)
-     * @return
-     */
-    public String getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
-    }
+    private String currency;
 
     /**
      * Indicate whether the certification is written in the blockchain or not.
@@ -58,11 +52,35 @@ public class Identity extends BasicIdentity {
         this.isMember = isMember;
     }
 
-    public String getCurrencyId() {
-        return currencyId;
+    public Boolean getWasMember() {
+        return wasMember;
     }
 
-    public void setCurrencyId(String currencyId) {
-        this.currencyId = currencyId;
+    public void setWasMember(Boolean wasMember) {
+        this.wasMember = wasMember;
+    }
+
+    /**
+     * The timestamp value of the signature date (a BLOCK_UID)
+     * @return
+     */
+    @JsonIgnore
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    @JsonIgnore
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    @JsonIgnore
+    public String getCurrency() {
+        return currency;
+    }
+
+    @JsonIgnore
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 }

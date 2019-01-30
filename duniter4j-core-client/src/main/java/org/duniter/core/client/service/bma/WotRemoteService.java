@@ -25,10 +25,7 @@ package org.duniter.core.client.service.bma;
 import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.bma.WotCertification;
 import org.duniter.core.client.model.bma.WotLookup;
-import org.duniter.core.client.model.local.Certification;
-import org.duniter.core.client.model.local.Identity;
-import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.model.local.Wallet;
+import org.duniter.core.client.model.local.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,50 +36,54 @@ public interface WotRemoteService extends Service {
 
     List<Identity> findIdentities(Set<String> currenciesIds, String uidOrPubKey);
 
+    WotLookup.Uid find(Peer peer, String uidOrPubKey);
     WotLookup.Uid find(String currencyId, String uidOrPubKey);
 
-    void getRequirments(String currencyId, String pubKey);
+    void getRequirements(String currencyId, String pubKey);
 
+    WotLookup.Uid findByUid(Peer peer, String uid);
     WotLookup.Uid findByUid(String currencyId, String uid);
 
+    WotLookup.Uid findByUidAndPublicKey(Peer peer, String uid, String pubKey);
     WotLookup.Uid findByUidAndPublicKey(String currencyId, String uid, String pubKey);
 
-    WotLookup.Uid findByUidAndPublicKey(Peer peer, String uid, String pubKey);
-
+    Identity getIdentity(Peer peer, String uid, String pubKey);
     Identity getIdentity(String currencyId, String uid, String pubKey);
 
+    Identity getIdentity(Peer peer, String pubKey);
     Identity getIdentity(String currencyId, String pubKey);
 
-    Identity getIdentity(Peer peer, String uid, String pubKey);
-
+    Collection<Certification> getCertifications(Peer peer, String uid, String pubkey, boolean isMember);
     Collection<Certification> getCertifications(String currencyId, String uid, String pubkey, boolean isMember);
 
+    WotCertification getCertifiedBy(Peer peer, String uid);
     WotCertification getCertifiedBy(String currencyId, String uid);
 
-    int countValidCertifiers(String currencyId, String pubkey);
-    
+    long countValidCertifiers(Peer peer, String pubkey);
+    long countValidCertifiers(String currencyId, String pubkey);
+
+    WotCertification getCertifiersOf(Peer peer, String uid);
     WotCertification getCertifiersOf(String currencyId, String uid);
 
-    String getSignedIdentity(String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid);
-
-    Map<String, String> getMembersUids(String currencyId);
+    String getSignedIdentity(String currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid);
 
     Map<String, String> getMembersUids(Peer peer);
-
-    void sendIdentity(String currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid);
+    List<Member> getMembers(Peer peer);
+    List<Member> getMembers(String currencyId);
 
     void sendIdentity(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid);
-
-    String getCertification(byte[] pubKey, byte[] secKey, String userUid,
-                                   String userTimestamp,
-                                   String userSignature);
+    void sendIdentity(String currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid);
 
     String sendCertification(Wallet wallet, Identity identity);
 
+    String sendCertification(Peer peer,
+                             byte[] pubKey, byte[] secKey,
+                             String userUid, String userPubKeyHash,
+                             String userTimestamp, String userSignature);
+
     String sendCertification(String currencyId,
-                                    byte[] pubKey, byte[] secKey,
-                                  String uid, String timestamp,
-                                  String userUid, String userPubKeyHash,
+                             byte[] pubKey, byte[] secKey,
+                             String userUid, String userPubKeyHash,
                              String userTimestamp, String userSignature);
 
 }

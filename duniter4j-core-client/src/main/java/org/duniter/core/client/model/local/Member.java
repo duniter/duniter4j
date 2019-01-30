@@ -1,4 +1,4 @@
-package org.duniter.core.client.model;
+package org.duniter.core.client.model.local;
 
 /*
  * #%L
@@ -23,29 +23,20 @@ package org.duniter.core.client.model;
  */
 
 
-import org.duniter.core.client.model.local.Identity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class Member extends Identity {
+public class Member extends Identity implements LocalEntity<String> {
 
     private static final long serialVersionUID = 8448049949323699700L;
 
-    private String number;
-
-    private String hash;
-
-    public String getNumber() {
-        return number;
+    @JsonIgnore
+    public String getId() {
+        return getPubkey();
     }
 
-    public void setNumber(String number) {
-        this.number = number;
+    @JsonIgnore
+    public void setId(String pubkey) {
+        setPubkey(pubkey);
     }
 
-    public String getHash() {
-        return hash;
-    }
-
-    public void setHash(String hash) {
-        this.hash = hash;
-    }
 }

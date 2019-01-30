@@ -251,6 +251,10 @@ public class Configuration  {
         return applicationConfig.getOptionAsInt(ConfigurationOption.NETWORK_TIMEOUT.getKey());
     }
 
+    public int getNetworkLargerTimeout() {
+        return Math.max(30000, getNetworkTimeout());
+    }
+
     public int getNetworkMaxTotalConnections() {
         return applicationConfig.getOptionAsInt(ConfigurationOption.NETWORK_MAX_CONNECTIONS.getKey());
     }

@@ -24,10 +24,7 @@ package org.duniter.core.client.model.local;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.duniter.core.client.model.bma.EndpointApi;
-import org.duniter.core.client.model.bma.NetworkPeering;
-import org.duniter.core.client.model.bma.NetworkPeers;
-import org.duniter.core.client.model.bma.Protocol;
+import org.duniter.core.client.model.bma.*;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.StringUtils;
 
@@ -147,6 +144,13 @@ public final class Peers {
         }).collect(Collectors.toList());
     }
 
+    public static NetworkWs2pHeads.Head toWs2pHead(Peer peer) {
+        NetworkWs2pHeads.Head result = new NetworkWs2pHeads.Head();
+
+        // TODO : add implementation
+
+        return result;
+    }
 
     public static  Peer.PeerStatus getStatus(final Peer peer) {
         return peer.getStats() != null &&

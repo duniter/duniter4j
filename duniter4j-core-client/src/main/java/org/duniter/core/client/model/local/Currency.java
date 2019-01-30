@@ -25,7 +25,6 @@ package org.duniter.core.client.model.local;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.duniter.core.client.model.Account;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 
 /**
@@ -33,7 +32,7 @@ import org.duniter.core.client.model.bma.BlockchainParameters;
  */
 public class Currency implements LocalEntity<String>, Serializable {
 
-    private String currencyName;
+    private String id;
     private Integer membersCount;
     private String firstBlockSignature;
     private Long lastUD;
@@ -42,11 +41,11 @@ public class Currency implements LocalEntity<String>, Serializable {
     public Currency() {
     }
 
-    public Currency(String currencyName,
+    public Currency(String id,
                     String firstBlockSignature,
                     int membersCount,
                     BlockchainParameters parameters) {
-        this.currencyName = currencyName;
+        this.id = id;
         this.firstBlockSignature = firstBlockSignature;
         this.membersCount = membersCount;
         this.parameters = parameters;
@@ -54,12 +53,11 @@ public class Currency implements LocalEntity<String>, Serializable {
 
     @JsonIgnore
     public String getId() {
-        return currencyName;
+        return id;
     }
 
-    public String getCurrencyName()
-    {
-        return currencyName;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public Integer getMembersCount() {
@@ -70,13 +68,6 @@ public class Currency implements LocalEntity<String>, Serializable {
         return firstBlockSignature;
     }
 
-    public void setId(String id) {
-        this.currencyName = id;
-    }
-
-    public void setCurrencyName(String currencyName) {
-        this.currencyName = currencyName;
-    }
 
     public void setMembersCount(Integer membersCount) {
         this.membersCount = membersCount;
@@ -103,6 +94,6 @@ public class Currency implements LocalEntity<String>, Serializable {
     }
 
     public String toString() {
-        return currencyName;
+        return id;
     }
 }

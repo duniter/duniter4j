@@ -24,8 +24,6 @@ package org.duniter.core.client.service.bma;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,13 +33,12 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
-import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,13 +68,15 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
     public static final String URL_WS2P_HEADS = URL_WS2P + "/heads";
 
+    public final Configuration config;
+
     public NetworkRemoteServiceImpl() {
         super();
+        this.config = Configuration.instance();
     }
 
     public NetworkPeering getPeering(Peer peer) {
-        NetworkPeering result = httpService.executeRequest(peer, URL_PEERING, NetworkPeering.class);
-        return result;
+        return httpService.executeRequest(peer, URL_PEERING, NetworkPeering.class);
     }
 
     @Override
@@ -125,9 +124,9 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     public List<Peer> findPeers(Peer peer, String status, EndpointApi endpointApi, Integer currentBlockNumber, String currentBlockHash) {
         Preconditions.checkNotNull(peer);
 
-        List<Peer> result = new ArrayList<Peer>();
+        List<Peer> result = Lists.newArrayList();
 
-        NetworkPeers remoteResult = httpService.executeRequest(peer, URL_PEERS, NetworkPeers.class);
+        NetworkPeers remoteResult = httpService.executeRequest(peer, URL_PEERS, NetworkPeers.class, config.getNetworkLargerTimeout());
 
         for (NetworkPeers.Peer remotePeer: remoteResult.peers) {
             boolean match = (status == null || status.equalsIgnoreCase(remotePeer.status))
@@ -161,7 +160,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     public List<Ws2pHead> getWs2pHeads(Peer peer) {
         Preconditions.checkNotNull(peer);
 
-        NetworkWs2pHeads remoteResult = httpService.executeRequest(peer, URL_WS2P_HEADS, NetworkWs2pHeads.class);
+        NetworkWs2pHeads remoteResult = httpService.executeRequest(peer, URL_WS2P_HEADS, NetworkWs2pHeads.class, config.getNetworkLargerTimeout());
 
         List<Ws2pHead> result = Lists.newArrayList();
 
@@ -210,7 +209,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
         Preconditions.checkNotNull(peeringDocument);
 
         // http post /tx/process
-        HttpPost httpPost = new HttpPost(getPath(peer, URL_PEERING_PEERS));
+        HttpPost httpPost = new HttpPost(httpService.getPath(peer, URL_PEERING_PEERS));
 
         if (log.isDebugEnabled()) {
             log.debug(String.format(
@@ -227,7 +226,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
             throw new TechnicalException(e);
         }
 
-        String result = executeRequest(httpPost, String.class);
+        String result = httpService.executeRequest(httpPost, String.class);
         if (log.isDebugEnabled()) {
             log.debug("Received from " + URL_PEERING_PEERS + " (POST): " + result);
         }

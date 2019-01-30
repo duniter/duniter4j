@@ -27,6 +27,7 @@ import org.duniter.core.client.dao.CurrencyDao;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
+import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 /**
@@ -62,11 +64,8 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
         blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
         currencyDao = ServiceLocator.instance().getBean(CurrencyDao.class);
 
-        // Load cache from account
-        long accountId = ServiceLocator.instance().getDataContext().getAccountId();
-        if (accountId != -1) {
-            loadCache(accountId);
-        }
+        // Load cache
+        initCaches();
     }
 
     @Override
@@ -76,13 +75,13 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
     }
 
     public Currency save(final Currency currency) {
-        ObjectUtils.checkNotNull(currency);
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(currency.getCurrencyName()));
-        ObjectUtils.checkArgument(StringUtils.isNotBlank(currency.getFirstBlockSignature()));
-        ObjectUtils.checkNotNull(currency.getMembersCount());
-        ObjectUtils.checkArgument(currency.getMembersCount().intValue() >= 0);
-        ObjectUtils.checkNotNull(currency.getLastUD());
-        ObjectUtils.checkArgument(currency.getLastUD().longValue() > 0);
+        Preconditions.checkNotNull(currency);
+        Preconditions.checkArgument(StringUtils.isNotBlank(currency.getId()));
+        Preconditions.checkArgument(StringUtils.isNotBlank(currency.getFirstBlockSignature()));
+        Preconditions.checkNotNull(currency.getMembersCount());
+        Preconditions.checkArgument(currency.getMembersCount().intValue() >= 0);
+        Preconditions.checkNotNull(currency.getLastUD());
+        Preconditions.checkArgument(currency.getLastUD().longValue() > 0);
 
         Currency result;
 
@@ -106,12 +105,18 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
         return result;
     }
 
-    public List<Currency> getCurrencies(long accountId) {
-        return currencyDao.getCurrencies(accountId);
+    public List<Currency> getAllByAccount(long accountId) {
+        return currencyDao.getAllByAccount(accountId);
     }
 
+    public List<Currency> getAll() {
+        Set<String> ids = currencyDao.getAllIds();
+        return ids.stream()
+                .map(id -> getById(id))
+                .collect(Collectors.toList());
+    }
 
-    public Currency getCurrencyById(String currencyId) {
+    public Currency getById(String currencyId) {
         return mCurrencyCache.get(currencyId);
     }
 
@@ -120,12 +125,12 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * @param currencyId
      * @return
      */
-    public String getCurrencyNameById(String currencyId) {
-        Currency currency = mCurrencyCache.getIfPresent(currencyId);
+    public String getNameById(String currencyId) {
+        Currency currency = mCurrencyCache != null ? mCurrencyCache.getIfPresent(currencyId) : null;
         if (currency == null) {
             return null;
         }
-        return currency.getCurrencyName();
+        return currency.getId();
     }
 
     /**
@@ -133,13 +138,13 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * @param currencyName
      * @return
      */
-    public String getCurrencyIdByName(String currencyName) {
+    public String getIdByName(String currencyName) {
         Preconditions.checkArgument(StringUtils.isNotBlank(currencyName));
 
         // Search from currencies
         for (Map.Entry<String, Currency> entry : mCurrencyCache.entrySet()) {
             Currency currency = entry.getValue();
-            if (ObjectUtils.equals(currencyName, currency.getCurrencyName())) {
+            if (ObjectUtils.equals(currencyName, currency.getId())) {
                 return entry.getKey();
             }
         }
@@ -150,62 +155,65 @@ public class CurrencyServiceImpl implements CurrencyService, InitializingBean {
      * Return a (cached) list of currency ids
      * @return
      */
-    public Set<String> getCurrencyIds() {
-        return mCurrencyCache.keySet();
+    public Set<String> getAllIds() {
+        Set<String> ids = mCurrencyCache.keySet();
+        if (CollectionUtils.isEmpty(ids)) {
+            ids = currencyDao.getAllIds();
+        }
+        return ids;
     }
 
     /**
      * Return a (cached) number of registered currencies
      * @return
      */
-    public int getCurrencyCount() {
+    public int count() {
         return mCurrencyCache.entrySet().size();
     }
 
-
     /**
      * Fill allOfToList cache need for currencies
-     * @param accountId
      */
-    public void loadCache(long accountId) {
-        if (mCurrencyCache == null || mUDCache == null) {
-            // Create and fill the currency cache
-            List<Currency> currencies = getCurrencies(accountId);
-            if (mCurrencyCache == null) {
+    public void initCaches() {
+        if (mCurrencyCache != null && mUDCache != null) return;
 
-                mCurrencyCache = new SimpleCache<String, Currency>() {
-                    @Override
-                    public Currency load(String currencyId) {
-                        return currencyDao.getById(currencyId);
-                    }
-                };
+        // Create and fill the currency cache
+        if (mCurrencyCache == null) {
 
-                // Fill the cache
-                for (Currency currency : currencies) {
-                    mCurrencyCache.put(currency.getId(), currency);
+            mCurrencyCache = new SimpleCache<String, Currency>() {
+                @Override
+                public Currency load(String currencyId) {
+                    return currencyDao.getById(currencyId);
                 }
+            };
+
+            // Fill cache for the configured account
+            long accountId = ServiceLocator.instance().getDataContext().getAccountId();
+            List<Currency> currencies = (accountId != -1) ? getAllByAccount(accountId) : getAll();
+            for (Currency currency : currencies) {
+                mCurrencyCache.put(currency.getId(), currency);
             }
+        }
 
-            // Create the UD cache
-            if (mUDCache == null) {
+        // Create the UD cache
+        if (mUDCache == null) {
 
-                mUDCache = new SimpleCache<String, Long>(UD_CACHE_TIME_MILLIS) {
-                    @Override
-                    public Long load(final String currencyId) {
-                        // Retrieve the last UD from the blockchain
-                        final Long lastUD = blockchainRemoteService.getLastUD(currencyId);
+            mUDCache = new SimpleCache<String, Long>(UD_CACHE_TIME_MILLIS) {
+                @Override
+                public Long load(final String currencyId) {
+                    // Retrieve the last UD from the blockchain
+                    final Long lastUD = blockchainRemoteService.getLastUD(currencyId);
 
-                        // Update currency
-                        Currency currency = getCurrencyById(currencyId);
-                        if (!ObjectUtils.equals(currency.getLastUD(), lastUD)) {
-                            currency.setLastUD(lastUD);
-                            currencyDao.update(currency);
-                        }
-
-                        return lastUD;
+                    // Update currency
+                    Currency currency = getById(currencyId);
+                    if (!ObjectUtils.equals(currency.getLastUD(), lastUD)) {
+                        currency.setLastUD(lastUD);
+                        currencyDao.update(currency);
                     }
-                };
-            }
+
+                    return lastUD;
+                }
+            };
         }
     }
 

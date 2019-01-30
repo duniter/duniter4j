@@ -58,17 +58,17 @@ public interface TransactionRemoteService extends Service {
 	String transfer(Wallet wallet, String destPubKey, long amount,
                     String comment) throws InsufficientCreditException;
 
+    TxSource getSources(Peer peer, String pubKey);
 	TxSource getSources(String currencyId, String pubKey);
 
-    TxSource getSources(Peer peer, String pubKey);
-
+    long getCreditOrZero(Peer peer, String pubKey);
     long getCreditOrZero(String currencyId, String pubKey);
 
-    Long getCredit(String currencyId, String pubKey);
-
     Long getCredit(Peer peer, String pubKey);
+    Long getCredit(String currencyId, String pubKey);
 
     long computeCredit(TxSource.Source[] sources);
 
+    TxHistory getTxHistory(Peer peer, String pubKey, long fromBlockNumber, long toBlockNumber);
     TxHistory getTxHistory(String currencyId, String pubKey, long fromBlockNumber, long toBlockNumber);
 }

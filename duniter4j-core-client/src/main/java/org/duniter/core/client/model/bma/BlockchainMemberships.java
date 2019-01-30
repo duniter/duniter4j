@@ -45,7 +45,7 @@ public class BlockchainMemberships extends BasicIdentity {
 		this.memberships = memberships;
 	}
 
-	public class Membership implements Serializable {
+	public static class Membership implements Serializable {
 		private static final long serialVersionUID = 1L;
 
 		private String version;

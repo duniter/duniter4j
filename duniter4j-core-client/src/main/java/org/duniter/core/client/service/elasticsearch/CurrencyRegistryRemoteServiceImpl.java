@@ -101,8 +101,8 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
         }
 
         // get currency
-        String path = getPath(peer, URL_ALL_CURRENCY_NAMES);
-        String jsonResponse = executeRequest(new HttpGet(path), String.class);
+        String path = httpService.getPath(peer, URL_ALL_CURRENCY_NAMES);
+        String jsonResponse = httpService.executeRequest(new HttpGet(path), String.class);
 
         List<String> currencyNames = new JsonAttributeParser<>("currencyName", String.class).getValues(jsonResponse);
 

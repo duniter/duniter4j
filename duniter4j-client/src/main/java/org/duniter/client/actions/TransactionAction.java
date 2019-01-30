@@ -100,7 +100,7 @@ public class TransactionAction extends AbstractAction  {
 
             Currency currency = ServiceLocator.instance().getBlockchainRemoteService().getCurrencyFromPeer(peer);
             ServiceLocator.instance().getCurrencyService().save(currency);
-            peer.setCurrency(currency.getCurrencyName());
+            peer.setCurrency(currency.getId());
             ServiceLocator.instance().getPeerService().save(peer);
 
 
@@ -123,7 +123,7 @@ public class TransactionAction extends AbstractAction  {
             }
 
             Wallet wallet = new Wallet(
-                    currency.getCurrencyName(),
+                    currency.getId(),
                     null,
                     keypair.getPubKey(),
                     keypair.getSecKey());
@@ -219,7 +219,7 @@ public class TransactionAction extends AbstractAction  {
         logTxSummary(wallet);
 
         peers.stream().forEach(peer -> {
-            peer.setCurrency(currency.getCurrencyName());
+            peer.setCurrency(currency.getId());
             peerService.save(peer);
 
             log.debug(String.format("Send TX to [%s]...", peer));

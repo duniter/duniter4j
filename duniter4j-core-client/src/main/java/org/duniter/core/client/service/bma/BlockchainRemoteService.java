@@ -23,6 +23,7 @@ package org.duniter.core.client.service.bma;
  */
 
 import org.duniter.core.beans.Service;
+import org.duniter.core.client.model.bma.BlockchainDifficulties;
 import org.duniter.core.client.model.local.Identity;
 import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.BlockchainMemberships;
@@ -48,6 +49,8 @@ public interface BlockchainRemoteService extends Service {
      * @return
      */
     BlockchainParameters getParameters(String currencyId, boolean useCache);
+
+    BlockchainParameters getParameters(Peer peer, boolean useCache);
 
     /**
      * get the blockchain parameters (currency parameters)
@@ -83,6 +86,8 @@ public interface BlockchainRemoteService extends Service {
      * @return
      */
     Long getBlockDividend(String currencyId, long number) throws BlockNotFoundException;
+
+    Long getBlockDividend(Peer peer, long number) throws BlockNotFoundException;
 
     /**
      * Retrieve a block, by id (from 0 to current)
@@ -124,6 +129,7 @@ public interface BlockchainRemoteService extends Service {
      *
      * @return
      */
+    BlockchainBlock getCurrentBlock(Peer peer, boolean useCache);
     BlockchainBlock getCurrentBlock(String currencyId, boolean useCache);
 
     /**
@@ -131,15 +137,8 @@ public interface BlockchainRemoteService extends Service {
      *
      * @return
      */
-    BlockchainBlock getCurrentBlock(String currencyId);
-
-    /**
-     * Retrieve the current block
-     *
-     * @param peer the peer to use for request
-     * @return the last block
-     */
     BlockchainBlock getCurrentBlock(Peer peer);
+    BlockchainBlock getCurrentBlock(String currencyId);
 
     /**
      * Retrieve the currency data, from peer
@@ -149,23 +148,20 @@ public interface BlockchainRemoteService extends Service {
      */
     Currency getCurrencyFromPeer(Peer peer);
 
-    BlockchainParameters getBlockchainParametersFromPeer(Peer peer);
+    /**
+     * Retrieve personal difficulties (level, uid)
+     * @return
+     */
+    BlockchainDifficulties getDifficulties(Peer peer);
+    BlockchainDifficulties getDifficulties(String currencyId);
 
     /**
      * Retrieve the last emitted UD (or ud0 if not UD emitted yet)
      *
-     * @param currencyId id of currency
-     * @return
-     */
-    long getLastUD(String currencyId);
-
-    /**
-     * Retrieve the last emitted UD, from a peer (or ud0 if not UD emitted yet)
-     *
-     * @param currencyId id of currency
      * @return
      */
     long getLastUD(Peer peer);
+    long getLastUD(String currencyId);
 
     /**
      * Check is a identity is not already used by a existing member
@@ -193,7 +189,6 @@ public interface BlockchainRemoteService extends Service {
      */
     void loadMembership(String currencyId, Identity identity, boolean checkLookupForNonMember);
 
-
     BlockchainMemberships getMembershipByUid(String currencyId, String uid);
 
     BlockchainMemberships getMembershipByPublicKey(String currencyId, String pubkey);
@@ -220,18 +215,18 @@ public interface BlockchainRemoteService extends Service {
      * @param startOffset
      * @return
      */
+    Map<Integer, Long> getUDs(Peer peer, long startOffset);
     Map<Integer, Long> getUDs(String currencyId, long startOffset);
 
     /**
      * Listening new block event
-     * @param currencyId
      * @param listener
      * @param autoReconnect
      * @return
      */
+    WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
     WebsocketClientEndpoint addBlockListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 
-    WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 
 
 }

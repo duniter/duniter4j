@@ -50,6 +50,8 @@ public interface HttpService extends Service {
 
     <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass);
 
+    <T> T executeRequest(Peer peer, String absolutePath, Class<? extends T> resultClass, int timeout) ;
+
     String getPath(Peer peer, String... absolutePath);
 
     String getPath(String... absolutePath);

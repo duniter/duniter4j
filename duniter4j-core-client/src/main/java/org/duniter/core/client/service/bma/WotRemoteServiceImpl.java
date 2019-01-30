@@ -23,18 +23,17 @@ package org.duniter.core.client.service.bma;
  */
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.collections4.MapUtils;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.*;
-import org.duniter.core.client.model.local.Certification;
-import org.duniter.core.client.model.local.Identity;
-import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.model.local.Wallet;
+import org.duniter.core.client.model.local.*;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.local.CurrencyService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
-import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.apache.http.NameValuePair;
@@ -46,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRemoteService {
 
@@ -54,6 +54,8 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     public static final String URL_BASE = "/wot";
 
     public static final String URL_ADD = URL_BASE + "/add";
+
+    public static final String URL_CERTIFY = URL_BASE + "/certify";
 
     public static final String URL_MEMBERS = URL_BASE + "/members";
 
@@ -88,13 +90,14 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     }
 
     public List<Identity> findIdentities(Set<String> currenciesIds, String uidOrPubKey) {
-        List<Identity> result = new ArrayList<Identity>();
+        List<Identity> result = Lists.newArrayList();
 
         String path = String.format(URL_LOOKUP, uidOrPubKey);
 
         for (String currencyId: currenciesIds) {
 
-            WotLookup lookupResult = executeRequest(currencyId, path, WotLookup.class);
+            Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+            WotLookup lookupResult = httpService.executeRequest(peer, path, WotLookup.class);
 
             addAllIdentities(result, lookupResult, currencyId);
         }
@@ -102,14 +105,14 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         return result;
     }
 
-    public WotLookup.Uid find(String currencyId, String uidOrPubKey) {
+    public WotLookup.Uid find(Peer peer, String uidOrPubKey) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Try to find user by looking up on [%s]", uidOrPubKey));
         }
 
         // get parameter
         String path = String.format(URL_LOOKUP, uidOrPubKey);
-        WotLookup lookupResults = executeRequest(currencyId, path, WotLookup.class);
+        WotLookup lookupResults = httpService.executeRequest(peer, path, WotLookup.class);
 
         for (WotLookup.Result result : lookupResults.getResults()) {
             if (CollectionUtils.isNotEmpty(result.getUids())) {
@@ -122,38 +125,50 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
     }
 
-    public Map<String, String> getMembersUids(String currencyId) {
-        // get /wot/members
-        JsonNode json = executeRequest(currencyId, URL_MEMBERS, JsonNode.class);
-
-        if (json == null  || !json.has("results")) return null;
-
-        Map<String, String> result = new HashMap<>();
-
-        json.get("results").forEach(entry -> {
-            result.put(entry.get("pubkey").asText(), entry.get("uid").asText());
-        });
-        return result;
+    public WotLookup.Uid find(String currencyId, String uidOrPubKey) {
+        return find(peerService.getActivePeerByCurrencyId(currencyId), uidOrPubKey);
     }
 
+    @Override
     public Map<String, String> getMembersUids(Peer peer) {
         // get /wot/members
-        JsonNode json = executeRequest(peer, URL_MEMBERS, JsonNode.class);
+        JsonNode json = httpService.executeRequest(peer, URL_MEMBERS, JsonNode.class);
 
         if (json == null || !json.has("results")) return null;
 
-        Map<String, String> result = new HashMap<>();
-
+        Map<String, String> result = Maps.newHashMap();
         json.get("results").forEach(entry -> {
-            result.put(entry.get("pubkey").asText(), entry.get("uid").asText());
+            result.put(
+                    entry.get("pubkey").asText(),
+                    entry.get("uid").asText()
+            );
         });
         return result;
     }
 
+    public List<Member> getMembers(Peer peer) {
 
-    public void getRequirments(String currencyId, String pubKey) {
+        Map<String, String> map = getMembersUids(peer);
+        if (MapUtils.isEmpty(map)) return null;
+
+        return map.entrySet().stream().map(entry -> {
+            Member member = new Member();
+            member.setPubkey(entry.getKey());
+            member.setUid(entry.getValue());
+            member.setMember(true);
+            return member;
+        }).collect(Collectors.toList());
+    }
+
+    public List<Member> getMembers(String currencyId) {
+        List<Member> result = getMembers(peerService.getActivePeerByCurrencyId(currencyId));
+        result.forEach(m -> m.setCurrency(currencyId));
+        return result;
+    }
+
+    public void getRequirements(String currencyId, String pubKey) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Try to find user requirements on [%s]", pubKey));
+            log.debug(String.format("TODO: implement /wot/requirements on [%s]", pubKey));
         }
         // get parameter
         String path = String.format(URL_REQUIREMENT, pubKey);
@@ -162,14 +177,14 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
     }
 
-    public WotLookup.Uid findByUid(String currencyId, String uid) {
+    public WotLookup.Uid findByUid(Peer peer, String uid) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Try to find user info by uid: %s", uid));
         }
 
         // call lookup
         String path = String.format(URL_LOOKUP, uid);
-        WotLookup lookupResults = executeRequest(currencyId, path, WotLookup.class);
+        WotLookup lookupResults = httpService.executeRequest(peer, path, WotLookup.class);
 
         // Retrieve the exact uid
         WotLookup.Uid uniqueResult = getUid(lookupResults, uid);
@@ -180,22 +195,12 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         return uniqueResult;
     }
 
+    public WotLookup.Uid findByUid(String currencyId, String uid) {
+        return findByUid(peerService.getActivePeerByCurrencyId(currencyId), uid);
+    }
+
     public WotLookup.Uid findByUidAndPublicKey(String currencyId, String uid, String pubKey) {
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Try to find user info by uid [%s] and pubKey [%s]", uid, pubKey));
-        }
-
-        // call lookup
-        String path = String.format(URL_LOOKUP, uid);
-        WotLookup lookupResults = executeRequest(currencyId, path, WotLookup.class);
-
-        // Retrieve the exact uid
-        WotLookup.Uid uniqueResult = getUidByUidAndPublicKey(lookupResults, uid, pubKey);
-        if (uniqueResult == null) {
-            return null;
-        }
-
-        return uniqueResult;
+        return findByUidAndPublicKey(peerService.getActivePeerByCurrencyId(currencyId), uid, pubKey);
     }
 
     public WotLookup.Uid findByUidAndPublicKey(Peer peer, String uid, String pubKey) {
@@ -205,7 +210,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
         // call lookup
         String path = String.format(URL_LOOKUP, uid);
-        WotLookup lookupResults = executeRequest(peer, path, WotLookup.class);
+        WotLookup lookupResults = httpService.executeRequest(peer, path, WotLookup.class);
 
         // Retrieve the exact uid
         WotLookup.Uid uniqueResult = getUidByUidAndPublicKey(lookupResults, uid, pubKey);
@@ -217,28 +222,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     }
 
     public Identity getIdentity(String currencyId, String uid, String pubKey) {
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Get identity by uid [%s] and pubKey [%s]", uid, pubKey));
-        }
-
-        WotLookup.Uid lookupUid = findByUidAndPublicKey(currencyId, uid, pubKey);
-        if (lookupUid == null) {
-            return null;
-        }
-        return toIdentity(lookupUid);
-    }
-
-    public Identity getIdentity(String currencyId, String pubKey) {
-//        Log.d(TAG, String.format("Get identity by uid [%s] and pubKey [%s]", uid, pubKey));
-
-        WotLookup.Uid lookupUid = find(currencyId, pubKey);
-        if (lookupUid == null) {
-            return null;
-        }
-        Identity result = toIdentity(lookupUid);
-        result.setPubkey(pubKey);
-        result.setCurrencyId(currencyId);
-        return result;
+        return getIdentity(peerService.getActivePeerByCurrencyId(currencyId), uid, pubKey);
     }
 
     public Identity getIdentity(Peer peer, String uid, String pubKey) {
@@ -250,97 +234,101 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         if (lookupUid == null) {
             return null;
         }
-        return toIdentity(lookupUid);
+
+        Identity result = toIdentity(lookupUid);
+        result.setPubkey(pubKey);
+        return result;
     }
 
-    public Collection<Certification> getCertifications(String currencyId, String uid, String pubkey, boolean isMember) {
+    public Identity getIdentity(String currencyId, String pubKey) {
+        return getIdentity(peerService.getActivePeerByCurrencyId(currencyId), pubKey);
+    }
+
+    @Override
+    public Identity getIdentity(Peer peer, String pubKey) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Get identity by pubKey [%s]", pubKey));
+        }
+
+        WotLookup.Uid lookupUid = find(peer, pubKey);
+        if (lookupUid == null) {
+            return null;
+        }
+        Identity result = toIdentity(lookupUid);
+        result.setPubkey(pubKey);
+        result.setCurrency(peer.getCurrency());
+        return result;
+    }
+
+
+    public Collection<Certification> getCertifications(Peer peer, String uid, String pubkey, boolean isMember) {
         Preconditions.checkNotNull(uid);
         Preconditions.checkNotNull(pubkey);
 
         if (isMember) {
-            return getCertificationsByPubkeyForMember(currencyId, pubkey, true);
+            return getCertificationsByPubkeyForMember(peer, pubkey, true);
         }
         else {
-            return getCertificationsByPubkeyForNonMember(currencyId, uid, pubkey);
+            return getCertificationsByPubkeyForNonMember(peer, uid, pubkey);
         }
     }
 
+    public Collection<Certification> getCertifications(String currencyId, String uid, String pubkey, boolean isMember) {
+        return getCertifications(peerService.getActivePeerByCurrencyId(currencyId), uid, pubkey, isMember);
+    }
 
-    public WotCertification getCertifiedBy(String currencyId, String uid) {
+    public WotCertification getCertifiedBy(Peer peer, String uid) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Try to get certifications done by uid: %s", uid));
         }
 
         // call certified-by
         String path = String.format(URL_CERTIFIED_BY, uid);
-        WotCertification result = executeRequest(currencyId, path, WotCertification.class);
+        WotCertification result = httpService.executeRequest(peer, path, WotCertification.class);
         
         return result;
+    }
+
+    public WotCertification getCertifiedBy(String currencyId, String uid) {
+        return getCertifiedBy(peerService.getActivePeerByCurrencyId(currencyId), uid);
 
     }
 
-    public int countValidCertifiers(String currencyId, String pubkey) {
+    public long countValidCertifiers(Peer peer, String pubkey) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Try to count valid certifications done by pubkey: %s", pubkey));
         }
 
-        int count =0;
-
         // call certified-by
-        Collection<Certification> certifiersOf = getCertificationsByPubkeyForMember(currencyId, pubkey, false/*only certifiers of*/);
-        if (CollectionUtils.isEmpty(certifiersOf)) {
-            return 0;
-        }
+        Collection<Certification> certifiersOf = getCertificationsByPubkeyForMember(peer, pubkey, false/*only certifiers of*/);
+        if (CollectionUtils.isEmpty(certifiersOf)) return 0;
 
-        for(Certification certifier : certifiersOf){
-            if(certifier.isValid()){
-                count++;
-            }
-        }
+        return certifiersOf.stream().filter(Certification::isValid).count();
+    }
 
-        return count;
-
+    public long countValidCertifiers(String currencyId, String pubkey) {
+        return countValidCertifiers(peerService.getActivePeerByCurrencyId(currencyId), pubkey);
     }
     
-    public WotCertification getCertifiersOf(String currencyId, String uid) {
+    public WotCertification getCertifiersOf(Peer peer, String uid) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Try to get certifications done to uid: %s", uid));
         }
 
         // call certifiers-of
         String path = String.format(URL_CERTIFIERS_OF, uid);
-        WotCertification result = executeRequest(currencyId, path, WotCertification.class);
+        WotCertification result = httpService.executeRequest(peer, path, WotCertification.class);
         
         return result;
     }
 
-
-    public void sendIdentity(String currencyId, byte[] pubKey, byte[] secKey, String userId, String blockUid) {
-        // http post /wot/add
-        HttpPost httpPost = new HttpPost(getPath(currencyId, URL_ADD));
-
-        String currency = currencyService.getCurrencyNameById(currencyId);
-
-        // compute the self-certification
-        String identity = getSignedIdentity(currency, pubKey, secKey, userId, blockUid);
-
-        List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-        urlParameters.add(new BasicNameValuePair("identity", identity));
-
-        try {
-            httpPost.setEntity(new UrlEncodedFormEntity(urlParameters));
-        }
-        catch(UnsupportedEncodingException e) {
-            throw new TechnicalException(e);
-        }
-
-        // Execute the request
-        executeRequest(httpPost, String.class);
+    public WotCertification getCertifiersOf(String currencyId, String uid) {
+        return getCertifiersOf(peerService.getActivePeerByCurrencyId(currencyId), uid);
     }
 
     public void sendIdentity(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid) {
         // http post /wot/add
-        HttpPost httpPost = new HttpPost(getPath(peer, URL_ADD));
+        HttpPost httpPost = new HttpPost(httpService.getPath(peer, URL_ADD));
 
         // compute the self-certification
         String identity = getSignedIdentity(currency, pubKey, secKey, uid, blockUid);
@@ -356,34 +344,27 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         }
 
         // Execute the request
-        executeRequest(httpPost, String.class);
+        httpService.executeRequest(httpPost, String.class);
     }
 
-    public String sendCertification(Wallet wallet,
-                                    Identity identity) {
-        return sendCertification(
-                    wallet.getCurrencyId(),
-                    wallet.getPubKey(),
-                    wallet.getSecKey(),
-                    wallet.getIdentity().getUid(),
-                    wallet.getIdentity().getTimestamp(),
-                    identity.getUid(),
-                    identity.getPubkey(),
-                    identity.getTimestamp(),
-                    identity.getSignature());
+    public void sendIdentity(String currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid) {
+        String currency = currencyService.getNameById(currencyId);
+        sendIdentity(peerService.getActivePeerByCurrencyId(currencyId), currency, pubKey, secKey, uid, blockUid);
     }
 
-    public String sendCertification(String currencyId,
-                                    byte[] pubKey, byte[] secKey,
-                                  String uid, String timestamp,
-                                  String userUid, String userPubKeyHash,
-                                  String userBlockUid, String userSignature) {
+    public String sendCertification(Peer peer,
+                                    byte[] pubKey,
+                                    byte[] secKey,
+                                    String idtyUid,
+                                    String idtyIssuer,
+                                    String idtyBlockUid,
+                                    String idtySignature) {
         // http post /wot/add
-        HttpPost httpPost = new HttpPost(getPath(currencyId, URL_ADD));
+        HttpPost httpPost = new HttpPost(httpService.getPath(peer, URL_CERTIFY));
 
         // Read the current block (number and hash)
         BlockchainRemoteService blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
-        BlockchainBlock currentBlock = blockchainService.getCurrentBlock(currencyId);
+        BlockchainBlock currentBlock = blockchainService.getCurrentBlock(peer);
         int blockNumber = currentBlock.getNumber();
         String blockHash = (blockNumber != 0)
                 ? currentBlock.getHash()
@@ -392,20 +373,16 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         // Compute the pub key hash
         String pubKeyHash = CryptoUtils.encodeBase58(pubKey);
 
-        // compute signed identity
-        String identity = getIdentity(currentBlock.getCurrency(),
-                pubKeyHash, userUid, userBlockUid, userSignature);
-
         // Compute the certification
-        String certification = null; /* FIXME getCertification(pubKey, secKey,
-                userUid, userBlockUid, userSignature,
-                blockNumber, blockHash);*/
-        String inlineCertification = toInlineCertification(pubKeyHash, userPubKeyHash, certification);
+        String certification = getCertification(
+                currentBlock.getCurrency(),
+                pubKeyHash,
+                secKey,
+                idtyIssuer, idtyUid, idtyBlockUid, idtySignature,
+                blockNumber, blockHash);
 
         List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-        urlParameters.add(new BasicNameValuePair("identity", identity));
-        urlParameters.add(new BasicNameValuePair("self", identity));
-        urlParameters.add(new BasicNameValuePair("other", inlineCertification));
+        urlParameters.add(new BasicNameValuePair("cert", certification));
 
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(urlParameters));
@@ -413,10 +390,33 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         catch(UnsupportedEncodingException e) {
             throw new TechnicalException(e);
         }
-        String selfResult = executeRequest(httpPost, String.class);
-        log.debug("received from /add: " + selfResult);
+        String selfResult = httpService.executeRequest(httpPost, String.class);
+        log.debug("received from /wot/certify: " + selfResult);
 
         return selfResult;
+    }
+
+    public String sendCertification(String currencyId,
+                                    byte[] pubKey, byte[] secKey,
+                                    String idtyIssuer,
+                                    String idtyUid,
+                                    String idtyBlockUid,
+                                    String idtySignature) {
+        return sendCertification(
+                peerService.getActivePeerByCurrencyId(currencyId),
+                pubKey, secKey, idtyIssuer, idtyUid,idtyBlockUid, idtySignature);
+    }
+
+    public String sendCertification(Wallet wallet,
+                                    Identity identity) {
+        return sendCertification(
+                wallet.getCurrencyId(),
+                wallet.getPubKey(),
+                wallet.getSecKey(),
+                identity.getUid(),
+                identity.getPubkey(),
+                identity.getTimestamp(),
+                identity.getSignature());
     }
 
     public void addAllIdentities(List<Identity> result, WotLookup lookupResults, String currencyName) {
@@ -433,7 +433,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
                 // Fill currency id and name
                 // TODO
-                target.setCurrencyId(currencyName);
+                target.setCurrency(currencyName);
 
                 result.add(target);
             }
@@ -471,10 +471,10 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
     /* -- Internal methods -- */
 
-    protected Collection<Certification> getCertificationsByPubkeyForMember(String currencyId, String pubkey, boolean onlyCertifiersOf) {
+    protected Collection<Certification> getCertificationsByPubkeyForMember(Peer peer, String pubkey, boolean onlyCertifiersOf) {
 
-        BlockchainParameters bcParameter = bcService.getParameters(currencyId, true);
-        BlockchainBlock currentBlock = bcService.getCurrentBlock(currencyId, true);
+        BlockchainParameters bcParameter = bcService.getParameters(peer, true);
+        BlockchainBlock currentBlock = bcService.getCurrentBlock(peer, true);
         long medianTime = currentBlock.getMedianTime();
         int sigValidity = bcParameter.getSigValidity();
         int sigQty = bcParameter.getSigQty();
@@ -482,14 +482,14 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         Collection<Certification> result = new TreeSet<Certification>(ModelUtils.newWotCertificationComparatorByUid());
 
         // Certifiers of
-        WotCertification certifiersOfList = getCertifiersOf(currencyId, pubkey);
+        WotCertification certifiersOfList = getCertifiersOf(peer, pubkey);
         boolean certifiersOfIsEmpty = (certifiersOfList == null
                 || certifiersOfList.getCertifications() == null);
         int validWrittenCertifiersCount = 0;
         if (!certifiersOfIsEmpty) {
             for (WotCertification.Certification certifier : certifiersOfList.getCertifications()) {
 
-                Certification cert = toCertification(certifier, currencyId);
+                Certification cert = toCertification(certifier);
                 cert.setCertifiedBy(false);
                 result.add(cert);
 
@@ -521,14 +521,14 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         if (!onlyCertifiersOf) {
 
             // Certified by
-            WotCertification certifiedByList = getCertifiedBy(currencyId, pubkey);
+            WotCertification certifiedByList = getCertifiedBy(peer, pubkey);
             boolean certifiedByIsEmpty = (certifiedByList == null
                     || certifiedByList.getCertifications() == null);
 
             if (!certifiedByIsEmpty) {
                 for (WotCertification.Certification certifiedBy : certifiedByList.getCertifications()) {
 
-                    Certification cert = toCertification(certifiedBy, currencyId);
+                    Certification cert = toCertification(certifiedBy);
                     cert.setCertifiedBy(true);
                     result.add(cert);
 
@@ -552,7 +552,14 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         return result;
     }
 
-    protected Collection<Certification> getCertificationsByPubkeyForNonMember(String currencyId, final String uid, final String pubkey) {
+    protected Collection<Certification> getCertificationsByPubkeyForMember(final String currencyId, String pubkey, boolean onlyCertifiersOf) {
+        Collection<Certification> result = getCertificationsByPubkeyForMember(peerService.getActivePeerByCurrencyId(currencyId), pubkey, onlyCertifiersOf);
+        result.forEach(c -> c.setCurrencyId(currencyId));
+        return result;
+    }
+
+
+    protected Collection<Certification> getCertificationsByPubkeyForNonMember(Peer peer, final String uid, final String pubkey) {
         // Ordered list, by uid/pubkey/cert time
 
         Collection<Certification> result = new TreeSet<>(ModelUtils.newWotCertificationComparatorByUid());
@@ -563,7 +570,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
         // call lookup
         String path = String.format(URL_LOOKUP, pubkey);
-        WotLookup lookupResults = executeRequest(currencyId, path, WotLookup.class);
+        WotLookup lookupResults = httpService.executeRequest(peer, path, WotLookup.class);
 
         // Retrieve the exact uid
         WotLookup.Uid lookupUId = getUidByUidAndPublicKey(lookupResults, uid, pubkey);
@@ -572,7 +579,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         Map<String, Certification> certifierByPubkeys = new HashMap<>();
         if (lookupUId != null && lookupUId.getOthers() != null) {
             for(WotLookup.OtherSignature lookupSignature: lookupUId.getOthers()) {
-                Collection<Certification> certifiers = toCertifierCertifications(lookupSignature, currencyId);
+                Collection<Certification> certifiers = toCertifierCertifications(lookupSignature);
                 result.addAll(certifiers);
             }
         }
@@ -583,9 +590,6 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
                 if (lookupResult.getSigned() != null) {
                     for(WotLookup.SignedSignature lookupSignature : lookupResult.getSigned()) {
                         Certification certifiedBy = toCertifiedByCerticication(lookupSignature);
-
-                        // Set the currency Id
-                        certifiedBy.setCurrencyId(currencyId);
 
                         // If exists, link to other side certification
                         String certifiedByPubkey = certifiedBy.getPubkey();
@@ -606,6 +610,12 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         // group certifications  by [uid, pubKey] and keep last timestamp
         result = groupByUidAndPubKey(result, true);
 
+        return result;
+    }
+
+    protected Collection<Certification> getCertificationsByPubkeyForNonMember(String currencyId, final String uid, final String pubkey) {
+        Collection<Certification> result = getCertificationsByPubkeyForNonMember(peerService.getActivePeerByCurrencyId(currencyId), uid, pubkey);
+        result.forEach(c -> c.setCurrencyId(currencyId));
         return result;
     }
 
@@ -642,12 +652,26 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
                 .toString();
     }
 
-    public String getCertification(byte[] pubKey, byte[] secKey, String userUid,
-                                   String userTimestamp,
-                                   String userSignature) {
+    public String getCertification(String currency,
+                                   String issuer,
+                                   byte[] secKey,
+                                   String idtyIssuer,
+                                   String idtyUid,
+                                   String idtyTimestamp,
+                                   String idtySignature,
+                                   int certBlockNumber,
+                                   String certBlockHash) {
+
         // Create the self part to sign
         String unsignedCertification = getCertificationUnsigned(
-                userUid, userTimestamp, userSignature);
+                currency,
+                issuer,
+                idtyIssuer,
+                idtyUid,
+                idtyTimestamp,
+                idtySignature,
+                certBlockNumber,
+                certBlockHash);
 
         // Compute the signature
         String signature = cryptoService.sign(unsignedCertification, secKey);
@@ -660,21 +684,25 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
                 .toString();
     }
 
-    protected String getCertificationUnsigned(String userUid,
-                                      String userTimestamp,
-                                      String userSignature) {
+    protected String getCertificationUnsigned(String currency,
+                                              String issuer,
+                                              String idtyPubkey,
+                                              String idtyUid,
+                                              String idtyTimestamp,
+                                              String idtySignature,
+                                              int certBlockNumber,
+                                              String certBlockHash) {
         // Create the self part to sign
         return new StringBuilder()
-                .append("UID:")
-                .append(userUid)
-                .append("\nMETA:TS:")
-                .append(userTimestamp)
-                .append('\n')
-                .append(userSignature)
-                /*.append("\nMETA:TS:")
-                .append(blockNumber)
-                .append('-')
-                .append(blockHash)*/
+                .append("Version: ").append(Protocol.VERSION)
+                .append("\nType: ").append(Protocol.TYPE_CERTIFICATION)
+                .append("\nCurrency: ").append(currency)
+                .append("\nIssuer: ").append(issuer)
+                .append("\nIdtyIssuer: ").append(idtyPubkey)
+                .append("\nIdtyUniqueID: ").append(idtyUid)
+                .append("\nIdtyTimestamp: ").append(idtyTimestamp)
+                .append("\nIdtySignature: ").append(idtySignature)
+                .append("\nCertTimestamp: ").append(certBlockNumber).append('-').append(certBlockHash)
                 .append('\n').toString();
     }
 
@@ -724,6 +752,9 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     protected WotLookup.Uid getUidByUidAndPublicKey(WotLookup lookupResults,
                                                    String filterUid,
                                                    String filterPublicKey) {
+        Preconditions.checkNotNull(filterUid);
+        Preconditions.checkNotNull(filterPublicKey);
+
         if (lookupResults.getResults() == null || lookupResults.getResults().length == 0) {
             return null;
         }
@@ -744,17 +775,16 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         return null;
     }
 
-    private Certification toCertification(final WotCertification.Certification source, final String currencyId) {
+    private Certification toCertification(final WotCertification.Certification source) {
         Certification target = new Certification();
         target.setPubkey(source.getPubkey());
         target.setUid(source.getUid());
         target.setMember(source.getIsMember());
-        target.setCurrencyId(currencyId);
 
         return target;
     }
 
-    private Collection<Certification> toCertifierCertifications(final WotLookup.OtherSignature source, final String currencyId) {
+    private Collection<Certification> toCertifierCertifications(final WotLookup.OtherSignature source) {
         List<Certification> result = new ArrayList<Certification>();
         // If only one uid
         if (source.getUids().length == 1) {
@@ -772,8 +802,6 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
             // Is member
             target.setMember(source.isMember());
 
-            // Set currency Id
-            target.setCurrencyId(currencyId);
 
             result.add(target);
         }
@@ -792,9 +820,6 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
                 // Is member
                 target.setMember(source.isMember());
-
-                // Set currency Id
-                target.setCurrencyId(currencyId);
 
                 result.add(target);
             }

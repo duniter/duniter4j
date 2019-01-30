@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.core.client.model.bma.BlockchainDifficulties;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 import org.duniter.core.client.model.bma.ErrorCode;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
@@ -187,6 +188,18 @@ public class BlockchainRemoteServiceTest {
             Assert.assertEquals(ErrorCode.MEMBERSHRIP_ALREADY_SEND, e.getCode());
 
         }
+    }
+
+    @Test
+    public void getDifficulties() {
+        Peer peer = createTestPeer();
+
+        BlockchainDifficulties result = service.getDifficulties(peer);
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getBlock());
+
+        Assert.assertNotNull(result.getLevels());
+        Assert.assertTrue(result.getLevels().length > 0);
     }
 
     /* -- Internal methods -- */

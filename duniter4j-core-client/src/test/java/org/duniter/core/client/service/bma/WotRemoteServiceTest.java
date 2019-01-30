@@ -27,6 +27,7 @@ import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.ErrorCode;
 import org.duniter.core.client.model.local.Identity;
+import org.duniter.core.client.model.local.Member;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.client.service.ServiceLocator;
@@ -154,6 +155,33 @@ public class WotRemoteServiceTest {
         catch(HttpBadRequestException e) {
             Assert.assertTrue(ErrorCode.UID_ALREADY_USED == e.getCode() || ErrorCode.ALREADY_UP_TO_DATE == e.getCode());
         }
+	}
+
+	@Test
+	public void sendCertification()  {
+		Peer peer = createTestPeer();
+		Wallet wallet = createTestWallet();
+		WotRemoteService service = ServiceLocator.instance().getWotRemoteService();
+
+		Identity result = service.getIdentity(peer, "kimamila", "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of");
+		Assert.assertNotNull(result);
+		Assert.assertNotNull(result.getUid());
+		Assert.assertNotNull(result.getPubkey());
+
+		try {
+			service.sendCertification(wallet, result);
+		} catch (BmaTechnicalException e) {
+			// Test user is not a member: an 1002 should be return
+			Assert.assertTrue(e.getCode() == 1002);
+		}
+	}
+
+	@Test
+	public void getMembers() {
+		Peer peer = createTestPeer();
+		List<Member> result = service.getMembers(peer);
+		Assert.assertNotNull(result);
+		Assert.assertTrue(result.size() > 0);
 	}
 
 	/* -- internal methods */

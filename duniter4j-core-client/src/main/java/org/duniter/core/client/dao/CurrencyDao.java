@@ -40,9 +40,11 @@ public interface CurrencyDao extends Bean, EntityDao<String, Currency> {
 
     void remove(final Currency currency);
 
-    List<String> getCurrencyIds();
+    Set<String> getAllIds();
 
-    List<Currency> getCurrencies(long accountId);
+    List<Currency> getAll();
+
+    List<Currency> getAllByAccount(long accountId);
 
     /**
      * Return the value of the last universal dividend

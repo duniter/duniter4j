@@ -35,6 +35,8 @@ public interface Protocol {
 
     String TYPE_MEMBERSHIP = "Membership";
 
+    String TYPE_CERTIFICATION = "Certification";
+
     String TYPE_TRANSACTION = "Transaction";
 
     String TYPE_PEER = "Peer";

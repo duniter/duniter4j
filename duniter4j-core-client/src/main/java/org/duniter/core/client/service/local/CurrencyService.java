@@ -36,41 +36,37 @@ public interface CurrencyService extends Service {
 
     Currency save(final Currency currency);
 
-    List<Currency> getCurrencies(long accountId);
+    List<Currency> getAll();
 
-    Currency getCurrencyById(String currencyId);
+    List<Currency> getAllByAccount(long accountId);
+
+    Currency getById(String currencyId);
 
     /**
      * Return a (cached) currency name, by id
      * @param currencyId
      * @return
      */
-    String getCurrencyNameById(String currencyId);
+    String getNameById(String currencyId);
 
     /**
      * Return a currency id, by name
      * @param currencyName
      * @return
      */
-    String getCurrencyIdByName(String currencyName);
+    String getIdByName(String currencyName);
 
     /**
      * Return a (cached) list of currency ids
      * @return
      */
-    Set<String> getCurrencyIds();
+    Set<String> getAllIds();
 
     /**
      * Return a (cached) number of registered currencies
      * @return
      */
-    int getCurrencyCount();
-
-    /**
-     * Fill allOfToList cache need for currencies
-     * @param context
-     */
-    void loadCache(long accountId);
+    int count();
 
     /**
      * Return the value of the last universal dividend

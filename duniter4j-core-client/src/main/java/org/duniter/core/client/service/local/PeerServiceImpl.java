@@ -31,7 +31,6 @@ import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
-import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.cache.Cache;
@@ -170,7 +169,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
             }
         };
 
-        List<Currency> currencies = ServiceLocator.instance().getCurrencyService().getCurrencies(accountId);
+        List<Currency> currencies = ServiceLocator.instance().getCurrencyService().getAllByAccount(accountId);
 
         for (Currency currency: currencies) {
             // Get peers from DB
@@ -232,13 +231,23 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     protected Peer loadDefaultPeer(String currencyId) {
         List<Peer> peers = peerDao.getPeersByCurrencyId(currencyId);
         if (CollectionUtils.isEmpty(peers)) {
-            String currencyName = currencyService.getCurrencyNameById(currencyId);
             throw new TechnicalException(String.format(
                     "No peers configure for currency [%s]",
-                    currencyName != null ? currencyName : currencyId));
+                    currencyId));
         }
 
-        return peers.get(0);
+        Peer defaultPeer = peers.stream()
+                .filter(peer -> peer.getStats() == null || peer.getStats().getStatus() == null || peer.getStats().getStatus() == Peer.PeerStatus.UP)
+                .findFirst().orElse(null);
+        if (defaultPeer != null) {
+            // Make sure currency is filled
+            defaultPeer.setCurrency(currencyId);
+        }
+        else {
+            log.warn(String.format("[%s] No default peer found. Unable to send remote request.", currencyId));
+        }
+
+        return defaultPeer;
     }
 
 }

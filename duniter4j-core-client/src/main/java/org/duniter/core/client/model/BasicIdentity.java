@@ -23,6 +23,9 @@ package org.duniter.core.client.model;
  */
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.duniter.core.client.model.local.LocalEntity;
+
 import java.io.Serializable;
 
 /**
@@ -35,6 +38,10 @@ import java.io.Serializable;
 public class BasicIdentity implements Serializable {
 
     private static final long serialVersionUID = 8080689271400316984L;
+
+    public static final String PROPERTY_UID = "uid";
+    public static final String PROPERTY_PUBKEY = "pubkey";
+    public static final String PROPERTY_SIGNATURE = "signature";
 
     private String pubkey;
 
@@ -58,10 +65,14 @@ public class BasicIdentity implements Serializable {
         this.signature = signature;
     }
 
+    @JsonIgnore
+    @Deprecated
     public String getSelf() {
         return signature;
     }
 
+    @JsonIgnore
+    @Deprecated
     public void setSelf(String signature) {
         this.signature = signature;
     }

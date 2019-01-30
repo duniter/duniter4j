@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import org.duniter.core.client.dao.PeerDao;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeers;
+import org.duniter.core.client.model.bma.NetworkWs2pHeads;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Peers;
 import org.duniter.core.util.Preconditions;
@@ -121,6 +122,17 @@ public class MemoryPeerDaoImpl implements PeerDao {
         return Peers.toBmaPeers(getPeersByCurrencyIdAndApiAndPubkeys(currencyId, null, pubkeys));
     }
 
+    @Override
+    public List<NetworkWs2pHeads.Head> getWs2pPeersByCurrencyId(String currencyId, String[] pubkeys) {
+        Preconditions.checkNotNull(currencyId);
+
+        return getPeersByCurrencyIdAndApiAndPubkeys(currencyId, null, pubkeys)
+                .stream()
+                .map(Peers::toWs2pHead)
+                // Skip if no message
+                .filter(head -> head.getMessage() != null)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public boolean isExists(final String currencyId, final  String peerId) {

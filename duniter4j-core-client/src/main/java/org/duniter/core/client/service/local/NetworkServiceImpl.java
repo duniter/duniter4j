@@ -25,6 +25,7 @@ package org.duniter.core.client.service.local;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.local.Peer;
@@ -370,7 +371,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         final String currency = filter != null && filter.currency != null ? filter.currency :
                 blockchainRemoteService.getParameters(mainPeer).getCurrency();
 
-        final List<String> knownBlocks = new ArrayList<>();
+        final Set<String> knownBlocks = Sets.newHashSet();
         final Predicate<Peer> peerFilter = peerFilter(filter);
         final Comparator<Peer> peerComparator = peerComparator(sort);
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
@@ -378,12 +379,8 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         // Refreshing one peer (e.g. received from WS)
         Consumer<List<Peer>> updateKnownBlocks = (updatedPeers) ->
-            updatedPeers.forEach(peer -> {
-                String buid = Peers.buid(peer);
-                if (!knownBlocks.contains(buid)) {
-                    knownBlocks.add(buid);
-                }
-            });
+            knownBlocks.addAll(updatedPeers.stream().map(Peers::buid).collect(Collectors.toSet()))
+        ;
 
         // Load all peers
         Runnable loadAllPeers = () -> {

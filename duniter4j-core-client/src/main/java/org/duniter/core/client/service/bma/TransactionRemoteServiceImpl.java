@@ -91,15 +91,12 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		Preconditions.checkNotNull(wallet);
 		Preconditions.checkArgument(peer != null || wallet.getCurrencyId() != null);
 
+		peer = peer != null ? peer : peerService.getActivePeerByCurrencyId(wallet.getCurrencyId());
 		// Get current block
-		BlockchainBlock currentBlock = peer != null ?
-				executeRequest(peer, BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class) :
-				executeRequest(wallet.getCurrencyId(), BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class);
+		BlockchainBlock currentBlock = httpService.executeRequest(peer, BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class);
 
 		// http post /tx/process
-		HttpPost httpPost = peer != null ?
-				new HttpPost(getPath(peer, URL_TX_PROCESS)) :
-				new HttpPost(getPath(wallet.getCurrencyId(), URL_TX_PROCESS));
+		HttpPost httpPost = new HttpPost(httpService.getPath(peer, URL_TX_PROCESS));
 
 		// compute transaction
 		String transaction = getSignedTransaction(peer, wallet, currentBlock, destPubKey, 0, amount,
@@ -120,7 +117,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 			throw new TechnicalException(e);
 		}
 
-		String selfResult = executeRequest(httpPost, String.class);
+		String selfResult = httpService.executeRequest(httpPost, String.class);
 		if (log.isDebugEnabled()) {
 			log.debug("Received from /tx/process: " + selfResult);
 		}
@@ -136,17 +133,6 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 	}
 
-	public TxSource getSources(String currencyId, String pubKey) {
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Get sources by pubKey: %s", pubKey));
-		}
-
-		// get parameter
-		String path = String.format(URL_TX_SOURCES, pubKey);
-		TxSource result = executeRequest(currencyId, path, TxSource.class);
-
-		return result;
-	}
 
 	public TxSource getSources(Peer peer, String pubKey) {
 		if (log.isDebugEnabled()) {
@@ -155,13 +141,17 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 		// get parameter
 		String path = String.format(URL_TX_SOURCES, pubKey);
-		TxSource result = executeRequest(peer, path, TxSource.class);
+		TxSource result = httpService.executeRequest(peer, path, TxSource.class);
 
 		return result;
 	}
 
-    public long getCreditOrZero(String currencyId, String pubKey) {
-        Long credit = getCredit(currencyId, pubKey);
+	public TxSource getSources(String currencyId, String pubKey) {
+		return getSources(peerService.getActivePeerByCurrencyId(currencyId), pubKey);
+	}
+
+    public long getCreditOrZero(Peer peer, String pubKey) {
+        Long credit = getCredit(peer, pubKey);
 
         if (credit == null) {
             return 0;
@@ -169,22 +159,9 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
         return credit.longValue();
     }
 
-    public Long getCredit(String currencyId, String pubKey) {
-		if (log.isDebugEnabled()) {
-			log.debug(String.format("Get credit by pubKey [%s] for currency [id=%s]", pubKey, currencyId));
-		}
-
-        // get parameter
-        String path = String.format(URL_TX_SOURCES, pubKey);
-        TxSource result = executeRequest(currencyId, path, TxSource.class);
-
-        if (result == null) {
-            return null;
-        }
-
-        // Compute the credit
-        return computeCredit(result.getSources());
-    }
+	public long getCreditOrZero(String currencyId, String pubKey) {
+		return getCreditOrZero(peerService.getActivePeerByCurrencyId(currencyId), pubKey);
+	}
 
     public Long getCredit(Peer peer, String pubKey) {
         if (log.isDebugEnabled()) {
@@ -193,7 +170,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
         // get parameter
         String path = String.format(URL_TX_SOURCES, pubKey);
-        TxSource result = executeRequest(peer, path, TxSource.class);
+        TxSource result = httpService.executeRequest(peer, path, TxSource.class);
 
         if (result == null) {
             return null;
@@ -203,8 +180,11 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
         return computeCredit(result.getSources());
     }
 
+	public Long getCredit(String currencyId, String pubKey) {
+		return getCredit(peerService.getActivePeerByCurrencyId(currencyId), pubKey);
+	}
 
-    public long computeCredit(TxSource.Source[] sources) {
+	public long computeCredit(TxSource.Source[] sources) {
         if (CollectionUtils.isEmpty(sources)) {
             return 0;
         }
@@ -216,21 +196,25 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
         return credit;
     }
 
-    public TxHistory getTxHistory(String currencyId, String pubKey, long fromBlockNumber, long toBlockNumber) {
+    public TxHistory getTxHistory(Peer peer, String pubKey, long start, long end) {
 		Preconditions.checkNotNull(pubKey);
-        Preconditions.checkArgument(fromBlockNumber >= 0);
-        Preconditions.checkArgument(fromBlockNumber <= toBlockNumber);
+        Preconditions.checkArgument(start >= 0);
+        Preconditions.checkArgument(start <= end);
 
         if (log.isDebugEnabled()) {
-			log.debug(String.format("Get TX history by pubKey [%s], from block [%s -> %s]", pubKey, fromBlockNumber, toBlockNumber));
+			log.debug(String.format("Get TX history by pubKey [%s], from block [%s -> %s]", pubKey, start, end));
 		}
 
         // get parameter
-        String path = String.format(URL_TX_HISTORY, pubKey, fromBlockNumber, toBlockNumber);
-		TxHistory result = executeRequest(currencyId, path, TxHistory.class);
+        String path = String.format(URL_TX_HISTORY, pubKey, start, end);
+		TxHistory result = httpService.executeRequest(peer, path, TxHistory.class);
 
         return result;
     }
+
+	public TxHistory getTxHistory(String currencyId, String pubKey, long start, long end) {
+		return getTxHistory(peerService.getActivePeerByCurrencyId(currencyId), pubKey, start, end);
+	}
 
 	/* -- internal methods -- */
 
