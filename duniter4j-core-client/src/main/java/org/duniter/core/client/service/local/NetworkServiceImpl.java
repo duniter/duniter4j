@@ -102,11 +102,14 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     @Override
     public List<Peer> getPeers(Peer firstPeer) {
 
+        BlockchainBlock current = blockchainRemoteService.getCurrentBlock(firstPeer);
+
         // Default filter
         Filter filterDef = new Filter();
         filterDef.filterType = null;
         filterDef.filterStatus = Peer.PeerStatus.UP;
         filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name(), EndpointApi.WS2P.name());
+        filterDef.minBlockNumber = current.getNumber().intValue() - 100;
 
         // Default sort
         Sort sortDef = new Sort();
@@ -125,7 +128,6 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         try {
             return getPeersAsync(mainPeer, (filter != null ? filter.filterEndpoints : null), executor)
-                //.thenComposeAsync(CompletableFutures::allOfToList)
                 .thenApplyAsync(this::fillPeerStatsConsensus)
                 .thenApplyAsync(peers -> peers.stream()
                         // Filter on currency
@@ -197,8 +199,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         // BMA or ES_CORE
         if (Peers.hasBmaEndpoint(peer) || Peers.hasEsCoreEndpoint(peer)) {
 
-            return CompletableFuture.supplyAsync(() -> fillNodeSummary(peer), pool)
-                .thenApplyAsync(this::fillCurrentBlock)
+            return CompletableFuture.allOf(
+                    CompletableFuture.supplyAsync(() -> fillNodeSummary(peer), pool),
+                    CompletableFuture.supplyAsync(() -> fillCurrentBlock(peer), pool)
+            )
+                .thenApply((v) -> peer)
                 .exceptionally(throwable -> {
                     peer.getStats().setStatus(Peer.PeerStatus.DOWN);
                     if(!(throwable instanceof HttpConnectException)) {
@@ -362,6 +367,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     public void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener) {
 
         BlockchainParameters parameters = blockchainRemoteService.getParameters(mainPeer);
+        fillCurrentBlock(mainPeer);
 
         // Default filter
         Filter filterDef = new Filter();
@@ -369,6 +375,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         filterDef.filterStatus = Peer.PeerStatus.UP;
         filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name(), EndpointApi.WS2P.name());
         filterDef.currency = parameters.getCurrency();
+
+        // Skip node on an old fork
+        if (mainPeer.getStats().getBlockNumber() != null) {
+            filterDef.minBlockNumber = mainPeer.getStats().getBlockNumber() - 100;
+        }
 
         // Default sort
         Sort sortDef = new Sort();
@@ -668,6 +679,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         // Filter on SSL
         if (filter.filterSsl != null && filter.filterSsl != peer.isUseSsl()) {
+            return false;
+        }
+
+        // Filter block number
+        if (filter.minBlockNumber != null && (stats.getBlockNumber() == null || stats.getBlockNumber().intValue() < filter.minBlockNumber.intValue())) {
             return false;
         }
 

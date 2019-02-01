@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections4.MapUtils;
+import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.local.*;
@@ -76,6 +77,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     private CryptoService cryptoService;
     private BlockchainRemoteService bcService;
     private CurrencyService currencyService;
+    private Configuration config;
 
     public WotRemoteServiceImpl() {
         super();
@@ -87,6 +89,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         cryptoService = ServiceLocator.instance().getCryptoService();
         bcService = ServiceLocator.instance().getBlockchainRemoteService();
         currencyService = ServiceLocator.instance().getCurrencyService();
+        config = Configuration.instance();
     }
 
     public List<Identity> findIdentities(Set<String> currenciesIds, String uidOrPubKey) {
@@ -132,7 +135,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     @Override
     public Map<String, String> getMembersUids(Peer peer) {
         // get /wot/members
-        JsonNode json = httpService.executeRequest(peer, URL_MEMBERS, JsonNode.class);
+        JsonNode json = httpService.executeRequest(peer, URL_MEMBERS, JsonNode.class, config.getNetworkLargerTimeout());
 
         if (json == null || !json.has("results")) return null;
 

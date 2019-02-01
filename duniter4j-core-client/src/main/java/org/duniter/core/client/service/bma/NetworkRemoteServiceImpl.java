@@ -37,6 +37,7 @@ import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
@@ -68,11 +69,16 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
     public static final String URL_WS2P_HEADS = URL_WS2P + "/heads";
 
-    public final Configuration config;
+    private Configuration config;
 
     public NetworkRemoteServiceImpl() {
         super();
-        this.config = Configuration.instance();
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        super.afterPropertiesSet();
+        config = Configuration.instance();
     }
 
     public NetworkPeering getPeering(Peer peer) {

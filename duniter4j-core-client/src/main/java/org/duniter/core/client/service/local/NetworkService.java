@@ -55,6 +55,7 @@ public interface NetworkService extends Service {
         public Boolean filterSsl;
         public List<String> filterEndpoints;
         public String currency;
+        public Integer minBlockNumber;
     }
 
 
