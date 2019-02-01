@@ -81,17 +81,21 @@ public class NetworkAction extends AbstractAction {
         final Peer mainPeer = peerParameters.getPeer();
         checkOutputFileIfNotNull(); // make sure the file (if any) is writable
 
-        // Reducing node timeout when broadcast
-        if (peerParameters.timeout != null) {
-            Configuration.instance().getApplicationConfig().setOption(ConfigurationOption.NETWORK_TIMEOUT.getKey(), peerParameters.timeout.toString());
+        Configuration config = Configuration.instance();
+
+        // Configure network timeout
+        Integer timeout = peerParameters.timeout;
+        if (timeout == null) {
+            timeout = 300; // Override default timeout to 300ms.
         }
+        config.getApplicationConfig().setOption(ConfigurationOption.NETWORK_TIMEOUT.getKey(), timeout.toString());
 
         dateFormat = SimpleDateFormat.getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.MEDIUM, I18n.getDefaultLocale());
 
         console = new RegexAnsiConsole();
         System.setOut(console);
 
-        log.info(I18n.t("duniter4j.client.network.loadingPeers"));
+        log.info(I18n.t("duniter4j.client.network.loadingPeers", timeout));
 
         NetworkService service = ServiceLocator.instance().getNetworkService();
 
@@ -130,11 +134,14 @@ public class NetworkAction extends AbstractAction {
             return;
         }
 
-        Peer mainConsensusPeer = peers.iterator().next();
-        Peer.Stats mainConsensusStats = mainConsensusPeer.getStats();
-        if (mainConsensusStats.isMainConsensus()) {
-            Long mediantTime = mainConsensusStats.getMedianTime();
-            String medianTime = dateFormat.format(new Date(mediantTime * 1000));
+        Peer.Stats mainConsensusStats = peers.stream()
+                .filter(p -> p.getStats() != null && p.getStats().getMedianTime() != null && p.getStats().isMainConsensus())
+                .map(Peer::getStats)
+                .findFirst().orElse(null);
+
+        // Define color of main consensus info
+        if (mainConsensusStats != null) {
+            String medianTime = dateFormat.format(new Date(mainConsensusStats.getMedianTime() * 1000));
             String mainBuid = formatBuid(mainConsensusStats);
 
             console.reset()
@@ -144,7 +151,7 @@ public class NetworkAction extends AbstractAction {
                    .fgString(medianTime, Ansi.Color.GREEN);
 
             peers.stream()
-                    .filter(peer -> peer.getStats().isForkConsensus())
+                    .filter(peer -> peer.getStats() != null && peer.getStats().isForkConsensus())
                     .map(peer -> formatBuid(peer.getStats()))
                     .forEach(forkConsensusBuid -> console.fgString(Formatters.formatBuid(forkConsensusBuid), Ansi.Color.YELLOW));
 
@@ -175,7 +182,7 @@ public class NetworkAction extends AbstractAction {
                     peer.getStats().getStatus().name(),
                     isUp ? formatApi(peer) : "",
                     isUp ? peer.getStats().getVersion() : "",
-                    (isUp && peer.getStats().getHardshipLevel() != null) ? peer.getStats().getHardshipLevel() : (peer.getStats().getUid() == null ? I18n.t("duniter4j.client.network.mirror") : ""),
+                    isUp ? formatHarshipLevel(peer) : "",
                     isUp ? formatBuid(peer.getStats()) : ""
             };
         })
@@ -252,5 +259,16 @@ public class NetworkAction extends AbstractAction {
         }
 
         return peer.getApi();
+    }
+
+    protected String formatHarshipLevel(Peer peer) {
+        // Mirror
+        if (peer.getStats().getHardshipLevel() == null || peer.getStats().getUid() == null) {
+            return I18n.t("duniter4j.client.network.mirror");
+        }
+        if (peer.getStats().getHardshipLevel() == 0) {
+            return "?";
+        }
+        return peer.getStats().getHardshipLevel().toString();
     }
 }

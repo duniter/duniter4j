@@ -417,8 +417,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                         lockManager.unlock(PEERS_UPDATE_LOCK_NAME);
                     }
                 }
+                else {
+                    log.debug("Could not acquire lock for reloading all peers. Skipping.");
+                }
             } catch (InterruptedException e) {
-                log.warn("Could not acquire lock for reloading all peers. Skipping.");
+                log.warn("Stopping reloading all peers: " + e.getMessage());
             }
         };
 
@@ -487,7 +490,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
                 // If new block + wait 3s for network propagation
                 if (isNewBlock) {
-                    schedule(loadAllPeers, pool, 3000/*waiting block propagation*/);
+                    schedule(loadAllPeers, pool, 3000/*waiting 3s, for block propagation*/);
                 }
 
             } catch(IOException e) {

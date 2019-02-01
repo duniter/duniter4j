@@ -46,7 +46,7 @@ public class PeerParameters {
     public boolean useSsl = false;
 
     @Parameter(names = "--timeout", description = "HTTP request timeout, in millisecond", descriptionKey = "duniter4j.client.params.peer.timeout")
-    public Long timeout = null;
+    public Integer timeout = null;
 
     private Peer peer = null;
 
