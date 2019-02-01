@@ -22,7 +22,13 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.io.Serializable;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BlockchainDifficulties implements Serializable {
 	private static final long serialVersionUID = -5631089862715942431L;
@@ -64,5 +70,15 @@ public class BlockchainDifficulties implements Serializable {
 		public void setLevel(int level) {
 			this.level = level;
 		}
+	}
+
+	@JsonIgnore
+	public Map<String, Integer> toMapByUid() {
+		return toMapByUid(getLevels());
+	}
+
+	public static Map<String, Integer> toMapByUid(DifficultyLevel[] levels) {
+		if (ArrayUtils.isEmpty(levels)) return null;
+		return Stream.of(levels).collect(Collectors.toMap(d -> d.getUid(), d -> d.getLevel()));
 	}
 }

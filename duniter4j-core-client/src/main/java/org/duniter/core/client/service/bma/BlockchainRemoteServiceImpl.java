@@ -50,6 +50,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implements BlockchainRemoteService {
 
@@ -571,6 +573,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     public BlockchainDifficulties getDifficulties(String currencyId) {
         return getDifficulties(peerService.getActivePeerByCurrencyId(currencyId));
     }
+
 
     /* -- Internal methods -- */
 

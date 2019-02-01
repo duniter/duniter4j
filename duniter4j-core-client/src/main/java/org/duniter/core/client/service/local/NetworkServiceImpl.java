@@ -52,6 +52,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by blavenie on 20/03/17.
@@ -161,24 +162,20 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 .thenApply(peers ->
                     peers.stream()
                     .map(peer -> {
-                        // For if same as main peer,
+                        // Replace by main peer, if same URL
                         if (mainPeer.getUrl().equals(peer.getUrl())) {
                             // Update properties
                             mainPeer.setPubkey(peer.getPubkey());
                             mainPeer.setHash(peer.getHash());
                             mainPeer.setCurrency(peer.getCurrency());
                             // reuse instance
-                            peer = mainPeer;
-                        }
-
-                        // Exclude peer with only a local IPv4 address (or localhost)
-                        else if (InetAddressUtils.isLocalAddress(peer.getHost())) {
-                            return null;
+                            return mainPeer;
                         }
 
                         return peer;
                     })
-                    .filter(Objects::nonNull)
+                    // Exclude peer with only a local address
+                    .filter(peer -> InetAddressUtils.isNotLocalAddress(peer.getHost()))
                     .collect(Collectors.toList())
         )
          .thenCompose(peers -> this.refreshPeersAsync(mainPeer, peers, pool));
@@ -188,12 +185,13 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     public CompletableFuture<Peer> refreshPeerAsync(final Peer peer,
                                                     final Map<String, String> memberUids,
                                                     final List<Ws2pHead> ws2pHeads,
+                                                    final BlockchainDifficulties difficulties,
                                                     final ExecutorService pool) {
         if (log.isDebugEnabled()) log.debug(String.format("[%s] Refreshing peer status", peer.toString()));
 
         // WS2P: refresh using heads
         if (Peers.hasWs2pEndpoint(peer)) {
-            return CompletableFuture.supplyAsync(() -> fillWs2pPeer(peer, memberUids, ws2pHeads), pool);
+            return CompletableFuture.supplyAsync(() -> fillWs2pPeer(peer, memberUids, ws2pHeads, difficulties), pool);
         }
 
         // BMA or ES_CORE
@@ -238,7 +236,10 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return CompletableFuture.completedFuture(peer);
     }
 
-    public Peer fillWs2pPeer(final Peer peer, final Map<String, String> memberUids, List<Ws2pHead> ws2pHeads) {
+    public Peer fillWs2pPeer(final Peer peer,
+                             final Map<String, String> memberUids,
+                             final List<Ws2pHead> ws2pHeads,
+                             final BlockchainDifficulties difficulties) {
         if (log.isDebugEnabled()) log.debug(String.format("[%s] Refreshing WS2P peer status", peer.toString()));
 
         if (StringUtils.isBlank(peer.getPubkey()) || StringUtils.isBlank(peer.getEpId())) return peer;
@@ -249,31 +250,42 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                 )
         ).findFirst().orElse(null);
 
+        Peer.Stats stats = peer.getStats();
+
         if (ws2pHead != null) {
             if (ws2pHead.getBlock() != null) {
                 String[] blockParts = ws2pHead.getBlock().split("-");
                 if (blockParts.length == 2) {
-                    peer.getStats().setBlockNumber(Integer.parseInt(blockParts[0]));
-                    peer.getStats().setBlockHash(blockParts[1]);
+                    stats.setBlockNumber(Integer.parseInt(blockParts[0]));
+                    stats.setBlockHash(blockParts[1]);
                 }
             }
-            peer.getStats().setSoftware(ws2pHead.getSoftware());
-            peer.getStats().setVersion(ws2pHead.getSoftwareVersion());
+            stats.setSoftware(ws2pHead.getSoftware());
+            stats.setVersion(ws2pHead.getSoftwareVersion());
         }
         else {
-            peer.getStats().setStatus(Peer.PeerStatus.DOWN);
+            stats.setStatus(Peer.PeerStatus.DOWN);
         }
 
         // Set uid
         String uid = memberUids.get(peer.getPubkey());
-        peer.getStats().setUid(uid);
+        stats.setUid(uid);
 
         if (uid != null) {
-            // Could not known hardship, so fill 0 if member (=can compute)
-            peer.getStats().setHardshipLevel(0);
+            Integer difficulty = 0;
+            if (stats.getBlockNumber() == null || (stats.getBlockNumber().intValue()+1 == difficulties.getBlock().intValue())) {
+                difficulty = Stream.of(difficulties.getLevels())
+                        .filter(d -> uid.equals(d.getUid()))
+                        .map(d -> d.getLevel())
+                        .filter(Objects::nonNull)
+                        .findFirst()
+                        // Could not known hardship, so fill 0 if member (=can compute)
+                        .orElse(new Integer(0));
+            }
+            stats.setHardshipLevel(difficulty);
         }
         else {
-            peer.getStats().setHardshipLevel(null);
+            stats.setHardshipLevel(null);
         }
 
         return peer;
@@ -285,15 +297,17 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
         CompletableFuture<Map<String, String>> memberUidsFuture = CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool);
         CompletableFuture<List<Ws2pHead>> ws2pHeadsFuture = CompletableFuture.supplyAsync(() -> networkRemoteService.getWs2pHeads(mainPeer), pool);
+        CompletableFuture<BlockchainDifficulties> difficultiesFuture = CompletableFuture.supplyAsync(() -> blockchainRemoteService.getDifficulties(mainPeer), pool);
 
-        return CompletableFuture.allOf(memberUidsFuture, ws2pHeadsFuture)
+        return CompletableFuture.allOf(memberUidsFuture, ws2pHeadsFuture, difficultiesFuture)
 
                 // Refresh all endpoints
                 .thenApply(v -> {
                     final Map<String, String> memberUids = memberUidsFuture.join();
                     final List<Ws2pHead> ws2pHeads = ws2pHeadsFuture.join();
+                    final BlockchainDifficulties difficulties = difficultiesFuture.join();
                     return peers.stream().map(peer ->
-                            refreshPeerAsync(peer, memberUids, ws2pHeads, pool))
+                            refreshPeerAsync(peer, memberUids, ws2pHeads, difficulties, pool))
                             .collect(Collectors.toList());
                 })
                 .thenCompose(CompletableFutures::allOfToList);
