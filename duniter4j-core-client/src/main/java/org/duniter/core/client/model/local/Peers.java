@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 
 import java.util.List;
@@ -112,10 +113,6 @@ public final class Peers {
                 result.setSignature(null);
             }
 
-            // Default values (not stored yet)
-            // TODO check if still used by clients
-            result.setStatusTS(0L);
-
             // Compute status (=UP is at least one endpoint is UP)
             String status = endpoints.stream()
                     .map(Peers::getStatus)
@@ -189,5 +186,51 @@ public final class Peers {
         bmaEp.setIpv6(ep.getIpv6());
         bmaEp.setPath(ep.getPath());
         return bmaEp;
+    }
+
+    public static Peer setPeeringAndStats(Peer peer, NetworkPeering peeringDocument)  {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(peeringDocument);
+
+        Peer.Stats stats = peer.getStats() != null ? peer.getStats() : new Peer.Stats();
+        Peer.Peering peering = (peer.getPeering() != null) ? peer.getPeering() : new Peer.Peering();
+
+        // Copy some fields
+        peer.setPubkey(peeringDocument.getPubkey());
+        peer.setCurrency(peeringDocument.getCurrency());
+
+        peering.setVersion(peeringDocument.getVersion());
+        peering.setSignature(peeringDocument.getSignature());
+
+        // Copy block infos
+        String blockstamp = peeringDocument.getBlock();
+        if (StringUtils.isNotBlank(blockstamp)) {
+            String[] blockParts = blockstamp.split("-");
+            if (blockParts.length == 2) {
+                int blockNumber = Integer.parseInt(blockParts[0]);
+                String blockHash = blockParts[1];
+
+                // Fill peering block
+                peering.setBlockNumber(blockNumber);
+                peering.setBlockHash(blockHash);
+
+                // use peering block as default stats (if empty)
+                if (stats.getBlockNumber() == null) {
+                    stats.setBlockNumber(blockNumber);
+                    stats.setBlockHash(blockHash);
+                }
+            }
+        }
+
+        // Update peer status UP/DOWN
+        if ("UP".equalsIgnoreCase(peeringDocument.getStatus())) {
+            stats.setStatus(Peer.PeerStatus.UP);
+            stats.setLastUpTime((long)Math.round(System.currentTimeMillis() / 1000));
+        }
+        else {
+            stats.setStatus(Peer.PeerStatus.DOWN);
+        }
+
+        return peer;
     }
 }

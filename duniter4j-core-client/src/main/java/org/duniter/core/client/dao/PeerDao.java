@@ -47,15 +47,15 @@ public interface PeerDao extends EntityDao<String, Peer> {
      * @param pubkeys
      * @return
      */
-    List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] pubkeys);
+    List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] includePubkeys);
 
     /**
-     * Get peers as BMA /network/peers format
+     * Get all UP peers
      * @param currencyId
      * @param pubkeys use to filter on specific pubkeys. If null, not filtering
      * @return
      */
-    List<NetworkPeers.Peer> getBmaPeersByCurrencyId(String currencyId, String[] pubkeys);
+    List<Peer> getUpPeersByCurrencyId(String currencyId, String[] includePubkeys);
 
     /**
      * Get WS2p heads as BMA /network/ws2p/head format
@@ -63,7 +63,7 @@ public interface PeerDao extends EntityDao<String, Peer> {
      * @param pubkeys use to filter on specific pubkeys. If null, not filtering
      * @return
      */
-    List<NetworkWs2pHeads.Head> getWs2pPeersByCurrencyId(String currencyId, String[] pubkeys);
+    List<NetworkWs2pHeads.Head> getWs2pPeersByCurrencyId(String currencyId, String[] includePubkeys);
 
     boolean isExists(String currencyId, String peerId);
 

@@ -154,15 +154,15 @@ public class Peer implements LocalEntity<String>, Serializable {
             return this;
         }
 
-        public Builder setPeering(NetworkPeers.Peer remotePeer) {
+        public Builder setPeering(NetworkPeering remotePeering) {
             this.peering = this.peering != null ? this.peering : new Peering();
 
-            this.peering.setVersion(remotePeer.getVersion());
-            this.peering.setSignature(remotePeer.getSignature());
+            this.peering.setVersion(remotePeering.getVersion());
+            this.peering.setSignature(remotePeering.getSignature());
 
             // Block number+hash
-            if (remotePeer.getBlock() != null) {
-                String[] blockParts = remotePeer.getBlock().split("-");
+            if (remotePeering.getBlock() != null) {
+                String[] blockParts = remotePeering.getBlock().split("-");
                 if (blockParts.length == 2) {
                     this.peering.setBlockNumber(Integer.parseInt(blockParts[0]));
                     this.peering.setBlockHash(blockParts[1]);

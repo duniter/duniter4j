@@ -37,7 +37,6 @@ import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.bma.jackson.JacksonUtils;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
@@ -135,7 +134,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
         NetworkPeers remoteResult = httpService.executeRequest(peer, URL_PEERS, NetworkPeers.class, config.getNetworkLargerTimeout());
 
         for (NetworkPeers.Peer remotePeer: remoteResult.peers) {
-            boolean match = (status == null || status.equalsIgnoreCase(remotePeer.status))
+            boolean match = (status == null || status.equalsIgnoreCase(remotePeer.getStatus()))
                     && (currentBlockNumber == null || currentBlockNumber.equals(parseBlockNumber(remotePeer)))
                     && (currentBlockHash == null || currentBlockHash.equals(parseBlockHash(remotePeer)));
 
@@ -244,15 +243,15 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     protected Integer parseBlockNumber(NetworkPeers.Peer remotePeer) {
         Preconditions.checkNotNull(remotePeer);
 
-        if (remotePeer.block == null) {
+        if (remotePeer.getBlock() == null) {
             return null;
         }
-        int index = remotePeer.block.indexOf("-");
+        int index = remotePeer.getBlock().indexOf("-");
         if (index == -1) {
             return null;
         }
 
-        String str = remotePeer.block.substring(0, index);
+        String str = remotePeer.getBlock().substring(0, index);
         try {
             return Integer.parseInt(str);
         } catch(NumberFormatException e) {
@@ -263,15 +262,15 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     protected String parseBlockHash(NetworkPeers.Peer remotePeer) {
         Preconditions.checkNotNull(remotePeer);
 
-        if (remotePeer.block == null) {
+        if (remotePeer.getBlock()== null) {
             return null;
         }
-        int index = remotePeer.block.indexOf("-");
+        int index = remotePeer.getBlock().indexOf("-");
         if (index == -1) {
             return null;
         }
 
-        String hash = remotePeer.block.substring(index+1);
+        String hash = remotePeer.getBlock().substring(index+1);
         return hash;
     }
 

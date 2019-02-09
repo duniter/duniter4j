@@ -43,76 +43,9 @@ public class NetworkPeers implements Serializable {
         return s;
     }
 
-    public static class Peer implements Serializable {
-        public String version;
-        public String currency;
-        public String status;
-        public Long statusTS;
-        public String block;
-        public String signature;
-        public String pubkey;
+    public static class Peer extends NetworkPeering implements Serializable {
         public Long firstDown;
         public Long lastTry;
-        public String raw;
-        public NetworkPeering.Endpoint[] endpoints;
-
-        public String getVersion() {
-            return version;
-        }
-
-        public void setVersion(String version) {
-            this.version = version;
-        }
-
-        public String getCurrency() {
-            return currency;
-        }
-
-        public void setCurrency(String currency) {
-            this.currency = currency;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        @JsonGetter("statusTS")
-        public Long getStatusTS() {
-            return statusTS;
-        }
-
-        @JsonSetter("statusTS")
-        public void setStatusTS(Long statusTS) {
-            this.statusTS = statusTS;
-        }
-
-        public String getBlock() {
-            return block;
-        }
-
-        public void setBlock(String block) {
-            this.block = block;
-        }
-
-        public String getSignature() {
-            return signature;
-        }
-
-        public void setSignature(String signature) {
-            this.signature = signature;
-        }
-
-        public String getPubkey() {
-            return pubkey;
-        }
-
-        public void setPubkey(String pubkey) {
-            this.pubkey = pubkey;
-        }
 
         @JsonGetter("first_down")
         public Long getFirstDown() {
@@ -142,22 +75,13 @@ public class NetworkPeers implements Serializable {
             this.endpoints = endpoints;
         }
 
-        @JsonIgnore
-        public String getRaw() {
-            return raw;
-        }
-
-        public void setRaw(String raw) {
-            this.raw = raw;
-        }
-
         @Override
         public String toString() {
-            String s = "version=" + version + "\n" +
-                    "currency=" + currency + "\n" +
-                    "pubkey=" + pubkey + "\n" +
-                    "status=" + status + "\n" +
-                    "block=" + block + "\n";
+            String s = "version=" + getVersion() + "\n" +
+                    "currency=" + getCurrency() + "\n" +
+                    "pubkey=" + getPubkey() + "\n" +
+                    "status=" + getStatus() + "\n" +
+                    "block=" + getBlock() + "\n";
             for(NetworkPeering.Endpoint endpoint: endpoints) {
                 if (endpoint != null) {
                     s += endpoint.toString() + "\n";

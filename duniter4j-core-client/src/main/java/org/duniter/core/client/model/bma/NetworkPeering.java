@@ -37,10 +37,9 @@ public class NetworkPeering implements Serializable {
     private String block;
     private String signature;
     private String status;
+    private String pubkey;
 
     private String raw;
-
-    private String pubkey;
 
     public Endpoint[] endpoints;
 

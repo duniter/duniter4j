@@ -116,10 +116,13 @@ public class MemoryPeerDaoImpl implements PeerDao {
     }
 
     @Override
-    public List<NetworkPeers.Peer> getBmaPeersByCurrencyId(String currencyId, String[] pubkeys) {
+    public List<Peer> getUpPeersByCurrencyId(String currencyId, String[] pubkeys) {
         Preconditions.checkNotNull(currencyId);
 
-        return Peers.toBmaPeers(getPeersByCurrencyIdAndApiAndPubkeys(currencyId, null, pubkeys));
+        return getPeersByCurrencyIdAndApiAndPubkeys(currencyId, null, pubkeys)
+                .stream()
+                .filter(Peers::isReacheable)
+                .collect(Collectors.toList());
     }
 
     @Override
