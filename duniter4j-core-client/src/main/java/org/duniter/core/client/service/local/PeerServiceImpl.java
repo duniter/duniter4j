@@ -191,12 +191,15 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
                 log.debug(String.format("[%s] Updating peers (%s endpoints found)", currencyId, peers.size()));
             }
 
-            final long upTime = System.currentTimeMillis() / 1000;
+            // FIXME: Duniter 1.7 return lastUpTime in ms. Check if this a bug or not
+            final long upTime = System.currentTimeMillis();
+            //final long upTime = System.currentTimeMillis() / 1000;
 
             peers.forEach(peer -> {
                 // On each UP peers: set last UP time
                 if (peer.getStats() != null && peer.getStats().isReacheable()) {
                     peer.getStats().setLastUpTime(upTime);
+                    peer.getStats().setFirstDownTime(null);
                 }
                 // Save
                 save(peer);
@@ -208,7 +211,6 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     public boolean isExists(String currencyId, String peerId) {
         return peerDao.isExists(currencyId, peerId);
     }
-
 
     @Override
     public void updatePeersAsDown(String currencyId, Collection<String> filterApis) {

@@ -32,24 +32,22 @@ import org.duniter.core.client.model.bma.BlockchainParameters;
  */
 public class Currency implements LocalEntity<String>, Serializable {
 
+    public static final String PROPERTY_FIRST_BLOCK_SIGNATURE = "firstBlockSignature";
+    public static final String PROPERTY_MEMBER_COUNT = "membersCount";
+    public static final String PROPERTY_LAST_UD = "lastUD";
+    public static final String PROPERTY_PARAMETERS = "parameters";
+    public static final String PROPERTY_UNITBASE = "unitbase";
+
     private String id;
-    private Integer membersCount;
-    private String firstBlockSignature;
-    private Long lastUD;
     private BlockchainParameters parameters;
+    private String firstBlockSignature;
+    private Integer membersCount;
+    private Long lastUD;
+    private Integer unitbase;
 
     public Currency() {
     }
 
-    public Currency(String id,
-                    String firstBlockSignature,
-                    int membersCount,
-                    BlockchainParameters parameters) {
-        this.id = id;
-        this.firstBlockSignature = firstBlockSignature;
-        this.membersCount = membersCount;
-        this.parameters = parameters;
-    }
 
     @JsonIgnore
     public String getId() {
@@ -68,7 +66,6 @@ public class Currency implements LocalEntity<String>, Serializable {
         return firstBlockSignature;
     }
 
-
     public void setMembersCount(Integer membersCount) {
         this.membersCount = membersCount;
     }
@@ -83,6 +80,14 @@ public class Currency implements LocalEntity<String>, Serializable {
 
     public void setLastUD(Long lastUD) {
         this.lastUD = lastUD;
+    }
+
+    public Integer getUnitbase() {
+        return unitbase;
+    }
+
+    public void setUnitbase(Integer unitbase) {
+        this.unitbase = unitbase;
     }
 
     public BlockchainParameters getParameters() {

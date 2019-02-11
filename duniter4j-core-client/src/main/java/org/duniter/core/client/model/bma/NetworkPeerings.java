@@ -41,11 +41,14 @@ public class NetworkPeerings {
     }
 
     public static NetworkPeering parse(String document) throws IOException {
+        NetworkPeering result = new NetworkPeering();
+        return parse(document, result);
+    }
+
+    public static NetworkPeering parse(String document, NetworkPeering result) throws IOException {
         Preconditions.checkNotNull(document);
 
         try {
-
-            NetworkPeering result = new NetworkPeering();
 
             String[] lines = document.trim().split("\n");
 
@@ -87,26 +90,6 @@ public class NetworkPeerings {
         }
         catch(Exception e) {
             throw new IOException(e.getMessage(), e);
-        }
-    }
-
-    public static void parseDefaultFormatEndPoint(Matcher matcher, NetworkPeering.Endpoint endpoint, int startGroup) {
-        for(int i=startGroup; i<=matcher.groupCount(); i++) {
-            String word = matcher.group(i);
-
-            if (StringUtils.isNotBlank(word)) {
-                if (InetAddressUtils.isIPv4Address(word)) {
-                    endpoint.ipv4 = word;
-                } else if (InetAddressUtils.isIPv6Address(word)) {
-                    endpoint.ipv6 = word;
-                } else if (i == matcher.groupCount() || (i == matcher.groupCount() -1) && word.matches("\\d+")){
-                    endpoint.port = Integer.parseInt(word);
-                } else if (word.startsWith("/")) {
-                    endpoint.path = word;
-                } else {
-                    endpoint.dns = word;
-                }
-            }
         }
     }
 }

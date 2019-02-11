@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
-import org.duniter.core.client.model.bma.NetworkPeers;
+import org.duniter.core.client.model.bma.NetworkPeerings;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.http.InetAddressUtils;
@@ -56,6 +56,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         private String path;
 
         private Peering peering;
+        private Stats stats;
 
         public Builder() {
 
@@ -160,6 +161,12 @@ public class Peer implements LocalEntity<String>, Serializable {
             this.peering.setVersion(remotePeering.getVersion());
             this.peering.setSignature(remotePeering.getSignature());
 
+            String raw = remotePeering.getRaw();
+            if (StringUtils.isBlank(raw)) {
+                raw = remotePeering.toString();
+            }
+            this.peering.setRaw(raw);
+
             // Block number+hash
             if (remotePeering.getBlock() != null) {
                 String[] blockParts = remotePeering.getBlock().split("-");
@@ -171,6 +178,34 @@ public class Peer implements LocalEntity<String>, Serializable {
 
             return this;
         }
+
+        public Builder setStats(NetworkPeering remotePeering) {
+            this.stats = this.stats != null ? this.stats : new Stats();
+
+            // Block number+hash
+            if (remotePeering.getBlock() != null) {
+                String[] blockParts = remotePeering.getBlock().split("-");
+                if (blockParts.length == 2) {
+                    this.stats.setBlockNumber(Integer.parseInt(blockParts[0]));
+                    this.stats.setBlockHash(blockParts[1]);
+                }
+            }
+
+            // Update peer status UP/DOWN
+            if ("UP".equalsIgnoreCase(remotePeering.getStatus())) {
+                stats.setStatus(Peer.PeerStatus.UP);
+
+                // FIXME: Duniter 1.7 return lastUpTime in ms. Check if this a bug or not
+                stats.setLastUpTime(System.currentTimeMillis());
+                //stats.setLastUpTime((long)Math.round(System.currentTimeMillis() / 1000));
+            }
+            else {
+                stats.setStatus(Peer.PeerStatus.DOWN);
+            }
+
+            return this;
+        }
+
 
         public void setPath(String path) {
             this.path = path;
@@ -200,6 +235,10 @@ public class Peer implements LocalEntity<String>, Serializable {
             // Peering
             if (this.peering != null) {
                 ep.setPeering(this.peering);
+            }
+            // Stats
+            if (this.stats != null) {
+                ep.setStats(this.stats);
             }
             return ep;
         }
@@ -518,8 +557,9 @@ public class Peer implements LocalEntity<String>, Serializable {
         public static final String PROPERTY_SOFTWARE = "software";
         public static final String PROPERTY_VERSION = "version";
         public static final String PROPERTY_STATUS = "status";
-        public static final String PROPERTY_LAST_UP_TIME = "lastUpTime";
         public static final String PROPERTY_UID = "uid";
+        public static final String PROPERTY_LAST_UP_TIME = "lastUpTime";
+        public static final String PROPERTY_FIRST_DOWN_TIME = "firstDownTime";
 
         private String software;
         private String version;
@@ -534,6 +574,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         private Double consensusPct = 0d;
         private String uid;
         private Long lastUpTime;
+        private Long firstDownTime;
 
         public Stats() {
 
@@ -646,6 +687,14 @@ public class Peer implements LocalEntity<String>, Serializable {
 
         public void setLastUpTime(Long lastUpTime) {
             this.lastUpTime = lastUpTime;
+        }
+
+        public Long getFirstDownTime() {
+            return firstDownTime;
+        }
+
+        public void setFirstDownTime(Long firstDownTime) {
+            this.firstDownTime = firstDownTime;
         }
     }
 }

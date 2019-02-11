@@ -25,6 +25,7 @@ package org.duniter.core.client.dao.mem;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.duniter.core.client.dao.CurrencyDao;
+import org.duniter.core.client.model.local.Currency;
 
 import java.util.*;
 
@@ -43,7 +44,7 @@ public class MemoryCurrencyDaoImpl implements CurrencyDao {
     }
 
     @Override
-    public org.duniter.core.client.model.local.Currency create(final org.duniter.core.client.model.local.Currency entity) {
+    public Currency create(final org.duniter.core.client.model.local.Currency entity) {
 
         currencies.put(entity.getId(), entity);
 
@@ -51,13 +52,13 @@ public class MemoryCurrencyDaoImpl implements CurrencyDao {
     }
 
     @Override
-    public org.duniter.core.client.model.local.Currency update(final org.duniter.core.client.model.local.Currency currency) {
+    public Currency update(final Currency currency) {
         currencies.put(currency.getId(), currency);
         return currency;
     }
 
     @Override
-    public void remove(final org.duniter.core.client.model.local.Currency currency) {
+    public void remove(final Currency currency) {
         currencies.remove(currency.getId());
     }
 
@@ -67,23 +68,23 @@ public class MemoryCurrencyDaoImpl implements CurrencyDao {
     }
 
     @Override
-    public List<org.duniter.core.client.model.local.Currency> getAll() {
+    public List<Currency> getAll() {
         return ImmutableList.copyOf(currencies.values());
     }
 
     @Override
-    public List<org.duniter.core.client.model.local.Currency> getAllByAccount(long accountId) {
+    public List<Currency> getAllByAccount(long accountId) {
         return ImmutableList.copyOf(currencies.values());
     }
 
     @Override
-    public org.duniter.core.client.model.local.Currency getById(String id) {
+    public Currency getById(String id) {
         return currencies.get(id);
     }
 
     @Override
     public long getLastUD(String id) {
-        org.duniter.core.client.model.local.Currency currency = getById(id);
+        Currency currency = getById(id);
         if (currency == null) {
             return -1;
         }

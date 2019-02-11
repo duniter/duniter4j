@@ -27,6 +27,7 @@ import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.StringUtils;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Created by eis on 05/02/15.
@@ -91,7 +92,6 @@ public class NetworkPeering implements Serializable {
         this.status = status;
     }
 
-    @JsonIgnore
     public String getRaw() {
         return raw;
     }
@@ -230,6 +230,20 @@ public class NetworkPeering implements Serializable {
                 sb.append(" ").append(path);
             }
             return sb.toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Endpoint) {
+                return Objects.equals(((Endpoint) obj).api, api)
+                        && Objects.equals(((Endpoint) obj).id, id)
+                        && Objects.equals(((Endpoint) obj).dns, dns)
+                        && Objects.equals(((Endpoint) obj).ipv4, ipv4)
+                        && Objects.equals(((Endpoint) obj).ipv6, ipv6)
+                        && Objects.equals(((Endpoint) obj).port, port)
+                        && Objects.equals(((Endpoint) obj).path, path);
+            }
+            return super.equals(obj);
         }
     }
 

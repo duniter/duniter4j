@@ -22,22 +22,27 @@ package org.duniter.core.client.model.local;
  * #L%
  */
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Created by blavenie on 12/09/17.
  */
 public final class Peers {
+
+    private static final Logger log = LoggerFactory.getLogger(Peers.class);
 
     private Peers() {
         // helper class
@@ -79,66 +84,65 @@ public final class Peers {
         return peer.getStats() != null && peer.getStats().isReacheable();
     }
 
-    public static List<NetworkPeers.Peer> toBmaPeers(List<Peer> peers) {
-        if (CollectionUtils.isEmpty(peers)) return null;
+    public static List<NetworkPeers.Peer> toBmaPeers(List<Peer> endpointAsPeers) {
+        if (CollectionUtils.isEmpty(endpointAsPeers)) return null;
 
-        // Group endpoint by pubkey
-        Map<String, List<Peer>> epByPubkeys = Maps.newHashMap();
-        peers.stream().forEach(peer -> {
-            String pubkey = peer.getPubkey();
-            if (StringUtils.isNotBlank(pubkey)) {
-                List<Peer> endpoints = epByPubkeys.get(pubkey);
-                if (endpoints == null) {
-                    endpoints = Lists.newArrayList();
-                    epByPubkeys.put(pubkey, endpoints);
-                }
-                endpoints.add(peer);
-            }
-        });
+        Joiner keyJoiner = Joiner.on(':');
 
-        return epByPubkeys.values().stream().map(endpoints -> {
-            Peer firstEp = endpoints.get(0);
-            NetworkPeers.Peer result = new NetworkPeers.Peer();
-            result.setCurrency(firstEp.getCurrency());
-            result.setPubkey(firstEp.getPubkey());
+        // Group by peering document
+        Multimap<String, Peer> groupByPeering = ArrayListMultimap.create();
+        endpointAsPeers.stream()
+                .filter(endpointAsPeer ->
+                        endpointAsPeer.getPeering() != null
+                        && endpointAsPeer.getPubkey() != null
+                        && endpointAsPeer.getPeering().getSignature() != null
+                        && endpointAsPeer.getPeering().getRaw() != null
+                )
+                .forEach(endpointAsPeer ->  {
+                    String peeringKey = String.format("%s:%s:%s",
+                                    endpointAsPeer.getPubkey(),
+                                    endpointAsPeer.getPeering().getBlockNumber(),
+                                    endpointAsPeer.getPeering().getSignature());
+                    groupByPeering.put(peeringKey, endpointAsPeer);
+                });
 
-            if (firstEp.getPeering() != null) {
-                result.setBlock(getPeeringBlockStamp(firstEp));
-                result.setSignature(firstEp.getPeering().getSignature());
-                result.setVersion(firstEp.getPeering().getVersion());
-            }
-            else {
-                result.setVersion(Protocol.VERSION);
-                result.setBlock(getStatsBlockStamp(firstEp));
-                result.setSignature(null);
-            }
+        // Sort keys, to select only first peering doc, by pubkey (by block number)
+        Set<String> processedPubkeys = Sets.newHashSet();
+        return groupByPeering.keySet().stream()
+                .sorted(Comparator.naturalOrder())
+                .map(peeringKey -> {
+                    String pubkey = peeringKey.substring(0, peeringKey.indexOf(':'));
+                    // Skip if already processed
+                    if (processedPubkeys.contains(pubkey)) return null;
+                    // Remember the pubkey, to skip it next time
+                    processedPubkeys.add(pubkey);
 
-            // Compute status (=UP is at least one endpoint is UP)
-            String status = endpoints.stream()
-                    .map(Peers::getStatus)
-                    .filter(s -> s == Peer.PeerStatus.UP)
-                    .findAny()
-                    .orElse(Peer.PeerStatus.DOWN).name();
-            result.setStatus(status);
+                    // Get the first endpoint found for this pubkey
+                    Peer peer = groupByPeering.get(peeringKey).iterator().next();
+                    NetworkPeers.Peer result = new NetworkPeers.Peer();
 
-            // Compute endpoints list
-            List<NetworkPeering.Endpoint> bmaEps = endpoints.stream()
-                    .map(Peers::toBmaEndpoint)
-                    .collect(Collectors.toList());
-            result.setEndpoints(bmaEps.toArray(new NetworkPeering.Endpoint[bmaEps.size()]));
+                    // Fill BMA peer, using the raw document
+                    try {
+                        NetworkPeerings.parse(peer.getPeering().getRaw(), result);
+                    } catch (IOException e) {
+                        log.error("Unable to parse raw document found in: " + peer.toString());
+                        return null;
+                    }
 
-            // Compute last try
-            Long lastUpTime =  endpoints.stream()
-                    .map(Peers::getLastUpTime)
-                    .filter(Objects::nonNull)
-                    .max(Long::compare)
-                    .orElse(null);
-
-            // Compute last try
-            result.setLastTry(lastUpTime);
-
-            return result;
-        }).collect(Collectors.toList());
+                    // Override the status, last_try and first_down, using stats
+                    Peer.PeerStatus status = getStatus(peer).orElse(Peer.PeerStatus.DOWN);
+                    result.setStatus(status.name());
+                    if (status == Peer.PeerStatus.UP) {
+                        result.setLastTry(getLastUpTime(peer).get());
+                    }
+                    else {
+                        result.setFirstDown(getFirstDownTime(peer).get());
+                    }
+                    return result;
+                })
+                // Remove skipped items
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     public static NetworkWs2pHeads.Head toWs2pHead(Peer peer) {
@@ -149,18 +153,23 @@ public final class Peers {
         return result;
     }
 
-    public static  Peer.PeerStatus getStatus(final Peer peer) {
-        return peer.getStats() != null &&
-                peer.getStats().getStatus() != null ?
-                peer.getStats().getStatus() : null;
+    public static Optional<Peer.PeerStatus> getStatus(final Peer peer) {
+        return peer.getStats() != null ?
+                Optional.ofNullable(peer.getStats().getStatus()) :
+                Optional.empty();
     }
 
-    public static Long getLastUpTime(final Peer peer) {
-        return peer.getStats() != null &&
-                peer.getStats().getLastUpTime() != null ?
-                peer.getStats().getLastUpTime() : null;
+    public static Optional<Long> getLastUpTime(final Peer peer) {
+        return peer.getStats() != null ?
+                Optional.ofNullable(peer.getStats().getLastUpTime()) :
+                Optional.empty();
     }
 
+    public static Optional<Long> getFirstDownTime(final Peer peer) {
+        return peer.getStats() != null ?
+                Optional.ofNullable(peer.getStats().getFirstDownTime()) :
+                Optional.empty();
+    }
 
     public static String getPeeringBlockStamp(final Peer peer) {
         return peer.getPeering() != null &&
@@ -188,11 +197,26 @@ public final class Peers {
         return bmaEp;
     }
 
-    public static Peer setPeeringAndStats(Peer peer, NetworkPeering peeringDocument)  {
+    public static NetworkPeers.Peer toBmaPeer(NetworkPeering peeringDocument) {
+        NetworkPeers.Peer result = new NetworkPeers.Peer();
+
+        result.setCurrency(peeringDocument.getCurrency());
+        result.setPubkey(peeringDocument.getPubkey());
+        result.setBlock(peeringDocument.getBlock());
+        result.setSignature(peeringDocument.getSignature());
+        result.setVersion(peeringDocument.getVersion());
+        result.setEndpoints(peeringDocument.getEndpoints());
+        result.setStatus(peeringDocument.getStatus());
+
+        result.setRaw(peeringDocument.getRaw());
+
+        return result;
+    }
+
+    public static Peer setPeering(Peer peer, NetworkPeering peeringDocument)  {
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(peeringDocument);
 
-        Peer.Stats stats = peer.getStats() != null ? peer.getStats() : new Peer.Stats();
         Peer.Peering peering = (peer.getPeering() != null) ? peer.getPeering() : new Peer.Peering();
 
         // Copy some fields
@@ -203,29 +227,39 @@ public final class Peers {
         peering.setSignature(peeringDocument.getSignature());
 
         // Copy block infos
-        String blockstamp = peeringDocument.getBlock();
-        if (StringUtils.isNotBlank(blockstamp)) {
-            String[] blockParts = blockstamp.split("-");
+        if (StringUtils.isNotBlank(peeringDocument.getBlock())) {
+            String[] blockParts = peeringDocument.getBlock().split("-");
             if (blockParts.length == 2) {
-                int blockNumber = Integer.parseInt(blockParts[0]);
-                String blockHash = blockParts[1];
+                peering.setBlockNumber(Integer.parseInt(blockParts[0]));
+                peering.setBlockHash(blockParts[1]);
+            }
+        }
 
-                // Fill peering block
-                peering.setBlockNumber(blockNumber);
-                peering.setBlockHash(blockHash);
+        return peer;
+    }
 
-                // use peering block as default stats (if empty)
-                if (stats.getBlockNumber() == null) {
-                    stats.setBlockNumber(blockNumber);
-                    stats.setBlockHash(blockHash);
-                }
+    public static Peer setStats(Peer peer, NetworkPeering peeringDocument)  {
+        Preconditions.checkNotNull(peer);
+        Preconditions.checkNotNull(peeringDocument);
+
+        Peer.Stats stats = peer.getStats() != null ? peer.getStats() : new Peer.Stats();
+
+        // Copy block infos
+        if (StringUtils.isNotBlank(peeringDocument.getBlock())) {
+            String[] blockParts = peeringDocument.getBlock().split("-");
+            if (blockParts.length == 2) {
+                stats.setBlockNumber(Integer.parseInt(blockParts[0]));
+                stats.setBlockHash(blockParts[1]);
             }
         }
 
         // Update peer status UP/DOWN
         if ("UP".equalsIgnoreCase(peeringDocument.getStatus())) {
             stats.setStatus(Peer.PeerStatus.UP);
-            stats.setLastUpTime((long)Math.round(System.currentTimeMillis() / 1000));
+
+            // FIXME: Duniter 1.7 return lastUpTime in ms. Check if this a bug or not
+            stats.setLastUpTime(System.currentTimeMillis());
+            //stats.setLastUpTime((long)Math.round(System.currentTimeMillis() / 1000));
         }
         else {
             stats.setStatus(Peer.PeerStatus.DOWN);

@@ -34,17 +34,17 @@ import java.util.Set;
  */
 public interface CurrencyDao extends Bean, EntityDao<String, Currency> {
 
-    Currency create(final Currency currency);
-
-    Currency update(final Currency currency);
-
-    void remove(final Currency currency);
-
     Set<String> getAllIds();
 
     List<Currency> getAll();
 
     List<Currency> getAllByAccount(long accountId);
+
+    Currency create(final Currency currency);
+
+    Currency update(final Currency currency);
+
+    void remove(final Currency currency);
 
     /**
      * Return the value of the last universal dividend
@@ -62,4 +62,6 @@ public interface CurrencyDao extends Bean, EntityDao<String, Currency> {
      void insertUDs(String currencyId,  Map<Integer, Long> newUDs);
 
     boolean isExists(String currencyId);
+
+
 }
