@@ -157,6 +157,8 @@ public class Peer implements LocalEntity<String>, Serializable {
         public Builder setPeering(NetworkPeering remotePeering) {
             this.peering = this.peering != null ? this.peering : new Peering();
 
+            this.pubkey = remotePeering.getPubkey();
+
             this.peering.setVersion(remotePeering.getVersion());
             this.peering.setSignature(remotePeering.getSignature());
 
