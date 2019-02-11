@@ -217,17 +217,17 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         int peerDownTimeoutMs = config.getPeerUpMaxAge();
         // Mark old peers as DOWN
         if (peerDownTimeoutMs >0) {
-            long maxUpTimeInSec = Math.round((System.currentTimeMillis() - peerDownTimeoutMs) / 1000);
+            long maxUpTimeInSec = Math.round((System.currentTimeMillis() - peerDownTimeoutMs*1000));
             updatePeersAsDown(currencyId, maxUpTimeInSec, filterApis);
         }
     }
 
     @Override
-    public void updatePeersAsDown(String currencyId, long maxUpTimeInSec, Collection<String> filterApis) {
+    public void updatePeersAsDown(String currencyId, long minUpTimeInMs, Collection<String> filterApis) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("[%s] %s Setting peers as DOWN, if older than [%s]...", currencyId, filterApis, new Date(maxUpTimeInSec*1000)));
+            log.debug(String.format("[%s] %s Setting peers as DOWN, if older than [%s]...", currencyId, filterApis, new Date(minUpTimeInMs *1000)));
         }
-        peerDao.updatePeersAsDown(currencyId, maxUpTimeInSec, filterApis);
+        peerDao.updatePeersAsDown(currencyId, minUpTimeInMs, filterApis);
     }
 
     protected Peer loadDefaultPeer(String currencyId) {

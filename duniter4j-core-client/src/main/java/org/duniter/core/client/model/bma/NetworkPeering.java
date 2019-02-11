@@ -28,12 +28,13 @@ import org.duniter.core.util.StringUtils;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 /**
  * Created by eis on 05/02/15.
  */
 public class NetworkPeering implements Serializable {
-    private String version;
+    private Integer version;
     private String currency;
     private String block;
     private String signature;
@@ -44,11 +45,11 @@ public class NetworkPeering implements Serializable {
 
     public Endpoint[] endpoints;
 
-    public String getVersion() {
+    public Integer getVersion() {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(Integer version) {
         this.version = version;
     }
 
@@ -201,35 +202,37 @@ public class NetworkPeering implements Serializable {
         @Override
         public String toString() {
 
-            StringBuilder sb = new StringBuilder();
+            StringJoiner joiner = new StringJoiner(" ");
             // API
-            sb.append(api.name());
+            if (api != null) {
+                joiner.add(api.name());
+            }
 
             // Id (use for WS2P)
             if (StringUtils.isNotBlank(id)) {
-                sb.append(" ").append(id);
+                joiner.add(id);
             }
             // DNS
             if (StringUtils.isNotBlank(dns)) {
-                sb.append(" ").append(dns);
+                joiner.add(dns);
             }
             // IPv4
             if (StringUtils.isNotBlank(ipv4)) {
-                sb.append(" ").append(ipv4);
+                joiner.add(ipv4);
             }
             // IPv6
             if (StringUtils.isNotBlank(ipv6)) {
-                sb.append(" ").append(ipv6);
+                joiner.add(ipv6);
             }
             // Port
             if (port != null) {
-                sb.append(" ").append(port);
+                joiner.add(String.valueOf(port));
             }
             // path
             if (StringUtils.isNotBlank(path)) {
-                sb.append(" ").append(path);
+                joiner.add(path);
             }
-            return sb.toString();
+            return joiner.toString();
         }
 
         @Override

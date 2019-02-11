@@ -52,14 +52,18 @@ public class NetworkPeerings {
 
             String[] lines = document.trim().split("\n");
 
-            Preconditions.checkArgument(lines.length >= 7, "Invalid document");
+            Preconditions.checkArgument(lines.length >= 7, String.format("Invalid document. Only %s lines found (at least 7 expected)", lines.length));
 
             int i = 0;
             String line;
             for (; i < 5; ) {
                 line = lines[i++].trim();
                 if (line.startsWith("Version: ")) {
-                    result.setVersion(line.substring(9));
+                    String version = line.substring(9).trim();
+                    if (!Protocol.PEER_VERSION.equals(version)) {
+                        Preconditions.checkArgument(false, String.format("Unknown peer document version. Expected %s, but found %s", Protocol.PEER_VERSION));
+                    }
+                    result.setVersion(Integer.parseInt(version));
                 } else if (line.startsWith("Type: ")) {
                     String type = line.substring(6);
                     Preconditions.checkArgument(Protocol.TYPE_PEER.equals(type), "Invalid type found in document. Expected: " + Protocol.TYPE_PEER);

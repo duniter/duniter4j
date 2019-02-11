@@ -118,27 +118,31 @@ public final class Peers {
                     processedPubkeys.add(pubkey);
 
                     // Get the first endpoint found for this pubkey
-                    Peer peer = groupByPeering.get(peeringKey).iterator().next();
-                    NetworkPeers.Peer result = new NetworkPeers.Peer();
+                    for (Peer peer: groupByPeering.get(peeringKey)) {
+                        NetworkPeers.Peer result = new NetworkPeers.Peer();
 
-                    // Fill BMA peer, using the raw document
-                    try {
-                        NetworkPeerings.parse(peer.getPeering().getRaw(), result);
-                    } catch (IOException e) {
-                        log.error("Unable to parse raw document found in: " + peer.toString());
-                        return null;
+                        try {
+                            // Fill BMA peer, using the raw document
+                            NetworkPeerings.parse(peer.getPeering().getRaw(), result);
+                            // Override the status, last_try and first_down, using stats
+                            Peer.PeerStatus status = getStatus(peer).orElse(Peer.PeerStatus.DOWN);
+                            result.setStatus(status.name());
+                            if (status == Peer.PeerStatus.UP) {
+                                result.setLastTry(getLastUpTime(peer).get());
+                            } else {
+                                result.setFirstDown(getFirstDownTime(peer).get());
+                            }
+                            return result;
+
+                        } catch (IOException e) {
+                            log.error("Unable to parse peering raw document found in: " + e.getMessage());
+                            // Continue to next endpoint
+                        }
+
+
                     }
 
-                    // Override the status, last_try and first_down, using stats
-                    Peer.PeerStatus status = getStatus(peer).orElse(Peer.PeerStatus.DOWN);
-                    result.setStatus(status.name());
-                    if (status == Peer.PeerStatus.UP) {
-                        result.setLastTry(getLastUpTime(peer).get());
-                    }
-                    else {
-                        result.setFirstDown(getFirstDownTime(peer).get());
-                    }
-                    return result;
+                    return null;
                 })
                 // Remove skipped items
                 .filter(Objects::nonNull)

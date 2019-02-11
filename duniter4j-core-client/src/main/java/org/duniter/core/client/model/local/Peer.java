@@ -27,7 +27,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
-import org.duniter.core.client.model.bma.NetworkPeerings;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.http.InetAddressUtils;
@@ -506,17 +505,17 @@ public class Peer implements LocalEntity<String>, Serializable {
         public static final String PROPERTY_BLOCK_HASH = "blockHash";
         public static final String PROPERTY_RAW = "raw";
 
-        private String version;
+        private Integer version;
         private String signature;
         private Integer blockNumber;
         private String blockHash;
         private String raw;
 
-        public String getVersion() {
+        public Integer getVersion() {
             return version;
         }
 
-        public void setVersion(String version) {
+        public void setVersion(Integer version) {
             this.version = version;
         }
 
@@ -681,6 +680,10 @@ public class Peer implements LocalEntity<String>, Serializable {
             this.uid = uid;
         }
 
+        /**
+         * Last time the peer was UP (in millisecond)
+         * @return
+         */
         public Long getLastUpTime() {
             return lastUpTime;
         }
@@ -689,6 +692,10 @@ public class Peer implements LocalEntity<String>, Serializable {
             this.lastUpTime = lastUpTime;
         }
 
+        /**
+         * First time the peer was DOWN (in millisecond)
+         * @return
+         */
         public Long getFirstDownTime() {
             return firstDownTime;
         }

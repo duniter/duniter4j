@@ -25,6 +25,7 @@ package org.duniter.core.client.model.bma;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.google.common.base.Joiner;
 
 import java.io.Serializable;
 
@@ -36,11 +37,7 @@ public class NetworkPeers implements Serializable {
     public Peer[] peers;
 
     public String toString() {
-        String s = "";
-        for(Peer peer : peers) {
-            s += peer.toString() + "\n";
-        }
-        return s;
+        return Joiner.on(",").join(peers);
     }
 
     public static class Peer extends NetworkPeering implements Serializable {
@@ -65,29 +62,6 @@ public class NetworkPeers implements Serializable {
         @JsonSetter("last_try")
         public void setLastTry(Long lastTry) {
             this.lastTry = lastTry;
-        }
-
-        public NetworkPeering.Endpoint[] getEndpoints() {
-            return endpoints;
-        }
-
-        public void setEndpoints(NetworkPeering.Endpoint[] endpoints) {
-            this.endpoints = endpoints;
-        }
-
-        @Override
-        public String toString() {
-            String s = "version=" + getVersion() + "\n" +
-                    "currency=" + getCurrency() + "\n" +
-                    "pubkey=" + getPubkey() + "\n" +
-                    "status=" + getStatus() + "\n" +
-                    "block=" + getBlock() + "\n";
-            for(NetworkPeering.Endpoint endpoint: endpoints) {
-                if (endpoint != null) {
-                    s += endpoint.toString() + "\n";
-                }
-            }
-            return s;
         }
     }
 }

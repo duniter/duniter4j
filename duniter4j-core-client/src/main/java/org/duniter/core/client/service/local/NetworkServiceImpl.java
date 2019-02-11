@@ -38,6 +38,7 @@ import org.duniter.core.client.service.bma.WotRemoteService;
 import org.duniter.core.client.service.exception.HttpConnectException;
 import org.duniter.core.client.service.exception.HttpNotFoundException;
 import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.*;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.concurrent.CompletableFutures;
@@ -400,7 +401,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         final Predicate<Peer> peerFilter = peerFilter(filter);
         final Comparator<Peer> peerComparator = peerComparator(sort);
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
-        final int peerDownTimeoutMs = config.getPeerUpMaxAge();
+        final int peerUpMaxAgeInMs = config.getPeerUpMaxAge();
 
         // Refreshing one peer (e.g. received from WS)
         Consumer<List<Peer>> updateKnownBlocks = (updatedPeers) ->
@@ -416,7 +417,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                         List<Peer> result = getPeers(mainPeer, filter, sort, pool);
 
                         // Mark old peers as DOWN
-                        long maxUpTimeInSec = Math.round((System.currentTimeMillis() - peerDownTimeoutMs) / 1000);
+                        long minUpTimeInMs = (System.currentTimeMillis() - peerUpMaxAgeInMs);
 
                         knownBlocks.clear();
                         updateKnownBlocks.accept(result);
@@ -425,7 +426,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                         peerService.save(currency, result);
 
                         // Set old peers as DOWN (with a delay)
-                        peerService.updatePeersAsDown(currency, maxUpTimeInSec, filter.filterEndpoints);
+                        peerService.updatePeersAsDown(currency, minUpTimeInMs, filter.filterEndpoints);
 
                         long duration = System.currentTimeMillis() - now;
 
@@ -571,9 +572,10 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     protected List<Peer> loadPeerLeafs(Peer peer, List<String> filterEndpoints) {
         List<String> leaves = networkRemoteService.getPeersLeaves(peer);
 
-        if (CollectionUtils.isEmpty(leaves)) return new ArrayList<>(); // should never occur
+        if (CollectionUtils.isEmpty(leaves)) return Lists.newArrayList(); // should never occur
 
-        List<Peer> result = new ArrayList<>();
+        List<Peer> result = Lists.newArrayList();
+        CryptoService cryptoService = ServiceLocator.instance().getCryptoService();
 
         // If less than 100 node, get it in ONE call
         if (leaves.size() <= 2000) {
@@ -585,7 +587,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                     if (CollectionUtils.isEmpty(filterEndpoints)
                             || StringUtils.isBlank(peerEp.getApi())
                             || filterEndpoints.contains(peerEp.getApi())) {
-                        String hash = ServiceLocator.instance().getCryptoService().hash(peerEp.computeKey()); // compute the hash
+                        String hash = cryptoService.hash(peerEp.computeKey()); // compute the hash
                         peerEp.setHash(hash);
                         result.add(peerEp);
                     }

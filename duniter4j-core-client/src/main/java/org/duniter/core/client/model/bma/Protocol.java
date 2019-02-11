@@ -31,6 +31,8 @@ public interface Protocol {
 
     String TX_VERSION = "10";
 
+    String PEER_VERSION = "10";
+
     String TYPE_IDENTITY = "Identity";
 
     String TYPE_MEMBERSHIP = "Membership";

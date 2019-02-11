@@ -69,7 +69,7 @@ public interface PeerDao extends EntityDao<String, Peer> {
 
     Long getMaxLastUpTime(String currencyId);
 
-    void updatePeersAsDown(String currencyId, long upTimeLimitInSec, Collection<String> endpointApis);
+    void updatePeersAsDown(String currencyId, long minUpTimeInMs, Collection<String> endpointApis);
 
     boolean hasPeersUpWithApi(String currencyId, Set<EndpointApi> endpointApis);
 }

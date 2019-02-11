@@ -60,7 +60,7 @@ public interface PeerService extends Service {
 
     void updatePeersAsDown(String currencyId, Collection<String> filterApis);
 
-    void updatePeersAsDown(String currencyId, long maxUpTimeInSec, Collection<String> filterApis);
+    void updatePeersAsDown(String currencyId, long minUpTimeInMs, Collection<String> filterApis);
 
     boolean isExists(String currencyId, String peerId);
 }
