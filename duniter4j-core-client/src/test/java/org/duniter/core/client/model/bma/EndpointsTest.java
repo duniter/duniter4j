@@ -8,6 +8,7 @@ public class EndpointsTest {
     @Test
     public void parse() throws Exception {
 
+        // Parse valid endpoints
         NetworkPeering.Endpoint ep = Endpoints.parse("BASIC_MERKLED_API g1.duniter.fr 81.81.81.81 80");
         Assert.assertNotNull(ep);
         Assert.assertEquals(EndpointApi.BASIC_MERKLED_API, ep.api);
@@ -43,13 +44,6 @@ public class EndpointsTest {
         Assert.assertNotNull(ep.id);
         Assert.assertNotNull(ep.path);
 
-        // path without slash
-        ep = Endpoints.parse("WS2P 90e9b12 duniter.g1.1000i100.fr 443 ws2p");
-        Assert.assertNotNull(ep);
-        Assert.assertEquals(ep.api, EndpointApi.WS2P);
-        Assert.assertNotNull(ep.id);
-        Assert.assertNotNull(ep.path);
-
         ep = Endpoints.parse("WS2PTOR 1be86653 3k2zovlpihbt3j3g.onion 20901");
         Assert.assertNotNull(ep);
         Assert.assertNotNull(ep.id);
@@ -65,6 +59,22 @@ public class EndpointsTest {
         Assert.assertNull(ep.id);
         Assert.assertNull(ep.path);
 
+        // Parse Invalid endpoints
+
+        // FIXME: make sure this must failed (missing port)
+        ep = Endpoints.parse("BMAS g1.cgeek.fr");
+        Assert.assertNotNull(ep);
+        Assert.assertNull(ep.api);
+
+        // FIXME: make sure this must failed (because bad ID)
+        ep = Endpoints.parse("WS2P R8t2sg7w g1.ambau.ovh 443");
+        Assert.assertNotNull(ep);
+        Assert.assertNull(ep.api);
+
+        // FIXME: make sure this must failed (missing path first '/')
+        ep = Endpoints.parse("WS2P 90e9b12 duniter.g1.1000i100.fr 443 ws2p");
+        Assert.assertNotNull(ep);
+        Assert.assertNull(ep.api);
     }
 
 }
