@@ -192,8 +192,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
             }
 
             // FIXME: Duniter 1.7 return lastUpTime in ms. Check if this a bug or not
-            final long upTime = System.currentTimeMillis();
-            //final long upTime = System.currentTimeMillis() / 1000;
+            final long upTime = System.currentTimeMillis() / 1000;
 
             peers.forEach(peer -> {
                 // On each UP peers: set last UP time
@@ -217,8 +216,8 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         int peerDownTimeoutMs = config.getPeerUpMaxAge();
         // Mark old peers as DOWN
         if (peerDownTimeoutMs >0) {
-            long maxUpTimeInSec = Math.round((System.currentTimeMillis() - peerDownTimeoutMs*1000));
-            updatePeersAsDown(currencyId, maxUpTimeInSec, filterApis);
+            long maxUpTimeInMs = System.currentTimeMillis() - peerDownTimeoutMs;
+            updatePeersAsDown(currencyId, maxUpTimeInMs, filterApis);
         }
     }
 

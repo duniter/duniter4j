@@ -197,8 +197,7 @@ public class Peer implements LocalEntity<String>, Serializable {
                 stats.setStatus(Peer.PeerStatus.UP);
 
                 // FIXME: Duniter 1.7 return lastUpTime in ms. Check if this a bug or not
-                stats.setLastUpTime(System.currentTimeMillis());
-                //stats.setLastUpTime((long)Math.round(System.currentTimeMillis() / 1000));
+                stats.setLastUpTime((long)Math.round(System.currentTimeMillis() / 1000));
             }
             else {
                 stats.setStatus(Peer.PeerStatus.DOWN);
@@ -683,7 +682,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         }
 
         /**
-         * Last time the peer was UP (in millisecond)
+         * Last time the peer was UP (in second)
          * @return
          */
         public Long getLastUpTime() {
@@ -695,7 +694,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         }
 
         /**
-         * First time the peer was DOWN (in millisecond)
+         * First time the peer was DOWN (in second)
          * @return
          */
         public Long getFirstDownTime() {
