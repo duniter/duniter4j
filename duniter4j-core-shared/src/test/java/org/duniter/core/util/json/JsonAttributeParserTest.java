@@ -49,6 +49,48 @@ public class JsonAttributeParserTest {
     }
 
     @Test
+    public void getValueAsLong() {
+
+        String jsonString = "{\n" +
+                "    \"version\": 10,\n" +
+                "    \"nonce\": 10400000001312,\n" +
+                "    \"number\": 755,\n" +
+                "    \"powMin\": 81,\n" +
+                "    \"time\": 1489204846,\n" +
+                "    \"medianTime\": 1489201914,\n" +
+                "    \"membersCount\": 59,\n" +
+                "    \"monetaryMass\": 177000,\n" +
+                "    \"unitbase\": 0,\n" +
+                "    \"issuersCount\": 19,\n" +
+                "    \"issuersFrame\": 96,\n" +
+                "    \"issuersFrameVar\": 0,\n" +
+                "    \"currency\": \"g1\",\n" +
+                "    \"issuer\": \"Com8rJukCozHZyFao6AheSsfDQdPApxQRnz7QYFf64mm\",\n" +
+                "    \"signature\": \"HSA1F2JEf9vsORi5ABUrEgRKfLHFM76Yks9ibH1dgcQ/UBlo1iP9bYUT+lUQDgG5+EDUwuGQq5v+cJEVGciZDw==\",\n" +
+                "    \"hash\": \"000004C0781DA1F71571A83D23D8B38D67E2F73529D833917A274C372D2968C2\",\n" +
+                "    \"parameters\": \"\",\n" +
+                "    \"previousHash\": \"00000937703D4C34B234B18B7C5E7E67462BC8EBC0144AA6DE42FAD169C8EF05\",\n" +
+                "    \"previousIssuer\": \"4fHMTFBMo5sTQEc5p1CNWz28S4mnnqdUBmECq1zt4n2m\",\n" +
+                "    \"inner_hash\": \"7210E5D8B36BB2064D1DCFBE08C9FC8D0D107B87ED4D0AE8B6BF54C615366060\",\n" +
+                "    \"dividend\": null,\n" +
+                "    \"identities\": [],\n" +
+                "    \"joiners\": [],\n" +
+                "    \"actives\": [],\n" +
+                "    \"leavers\": [],\n" +
+                "    \"revoked\": [],\n" +
+                "    \"excluded\": [],\n" +
+                "    \"certifications\": [],\n" +
+                "    \"transactions\": [],\n" +
+                "    \"raw\": \"Version: 10\\nType: Block\\nCurrency: g1\\nNumber: 755\\nPoWMin: 81\\nTime: 1489204846\\nMedianTime: 1489201914\\nUnitBase: 0\\nIssuer: Com8rJukCozHZyFao6AheSsfDQdPApxQRnz7QYFf64mm\\nIssuersFrame: 96\\nIssuersFrameVar: 0\\nDifferentIssuersCount: 19\\nPreviousHash: 00000937703D4C34B234B18B7C5E7E67462BC8EBC0144AA6DE42FAD169C8EF05\\nPreviousIssuer: 4fHMTFBMo5sTQEc5p1CNWz28S4mnnqdUBmECq1zt4n2m\\nMembersCount: 59\\nIdentities:\\nJoiners:\\nActives:\\nLeavers:\\nRevoked:\\nExcluded:\\nCertifications:\\nTransactions:\\nInnerHash: 7210E5D8B36BB2064D1DCFBE08C9FC8D0D107B87ED4D0AE8B6BF54C615366060\\nNonce: 10400000001312\\n\"\n" +
+                "  }";
+
+        JsonAttributeParser<Long> idAttribute = new JsonAttributeParser<>("number", Long.class);
+        Long number = idAttribute.getValue(jsonString);
+        Assert.assertNotNull(number);
+        Assert.assertEquals(755L, number.longValue());
+    }
+
+    @Test
     public void removeStringAttributeFromJson() {
         String jsonString = String.format("%s", OBJ_JSON);
         String expectedJson = jsonString.replace("\"id\":\"joe\",", "");

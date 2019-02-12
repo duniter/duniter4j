@@ -111,11 +111,14 @@ public class JsonAttributeParser<T extends Object> {
 
         Matcher matcher = pattern.matcher(jsonString);
 
-        if (!matcher.find()) {
-            return null;
-        }
+        if (!matcher.find()) return null;
 
-        return parseValue(matcher.group(1));
+        try {
+            return parseValue(matcher.group(1));
+        }
+        catch(NumberFormatException e) {
+            throw new IllegalArgumentException(String.format("Unable to parse value '%' on attribute '%s' : %s. Expected type: %s", matcher.group(1), attributeName, e.getMessage(), type.name()));
+        }
     }
 
     public List<T> getValues(String jsonString) {
