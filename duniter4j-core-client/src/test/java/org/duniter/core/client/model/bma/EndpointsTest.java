@@ -36,6 +36,29 @@ public class EndpointsTest {
         Assert.assertNotNull(ep.port);
         Assert.assertEquals(443, ep.port.intValue());
 
+        // ws2pId on 7 characters
+        ep = Endpoints.parse("WS2P 90e9b12 duniter.g1.1000i100.fr 443 /ws2p");
+        Assert.assertNotNull(ep);
+        Assert.assertEquals(ep.api, EndpointApi.WS2P);
+        Assert.assertNotNull(ep.id);
+        Assert.assertNotNull(ep.path);
+
+        // path without slash
+        ep = Endpoints.parse("WS2P 90e9b12 duniter.g1.1000i100.fr 443 ws2p");
+        Assert.assertNotNull(ep);
+        Assert.assertEquals(ep.api, EndpointApi.WS2P);
+        Assert.assertNotNull(ep.id);
+        Assert.assertNotNull(ep.path);
+
+        ep = Endpoints.parse("WS2PTOR 1be86653 3k2zovlpihbt3j3g.onion 20901");
+        Assert.assertNotNull(ep);
+        Assert.assertNotNull(ep.id);
+        Assert.assertNull(ep.path);
+        Assert.assertEquals(EndpointApi.WS2PTOR, ep.api);
+        Assert.assertEquals("3k2zovlpihbt3j3g.onion", ep.dns);
+        Assert.assertNotNull(ep.port);
+        Assert.assertEquals(20901, ep.port.intValue());
+
         ep = Endpoints.parse("GCHANGE_API data.gchange.fr 443");
         Assert.assertNotNull(ep);
         Assert.assertEquals(ep.api, EndpointApi.GCHANGE_API);

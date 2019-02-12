@@ -63,5 +63,11 @@ public class NetworkPeers implements Serializable {
         public void setLastTry(Long lastTry) {
             this.lastTry = lastTry;
         }
+
+        @Override
+        @JsonIgnore
+        public String getRaw() {
+            return super.getRaw();
+        }
     }
 }

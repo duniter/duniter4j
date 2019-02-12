@@ -29,6 +29,7 @@ import org.duniter.core.util.StringUtils;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.stream.Stream;
 
 /**
  * Created by eis on 05/02/15.
@@ -110,6 +111,8 @@ public class NetworkPeering implements Serializable {
     }
 
     public String toString() {
+        if (StringUtils.isNotBlank(raw)) return raw;
+
         StringBuilder sb = new StringBuilder();
         // Version
         sb.append("Version: ").append(Protocol.VERSION).append("\n");
@@ -124,9 +127,9 @@ public class NetworkPeering implements Serializable {
         // Endpoints
         sb.append("Endpoints:\n");
         if (CollectionUtils.isNotEmpty(endpoints)) {
-            for (Endpoint ep: endpoints) {
-                sb.append(ep.toString()).append("\n");
-            }
+            Stream.of(endpoints)
+                    .filter(Objects::nonNull) // can be null
+                    .forEach(ep -> sb.append(ep.toString()).append("\n"));
         }
         if (StringUtils.isNotBlank(signature)) {
             sb.append(signature).append("\n");
@@ -142,6 +145,7 @@ public class NetworkPeering implements Serializable {
         public Integer port;
         public String id;
         public String path;
+        public String raw;
 
         public EndpointApi getApi() {
             return api;
@@ -199,15 +203,25 @@ public class NetworkPeering implements Serializable {
             this.path = path;
         }
 
+        @JsonIgnore
+        public String getRaw() {
+            return raw;
+        }
+
+        @JsonIgnore
+        public void setRaw(String raw) {
+            this.raw = raw;
+        }
+
         @Override
         public String toString() {
+            if (raw != null) return raw;
 
             StringJoiner joiner = new StringJoiner(" ");
             // API
             if (api != null) {
                 joiner.add(api.name());
             }
-
             // Id (use for WS2P)
             if (StringUtils.isNotBlank(id)) {
                 joiner.add(id);

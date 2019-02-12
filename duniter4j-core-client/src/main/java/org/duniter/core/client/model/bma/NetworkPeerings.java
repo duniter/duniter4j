@@ -90,6 +90,8 @@ public class NetworkPeerings {
 
             result.setStatus("UP");
 
+            result.setRaw(document);
+
             return result;
         }
         catch(Exception e) {

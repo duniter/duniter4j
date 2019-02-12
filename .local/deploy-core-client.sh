@@ -8,7 +8,7 @@ DEPLOY_DIR="${CESIUM_PLUS_POD_DIR}/cesium-plus-pod-assembly/target/es-run-home/p
 cd ..
 
 echo "***************************************"
-echo " Compiling duniter4j.core-client... "
+echo " Compiling core-client... "
 
 # Remove old JAR
 rm duniter4j-core-client/target/*.jar

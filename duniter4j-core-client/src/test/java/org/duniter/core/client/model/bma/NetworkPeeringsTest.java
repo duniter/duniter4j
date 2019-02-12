@@ -14,7 +14,7 @@ public class NetworkPeeringsTest {
         Assert.assertNotNull(peering);
 
         Assert.assertEquals("g1", peering.getCurrency());
-        Assert.assertEquals("10", peering.getVersion());
+        Assert.assertEquals(new Integer(10), peering.getVersion());
         Assert.assertEquals("38MEAZN68Pz1DTvT3tqgxx4yQP6snJCQhPqEFxbDk4aE", peering.getPubkey());
         Assert.assertEquals("162694-0000067CAF81B13E4BD7AE72A06F9981D80EB957E4D46C23A67B4DF734E258ED", peering.getBlock());
         Assert.assertEquals("U+obPZqDQ3WDDclyCrOhT80Dq/8sPZp0ng+hj4THPAaxKNQwc9cijNnfvwzSsQ/hZBJpZ6+Gzrzso+zprhNICQ==", peering.getSignature());

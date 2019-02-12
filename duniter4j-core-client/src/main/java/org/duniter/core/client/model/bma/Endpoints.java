@@ -24,6 +24,8 @@ package org.duniter.core.client.model.bma;
 
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.http.InetAddressUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.regex.Matcher;
@@ -34,10 +36,13 @@ import java.util.regex.Pattern;
  */
 public class Endpoints {
 
-    public static final String EP_END_REGEXP = "(?: ([a-z_][a-z0-9-_.ğĞ]*))?(?: ([0-9.]+))?(?: ([0-9a-f:]+))?(?: ([0-9]+))(?: (/[^/]+))?$";
+
+    private static final Logger log = LoggerFactory.getLogger(Endpoints.class);
+
+    public static final String EP_END_REGEXP = "(?: ([a-z0-9_ğĞ][a-z0-9-_.ğĞ]*))?(?: ([0-9.]+))?(?: ([0-9a-f:]+)(?:%[a-z0-9]+)?)?(?: ([0-9]+))(?: (/[^/]*))?$";
     public static final String BMA_API_REGEXP = "^BASIC_MERKLED_API" + EP_END_REGEXP;
     public static final String BMAS_API_REGEXP = "^BMAS" + EP_END_REGEXP;
-    public static final String WS2P_API_REGEXP = "^WS2P ([a-f0-9]{8})" + EP_END_REGEXP;
+    public static final String WS2P_API_REGEXP = "^(WS2P(?:TOR)?) ([a-f0-9]{7,8})" + EP_END_REGEXP;
     public static final String OTHER_API_REGEXP = "^([A-Z_-]+)" + EP_END_REGEXP;
 
     private static Pattern bmaPattern = Pattern.compile(BMA_API_REGEXP);
@@ -49,12 +54,13 @@ public class Endpoints {
        // helper class
     }
 
-    public static NetworkPeering.Endpoint parse(String ept) throws IOException {
+    public static NetworkPeering.Endpoint parse(String raw) throws IOException {
 
         NetworkPeering.Endpoint endpoint = new NetworkPeering.Endpoint();
+        endpoint.setRaw(raw);
 
         // BMA API
-        Matcher mather = bmaPattern.matcher(ept);
+        Matcher mather = bmaPattern.matcher(raw);
         if (mather.matches()) {
             endpoint.api = EndpointApi.BASIC_MERKLED_API;
             parseDefaultFormatEndPoint(mather, endpoint, 1);
@@ -62,7 +68,7 @@ public class Endpoints {
         }
 
         // BMAS API
-        mather = bmasPattern.matcher(ept);
+        mather = bmasPattern.matcher(raw);
         if (mather.matches()) {
             endpoint.api = EndpointApi.BMAS;
             parseDefaultFormatEndPoint(mather, endpoint, 1);
@@ -70,16 +76,22 @@ public class Endpoints {
         }
 
         // WS2P API
-        mather = ws2pPattern.matcher(ept);
+        mather = ws2pPattern.matcher(raw);
         if (mather.matches()) {
-            endpoint.api = EndpointApi.WS2P;
-            endpoint.id = mather.group(1);
-            parseDefaultFormatEndPoint(mather, endpoint, 2);
-            return endpoint;
+            String api = mather.group(1);
+            try {
+                endpoint.api = EndpointApi.valueOf(api);
+                endpoint.id = mather.group(2);
+                parseDefaultFormatEndPoint(mather, endpoint, 3);
+                return endpoint;
+            } catch(Exception e) {
+                // Unknown API
+                throw new IOException("Unable to deserialize endpoint: WS2P api [" + api + "]", e); // link the exception
+            }
         }
 
         // Other API
-        mather = otherApiPattern.matcher(ept);
+        mather = otherApiPattern.matcher(raw);
         if (mather.matches()) {
             String api = mather.group(1);
             try {
@@ -92,7 +104,8 @@ public class Endpoints {
             }
         }
 
-        return null;
+        log.warn("Unable to parse Endpoint: " + raw);
+        return endpoint;
     }
 
     public static void parseDefaultFormatEndPoint(Matcher matcher, NetworkPeering.Endpoint endpoint, int startGroup) {
