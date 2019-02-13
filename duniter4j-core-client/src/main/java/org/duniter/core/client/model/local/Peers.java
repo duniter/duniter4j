@@ -24,6 +24,7 @@ package org.duniter.core.client.model.local;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import org.duniter.core.client.model.bma.*;
@@ -84,10 +85,31 @@ public final class Peers {
         return peer.getStats() != null && peer.getStats().isReacheable();
     }
 
+    public static NetworkPeers.Peer toBmaPeer(Peer endpointAsPeer) {
+        NetworkPeers.Peer result = new NetworkPeers.Peer();
+
+        try {
+            // Fill BMA peer, using the raw document
+            NetworkPeerings.parse(endpointAsPeer.getPeering().getRaw(), result);
+            // Override the status, last_try and first_down, using stats
+            Peer.PeerStatus status = getStatus(endpointAsPeer).orElse(Peer.PeerStatus.DOWN);
+            result.setStatus(status.name());
+            if (status == Peer.PeerStatus.UP) {
+                result.setLastTry(getLastUpTime(endpointAsPeer).get());
+            } else {
+                result.setFirstDown(getFirstDownTime(endpointAsPeer).get());
+            }
+            return result;
+
+        } catch (IOException e) {
+            log.error("Unable to parse peering raw document found in: " + e.getMessage());
+            // Continue to next endpoint
+        }
+        return null;
+    }
+
     public static List<NetworkPeers.Peer> toBmaPeers(List<Peer> endpointAsPeers) {
         if (CollectionUtils.isEmpty(endpointAsPeers)) return null;
-
-        Joiner keyJoiner = Joiner.on(':');
 
         // Group by peering document
         Multimap<String, Peer> groupByPeering = ArrayListMultimap.create();
@@ -118,31 +140,9 @@ public final class Peers {
                     processedPubkeys.add(pubkey);
 
                     // Get the first endpoint found for this pubkey
-                    for (Peer peer: groupByPeering.get(peeringKey)) {
-                        NetworkPeers.Peer result = new NetworkPeers.Peer();
-
-                        try {
-                            // Fill BMA peer, using the raw document
-                            NetworkPeerings.parse(peer.getPeering().getRaw(), result);
-                            // Override the status, last_try and first_down, using stats
-                            Peer.PeerStatus status = getStatus(peer).orElse(Peer.PeerStatus.DOWN);
-                            result.setStatus(status.name());
-                            if (status == Peer.PeerStatus.UP) {
-                                result.setLastTry(getLastUpTime(peer).get());
-                            } else {
-                                result.setFirstDown(getFirstDownTime(peer).get());
-                            }
-                            return result;
-
-                        } catch (IOException e) {
-                            log.error("Unable to parse peering raw document found in: " + e.getMessage());
-                            // Continue to next endpoint
-                        }
-
-
-                    }
-
-                    return null;
+                    return groupByPeering.get(peeringKey).stream().map(Peers::toBmaPeer)
+                            .filter(Objects::nonNull)
+                            .findFirst().orElse(null);
                 })
                 // Remove skipped items
                 .filter(Objects::nonNull)
