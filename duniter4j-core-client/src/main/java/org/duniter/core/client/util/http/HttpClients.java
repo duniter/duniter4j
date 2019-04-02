@@ -166,41 +166,4 @@ public abstract class HttpClients {
             }
         };
     }
-
-//
-//    private PoolingHttpClientConnectionManager connectionManager;
-//
-//    private static final ThreadLocal<SimpleCache<Integer, HttpClient>> threadLocalCache = new ThreadLocal<SimpleCache<Integer, HttpClient>>() {
-//        @Override
-//        protected SimpleCache<Integer, HttpClient> initialValue() {
-//            int cacheTimeInMillis = 1000 * 60 * 5; // 5 min cache
-//            SimpleCache<Integer, HttpClient> cache = new SimpleCache<Integer, HttpClient>(cacheTimeInMillis*100) {
-//                @Override
-//                public HttpClient load(Integer timeout) {
-//                    return createHttpClient(timeout);
-//                }
-//            };
-//            cache.registerRemoveListener(item -> {
-//                log.debug("Closing HttpClient...");
-//                closeQuietly(item);
-//            });
-//        }
-//    };
-//
-//
-//    protected static HttpClient createHttpClient(int timeout) {
-//        if (connectionManager == null) {
-//            Configuration config = Configuration.instance();
-//            connectionManager = createConnectionManager(
-//                    config.getNetworkMaxTotalConnections(),
-//                    config.getNetworkMaxConnectionsPerRoute(),
-//                    config.getNetworkTimeout());
-//        }
-//
-//        return org.apache.http.impl.client.HttpClients.custom()
-//                .setConnectionManager(connectionManager)
-//                .setDefaultRequestConfig(requestConfigCache.get(timeout))
-//                .setRetryHandler(createRetryHandler(timeout))
-//                .build();
-//    }
 }
