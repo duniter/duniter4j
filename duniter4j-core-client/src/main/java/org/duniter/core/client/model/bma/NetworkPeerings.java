@@ -80,9 +80,11 @@ public class NetworkPeerings {
             List<NetworkPeering.Endpoint> endpoints = Lists.newArrayList();
             for (; i < lines.length - 1; ) {
                 line = lines[i++].trim();
-                NetworkPeering.Endpoint ep = Endpoints.parse(line);
-                Preconditions.checkNotNull(ep, "Unable to parse endpoint: " + line);
-                endpoints.add(ep);
+                NetworkPeering.Endpoint ep = Endpoints.parse(line).orElse(null);
+                // Add to endpoint, only if not null
+                if (ep != null) {
+                    endpoints.add(ep);
+                }
             }
             result.setEndpoints(endpoints.toArray(new NetworkPeering.Endpoint[endpoints.size()]));
 

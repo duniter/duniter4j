@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,7 +55,7 @@ public class Endpoints {
        // helper class
     }
 
-    public static NetworkPeering.Endpoint parse(String raw) throws IOException {
+    public static Optional<NetworkPeering.Endpoint> parse(String raw) throws IOException {
 
         NetworkPeering.Endpoint endpoint = new NetworkPeering.Endpoint();
         endpoint.setRaw(raw);
@@ -64,7 +65,7 @@ public class Endpoints {
         if (mather.matches()) {
             endpoint.api = EndpointApi.BASIC_MERKLED_API;
             parseDefaultFormatEndPoint(mather, endpoint, 1);
-            return endpoint;
+            return Optional.of(endpoint);
         }
 
         // BMAS API
@@ -72,7 +73,7 @@ public class Endpoints {
         if (mather.matches()) {
             endpoint.api = EndpointApi.BMAS;
             parseDefaultFormatEndPoint(mather, endpoint, 1);
-            return endpoint;
+            return Optional.of(endpoint);
         }
 
         // WS2P API
@@ -83,7 +84,7 @@ public class Endpoints {
                 endpoint.api = EndpointApi.valueOf(api);
                 endpoint.id = mather.group(2);
                 parseDefaultFormatEndPoint(mather, endpoint, 3);
-                return endpoint;
+                return Optional.of(endpoint);
             } catch(Exception e) {
                 // Unknown API
                 throw new IOException("Unable to deserialize endpoint: WS2P api [" + api + "]", e); // link the exception
@@ -97,7 +98,7 @@ public class Endpoints {
             try {
                 endpoint.api = EndpointApi.valueOf(api);
                 parseDefaultFormatEndPoint(mather, endpoint, 2);
-                return endpoint;
+                return Optional.of(endpoint);
             } catch(Exception e) {
                 // Unknown API
                 throw new IOException("Unable to deserialize endpoint: unknown api [" + api + "]", e); // link the exception
@@ -105,7 +106,7 @@ public class Endpoints {
         }
 
         log.warn("Unable to parse Endpoint: " + raw);
-        return endpoint;
+        return Optional.empty();
     }
 
     public static void parseDefaultFormatEndPoint(Matcher matcher, NetworkPeering.Endpoint endpoint, int startGroup) {

@@ -51,7 +51,7 @@ public class EndpointDeserializer extends JsonDeserializer<NetworkPeering.Endpoi
         String ept = jp.getText();
 
         try {
-            return Endpoints.parse(ept);
+            return Endpoints.parse(ept).orElse(null);
         } catch(IOException e) {
             // Unable to parse endpoint: continue (will skip this endpoint)
             if (debug) {
