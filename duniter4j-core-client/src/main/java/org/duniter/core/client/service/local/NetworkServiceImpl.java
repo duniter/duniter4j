@@ -43,9 +43,11 @@ import org.duniter.core.util.*;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.concurrent.CompletableFutures;
 import org.duniter.core.util.http.InetAddressUtils;
+import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -365,7 +367,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return peers;
     }
 
-    public void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener) {
+    public Closeable addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener) {
 
         BlockchainParameters parameters = blockchainRemoteService.getParameters(mainPeer);
         fillCurrentBlock(mainPeer);
@@ -386,13 +388,13 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         Sort sortDef = new Sort();
         sortDef.sortType = null;
 
-        addPeersChangeListener(mainPeer, listener, filterDef, sortDef, true, null);
+        return addPeersChangeListener(mainPeer, listener, filterDef, sortDef, true, null);
 
     }
 
-    public void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener,
-                                       final Filter filter, final Sort sort, final boolean autoreconnect,
-                                       final ExecutorService executor) {
+    public Closeable addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener,
+                                            final Filter filter, final Sort sort, final boolean autoreconnect,
+                                            final ExecutorService executor) {
 
         final String currency = filter != null && filter.currency != null ? filter.currency :
                 blockchainRemoteService.getParameters(mainPeer).getCurrency();
@@ -507,7 +509,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         };
 
         // Manage new block event
-        blockchainRemoteService.addBlockListener(mainPeer, json -> {
+        WebsocketClientEndpoint.MessageListener blockListener = json -> {
             log.debug("Received new block event");
             try {
                 BlockchainBlock block = readValue(json, BlockchainBlock.class);
@@ -522,10 +524,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
             } catch(IOException e) {
                 log.error("Could not parse peer received by WS: " + e.getMessage(), e);
             }
-        }, autoreconnect);
+        };
+        WebsocketClientEndpoint wsBlockEndpoint = blockchainRemoteService.addBlockListener(mainPeer, blockListener, autoreconnect);
 
         // Manage new peer event
-        networkRemoteService.addPeerListener(mainPeer, json -> {
+        WebsocketClientEndpoint.MessageListener peerListsner = json -> {
 
             log.debug("Received new peer event");
             try {
@@ -536,11 +539,17 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
             } catch(IOException e) {
                 log.error("Could not parse peer received by WS: " + e.getMessage(), e);
             }
-        }, autoreconnect);
+        };
+        WebsocketClientEndpoint wsPeerEndpoint = networkRemoteService.addPeerListener(mainPeer, peerListsner, autoreconnect);
 
         // Default action: Load all peers
         pool.submit(loadAllPeers);
 
+        // Return the tear down logic
+        return () -> {
+            wsBlockEndpoint.unregisterListener(blockListener);
+            wsPeerEndpoint.unregisterListener(peerListsner);
+        };
     }
 
     public String getVersion(final Peer peer) {

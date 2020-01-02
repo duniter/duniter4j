@@ -25,6 +25,7 @@ package org.duniter.core.client.service.local;
 import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Peer;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -86,9 +87,9 @@ public interface NetworkService extends Service {
 
     Comparator<Peer> peerComparator(Sort sort);
 
-    void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener);
+    Closeable addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener);
 
-    void addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener,
+    Closeable addPeersChangeListener(final Peer mainPeer, final PeersChangeListener listener,
                                 final Filter filter, final Sort sort, final boolean autoreconnect,
                                 final ExecutorService executor);
 

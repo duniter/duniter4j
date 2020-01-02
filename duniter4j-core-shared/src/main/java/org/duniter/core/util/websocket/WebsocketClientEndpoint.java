@@ -148,6 +148,16 @@ public class WebsocketClientEndpoint implements Closeable {
     public void unregisterListener(MessageListener listener) {
         synchronized (messageListeners) {
             this.messageListeners.remove(listener);
+
+            // If no more listener, close the WS client
+            if (this.messageListeners.size() == 0) {
+                try {
+                    close();
+                }
+                catch(IOException e) {
+                    // Silent
+                }
+            }
         }
     }
 
