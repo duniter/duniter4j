@@ -28,6 +28,7 @@ import org.duniter.core.util.Preconditions;
 import javax.print.DocFlavor;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,7 +89,9 @@ public class JsonAttributeParser<T extends Object> {
             type = Type.DOUBLE;
             this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_NUMERIC_VALUE, attributeName));
             this.decimalFormat = new DecimalFormat();
-            this.decimalFormat.getDecimalFormatSymbols().setDecimalSeparator('.');
+            DecimalFormatSymbols symbols = this.decimalFormat.getDecimalFormatSymbols();
+            symbols.setDecimalSeparator('.');
+            symbols.setGroupingSeparator(',');
         }
         // BigDecimal
         else if (BigDecimal.class.isAssignableFrom(clazz)) {
@@ -96,7 +99,9 @@ public class JsonAttributeParser<T extends Object> {
             this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_NUMERIC_VALUE, attributeName));
             this.decimalFormat = new DecimalFormat();
             this.decimalFormat.setParseBigDecimal(true); // allow big decimal
-            this.decimalFormat.getDecimalFormatSymbols().setDecimalSeparator('.');
+            DecimalFormatSymbols symbols = this.decimalFormat.getDecimalFormatSymbols();
+            symbols.setDecimalSeparator('.');
+            symbols.setGroupingSeparator(',');
         }
         // Boolean
         else if (Boolean.class.isAssignableFrom(clazz)) {
