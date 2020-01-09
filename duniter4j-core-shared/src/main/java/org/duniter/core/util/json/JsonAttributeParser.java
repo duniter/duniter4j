@@ -31,6 +31,7 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UnknownFormatConversionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,8 +55,8 @@ public class JsonAttributeParser<T extends Object> {
     }
 
     private Type type;
-    private Pattern pattern;
-    private DecimalFormat decimalFormat;
+    private final Pattern pattern;
+    private final DecimalFormat decimalFormat;
     private String attributeName;
 
     public JsonAttributeParser(String attributeName, Class<? extends T> clazz) {
@@ -67,6 +68,7 @@ public class JsonAttributeParser<T extends Object> {
         if (String.class.isAssignableFrom(clazz)) {
             type = Type.STRING;
             this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_STRING_VALUE, attributeName));
+            this.decimalFormat = null;
         }
         // Integer
         else if (Integer.class.isAssignableFrom(clazz)) {
@@ -100,6 +102,7 @@ public class JsonAttributeParser<T extends Object> {
         else if (Boolean.class.isAssignableFrom(clazz)) {
             type = Type.BOOLEAN;
             this.pattern = Pattern.compile(String.format(REGEX_ATTRIBUTE_BOOLEAN_VALUE, attributeName));
+            this.decimalFormat = null;
         }
         else {
             throw new IllegalArgumentException("Invalid attribute class " + clazz.getCanonicalName());
@@ -109,15 +112,16 @@ public class JsonAttributeParser<T extends Object> {
     public T getValue(String jsonString) {
         Preconditions.checkNotNull(jsonString);
 
-        Matcher matcher = pattern.matcher(jsonString);
+        final Matcher matcher = pattern.matcher(jsonString);
 
         if (!matcher.find()) return null;
 
+        final String value = matcher.group(1);
         try {
-            return parseValue(matcher.group(1));
+            return parseValue(value);
         }
-        catch(NumberFormatException e) {
-            throw new IllegalArgumentException(String.format("Unable to parse value '%' on attribute '%s' : %s. Expected type: %s", matcher.group(1), attributeName, e.getMessage(), type.name()));
+        catch(NumberFormatException | UnknownFormatConversionException e) {
+            throw new IllegalArgumentException(String.format("Unable to parse value '%' on attribute '%s' : %s. Expected type: %s", value, attributeName, e.getMessage(), type.name()), e);
         }
     }
 
