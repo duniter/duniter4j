@@ -178,16 +178,16 @@ public class JsonAttributeParser<T extends Object> {
                 return (T)attributeValue;
             case INTEGER:
                 try {
-                    Number result = decimalFormat.parse(attributeValue);
-                    return (T)new Integer(result.intValue());
-                } catch (ParseException e) {
+                    int result = Integer.parseInt(attributeValue);
+                    return (T)new Integer(result);
+                } catch (NumberFormatException e) {
                     throw new TechnicalException(String.format("Error while parsing json numeric value, for attribute [%s]: %s", attributeName,e.getMessage()), e);
                 }
             case LONG:
                 try {
-                    Number result = decimalFormat.parse(attributeValue);
-                    return (T)new Long(result.longValue());
-                } catch (ParseException e) {
+                    long result = Long.parseLong(attributeValue);
+                    return (T)new Long(result);
+                } catch (NumberFormatException e) {
                     throw new TechnicalException(String.format("Error while parsing json numeric value, for attribute [%s]: %s", attributeName,e.getMessage()), e);
                 }
             case DOUBLE:
