@@ -23,9 +23,10 @@ package org.duniter.core.client.service.bma;
  */
 
 
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.model.bma.ErrorCode;
+import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.local.Identity;
 import org.duniter.core.client.model.local.Member;
 import org.duniter.core.client.model.local.Peer;
@@ -34,9 +35,6 @@ import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.exception.HttpBadRequestException;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
-import org.duniter.core.client.model.bma.BlockchainBlock;
-import org.duniter.core.client.model.bma.WotCertification;
-import org.duniter.core.client.model.bma.WotLookup;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,6 +180,34 @@ public class WotRemoteServiceTest {
 		List<Member> result = service.getMembers(peer);
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.size() > 0);
+	}
+
+	@Test
+	public void getPendingMemberships() {
+		Peer peer = createTestPeer();
+		List<WotPendingMembership> result = service.getPendingMemberships(peer);
+		Assert.assertNotNull(result);
+		Assert.assertTrue(result.size() > 0);
+	}
+
+	@Test
+	public void getRequirements() {
+		Peer peer = createTestPeer();
+		List<WotPendingMembership> pendingMemberships = service.getPendingMemberships(peer);
+		Assume.assumeTrue(CollectionUtils.isNotEmpty(pendingMemberships));
+
+		MutableInt counter = new MutableInt(0);
+		pendingMemberships.stream()
+				// Get first 10
+			.filter(ms -> {
+				counter.increment();
+				return counter.getValue() < 10;
+			})
+			.forEach(ms -> {
+				List<WotRequirements> result = service.getRequirements(peer, ms.getPubkey());
+				Assert.assertNotNull(result);
+				Assert.assertNotNull(result.size() > 0);
+			});
 	}
 
 	/* -- internal methods */

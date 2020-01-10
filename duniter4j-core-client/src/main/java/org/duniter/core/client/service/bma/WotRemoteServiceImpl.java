@@ -23,6 +23,7 @@ package org.duniter.core.client.service.bma;
  */
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections4.MapUtils;
@@ -31,6 +32,7 @@ import org.duniter.core.client.model.ModelUtils;
 import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.local.*;
 import org.duniter.core.client.service.ServiceLocator;
+import org.duniter.core.client.service.exception.HttpBadRequestException;
 import org.duniter.core.client.service.local.CurrencyService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -59,6 +61,8 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     public static final String URL_CERTIFY = URL_BASE + "/certify";
 
     public static final String URL_MEMBERS = URL_BASE + "/members";
+
+    public static final String URL_PENDING = URL_BASE + "/pending";
 
     public static final String URL_LOOKUP = URL_BASE + "/lookup/%s";
 
@@ -169,15 +173,35 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         return result;
     }
 
-    public void getRequirements(String currencyId, String pubKey) {
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("TODO: implement /wot/requirements on [%s]", pubKey));
+    public List<WotPendingMembership> getPendingMemberships(Peer peer) {
+        try {
+            WotPendingMemberships lists = httpService.executeRequest(peer, URL_PENDING, WotPendingMemberships.class);
+            return ImmutableList.copyOf(lists.getMemberships());
+        } catch (HttpBadRequestException e) {
+            log.debug("Unable to get pending memberships");
+            return null;
         }
-        // get parameter
-        String path = String.format(URL_REQUIREMENT, pubKey);
-        // TODO : managed requirements
-        //WotLookup lookupResults = executeRequest(currencyId, path, WotLookup.class);
+    }
 
+    @Override
+    public List<WotPendingMembership> getPendingMemberships(String currencyId) {
+        return getPendingMemberships(peerService.getActivePeerByCurrencyId(currencyId));
+    }
+
+    @Override
+    public List<WotRequirements> getRequirements(Peer peer, String pubKey) {
+        try {
+            WotRequirementsResponse response = httpService.executeRequest(peer, String.format(URL_REQUIREMENT, pubKey), WotRequirementsResponse.class);
+            return ImmutableList.copyOf(response.getIdentities());
+        } catch (HttpBadRequestException e) {
+            log.debug(String.format("Unable to get memberships for {%.8s}", pubKey));
+            return null;
+        }
+    }
+
+    @Override
+    public List<WotRequirements> getRequirements(String currencyId, String pubKey) {
+        return getRequirements(peerService.getActivePeerByCurrencyId(currencyId), pubKey);
     }
 
     public WotLookup.Uid findByUid(Peer peer, String uid) {

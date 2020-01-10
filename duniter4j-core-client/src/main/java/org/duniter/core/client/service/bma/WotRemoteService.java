@@ -23,8 +23,7 @@ package org.duniter.core.client.service.bma;
  */
 
 import org.duniter.core.beans.Service;
-import org.duniter.core.client.model.bma.WotCertification;
-import org.duniter.core.client.model.bma.WotLookup;
+import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.local.*;
 
 import java.util.Collection;
@@ -39,7 +38,8 @@ public interface WotRemoteService extends Service {
     WotLookup.Uid find(Peer peer, String uidOrPubKey);
     WotLookup.Uid find(String currencyId, String uidOrPubKey);
 
-    void getRequirements(String currencyId, String pubKey);
+    List<WotRequirements> getRequirements(Peer peer, String pubKey);
+    List<WotRequirements> getRequirements(String currencyId, String pubKey);
 
     WotLookup.Uid findByUid(Peer peer, String uid);
     WotLookup.Uid findByUid(String currencyId, String uid);
@@ -70,6 +70,8 @@ public interface WotRemoteService extends Service {
     Map<String, String> getMembersUids(Peer peer);
     List<Member> getMembers(Peer peer);
     List<Member> getMembers(String currencyId);
+    List<WotPendingMembership> getPendingMemberships(Peer peer);
+    List<WotPendingMembership> getPendingMemberships(String currencyId);
 
     void sendIdentity(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid);
     void sendIdentity(String currencyId, byte[] pubKey, byte[] secKey, String uid, String blockUid);
