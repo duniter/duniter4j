@@ -41,8 +41,25 @@ import java.math.BigInteger;
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class BlockchainBlock implements Serializable {
 
+    public static final String PROPERTY_VERSION = "version";
+    public static final String PROPERTY_NONCE = "nonce";
     public static final String PROPERTY_NUMBER = "number";
+    public static final String PROPERTY_POW_MIN = "powMin";
+    public static final String PROPERTY_TIME = "time";
+    public static final String PROPERTY_MEDIAN_TIME = "medianTime";
+    public static final String PROPERTY_MEMBERS_COUNT = "membersCount";
+    public static final String PROPERTY_MONETARY_MASS = "monetaryMass";
+    public static final String PROPERTY_UNIT_BASE = "unitbase";
+    public static final String PROPERTY_ISSUERS_COUNT = "issuersCount";
+    public static final String PROPERTY_ISSUERS_FRAME = "issuersFrame";
+    public static final String PROPERTY_ISSUERS_FRAME_VAR = "issuersFrameVar";
+    public static final String PROPERTY_CURRENCY = "currency";
+    public static final String PROPERTY_ISSUER = "issuer";
     public static final String PROPERTY_HASH = "hash";
+    public static final String PROPERTY_PARAMETERS = "parameters";
+    public static final String PROPERTY_PREVIOUS_HASH = "previousHash";
+    public static final String PROPERTY_PREVIOUS_ISSUER = "previousIssuer";
+    public static final String PROPERTY_INNER_HASH = "innerHash";
     public static final String PROPERTY_DIVIDEND = "dividend";
     public static final String PROPERTY_IDENTITIES = "identities";
     public static final String PROPERTY_JOINERS = "joiners";
@@ -50,8 +67,9 @@ public class BlockchainBlock implements Serializable {
     public static final String PROPERTY_LEAVERS = "leavers";
     public static final String PROPERTY_REVOKED = "revoked";
     public static final String PROPERTY_EXCLUDED = "excluded";
-    public static final String PROPERTY_MEDIAN_TIME = "medianTime";
-    public static final String PROPERTY_ISSUER = "issuer";
+    public static final String PROPERTY_CERTIFICATIONS = "certifications";
+    public static final String PROPERTY_TRANSACTIONS = "transactions";
+    public static final String PROPERTY_SIGNATURE = "signature";
 
 
     private static final long serialVersionUID = -5598140972293452669L;
