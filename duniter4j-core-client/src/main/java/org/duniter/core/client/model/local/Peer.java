@@ -128,7 +128,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         public Builder setEndpoint(NetworkPeering.Endpoint source) {
             Preconditions.checkNotNull(source);
             if (source.api != null) {
-               setApi(source.api.name());
+               setApi(source.api);
             }
             if (StringUtils.isNotBlank(source.id)) {
                 setEpId(source.id);

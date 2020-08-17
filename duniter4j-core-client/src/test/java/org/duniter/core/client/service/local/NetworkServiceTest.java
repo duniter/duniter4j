@@ -59,6 +59,8 @@ public class NetworkServiceTest {
 
 		Assert.assertNotNull(peers);
 		Assert.assertTrue(peers.size() > 0);
+
+		peers.forEach(p -> log.debug(" Found peer: " + p.toString()));
 	}
 
 	/* -- internal methods */

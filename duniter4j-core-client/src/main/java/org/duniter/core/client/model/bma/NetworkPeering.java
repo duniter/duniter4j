@@ -138,7 +138,7 @@ public class NetworkPeering implements Serializable {
     }
 
     public static class Endpoint implements Serializable {
-        public EndpointApi api;
+        public String api;
         public String dns;
         public String ipv4;
         public String ipv6;
@@ -147,11 +147,11 @@ public class NetworkPeering implements Serializable {
         public String path;
         public String raw;
 
-        public EndpointApi getApi() {
+        public String getApi() {
             return api;
         }
 
-        public void setApi(EndpointApi api) {
+        public void setApi(String api) {
             this.api = api;
         }
 
@@ -220,7 +220,7 @@ public class NetworkPeering implements Serializable {
             StringJoiner joiner = new StringJoiner(" ");
             // API
             if (api != null) {
-                joiner.add(api.name());
+                joiner.add(api);
             }
             // Id (use for WS2P)
             if (StringUtils.isNotBlank(id)) {

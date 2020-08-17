@@ -40,7 +40,9 @@ public class Endpoints {
 
     private static final Logger log = LoggerFactory.getLogger(Endpoints.class);
 
-    public static final String EP_END_REGEXP = "(?: ([a-z0-9_ğĞ][a-z0-9-_.ğĞ]*))?(?: ([0-9.]+))?(?: ([0-9a-f:]+)(?:%[a-z0-9]+)?)?(?: ([0-9]+))(?: (/[^/]*))?$";
+    // Path regexp (can have no starting slash - see issue https://git.duniter.org/clients/cesium-grp/cesium-plus-pod/-/issues/41)
+    public static final String PATH_REGEXP = "\\/?[^\\/\\s]+(?:\\/[^\\/\\s]+)*";
+    public static final String EP_END_REGEXP = "(?: ([a-z0-9_ğĞ][a-z0-9-_.ğĞ]*))?(?: ([0-9.]+))?(?: ([0-9a-f:]+)(?:%[a-z0-9]+)?)?(?: ([0-9]+))(?: ("+PATH_REGEXP + "))?$";
     public static final String BMA_API_REGEXP = "^BASIC_MERKLED_API" + EP_END_REGEXP;
     public static final String BMAS_API_REGEXP = "^BMAS" + EP_END_REGEXP;
     public static final String WS2P_API_REGEXP = "^(WS2P(?:TOR)?) ([a-f0-9]{7,8})" + EP_END_REGEXP;
@@ -63,7 +65,7 @@ public class Endpoints {
         // BMA API
         Matcher mather = bmaPattern.matcher(raw);
         if (mather.matches()) {
-            endpoint.api = EndpointApi.BASIC_MERKLED_API;
+            endpoint.api = EndpointApi.BASIC_MERKLED_API.name();
             parseDefaultFormatEndPoint(mather, endpoint, 1);
             return Optional.of(endpoint);
         }
@@ -71,7 +73,7 @@ public class Endpoints {
         // BMAS API
         mather = bmasPattern.matcher(raw);
         if (mather.matches()) {
-            endpoint.api = EndpointApi.BMAS;
+            endpoint.api = EndpointApi.BMAS.name();
             parseDefaultFormatEndPoint(mather, endpoint, 1);
             return Optional.of(endpoint);
         }
@@ -81,7 +83,7 @@ public class Endpoints {
         if (mather.matches()) {
             String api = mather.group(1);
             try {
-                endpoint.api = EndpointApi.valueOf(api);
+                endpoint.api = EndpointApi.valueOf(api).name();
                 endpoint.id = mather.group(2);
                 parseDefaultFormatEndPoint(mather, endpoint, 3);
                 return Optional.of(endpoint);
@@ -96,7 +98,7 @@ public class Endpoints {
         if (mather.matches()) {
             String api = mather.group(1);
             try {
-                endpoint.api = EndpointApi.valueOf(api);
+                endpoint.api = api;
                 parseDefaultFormatEndPoint(mather, endpoint, 2);
                 return Optional.of(endpoint);
             } catch(Exception e) {
@@ -120,9 +122,13 @@ public class Endpoints {
                     endpoint.ipv6 = word;
                 } else if ((i == matcher.groupCount() || i == matcher.groupCount() -1) && word.matches("^\\d+$")){
                     endpoint.port = Integer.parseInt(word);
-                } else if (i == matcher.groupCount() && word.startsWith("/")) {
-                    endpoint.path = word;
-                } else {
+                } else if (i == matcher.groupCount()) {
+                    // Path without starting slash must e accepted - fix issue https://git.duniter.org/clients/cesium-grp/cesium-plus-pod/-/issues/41
+                    if (word.startsWith("/") || word.matches(PATH_REGEXP)) {
+                        endpoint.path = word;
+                    }
+                }
+                else {
                     endpoint.dns = word;
                 }
             }

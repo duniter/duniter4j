@@ -21,12 +21,12 @@ public class NetworkPeeringTest {
         peering.setStatus("UP");
 
         NetworkPeering.Endpoint epBma = new NetworkPeering.Endpoint();
-        epBma.setApi(EndpointApi.BASIC_MERKLED_API);
+        epBma.setApi(EndpointApi.BASIC_MERKLED_API.name());
         epBma.setDns("g1.duniter.fr");
         epBma.setPort(80);
 
         NetworkPeering.Endpoint epWs2p = new NetworkPeering.Endpoint();
-        epWs2p.setApi(EndpointApi.WS2P);
+        epWs2p.setApi(EndpointApi.WS2P.name());
         epWs2p.setDns("g1.duniter.fr");
         epWs2p.setPath("/ws2p");
         epWs2p.setId("fb17fcd4");

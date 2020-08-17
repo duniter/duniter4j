@@ -191,7 +191,7 @@ public final class Peers {
 
     public static NetworkPeering.Endpoint toBmaEndpoint(Peer ep) {
         NetworkPeering.Endpoint bmaEp = new NetworkPeering.Endpoint();
-        bmaEp.setApi(EndpointApi.valueOf(ep.getApi()));
+        bmaEp.setApi(ep.getApi());
         bmaEp.setId(ep.getEpId());
         bmaEp.setDns(ep.getDns());
         bmaEp.setPort(ep.getPort());

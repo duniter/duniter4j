@@ -70,7 +70,7 @@ public class NetworkRemoteServiceTest {
 	@Test
 	public void findPeers() throws Exception {
 
-		List<Peer> result = service.findPeers(peer, null, EndpointApi.BASIC_MERKLED_API, null, null);
+		List<Peer> result = service.findPeers(peer, null, EndpointApi.BASIC_MERKLED_API.name(), null, null);
 
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.size() > 0);
@@ -94,9 +94,7 @@ public class NetworkRemoteServiceTest {
 		Assert.assertTrue(result.size() > 0);
 
 		// log
-		//result.stream().forEach(head ->
-		//		System.out.println(head.toString())
-		//);
+		result.stream().forEach(head -> log.debug(head.toString()));
 	}
 
 	/* -- internal methods */

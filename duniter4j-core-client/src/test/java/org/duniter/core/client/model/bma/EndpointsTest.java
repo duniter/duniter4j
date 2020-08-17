@@ -11,7 +11,7 @@ public class EndpointsTest {
         // Parse valid endpoints
         NetworkPeering.Endpoint ep = Endpoints.parse("BASIC_MERKLED_API g1.duniter.fr 81.81.81.81 80").orElse(null);
         Assert.assertNotNull(ep);
-        Assert.assertEquals(EndpointApi.BASIC_MERKLED_API, ep.api);
+        Assert.assertEquals(EndpointApi.BASIC_MERKLED_API.name(), ep.api);
         Assert.assertEquals("g1.duniter.fr", ep.dns);
         Assert.assertEquals("81.81.81.81", ep.ipv4);
         Assert.assertNotNull(ep.port);
@@ -19,28 +19,37 @@ public class EndpointsTest {
         Assert.assertNull(ep.id);
         Assert.assertNull(ep.path);
 
-        ep = Endpoints.parse("BMAS g1.duniter.fr 443").orElse(null);
+        ep = Endpoints.parse("BMAS g1.duniter.org 443").orElse(null);
         Assert.assertNotNull(ep);
-        Assert.assertEquals(EndpointApi.BMAS, ep.api);
-        Assert.assertEquals("g1.duniter.fr", ep.dns);
+        Assert.assertEquals(EndpointApi.BMAS.name(), ep.api);
+        Assert.assertEquals("g1.duniter.org", ep.dns);
         Assert.assertNotNull(ep.port);
         Assert.assertEquals(443, ep.port.intValue());
         Assert.assertNull(ep.id);
         Assert.assertNull(ep.path);
 
-        ep = Endpoints.parse("WS2P fb17fcd4 g1.duniter.fr 443 /ws2p").orElse(null);
+        ep = Endpoints.parse("WS2P fb17fcd4 g1.duniter.org 443 /ws2p").orElse(null);
         Assert.assertNotNull(ep);
-        Assert.assertNotNull(ep.id);
-        Assert.assertNotNull(ep.path);
-        Assert.assertEquals(EndpointApi.WS2P, ep.api);
-        Assert.assertEquals("g1.duniter.fr", ep.dns);
+        Assert.assertNotNull("fb17fcd4", ep.id);
+        Assert.assertEquals("g1.duniter.org", ep.dns);
+        Assert.assertEquals(EndpointApi.WS2P.name(), ep.api);
         Assert.assertNotNull(ep.port);
         Assert.assertEquals(443, ep.port.intValue());
+        Assert.assertEquals("/ws2p", ep.path);
+
+        ep = Endpoints.parse("WS2P fb17fcd4 g1.duniter.org 443 ws2p").orElse(null);
+        Assert.assertNotNull(ep);
+        Assert.assertNotNull(ep.id);
+        Assert.assertEquals(EndpointApi.WS2P.name(), ep.api);
+        Assert.assertEquals("g1.duniter.org", ep.dns);
+        Assert.assertNotNull(ep.port);
+        Assert.assertEquals(443, ep.port.intValue());
+        Assert.assertEquals("ws2p", ep.path);
 
         // ws2pId on 7 characters
         ep = Endpoints.parse("WS2P 90e9b12 duniter.g1.1000i100.fr 443 /ws2p").orElse(null);
         Assert.assertNotNull(ep);
-        Assert.assertEquals(ep.api, EndpointApi.WS2P);
+        Assert.assertEquals(ep.api, EndpointApi.WS2P.name());
         Assert.assertNotNull(ep.id);
         Assert.assertNotNull(ep.path);
 
@@ -48,14 +57,14 @@ public class EndpointsTest {
         Assert.assertNotNull(ep);
         Assert.assertNotNull(ep.id);
         Assert.assertNull(ep.path);
-        Assert.assertEquals(EndpointApi.WS2PTOR, ep.api);
+        Assert.assertEquals(EndpointApi.WS2PTOR.name(), ep.api);
         Assert.assertEquals("3k2zovlpihbt3j3g.onion", ep.dns);
         Assert.assertNotNull(ep.port);
         Assert.assertEquals(20901, ep.port.intValue());
 
         ep = Endpoints.parse("GCHANGE_API data.gchange.fr 443").orElse(null);
         Assert.assertNotNull(ep);
-        Assert.assertEquals(ep.api, EndpointApi.GCHANGE_API);
+        Assert.assertEquals(ep.api, EndpointApi.GCHANGE_API.name());
         Assert.assertNull(ep.id);
         Assert.assertNull(ep.path);
 
@@ -69,9 +78,6 @@ public class EndpointsTest {
         ep = Endpoints.parse("WS2P R8t2sg7w g1.ambau.ovh 443").orElse(null);
         Assert.assertNull(ep);
 
-        // This must failed (missing path first '/')
-        ep = Endpoints.parse("WS2P 90e9b12 duniter.g1.1000i100.fr 443 ws2p").orElse(null);
-        Assert.assertNull(ep);
     }
 
 }

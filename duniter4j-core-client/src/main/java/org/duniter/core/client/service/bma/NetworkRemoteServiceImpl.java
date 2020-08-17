@@ -126,7 +126,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
     }
 
     @Override
-    public List<Peer> findPeers(Peer peer, String status, EndpointApi endpointApi, Integer currentBlockNumber, String currentBlockHash) {
+    public List<Peer> findPeers(Peer peer, String status, String endpointApi, Integer currentBlockNumber, String currentBlockHash) {
         Preconditions.checkNotNull(peer);
 
         List<Peer> result = Lists.newArrayList();
@@ -142,7 +142,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
                 for (NetworkPeering.Endpoint endpoint : remotePeer.endpoints) {
 
-                    match = endpointApi == null || (endpoint != null && endpointApi == endpoint.api);
+                    match = endpointApi == null || (endpoint != null && endpointApi.equals(endpoint.api));
 
                     if (match && endpoint != null) {
                         Peer childPeer = Peer.newBuilder()
