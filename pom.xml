@@ -3,7 +3,7 @@
 
   <groupId>org.duniter</groupId>
   <artifactId>duniter4j</artifactId>
-  <version>1.3.3-SNAPSHOT</version>
+  <version>1.3.3</version>
   <packaging>pom</packaging>
   <name>Duniter4j</name>
   <description>a Duniter Java Client API</description>
@@ -150,7 +150,7 @@
     <url>https://git.duniter.org/clients/java/duniter4j.git</url>
     <connection>scm:git:git@git.duniter.org:clients/java/duniter4j.git</connection>
     <developerConnection>scm:git:git@git.duniter.org:clients/java/duniter4j.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>duniter4j-1.3.3</tag>
   </scm>
 
   <issueManagement>
