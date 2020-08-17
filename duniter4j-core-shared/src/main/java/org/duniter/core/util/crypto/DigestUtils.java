@@ -38,6 +38,7 @@ import java.security.NoSuchAlgorithmException;
 public class DigestUtils {
     private static final char[] HEXITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     private static final String SHA1_ALGORITHM = "SHA1";
+    private static final String SHA256_ALGORITHM = "SHA-256";
     private static final String UTF_8 = "UTF-8";
 
     /**
@@ -69,17 +70,39 @@ public class DigestUtils {
     }
 
     public static String sha1Hex(String message, String encoding) {
+        return toHex(SHA1_ALGORITHM, message, encoding);
+    }
+
+    /**
+     * Genera a SHA2 fingerprint from the given message
+     *
+     * @param message a message to encodeinto SHA-1
+     * @return a SHA1 fingerprint
+     */
+    public static String sha2Hex(String message) {
+        return sha2Hex(message, UTF_8);
+    }
+
+    public static String sha2Hex(String message, String encoding) {
+        return toHex(SHA256_ALGORITHM, message, encoding);
+    }
+
+    public static String toHex(String digestAlgo, String message) {
+        return toHex(digestAlgo, message, UTF_8);
+    }
+
+    public static String toHex(String digestAlgo, String message, String encoding) {
         try {
-            MessageDigest md = getSHA1Instance();
+            MessageDigest md = getInstance(digestAlgo);
             return encodeHex(md.digest(message.getBytes(encoding)));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static MessageDigest getSHA1Instance() {
+    public static MessageDigest getInstance(String algo) {
         try {
-            return MessageDigest.getInstance(SHA1_ALGORITHM);
+            return MessageDigest.getInstance(algo);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
