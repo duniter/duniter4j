@@ -25,10 +25,10 @@ package org.duniter.core.client.model.local;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
-import org.duniter.core.util.Preconditions;
-import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.http.InetAddressUtils;
 
 import java.io.Serializable;

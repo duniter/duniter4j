@@ -42,27 +42,18 @@ public class CollectionUtils {
     }
 
     public static boolean isNotEmpty(Object[] coll) {
-        return coll != null && coll.length > 0;
+        return ArrayUtils.isNotEmpty(coll);
     }
     public static boolean isEmpty(Object[] coll) {
-        return coll == null || coll.length == 0;
+        return ArrayUtils.isEmpty(coll);
     }
 
     public static String join(final Object[] array) {
-        return join(array, ", ");
+        return ArrayUtils.join(array);
     }
 
     public static String join(final Object[] array, final  String separator) {
-        if (array == null || array.length == 0) {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder(array.length * 7);
-        sb.append(array[0]);
-        for (int i = 1; i < array.length; i++) {
-            sb.append(separator);
-            sb.append(array[i]);
-        }
-        return sb.toString();
+        return ArrayUtils.join(array, separator);
     }
 
     public static String join(final Collection<?> collection) {
@@ -88,7 +79,7 @@ public class CollectionUtils {
     }
 
     public static int size(final Object[] array) {
-        return array == null ? 0 : array.length;
+        return ArrayUtils.size(array);
     }
 
     public static <E> E extractSingleton(Collection<E> collection) {

@@ -22,14 +22,12 @@ package org.duniter.core.client.dao.mem;
  * #L%
  */
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import org.duniter.core.client.dao.PeerDao;
-import org.duniter.core.client.model.bma.EndpointApi;
-import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.client.model.bma.NetworkWs2pHeads;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Peers;
-import org.duniter.core.util.Preconditions;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -180,11 +178,11 @@ public class MemoryPeerDaoImpl implements PeerDao {
     }
 
     @Override
-    public boolean hasPeersUpWithApi(String currencyId, Set<EndpointApi> api) {
+    public boolean hasPeersUpWithApi(String currencyId, Set<String> api) {
         return getPeersByCurrencyId(currencyId)
                 .stream()
                 .anyMatch(p ->
-                    api.contains(EndpointApi.valueOf(p.getApi())) &&
+                    api.contains(p.getApi()) &&
                             p.getStats() != null &&
                             Peer.PeerStatus.UP.equals(p.getStats().getStatus())
                 );

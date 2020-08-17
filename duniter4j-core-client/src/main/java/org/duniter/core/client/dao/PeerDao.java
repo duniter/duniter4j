@@ -71,5 +71,5 @@ public interface PeerDao extends EntityDao<String, Peer> {
 
     void updatePeersAsDown(String currencyId, long minUpTimeInMs, Collection<String> endpointApis);
 
-    boolean hasPeersUpWithApi(String currencyId, Set<EndpointApi> endpointApis);
+    boolean hasPeersUpWithApi(String currencyId, Set<String> endpointApis);
 }

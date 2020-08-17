@@ -22,8 +22,8 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
-import org.duniter.core.util.StringUtils;
-import org.duniter.core.util.http.InetAddressUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.conn.util.InetAddressUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
