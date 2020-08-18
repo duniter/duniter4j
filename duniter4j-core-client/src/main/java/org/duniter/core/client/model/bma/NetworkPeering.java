@@ -94,6 +94,10 @@ public class NetworkPeering implements Serializable {
         this.status = status;
     }
 
+    /**
+     * Unsigned raw
+     * @return
+     */
     public String getRaw() {
         return raw;
     }
@@ -111,7 +115,21 @@ public class NetworkPeering implements Serializable {
     }
 
     public String toString() {
-        if (StringUtils.isNotBlank(raw)) return raw;
+        // Use raw, if exists
+        String raw = this.raw != null ? this.raw : toUnsignedRaw();
+
+        // Append signature (if any)
+        if (StringUtils.isBlank(signature)) {
+            return raw;
+        }
+
+        return new StringBuilder()
+                .append(raw)
+                .append(signature).append("\n")
+                .toString();
+    }
+
+    public String toUnsignedRaw() {
 
         StringBuilder sb = new StringBuilder();
         // Version
@@ -130,9 +148,6 @@ public class NetworkPeering implements Serializable {
             Stream.of(endpoints)
                     .filter(Objects::nonNull) // can be null
                     .forEach(ep -> sb.append(ep.toString()).append("\n"));
-        }
-        if (StringUtils.isNotBlank(signature)) {
-            sb.append(signature).append("\n");
         }
         return sb.toString();
     }

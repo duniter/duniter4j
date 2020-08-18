@@ -22,12 +22,6 @@ package org.duniter.core.util;
  * #L%
  */
 
-import com.google.common.collect.Lists;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-
 /**
  * Created by eis on 23/12/14.
  */

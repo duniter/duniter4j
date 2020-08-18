@@ -22,12 +22,15 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import org.duniter.core.util.ArrayUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.http.InetAddressUtils;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 
@@ -92,7 +95,10 @@ public class NetworkPeerings {
 
             result.setStatus("UP");
 
-            result.setRaw(document);
+            // Remove signature (will be an end line)
+            lines[lines.length - 1] = "";
+            String unsignedRaw = Joiner.on('\n').join(lines);
+            result.setRaw(unsignedRaw);
 
             return result;
         }

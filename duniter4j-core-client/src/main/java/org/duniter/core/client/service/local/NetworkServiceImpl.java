@@ -139,7 +139,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                         .filter(peerFilter(filter))
                         .sorted(peerComparator(sort))
                         .collect(Collectors.toList()))
-                .thenApplyAsync(this::logPeers)
+                //.thenApplyAsync(this::logPeers)
                 .get();
         } catch (InterruptedException | ExecutionException e) {
             throw new TechnicalException("Error while loading peers: " + e.getMessage(), e);
