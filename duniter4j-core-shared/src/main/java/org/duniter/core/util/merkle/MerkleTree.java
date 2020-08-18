@@ -84,6 +84,7 @@ public class MerkleTree {
     }
 
 
+
     private void feed(String str) {
         if(StringUtils.isNotBlank(str) && regexp.test(str)){
             // Push leaf without hashing it since it is already a hash

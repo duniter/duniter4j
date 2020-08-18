@@ -43,6 +43,8 @@ public class NetworkPeers implements Serializable {
     public static class Peer extends NetworkPeering implements Serializable {
         public Long firstDown;
         public Long lastTry;
+        public Long lastContact;
+        public String hash;
 
         @JsonGetter("first_down")
         public Long getFirstDown() {
@@ -62,6 +64,26 @@ public class NetworkPeers implements Serializable {
         @JsonSetter("last_try")
         public void setLastTry(Long lastTry) {
             this.lastTry = lastTry;
+        }
+
+        @JsonGetter("lastContact")
+        public Long getLastContact() {
+            return lastContact;
+        }
+
+        @JsonSetter("lastContact")
+        public void setLastContact(Long lastContact) {
+            this.lastContact = lastContact;
+        }
+
+        @JsonIgnore
+        public String getHash() {
+            return hash;
+        }
+
+        @JsonIgnore
+        public void setHash(String hash {
+            this.hash = hash;
         }
 
         @Override
