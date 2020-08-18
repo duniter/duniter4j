@@ -33,6 +33,7 @@ import org.duniter.core.client.model.bma.*;
 import org.duniter.core.client.model.local.*;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.exception.HttpBadRequestException;
+import org.duniter.core.client.service.exception.HttpNotFoundException;
 import org.duniter.core.client.service.local.CurrencyService;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -193,7 +194,7 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         try {
             WotRequirementsResponse response = httpService.executeRequest(peer, String.format(URL_REQUIREMENT, pubKey), WotRequirementsResponse.class);
             return ImmutableList.copyOf(response.getIdentities());
-        } catch (HttpBadRequestException e) {
+        } catch (HttpBadRequestException | HttpNotFoundException e) {
             log.debug(String.format("Unable to get memberships for {%.8s}", pubKey));
             return null;
         }

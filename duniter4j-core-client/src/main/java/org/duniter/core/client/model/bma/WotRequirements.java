@@ -20,6 +20,9 @@ public class WotRequirements implements Serializable {
 	private Boolean isSentry;
 	private Boolean wasMember;
 
+
+	private Certification[] certifications;
+
 	public String getPubkey() {
 		return pubkey;
 	}
@@ -92,11 +95,11 @@ public class WotRequirements implements Serializable {
 		this.outdistanced = outdistanced;
 	}
 
-	public Boolean getSentry() {
+	public Boolean getIsSentry() {
 		return isSentry;
 	}
 
-	public void setSentry(Boolean sentry) {
+	public void setIsSentry(Boolean sentry) {
 		isSentry = sentry;
 	}
 
@@ -108,6 +111,15 @@ public class WotRequirements implements Serializable {
 		this.wasMember = wasMember;
 	}
 
+
+	public Certification[] getCertifications() {
+		return certifications;
+	}
+
+	public void setCertifications(Certification[] certifications) {
+		this.certifications = certifications;
+	}
+
 	public static class Meta implements Serializable {
 		private String timestamp;
 
@@ -117,6 +129,54 @@ public class WotRequirements implements Serializable {
 
 		public void setTimestamp(String timestamp) {
 			this.timestamp = timestamp;
+		}
+	}
+
+	public static class Certification implements Serializable {
+		private long timestamp;
+		private String from;
+		private String to;
+		private String sig;
+		private long expiresIn;
+
+		public long getTimestamp() {
+			return timestamp;
+		}
+
+		public void setTimestamp(long timestamp) {
+			this.timestamp = timestamp;
+		}
+
+		public String getFrom() {
+			return from;
+		}
+
+		public void setFrom(String from) {
+			this.from = from;
+		}
+
+		public String getTo() {
+			return to;
+		}
+
+		public void setTo(String to) {
+			this.to = to;
+		}
+
+		public String getSig() {
+			return sig;
+		}
+
+		public void setSig(String sig) {
+			this.sig = sig;
+		}
+
+		public long getExpiresIn() {
+			return expiresIn;
+		}
+
+		public void setExpiresIn(long expiresIn) {
+			this.expiresIn = expiresIn;
 		}
 	}
 }
