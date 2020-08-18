@@ -82,7 +82,7 @@ public class NetworkPeers implements Serializable {
         }
 
         @JsonIgnore
-        public void setHash(String hash {
+        public void setHash(String hash) {
             this.hash = hash;
         }
 
