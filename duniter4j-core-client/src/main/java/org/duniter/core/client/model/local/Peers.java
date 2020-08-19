@@ -116,7 +116,7 @@ public final class Peers {
     }
 
     public static List<NetworkPeers.Peer> toBmaPeers(List<Peer> endpointAsPeers) {
-        if (CollectionUtils.isEmpty(endpointAsPeers)) return null;
+        if (CollectionUtils.isEmpty(endpointAsPeers)) return ImmutableList.of();
 
         // Group by peering document
         Multimap<String, Peer> groupByPeering = ArrayListMultimap.create();
