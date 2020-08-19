@@ -41,9 +41,8 @@ public enum EndpointApi implements IEndpointApi {
     ES_USER_API(),
     ES_SUBSCRIPTION_API(),
     MONIT_API(),
-    UNDEFINED(),
-    // TODO: remove this
-    GCHANGE_API();
+    UNDEFINED()
+    ;
 
 
     private static final Logger log = LoggerFactory.getLogger(EndpointApi.class);
