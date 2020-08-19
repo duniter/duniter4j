@@ -64,7 +64,7 @@ public class EndpointsTest {
 
         ep = Endpoints.parse("GCHANGE_API data.gchange.fr 443").orElse(null);
         Assert.assertNotNull(ep);
-        Assert.assertEquals(ep.api, EndpointApi.GCHANGE_API.label());
+        Assert.assertEquals(ep.api, "GCHANGE_API");
         Assert.assertNull(ep.id);
         Assert.assertNull(ep.path);
 
