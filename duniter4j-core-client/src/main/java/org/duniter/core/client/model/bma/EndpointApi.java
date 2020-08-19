@@ -76,6 +76,6 @@ public enum EndpointApi implements IEndpointApi {
     }
 
     public static boolean useWebSocketProtocol(String api) {
-        return WS2P.name().equals(api);
+        return WS2P.label().equals(api);
     }
 }

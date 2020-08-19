@@ -26,7 +26,7 @@ public class NetworkPeeringTest {
         epBma.setPort(80);
 
         NetworkPeering.Endpoint epWs2p = new NetworkPeering.Endpoint();
-        epWs2p.setApi(EndpointApi.WS2P.name());
+        epWs2p.setApi(EndpointApi.WS2P.label());
         epWs2p.setDns("g1.duniter.fr");
         epWs2p.setPath("/ws2p");
         epWs2p.setId("fb17fcd4");

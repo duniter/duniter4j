@@ -73,7 +73,7 @@ public class Endpoints {
         // BMAS API
         mather = bmasPattern.matcher(raw);
         if (mather.matches()) {
-            endpoint.api = EndpointApi.BMAS.name();
+            endpoint.api = EndpointApi.BMAS.label();
             parseDefaultFormatEndPoint(mather, endpoint, 1);
             return Optional.of(endpoint);
         }
@@ -83,7 +83,7 @@ public class Endpoints {
         if (mather.matches()) {
             String api = mather.group(1);
             try {
-                endpoint.api = EndpointApi.valueOf(api).name();
+                endpoint.api = EndpointApi.valueOf(api).label();
                 endpoint.id = mather.group(2);
                 parseDefaultFormatEndPoint(mather, endpoint, 3);
                 return Optional.of(endpoint);
