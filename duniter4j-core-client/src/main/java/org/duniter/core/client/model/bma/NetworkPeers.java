@@ -87,7 +87,6 @@ public class NetworkPeers implements Serializable {
         }
 
         @Override
-        @JsonIgnore
         public String getRaw() {
             return super.getRaw();
         }

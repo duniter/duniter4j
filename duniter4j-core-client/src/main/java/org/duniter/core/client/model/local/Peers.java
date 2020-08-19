@@ -49,8 +49,12 @@ public final class Peers {
         // helper class
     }
 
-    public static boolean hasEndPointAPI(Peer peer, EndpointApi api) {
-        return peer.getApi() != null && peer.getApi().equalsIgnoreCase(api.name());
+    public static boolean hasEndPointAPI(Peer peer, IEndpointApi api) {
+        return hasEndPointAPI(peer, api.label());
+    }
+
+    public static boolean hasEndPointAPI(Peer peer, String api) {
+        return peer.getApi() != null && peer.getApi().equalsIgnoreCase(api);
     }
 
     public static String buid(Peer peer) {
@@ -91,6 +95,9 @@ public final class Peers {
         try {
             // Fill BMA peer, using the raw document
             NetworkPeerings.parse(endpointAsPeer.getPeering().getRaw(), result);
+            result.setSignature(endpointAsPeer.getPeering().getSignature());
+            result.setRaw(endpointAsPeer.getPeering().getRaw());
+
             // Override the status, last_try and first_down, using stats
             Peer.PeerStatus status = getStatus(endpointAsPeer).orElse(Peer.PeerStatus.DOWN);
             result.setStatus(status.name());
@@ -221,7 +228,11 @@ public final class Peers {
         Preconditions.checkNotNull(peer);
         Preconditions.checkNotNull(peeringDocument);
 
-        Peer.Peering peering = (peer.getPeering() != null) ? peer.getPeering() : new Peer.Peering();
+        Peer.Peering peering = peer.getPeering();
+        if (peering == null) {
+            peering = new Peer.Peering();
+            peer.setPeering(peering);
+        }
 
         // Copy some fields
         peer.setPubkey(peeringDocument.getPubkey());
@@ -229,6 +240,7 @@ public final class Peers {
 
         peering.setVersion(peeringDocument.getVersion());
         peering.setSignature(peeringDocument.getSignature());
+        peering.setRaw(peeringDocument.getRaw());
 
         // Copy block infos
         if (StringUtils.isNotBlank(peeringDocument.getBlock())) {

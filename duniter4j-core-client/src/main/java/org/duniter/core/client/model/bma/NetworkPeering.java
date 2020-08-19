@@ -24,6 +24,7 @@ package org.duniter.core.client.model.bma;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 
 import java.io.Serializable;
@@ -95,7 +96,7 @@ public class NetworkPeering implements Serializable {
     }
 
     /**
-     * Unsigned raw
+     * Unsigned peering document
      * @return
      */
     public String getRaw() {
@@ -150,6 +151,14 @@ public class NetworkPeering implements Serializable {
                     .forEach(ep -> sb.append(ep.toString()).append("\n"));
         }
         return sb.toString();
+    }
+
+    public String toSignedRaw() {
+        Preconditions.checkNotNull(this.signature, "Invalid peer document. Missing 'signature'");
+        return new StringBuilder()
+                .append(toUnsignedRaw())
+                .append(signature).append("\n")
+                .toString();
     }
 
     public static class Endpoint implements Serializable {

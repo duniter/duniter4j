@@ -11,7 +11,7 @@ public class EndpointsTest {
         // Parse valid endpoints
         NetworkPeering.Endpoint ep = Endpoints.parse("BASIC_MERKLED_API g1.duniter.fr 81.81.81.81 80").orElse(null);
         Assert.assertNotNull(ep);
-        Assert.assertEquals(EndpointApi.BASIC_MERKLED_API.name(), ep.api);
+        Assert.assertEquals(EndpointApi.BASIC_MERKLED_API.label(), ep.api);
         Assert.assertEquals("g1.duniter.fr", ep.dns);
         Assert.assertEquals("81.81.81.81", ep.ipv4);
         Assert.assertNotNull(ep.port);

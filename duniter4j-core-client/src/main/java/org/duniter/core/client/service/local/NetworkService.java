@@ -29,7 +29,6 @@ import java.io.Closeable;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -42,7 +41,10 @@ public interface NetworkService extends Service {
 
     interface PeersChangeListener {
         void onChanges(Collection<Peer> peers);
+    }
 
+    interface RefreshPeerListener {
+        void onRefresh(Peer peer);
     }
 
     class Sort {

@@ -164,7 +164,7 @@ public class Peer implements LocalEntity<String>, Serializable {
 
             String raw = remotePeering.getRaw();
             if (StringUtils.isBlank(raw)) {
-                raw = remotePeering.toString();
+                raw = remotePeering.toUnsignedRaw();
             }
             this.peering.setRaw(raw);
 
@@ -213,7 +213,7 @@ public class Peer implements LocalEntity<String>, Serializable {
 
         public Peer build() {
             int port = this.port != null ? this.port : 80;
-            String api = this.api != null ? this.api : EndpointApi.BASIC_MERKLED_API.name();
+            String api = this.api != null ? this.api : EndpointApi.BASIC_MERKLED_API.label();
             boolean useSsl = this.useSsl != null ? this.useSsl :
                     (port == 443 || EndpointApi.BMAS.name().equals(this.api));
             Peer ep = new Peer(api, dns, ipv4, ipv6, port, useSsl);
@@ -289,7 +289,7 @@ public class Peer implements LocalEntity<String>, Serializable {
      */
     @Deprecated
     public Peer(String host, Integer port) {
-        this.api = EndpointApi.BASIC_MERKLED_API.name();
+        this.api = EndpointApi.BASIC_MERKLED_API.label();
         if (InetAddressUtils.isIPv4Address(host)) {
             this.ipv4 = host;
         }
@@ -544,6 +544,10 @@ public class Peer implements LocalEntity<String>, Serializable {
             this.blockHash = blockHash;
         }
 
+        /**
+         * The raw peering document (unsigned)
+         * @return
+         */
         public String getRaw() {
             return raw;
         }

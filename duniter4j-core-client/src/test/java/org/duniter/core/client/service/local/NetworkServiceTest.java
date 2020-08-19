@@ -23,14 +23,12 @@ package org.duniter.core.client.service.local;
  */
 
 
+import com.google.common.collect.ImmutableList;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.service.ServiceLocator;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +59,36 @@ public class NetworkServiceTest {
 		Assert.assertTrue(peers.size() > 0);
 
 		peers.forEach(p -> log.debug(" Found peer: " + p.toString()));
+	}
+
+	@Test
+	@Ignore
+	public void getGchangePeers() throws Exception {
+
+		Peer gchangePeer = Peer.newBuilder()
+				//.setHost("data.gchange.fr")
+				.setHost("gchange.data.presles.fr")
+				.setPort(443)
+				.setApi("GCHANGE_API")
+				.build();
+
+		NetworkService.Filter filterDef = new NetworkService.Filter();
+		filterDef.filterStatus = Peer.PeerStatus.UP;
+		filterDef.filterEndpoints = ImmutableList.of("GCHANGE_API");
+
+		List<Peer> peers = service.getPeers(gchangePeer, filterDef, null);
+
+		Assert.assertNotNull(peers);
+		Assert.assertTrue(peers.size() > 0);
+
+
+		peers.forEach(p -> log.debug(" Found peer: " + p.toString()));
+
+		for (Peer peer: peers) {
+			Assert.assertNotNull(peer.getPeering());
+			Assert.assertNotNull(peer.getPeering().getRaw());
+		}
+
 	}
 
 	/* -- internal methods */

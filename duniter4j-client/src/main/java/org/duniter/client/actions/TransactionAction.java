@@ -195,10 +195,10 @@ public class TransactionAction extends AbstractAction  {
         peersFilter.filterType = NetworkService.FilterType.MEMBER;
         peersFilter.filterStatus = Peer.PeerStatus.UP;
         if (useSsl) {
-            peersFilter.filterEndpoints = ImmutableList.of(EndpointApi.BMAS.name());
+            peersFilter.filterEndpoints = ImmutableList.of(EndpointApi.BMAS.label());
         }
         else {
-            peersFilter.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name());
+            peersFilter.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.label());
         }
         // Sort by [lesser difficulty first]
         NetworkService.Sort sortLesserDifficulty = new NetworkService.Sort();

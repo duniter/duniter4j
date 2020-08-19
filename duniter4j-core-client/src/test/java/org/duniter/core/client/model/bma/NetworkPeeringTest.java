@@ -21,7 +21,7 @@ public class NetworkPeeringTest {
         peering.setStatus("UP");
 
         NetworkPeering.Endpoint epBma = new NetworkPeering.Endpoint();
-        epBma.setApi(EndpointApi.BASIC_MERKLED_API.name());
+        epBma.setApi(EndpointApi.BASIC_MERKLED_API.label());
         epBma.setDns("g1.duniter.fr");
         epBma.setPort(80);
 

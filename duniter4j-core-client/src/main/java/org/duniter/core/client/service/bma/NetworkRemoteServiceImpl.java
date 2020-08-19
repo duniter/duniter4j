@@ -145,13 +145,13 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
                     match = endpointApi == null || (endpoint != null && endpointApi.equals(endpoint.api));
 
                     if (match && endpoint != null) {
-                        Peer childPeer = Peer.newBuilder()
+                        Peer peerEp = Peer.newBuilder()
                                 .setCurrency(remotePeer.getCurrency())
                                 .setPubkey(remotePeer.getPubkey())
                                 .setEndpoint(endpoint)
                                 .setPeering(remotePeer)
                                 .build();
-                        result.add(childPeer);
+                        result.add(peerEp);
                     }
 
                 }

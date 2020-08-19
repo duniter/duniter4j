@@ -65,7 +65,7 @@ public class Endpoints {
         // BMA API
         Matcher mather = bmaPattern.matcher(raw);
         if (mather.matches()) {
-            endpoint.api = EndpointApi.BASIC_MERKLED_API.name();
+            endpoint.api = EndpointApi.BASIC_MERKLED_API.label();
             parseDefaultFormatEndPoint(mather, endpoint, 1);
             return Optional.of(endpoint);
         }

@@ -23,20 +23,53 @@ package org.duniter.core.client.model.bma;
  */
 
 
-public enum EndpointApi {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    BASIC_MERKLED_API,
-    BMAS,
-    BMATOR,
-    WS2P,
-    WS2PTOR,
-    ES_CORE_API,
-    ES_USER_API,
-    ES_SUBSCRIPTION_API,
-    MONIT_API,
-    UNDEFINED,
-    // TODO: remove this ?
-    GCHANGE_API;
+/**
+ * Endpoint used by Duniter protocol, and Cesium-plus-pod API.<br/>
+ * Label can be override using static the method <code>EndpointApi.setLabel()</code>
+ */
+public enum EndpointApi implements IEndpointApi {
+
+    BASIC_MERKLED_API(),
+    BMAS(),
+    BMATOR(),
+    WS2P(),
+    WS2PTOR(),
+    ES_CORE_API(),
+    ES_USER_API(),
+    ES_SUBSCRIPTION_API(),
+    MONIT_API(),
+    UNDEFINED(),
+    // TODO: remove this
+    GCHANGE_API();
+
+
+    private static final Logger log = LoggerFactory.getLogger(EndpointApi.class);
+
+    private String label;
+
+    EndpointApi() {
+        this.label = this.name();
+    }
+
+    public String label() {
+        return this.label;
+    }
+
+    /**
+     * Allow to change the API label.
+     * Useful for reuse and API enumeration, with a new label (eg: ES_CORE_API => GCHANGE_API)
+     * @param api
+     * @param label
+     */
+    public void setLabel(String label) {
+        if (!this.label.equals(label)) {
+            log.warn(String.format("Endpoint API '%s' label change to '%s'", this.name(), label));
+            this.label = label;
+        }
+    }
 
     public boolean useHttpProtocol(String api) {
         return !useWebSocketProtocol(api);

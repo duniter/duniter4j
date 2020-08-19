@@ -68,7 +68,6 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     private final static String BMA_URL_STATUS = "/node/summary";
     private final static String BMA_URL_BLOCKCHAIN_CURRENT = "/blockchain/current";
     private final static String BMA_URL_BLOCKCHAIN_HARDSHIP = "/blockchain/hardship/";
-    private final static String ES_URL_BLOCKCHAIN_CURRENT = "/blockchain/current";
 
     private NetworkRemoteService networkRemoteService;
     private WotRemoteService wotRemoteService;
@@ -77,6 +76,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
     private final LockManager lockManager = new LockManager(4, 10);
 
     private PeerService peerService;
+    private List<RefreshPeerListener> refreshPeerListeners = Lists.newArrayList();
 
     public NetworkServiceImpl() {
     }
@@ -111,7 +111,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         Filter filterDef = new Filter();
         filterDef.filterType = null;
         filterDef.filterStatus = Peer.PeerStatus.UP;
-        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.name(), EndpointApi.BMAS.name(), EndpointApi.WS2P.name());
+        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.label(), EndpointApi.BMAS.label(), EndpointApi.WS2P.label());
         filterDef.minBlockNumber = current.getNumber().intValue() - 100;
 
         // Default sort
@@ -139,7 +139,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                         .filter(peerFilter(filter))
                         .sorted(peerComparator(sort))
                         .collect(Collectors.toList()))
-                //.thenApplyAsync(this::logPeers)
+                .thenApplyAsync(this::logPeers)
                 .get();
         } catch (InterruptedException | ExecutionException e) {
             throw new TechnicalException("Error while loading peers: " + e.getMessage(), e);
@@ -164,15 +164,15 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         final ExecutorService pool = (executor != null) ? executor : ForkJoinPool.commonPool();
 
         return CompletableFuture.supplyAsync(() -> loadPeerLeafs(mainPeer, filterEndpoints), pool)
-                .thenApply(peers ->
-                    peers.stream()
+                .thenApply(peers -> peers.stream()
+                    // Replace by main peer, if same URL
                     .map(peer -> {
-                        // Replace by main peer, if same URL
                         if (mainPeer.getUrl().equals(peer.getUrl())) {
                             // Update properties
                             mainPeer.setPubkey(peer.getPubkey());
                             mainPeer.setHash(peer.getHash());
                             mainPeer.setCurrency(peer.getCurrency());
+                            mainPeer.setPeering(peer.getPeering());
                             // reuse instance
                             return mainPeer;
                         }
@@ -194,15 +194,16 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                                                     final ExecutorService pool) {
         if (log.isDebugEnabled()) log.debug(String.format("[%s] Refreshing peer status", peer.toString()));
 
+        CompletableFuture<Peer> result;
         // WS2P: refresh using heads
         if (Peers.hasWs2pEndpoint(peer)) {
-            return CompletableFuture.supplyAsync(() -> fillWs2pPeer(peer, memberUids, ws2pHeads, difficulties), pool);
+            result = CompletableFuture.supplyAsync(() -> fillWs2pPeer(peer, memberUids, ws2pHeads, difficulties), pool);
         }
 
         // BMA or ES_CORE
-        if (Peers.hasBmaEndpoint(peer) || Peers.hasEsCoreEndpoint(peer)) {
+        else if (Peers.hasBmaEndpoint(peer) || Peers.hasEsCoreEndpoint(peer)) {
 
-            return CompletableFuture.allOf(
+            result = CompletableFuture.allOf(
                     CompletableFuture.supplyAsync(() -> fillNodeSummary(peer), pool),
                     CompletableFuture.supplyAsync(() -> fillCurrentBlock(peer), pool)
             )
@@ -213,9 +214,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                         Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
                         peer.getStats().setError(cause.getMessage());
                         if (log.isDebugEnabled()) {
-                            if (log.isTraceEnabled()) {
-                                log.debug(String.format("[%s] is DOWN: %s", peer, cause.getMessage()), cause);
-                            }
+                            if (log.isTraceEnabled()) log.debug(String.format("[%s] is DOWN: %s", peer, cause.getMessage()), cause);
                             else log.debug(String.format("[%s] is DOWN: %s", peer, cause.getMessage()));
                         }
                     }
@@ -241,7 +240,28 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         }
 
         // Unknown API: just return the peer
-        return CompletableFuture.completedFuture(peer);
+        else {
+            result = CompletableFuture.completedFuture(peer);
+        }
+
+        // No listeners: return result
+        if (CollectionUtils.isEmpty(refreshPeerListeners)) {
+            return result;
+        }
+
+        // Executing listeners
+        return result.thenApplyAsync(p -> CompletableFuture.allOf(
+                refreshPeerListeners.stream()
+                    .map(l -> CompletableFuture.runAsync(() -> l.onRefresh(peer), pool))
+                    .toArray(CompletableFuture[]::new)
+                )
+                .exceptionally(e -> {
+                    if (log.isDebugEnabled()) log.error(String.format("[%s] Refresh peer listeners error: %s", peer, e.getMessage()), e);
+                    else log.error(String.format("[%s] Refresh peer listeners error: %s", peer, e.getMessage()));
+                    return null;
+                }))
+            // Return the peer, as result
+            .thenApply(v -> peer);
     }
 
     public Peer fillWs2pPeer(final Peer peer,
@@ -301,7 +321,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
     public CompletableFuture<List<Peer>> refreshPeersAsync(final Peer mainPeer,final  List<Peer> peers, final ExecutorService pool) {
 
-        if (CollectionUtils.isEmpty(peers)) return CompletableFuture.completedFuture(null);
+        if (CollectionUtils.isEmpty(peers)) return CompletableFuture.completedFuture(ImmutableList.of());
 
         CompletableFuture<Map<String, String>> memberUidsFuture = CompletableFuture.supplyAsync(() -> wotRemoteService.getMembersUids(mainPeer), pool);
         CompletableFuture<List<Ws2pHead>> ws2pHeadsFuture = CompletableFuture.supplyAsync(() -> networkRemoteService.getWs2pHeads(mainPeer), pool);
@@ -576,48 +596,56 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         return json.asText();
     }
 
+    public NetworkService addRefreshPeerListener(RefreshPeerListener listener) {
+        refreshPeerListeners.add(listener);
+        return this;
+    }
+
+    public NetworkService removeRefreshPeerListener(RefreshPeerListener listener) {
+        refreshPeerListeners.remove(listener);
+        return this;
+    }
+
     /* -- protected methods -- */
 
     protected List<Peer> loadPeerLeafs(Peer peer, List<String> filterEndpoints) {
         List<String> leaves = networkRemoteService.getPeersLeaves(peer);
 
-        if (CollectionUtils.isEmpty(leaves)) return Lists.newArrayList(); // should never occur
+        if (CollectionUtils.isEmpty(leaves)) return ImmutableList.of();
 
-        List<Peer> result = Lists.newArrayList();
         CryptoService cryptoService = ServiceLocator.instance().getCryptoService();
 
         // If less than 100 node, get it in ONE call
         if (leaves.size() <= 2000) {
             List<Peer> peers = networkRemoteService.getPeers(peer);
+            if (CollectionUtils.isEmpty(peers)) return ImmutableList.of();
+            return peers.stream()
+                // Filter on endpoints - fix #18
+                .filter(peerEp -> CollectionUtils.isEmpty(filterEndpoints)
+                        || StringUtils.isBlank(peerEp.getApi())
+                        || filterEndpoints.contains(peerEp.getApi()))
 
-            if (CollectionUtils.isNotEmpty(peers)) {
-                for (Peer peerEp : peers) {
-                    // Filter on endpoints - fix #18
-                    if (CollectionUtils.isEmpty(filterEndpoints)
-                            || StringUtils.isBlank(peerEp.getApi())
-                            || filterEndpoints.contains(peerEp.getApi())) {
-                        String hash = cryptoService.hash(peerEp.computeKey()); // compute the hash
-                        peerEp.setHash(hash);
-                        result.add(peerEp);
-                    }
-                }
-            }
+                // Compute the hash
+                .map(peerEp -> {
+                    String hash = cryptoService.hash(peerEp.computeKey());
+                    peerEp.setHash(hash);
+                    return peerEp;
+                }).collect(Collectors.toList());
         }
 
         // Get it by multiple call on /network/peering?leaf=
-        else {
-            int offset = 0;
-            int count = Constants.Config.MAX_SAME_REQUEST_COUNT;
-            while (offset < leaves.size()) {
-                if (offset + count > leaves.size()) count = leaves.size() - offset;
-                loadPeerLeafs(peer, result, leaves, offset, count, filterEndpoints);
-                offset += count;
-                try {
-                    Thread.sleep(1000); // wait 1 s
-                } catch (InterruptedException e) {
-                    // stop
-                    offset = leaves.size();
-                }
+        List<Peer> result = Lists.newArrayList();
+        int offset = 0;
+        int count = Constants.Config.MAX_SAME_REQUEST_COUNT;
+        while (offset < leaves.size()) {
+            if (offset + count > leaves.size()) count = leaves.size() - offset;
+            loadPeerLeafs(peer, result, leaves, offset, count, filterEndpoints);
+            offset += count;
+            try {
+                Thread.sleep(1000); // wait 1 s
+            } catch (InterruptedException e) {
+                // stop
+                offset = leaves.size();
             }
         }
 
@@ -665,6 +693,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
 
     protected boolean applyPeerFilter(Peer peer, Filter filter) {
+        if (filter == null) return true;
 
         Peer.Stats stats = peer.getStats();
 
