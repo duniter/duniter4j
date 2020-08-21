@@ -123,6 +123,9 @@ public class JsonAttributeParser<T extends Object> {
 
         final String value = matcher.group(1);
         try {
+            if (value == null) {
+                return null;
+            }
             return parseValue(value);
         }
         catch(NumberFormatException | UnknownFormatConversionException e) {

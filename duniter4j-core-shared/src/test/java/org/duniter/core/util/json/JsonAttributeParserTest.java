@@ -34,7 +34,7 @@ public class JsonAttributeParserTest {
     private static final String PROPERTY_TS = "ts";
     private static final String PROPERTY_B = "b";
 
-    private  static final String TS_VALUE = "2014-12-02T13:58:23.801+0100";
+    private static final String TS_VALUE = "2014-12-02T13:58:23.801+0100";
     private static final String OBJ_JSON = ("{'id':'joe','ts':'" + TS_VALUE + "','foo':{'bar':{'v1':50019820,'v2':0,     'v3':0.001, 'v4':-100, 'v5':0.000001, 'v6':0.0, 'b':true}}}")
             .replace("'", "\"");
 
@@ -110,7 +110,35 @@ public class JsonAttributeParserTest {
         JsonAttributeParser<String> tsAttribute = new JsonAttributeParser<>(PROPERTY_TS, String.class);
         newJson = tsAttribute.removeFromJson(newJson);
 
-        expectedJson = expectedJson.replace("\"ts\":\""+TS_VALUE+"\",", "");
+        expectedJson = expectedJson.replace("\"ts\":\"" + TS_VALUE + "\",", "");
         Assert.assertEquals(expectedJson, newJson);
+    }
+
+    @Test
+    public void parseNullableValue() {
+        // Long
+        {
+            String jsonString = "{\n" +
+                    "    \"ts\": null\n" +
+                    "}";
+
+            // nullable = true
+            JsonAttributeParser<Long> tsAttribute = new JsonAttributeParser<>(PROPERTY_TS, Long.class);
+            Long parsedValue = tsAttribute.getValue(jsonString);
+            Assert.assertNull(parsedValue);
+        }
+
+        // String
+        {
+            String jsonString = "{\n" +
+                    "    \"id\": null\n" +
+                    "}";
+
+            // nullable = true
+            JsonAttributeParser<String> idAttribute = new JsonAttributeParser<>(PROPERTY_ID, String.class);
+            String parsedValue = idAttribute.getValue(jsonString);
+            Assert.assertNull(parsedValue);
+
+        }
     }
 }
