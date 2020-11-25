@@ -70,8 +70,6 @@ public interface CryptoService extends Bean {
 
     String box(String message, String nonce, String recipientSignPk, String senderSignSk);
 
-    String box(String message, byte[] nonce, String recipientSignPk, String senderSignSk);
-
     String box(String message, byte[] nonce, byte[] recipientSignPk, byte[] senderSignSk);
 
     byte[] getBoxRandomNonce();

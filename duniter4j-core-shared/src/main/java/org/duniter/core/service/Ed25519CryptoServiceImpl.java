@@ -161,14 +161,6 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
                 CryptoUtils.decodeBase58(senderSignSk));
     }
 
-
-    @Override
-    public String box(String message, byte[] nonce, String recipientSignPk, String senderSignSk) {
-        return box(message, nonce,
-                CryptoUtils.decodeBase58(recipientSignPk),
-                CryptoUtils.decodeBase58(senderSignSk));
-    }
-
     @Override
     public String box(String message, byte[] nonce, byte[] recipientSignPk, byte[] senderSignSk) {
         checkLength(nonce, CRYPTO_BOX_CURVE25519XSALSA20POLY1305_NONCEBYTES);
