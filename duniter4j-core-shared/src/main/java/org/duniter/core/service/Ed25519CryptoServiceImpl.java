@@ -154,27 +154,36 @@ public class Ed25519CryptoServiceImpl implements CryptoService {
     }
 
     @Override
-    public String box(String message, byte[] nonce, String senderSignSk, String receiverSignPk) {
-        byte[] senderSignSkBinary = CryptoUtils.decodeBase58(senderSignSk);
-        byte[] receiverSignPkBinary = CryptoUtils.decodeBase58(receiverSignPk);
-        return box(message, nonce, senderSignSkBinary, receiverSignPkBinary);
+    public String box(String message, String nonce, String recipientSignPk, String senderSignSk) {
+        return box(message,
+                CryptoUtils.decodeBase58(nonce),
+                CryptoUtils.decodeBase58(recipientSignPk),
+                CryptoUtils.decodeBase58(senderSignSk));
+    }
+
+
+    @Override
+    public String box(String message, byte[] nonce, String recipientSignPk, String senderSignSk) {
+        return box(message, nonce,
+                CryptoUtils.decodeBase58(recipientSignPk),
+                CryptoUtils.decodeBase58(senderSignSk));
     }
 
     @Override
-    public String box(String message, byte[] nonce, byte[] senderSignSk, byte[] receiverSignPk) {
+    public String box(String message, byte[] nonce, byte[] recipientSignPk, byte[] senderSignSk) {
         checkLength(nonce, CRYPTO_BOX_CURVE25519XSALSA20POLY1305_NONCEBYTES);
 
-        byte[] messageBinary = prependZeros(CRYPTO_BOX_CURVE25519XSALSA20POLY1305_ZEROBYTES, CryptoUtils.decodeBase64(message));
+        byte[] messageBinary = prependZeros(CRYPTO_BOX_CURVE25519XSALSA20POLY1305_ZEROBYTES, CryptoUtils.decodeUTF8(message));
 
         byte[] senderBoxSk = new byte[Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_SECRETKEYBYTES];
         naCl.crypto_sign_ed25519_sk_to_curve25519(senderBoxSk, senderSignSk);
 
-        byte[] receiverBoxPk = new byte[Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_PUBLICKEYBYTES];
-        naCl.crypto_sign_ed25519_pk_to_curve25519(receiverBoxPk, receiverSignPk);
+        byte[] recipientBoxPk = new byte[Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_PUBLICKEYBYTES];
+        naCl.crypto_sign_ed25519_pk_to_curve25519(recipientBoxPk, recipientSignPk);
 
         byte[] cypherTextBinary = new byte[messageBinary.length];
         isValid(sodium().crypto_box_curve25519xsalsa20poly1305(cypherTextBinary, messageBinary,
-                cypherTextBinary.length, nonce, senderBoxSk, receiverBoxPk), "Encryption failed");
+                cypherTextBinary.length, nonce, recipientBoxPk, senderBoxSk), "Encryption failed");
         return CryptoUtils.encodeBase64(removeZeros(CRYPTO_BOX_CURVE25519XSALSA20POLY1305_BOXZEROBYTES, cypherTextBinary));
     }
 

@@ -25,11 +25,9 @@ package org.duniter.core.service;
 
 import org.duniter.core.test.TestFixtures;
 import org.duniter.core.util.crypto.Base58;
-import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.core.util.crypto.SecretBox;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
@@ -80,28 +78,27 @@ public class Ed25519CryptoServiceTest {
     }
 
     @Test
-    @Ignore
-    // FIXME: It's seems that pack does not work...
-    public void packThenOpenBox() throws Exception {
+    public void packThenOpenBox() {
 
         //
         String originalMessage = "test@test";
         String nonce = "AHHfny8igAJp1h7P5d8bEobKZfgoRcXs9";
 
         // Sender
-        SecretBox receiver = createSecretBox();
         SecretBox sender = createSecretBox();
+        SecretBox recipient = createSecretBox();
 
         // Create box
         String cypherText = service.box(originalMessage,
-                CryptoUtils.decodeBase58(nonce),
-                receiver.getSecretKey(), sender.getPublicKey());
+                nonce,
+                recipient.getPublicKey(),
+                sender.getSecretKey());
 
         // Open box
         String decryptedText = service.openBox(
                 cypherText,
                 nonce,
-                sender.getPublicKey(), receiver.getSecretKey());
+                sender.getPublicKey(), recipient.getSecretKey());
 
         Assert.assertEquals(originalMessage, decryptedText);
 
@@ -126,10 +123,14 @@ public class Ed25519CryptoServiceTest {
 	/* -- internal methods */
 
 	protected SecretBox createSecretBox() {
-		String salt = fixtures.getUserSalt();
-		String password = fixtures.getUserPassword();
-		SecretBox secretBox = new SecretBox(salt, password);
-
-		return secretBox;
+		return createSecretBox("");
 	}
+
+    protected SecretBox createSecretBox(String saltPrefix) {
+        String salt = fixtures.getUserSalt() + saltPrefix;
+        String password = fixtures.getUserPassword();
+        SecretBox secretBox = new SecretBox(salt, password);
+
+        return secretBox;
+    }
 }
