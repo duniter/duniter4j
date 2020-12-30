@@ -112,7 +112,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         filterDef.filterType = null;
         filterDef.filterStatus = Peer.PeerStatus.UP;
         filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.label(), EndpointApi.BMAS.label(), EndpointApi.WS2P.label());
-        filterDef.minBlockNumber = current.getNumber().intValue() - 100;
+        filterDef.minBlockNumber = current.getNumber() - 100;
 
         // Default sort
         Sort sortDef = new Sort();
@@ -869,6 +869,5 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
             });
         }
     }
-
 
 }
