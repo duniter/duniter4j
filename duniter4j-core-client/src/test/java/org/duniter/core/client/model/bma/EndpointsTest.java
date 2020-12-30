@@ -62,6 +62,30 @@ public class EndpointsTest {
         Assert.assertNotNull(ep.port);
         Assert.assertEquals(20901, ep.port.intValue());
 
+
+        // GVA
+        ep = Endpoints.parse("GVA S g1.librelois.fr 443 gva").orElse(null);
+        Assert.assertNotNull(ep);
+        Assert.assertEquals(EndpointApi.GVA.label(), ep.api);
+        Assert.assertEquals("g1.librelois.fr", ep.dns);
+        Assert.assertNull(ep.ipv4);
+        Assert.assertNotNull(ep.port);
+        Assert.assertEquals(443, ep.port.intValue());
+        Assert.assertNull(ep.id);
+        Assert.assertEquals("gva", ep.path);
+
+        // GVA SUB
+        ep = Endpoints.parse("GVASUB S g1.librelois.fr 443 gva-sub").orElse(null);
+        Assert.assertNotNull(ep);
+        Assert.assertEquals(EndpointApi.GVASUB.label(), ep.api);
+        Assert.assertEquals("g1.librelois.fr", ep.dns);
+        Assert.assertNull(ep.ipv4);
+        Assert.assertNotNull(ep.port);
+        Assert.assertEquals(443, ep.port.intValue());
+        Assert.assertNull(ep.id);
+        Assert.assertEquals("gva-sub", ep.path);
+
+        // Any other api
         ep = Endpoints.parse("GCHANGE_API data.gchange.fr 443").orElse(null);
         Assert.assertNotNull(ep);
         Assert.assertEquals(ep.api, "GCHANGE_API");

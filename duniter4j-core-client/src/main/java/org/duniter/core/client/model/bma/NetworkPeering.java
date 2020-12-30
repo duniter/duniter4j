@@ -169,6 +169,7 @@ public class NetworkPeering implements Serializable {
         public Integer port;
         public String id;
         public String path;
+        public Boolean useSsl;
         public String raw;
 
         public String getApi() {
@@ -227,6 +228,14 @@ public class NetworkPeering implements Serializable {
             this.path = path;
         }
 
+        public Boolean useSsl() {
+            return useSsl;
+        }
+
+        public void setUseSsl(Boolean useSsl) {
+            this.useSsl = useSsl;
+        }
+
         @JsonIgnore
         public String getRaw() {
             return raw;
@@ -245,6 +254,10 @@ public class NetworkPeering implements Serializable {
             // API
             if (api != null) {
                 joiner.add(api);
+            }
+            // SSL
+            if (useSsl != null && useSsl.booleanValue()) {
+                joiner.add("S"); // useSsl ? used by GVA or GVASUB
             }
             // Id (use for WS2P)
             if (StringUtils.isNotBlank(id)) {
@@ -277,6 +290,7 @@ public class NetworkPeering implements Serializable {
         public boolean equals(Object obj) {
             if (obj instanceof Endpoint) {
                 return Objects.equals(((Endpoint) obj).api, api)
+                        && Objects.equals(((Endpoint) obj).useSsl, useSsl)
                         && Objects.equals(((Endpoint) obj).id, id)
                         && Objects.equals(((Endpoint) obj).dns, dns)
                         && Objects.equals(((Endpoint) obj).ipv4, ipv4)

@@ -46,11 +46,15 @@ public class Endpoints {
     public static final String BMA_API_REGEXP = "^BASIC_MERKLED_API" + EP_END_REGEXP;
     public static final String BMAS_API_REGEXP = "^BMAS" + EP_END_REGEXP;
     public static final String WS2P_API_REGEXP = "^(WS2P(?:TOR)?) ([a-f0-9]{7,8})" + EP_END_REGEXP;
+    public static final String GVA_API_REGEXP = "^GVA(:? S)?" + EP_END_REGEXP;
+    public static final String GVASUB_API_REGEXP = "^GVASUB(:? S)?" + EP_END_REGEXP;
     public static final String OTHER_API_REGEXP = "^([A-Z_-]+)" + EP_END_REGEXP;
 
     private static Pattern bmaPattern = Pattern.compile(BMA_API_REGEXP);
     private static Pattern bmasPattern = Pattern.compile(BMAS_API_REGEXP);
     private static Pattern ws2pPattern = Pattern.compile(WS2P_API_REGEXP);
+    private static Pattern gvaPattern = Pattern.compile(GVA_API_REGEXP);
+    private static Pattern gvaSubPattern = Pattern.compile(GVASUB_API_REGEXP);
     private static Pattern otherApiPattern = Pattern.compile(OTHER_API_REGEXP);
 
     private Endpoints() {
@@ -62,8 +66,49 @@ public class Endpoints {
         NetworkPeering.Endpoint endpoint = new NetworkPeering.Endpoint();
         endpoint.setRaw(raw);
 
+        // WS2P API
+        Matcher mather = ws2pPattern.matcher(raw);
+        if (mather.matches()) {
+            String api = mather.group(1);
+            try {
+                endpoint.api = EndpointApi.valueOf(api).label();
+                endpoint.id = mather.group(2);
+                parseDefaultFormatEndPoint(mather, endpoint, 3);
+                return Optional.of(endpoint);
+            } catch(Exception e) {
+                // Unknown API
+                throw new IOException("Unable to deserialize endpoint: WS2P api [" + api + "]", e); // link the exception
+            }
+        }
+
+        // GVA API
+        mather = gvaPattern.matcher(raw);
+        if (mather.matches()) {
+            endpoint.api = EndpointApi.GVA.label();
+            try {
+                parseDefaultFormatEndPoint(mather, endpoint, 2);
+                return Optional.of(endpoint);
+            } catch(Exception e) {
+                // Unknown API
+                throw new IOException("Unable to deserialize endpoint: api [" + endpoint.api + "]", e); // link the exception
+            }
+        }
+
+        // GVA SUB API
+        mather = gvaSubPattern.matcher(raw);
+        if (mather.matches()) {
+            endpoint.api = EndpointApi.GVASUB.label();
+            try {
+                parseDefaultFormatEndPoint(mather, endpoint, 2);
+                return Optional.of(endpoint);
+            } catch(Exception e) {
+                // Unknown API
+                throw new IOException("Unable to deserialize endpoint: api [" + endpoint.api + "]", e); // link the exception
+            }
+        }
+
         // BMA API
-        Matcher mather = bmaPattern.matcher(raw);
+        mather = bmaPattern.matcher(raw);
         if (mather.matches()) {
             endpoint.api = EndpointApi.BASIC_MERKLED_API.label();
             parseDefaultFormatEndPoint(mather, endpoint, 1);
@@ -76,21 +121,6 @@ public class Endpoints {
             endpoint.api = EndpointApi.BMAS.label();
             parseDefaultFormatEndPoint(mather, endpoint, 1);
             return Optional.of(endpoint);
-        }
-
-        // WS2P API
-        mather = ws2pPattern.matcher(raw);
-        if (mather.matches()) {
-            String api = mather.group(1);
-            try {
-                endpoint.api = EndpointApi.valueOf(api).label();
-                endpoint.id = mather.group(2);
-                parseDefaultFormatEndPoint(mather, endpoint, 3);
-                return Optional.of(endpoint);
-            } catch(Exception e) {
-                // Unknown API
-                throw new IOException("Unable to deserialize endpoint: WS2P api [" + api + "]", e); // link the exception
-            }
         }
 
         // Other API

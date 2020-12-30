@@ -37,6 +37,8 @@ public enum EndpointApi implements IEndpointApi {
     BMATOR(),
     WS2P(),
     WS2PTOR(),
+    GVA(),
+    GVASUB(),
     ES_CORE_API(),
     ES_USER_API(),
     ES_SUBSCRIPTION_API(),
