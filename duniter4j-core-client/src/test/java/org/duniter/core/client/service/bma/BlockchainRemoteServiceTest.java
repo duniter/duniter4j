@@ -89,6 +89,7 @@ public class BlockchainRemoteServiceTest {
     }
 
     @Test
+    // @FIXME timeout trop court
     public void getBlockWithTx() throws Exception {
 
         long[] blocks = service.getBlocksWithTx(createTestPeer());
