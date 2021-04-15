@@ -38,18 +38,18 @@ WORKDIR /duniter4j
 #   tar -xzf archive.tar.gz && rm *.tar.gz && mv cesium-* src && \
 
 RUN cd /duniter4j && \
-    wget https://github.com/duniter/duniter4j/releases/download/duniter4j-${DUNITER4J_VERSION}/duniter4j-es-${DUNITER4J_VERSION}-standalone.zip && \
-    unzip *.zip && rm *.zip && mv duniter4j-es-* duniter4j-es && \
+    wget https://github.com/duniter/duniter4j/releases/download/duniter4j-${DUNITER4J_VERSION}/duniter4j-client-${DUNITER4J_VERSION}-standalone.zip && \
+    unzip *.zip && rm *.zip && mv duniter4j-client-* duniter4j-client && \
     mkdir duniter4j-es/data && \
-    chown -R duniter4j:duniter4j duniter4j-es
+    chown -R duniter4j:duniter4j duniter4j-client
 
-RUN ln -s /duniter4j/duniter4j-es/bin/elasticsearch /usr/bin/duniter4j-es
+RUN ln -s /duniter4j/duniter4j-client/bin/elasticsearch /usr/bin/duniter4j-client
 
-VOLUME /duniter4j/duniter4j-es
+VOLUME /duniter4j/duniter4j-client
 EXPOSE 9200 9400
 
 USER duniter4j
 WORKDIR /duniter4j
 
-ENTRYPOINT ["/usr/bin/duniter4j-es"]
+ENTRYPOINT ["/usr/bin/duniter4j-client"]
 CMD []
