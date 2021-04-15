@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import org.duniter.core.client.model.bma.*;
+import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
@@ -55,6 +56,19 @@ public final class Peers {
 
     public static boolean hasEndPointAPI(Peer peer, String api) {
         return peer.getApi() != null && peer.getApi().equalsIgnoreCase(api);
+    }
+
+    public static String computeHash(Peer peer, CryptoService cryptoService) {
+        String uniqueKey = Joiner.on('-').skipNulls().join(
+                peer.getPubkey(),
+                peer.getDns(),
+                peer.getIpv4(),
+                peer.getIpv6(),
+                peer.getPort(),
+                peer.isUseSsl(),
+                peer.getApi(),
+                peer.getPath());
+        return cryptoService.hash(uniqueKey);
     }
 
     public static String buid(Peer peer) {

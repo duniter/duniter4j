@@ -1,4 +1,4 @@
-package org.duniter.core.client.dao;
+package org.duniter.core.client.repositories;
 
 /*
  * #%L
@@ -22,10 +22,9 @@ package org.duniter.core.client.dao;
  * #L%
  */
 
-import org.duniter.core.client.model.bma.EndpointApi;
-import org.duniter.core.client.model.bma.NetworkPeers;
 import org.duniter.core.client.model.bma.NetworkWs2pHeads;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.repositories.CrudRepository;
 
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +33,7 @@ import java.util.Set;
 /**
  * Created by blavenie on 29/12/15.
  */
-public interface PeerDao extends EntityDao<String, Peer> {
+public interface PeerRepository extends CrudRepository<String, Peer> {
 
     List<Peer> getPeersByCurrencyId(String currencyId);
 
@@ -44,28 +43,28 @@ public interface PeerDao extends EntityDao<String, Peer> {
      *
      * @param currencyId
      * @param endpointApi
-     * @param pubkeys
+     * @param pubkeys filter on given pubkeys. If null, not filtering
      * @return
      */
-    List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] includePubkeys);
+    List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String... pubkeys);
 
     /**
      * Get all UP peers
      * @param currencyId
-     * @param pubkeys use to filter on specific pubkeys. If null, not filtering
+     * @param pubkeys Allow to use to filter on specific pubkeys. If null, not filtering
      * @return
      */
-    List<Peer> getUpPeersByCurrencyId(String currencyId, String[] includePubkeys);
+    List<Peer> getUpPeersByCurrencyId(String currencyId, String... pubkeys);
 
     /**
      * Get WS2p heads as BMA /network/ws2p/head format
      * @param currencyId
-     * @param pubkeys use to filter on specific pubkeys. If null, not filtering
+     * @param pubkeys Allow to filter on given pubkeys. If null, not filtering
      * @return
      */
-    List<NetworkWs2pHeads.Head> getWs2pPeersByCurrencyId(String currencyId, String[] includePubkeys);
+    List<NetworkWs2pHeads.Head> getWs2pPeersByCurrencyId(String currencyId, String... pubkeys);
 
-    boolean isExists(String currencyId, String peerId);
+    boolean existsByCurrencyAndId(String currency, String peerId);
 
     Long getMaxLastUpTime(String currencyId);
 

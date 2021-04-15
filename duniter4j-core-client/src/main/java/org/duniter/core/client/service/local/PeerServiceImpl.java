@@ -24,9 +24,10 @@ package org.duniter.core.client.service.local;
 
 import org.duniter.core.beans.InitializingBean;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.dao.PeerDao;
+import org.duniter.core.client.repositories.PeerRepository;
 import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Peer;
+import org.duniter.core.client.model.local.Peers;
 import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
@@ -52,7 +53,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
     private CurrencyService currencyService;
     private CryptoService cryptoService;
-    private PeerDao peerDao;
+    private PeerRepository peerRepository;
     private Configuration config;
 
     public PeerServiceImpl() {
@@ -63,7 +64,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         this.currencyService = ServiceLocator.instance().getCurrencyService();
-        this.peerDao = ServiceLocator.instance().getBean(PeerDao.class);
+        this.peerRepository = ServiceLocator.instance().getBean(PeerRepository.class);
         this.config = Configuration.instance();
         this.cryptoService = ServiceLocator.instance().getCryptoService();
         this.activePeerByCurrencyIdCache = new SimpleCache<String, Peer>() {
@@ -77,7 +78,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     @Override
     public void close() throws IOException {
         currencyService = null;
-        peerDao = null;
+        peerRepository = null;
         peersByCurrencyIdCache = null;
         activePeerByCurrencyIdCache = null;
         cryptoService = null;
@@ -91,21 +92,9 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         Preconditions.checkArgument(peer.getPort() >= 0);
 
 
-        String peerId = cryptoService.hash(peer.computeKey());
-        boolean exists = isExists(peer.getCurrency(), peerId);
-        peer.setId(peerId);
+        peer.setHash(Peers.computeHash(peer, cryptoService));
 
-        Peer result;
-        // Create
-        if (!exists) {
-            result = peerDao.create(peer);
-        }
-
-        // or update
-        else {
-            peerDao.update(peer);
-            result = peer;
-        }
+        Peer result = peerRepository.save(peer);
 
         // update cache (if already loaded)
         if (peersByCurrencyIdCache != null) {
@@ -128,7 +117,7 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
      * @param currencyId
      * @return
      */
-    public Peer getActivePeerByCurrencyId(String currencyId) {
+    public Peer getActivePeerByCurrency(String currencyId) {
         return activePeerByCurrencyIdCache.get(currencyId);
     }
 
@@ -155,9 +144,8 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     /**
      * Fill allOfToList cache need for currencies
      *
-     * @param accountId
      */
-    public void loadCache(long accountId) {
+    public void loadCache() {
         if (peersByCurrencyIdCache != null) {
             return;
         }
@@ -165,13 +153,11 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         peersByCurrencyIdCache = new SimpleCache<String, List<Peer>>() {
             @Override
             public List<Peer> load(String currencyId) {
-                return peerDao.getPeersByCurrencyId(currencyId);
+                return peerRepository.getPeersByCurrencyId(currencyId);
             }
         };
 
-        List<Currency> currencies = ServiceLocator.instance().getCurrencyService().getAllByAccount(accountId);
-
-        for (Currency currency: currencies) {
+        for (Currency currency: currencyService.findAll()) {
             // Get peers from DB
             List<Peer> peers = getPeersByCurrencyId(currency.getId());
 
@@ -207,8 +193,8 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
     }
 
     @Override
-    public boolean isExists(String currencyId, String peerId) {
-        return peerDao.isExists(currencyId, peerId);
+    public boolean existsByCurrencyAndId(String currency, String id) {
+        return peerRepository.existsByCurrencyAndId(currency, id);
     }
 
     @Override
@@ -226,11 +212,11 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         if (log.isDebugEnabled()) {
             log.debug(String.format("[%s] %s Setting peers as DOWN, if older than [%s]...", currencyId, filterApis, new Date(minUpTimeInMs *1000)));
         }
-        peerDao.updatePeersAsDown(currencyId, minUpTimeInMs, filterApis);
+        peerRepository.updatePeersAsDown(currencyId, minUpTimeInMs, filterApis);
     }
 
     protected Peer loadDefaultPeer(String currencyId) {
-        List<Peer> peers = peerDao.getPeersByCurrencyId(currencyId);
+        List<Peer> peers = peerRepository.getPeersByCurrencyId(currencyId);
         if (CollectionUtils.isEmpty(peers)) {
             throw new TechnicalException(String.format(
                     "No peers configure for currency [%s]",
@@ -250,5 +236,4 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
 
         return defaultPeer;
     }
-
 }

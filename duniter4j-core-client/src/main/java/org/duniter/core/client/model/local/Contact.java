@@ -22,6 +22,7 @@ package org.duniter.core.client.model.local;
  * #L%
  */
 
+import org.duniter.core.model.IEntity;
 import org.duniter.core.util.ObjectUtils;
 
 import java.io.Serializable;
@@ -32,13 +33,13 @@ import java.util.List;
  * A wallet is a user account
  * Created by eis on 13/01/15.
  */
-public class Contact implements LocalEntity<Long>, Serializable {
+public class Contact implements IEntity<Long>, Serializable {
 
     private long id;
     private long accountId;
     private String name;
     private long phoneContactId = 0;
-    private List<Identity> identities = new ArrayList<Identity>();
+    private List<Identity> identities = new ArrayList<>();
 
     @Override
     public Long getId() {

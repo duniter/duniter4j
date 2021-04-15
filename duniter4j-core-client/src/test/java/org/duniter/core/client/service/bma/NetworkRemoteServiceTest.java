@@ -100,9 +100,9 @@ public class NetworkRemoteServiceTest {
 	/* -- internal methods */
 
     protected Peer createTestPeer() {
-		return Peer.newBuilder()
-				.setHost(Configuration.instance().getNodeHost())
-				.setPort(Configuration.instance().getNodePort())
+		return Peer.builder()
+				.host(Configuration.instance().getNodeHost())
+				.port(Configuration.instance().getNodePort())
 				.build();
     }
 }

@@ -29,6 +29,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.*;
+import org.duniter.core.client.model.local.Currency;
 import org.duniter.core.client.model.local.Identity;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
@@ -49,9 +50,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implements BlockchainRemoteService {
 
@@ -136,7 +138,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     @Override
     public BlockchainParameters getParameters(String currencyId, boolean useCache) {
-        return getParameters(peerService.getActivePeerByCurrencyId(currencyId), useCache);
+        return getParameters(peerService.getActivePeerByCurrency(currencyId), useCache);
     }
 
     @Override
@@ -146,7 +148,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     @Override
     public BlockchainParameters getParameters(String currencyId) {
-        return getParameters(peerService.getActivePeerByCurrencyId(currencyId));
+        return getParameters(peerService.getActivePeerByCurrency(currencyId));
     }
 
     @Override
@@ -161,7 +163,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     @Override
     public BlockchainBlock getBlock(String currencyId, long number) throws BlockNotFoundException  {
-       return getBlock(peerService.getActivePeerByCurrencyId(currencyId), number);
+       return getBlock(peerService.getActivePeerByCurrency(currencyId), number);
     }
 
     @Override
@@ -178,7 +180,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     @Override
     public Long getBlockDividend(String currencyId, long number) throws BlockNotFoundException {
-        return getBlockDividend(peerService.getActivePeerByCurrencyId(currencyId), number);
+        return getBlockDividend(peerService.getActivePeerByCurrency(currencyId), number);
     }
 
 
@@ -239,13 +241,13 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         }
     }
 
-    public BlockchainBlock getCurrentBlock(String currencyId, boolean useCache) {
-        return getCurrentBlock(peerService.getActivePeerByCurrencyId(currencyId), useCache);
+    public BlockchainBlock getCurrentBlock(String currency, boolean useCache) {
+        return getCurrentBlock(peerService.getActivePeerByCurrency(currency), useCache);
     }
 
     @Override
-    public BlockchainBlock getCurrentBlock(String currencyId) {
-        return getCurrentBlock(peerService.getActivePeerByCurrencyId(currencyId));
+    public BlockchainBlock getCurrentBlock(String currency) {
+        return getCurrentBlock(peerService.getActivePeerByCurrency(currency));
     }
 
     @Override
@@ -256,22 +258,21 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public org.duniter.core.client.model.local.Currency getCurrencyFromPeer(Peer peer) {
+    public Currency getCurrencyFromPeer(Peer peer) {
         BlockchainParameters parameter = getParameters(peer);
         BlockchainBlock firstBlock = getBlock(peer, 0);
         BlockchainBlock lastBlock = getCurrentBlock(peer);
 
-        org.duniter.core.client.model.local.Currency result = new org.duniter.core.client.model.local.Currency();
-        result.setId(parameter.getCurrency());
-        result.setFirstBlockSignature(firstBlock.getSignature());
-        result.setMembersCount(lastBlock.getMembersCount());
-        result.setLastUD(parameter.getUd0());
-
-        return result;
+        return Currency.builder()
+            .id(parameter.getCurrency())
+            .firstBlockSignature(firstBlock.getSignature())
+            .membersCount(lastBlock.getMembersCount())
+            .dividend(parameter.getUd0())
+            .build();
     }
 
     @Override
-    public long getLastUD(Peer peer) {
+    public long getLastDividend(Peer peer) {
         // get block number with UD
         String blocksWithUdResponse = httpService.executeRequest(peer, URL_BLOCK_WITH_UD, String.class);
 
@@ -306,8 +307,8 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public long getLastUD(String currencyId) {
-        return getLastUD(peerService.getActivePeerByCurrencyId(currencyId));
+    public long getLastDividend(String currency) {
+        return getLastDividend(peerService.getActivePeerByCurrency(currency));
     }
 
     /**
@@ -393,10 +394,10 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
      */
     public void requestMembership(Wallet wallet) {
         Preconditions.checkNotNull(wallet);
-        Preconditions.checkNotNull(wallet.getCurrencyId());
+        Preconditions.checkNotNull(wallet.getCurrency());
         Preconditions.checkNotNull(wallet.getCertTimestamp());
 
-        BlockchainBlock block = getCurrentBlock(wallet.getCurrencyId());
+        BlockchainBlock block = getCurrentBlock(wallet.getCurrency());
 
         // Compute membership document
         String membership = getMembership(wallet,
@@ -409,10 +410,10 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
                     membership));
         }
 
-        List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+        List<NameValuePair> urlParameters = new ArrayList<>();
         urlParameters.add(new BasicNameValuePair("membership", membership));
 
-        HttpPost httpPost = new HttpPost(httpService.getPath(wallet.getCurrencyId(), URL_MEMBERSHIP));
+        HttpPost httpPost = new HttpPost(httpService.getPath(wallet.getCurrency(), URL_MEMBERSHIP));
         try {
             httpPost.setEntity(new UrlEncodedFormEntity(urlParameters));
         } catch (UnsupportedEncodingException e) {
@@ -433,7 +434,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         // compute the self-certification
         String membership = getSignedMembership(currency, pubKey, secKey, uid, membershipBlockUid, selfBlockUid, true/*side in*/);
 
-        List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+        List<NameValuePair> urlParameters = new ArrayList<>();
         urlParameters.add(new BasicNameValuePair("membership", membership));
 
         try {
@@ -457,7 +458,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     public BlockchainMemberships getMembershipByPubkeyOrUid(String currencyId, String uidOrPubkey) {
-        return getMembershipByPubkeyOrUid(peerService.getActivePeerByCurrencyId(currencyId), uidOrPubkey);
+        return getMembershipByPubkeyOrUid(peerService.getActivePeerByCurrency(currencyId), uidOrPubkey);
     }
 
     public String getMembership(Wallet wallet,
@@ -478,8 +479,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         CryptoService cryptoService = ServiceLocator.instance().getCryptoService();
         String signature = cryptoService.sign(membership, wallet.getSecKey());
 
-        return new StringBuilder().append(membership).append(signature)
-                .append('\n').toString();
+        return membership + signature + '\n';
     }
 
 
@@ -538,12 +538,12 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     /**
      * Get UD, by block number
      *
-     * @param currencyId
+     * @param currency
      * @param startOffset
      * @return
      */
-    public Map<Integer, Long> getUDs(String currencyId, long startOffset) {
-        return getUDs(peerService.getActivePeerByCurrencyId(currencyId), startOffset);
+    public Map<Integer, Long> getUDs(String currency, long startOffset) {
+        return getUDs(peerService.getActivePeerByCurrency(currency), startOffset);
     }
 
     @Override
@@ -562,7 +562,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
     @Override
     public WebsocketClientEndpoint addBlockListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
-        return addBlockListener(peerService.getActivePeerByCurrencyId(currencyId), listener, autoReconnect);
+        return addBlockListener(peerService.getActivePeerByCurrency(currencyId), listener, autoReconnect);
     }
 
     @Override
@@ -571,8 +571,8 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
     }
 
     @Override
-    public BlockchainDifficulties getDifficulties(String currencyId) {
-        return getDifficulties(peerService.getActivePeerByCurrencyId(currencyId));
+    public BlockchainDifficulties getDifficulties(String currency) {
+        return getDifficulties(peerService.getActivePeerByCurrency(currency));
     }
 
 
@@ -613,7 +613,7 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
         // uid not used = not was member
         if (result == null) {
-            identity.setMember(false);
+            identity.setIsMember(false);
 
             if (checkLookupForNonMember) {
                 WotRemoteService wotService = ServiceLocator.instance().getWotRemoteService();
@@ -635,13 +635,13 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
 
         // UID and pubkey is a member: fine
         else if (identity.getPubkey().equals(result.getPubkey())) {
-            identity.setMember(true);
+            identity.setIsMember(true);
             //FIXME identity.setTimestamp(result.getSigDate());
         }
 
         // Something wrong on pubkey : uid already used by anither pubkey !
         else {
-            identity.setMember(null);
+            identity.setIsMember(null);
         }
 
     }
@@ -683,8 +683,8 @@ public class BlockchainRemoteServiceImpl extends BaseRemoteServiceImpl implement
         return result;
     }
 
-    private int[] getBlocksWithUD(String currencyId) {
-        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+    private int[] getBlocksWithUD(String currency) {
+        Peer peer = peerService.getActivePeerByCurrency(currency);
         return getBlocksWithUD(peer);
     }
 

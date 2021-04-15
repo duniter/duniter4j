@@ -36,16 +36,14 @@ public class Example1 {
         Configuration config = new Configuration(configFilename, args);
         Configuration.setInstance(config);
 
-        // Set a wallet id (an identifier required for cache)
-        ServiceLocator.instance().getDataContext().setAccountId(0);
 
         // Initialize service locator
         ServiceLocator.instance().init();
 
         // Create a peer, from configuration
-        Peer aPeer = Peer.newBuilder()
-                .setHost(config.getNodeHost())
-                .setPort(config.getNodePort())
+        Peer aPeer = Peer.builder()
+                .host(config.getNodeHost())
+                .port(config.getNodePort())
                 .build();
 
         // Do something fun !

@@ -25,9 +25,7 @@ package org.duniter.core.client.service.local;
 import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Currency;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
 /**
  * Created by eis on 07/02/15.
@@ -36,54 +34,22 @@ public interface CurrencyService extends Service {
 
     Currency save(final Currency currency);
 
-    List<Currency> getAll();
+    Iterable<Currency> findAll();
 
-    List<Currency> getAllByAccount(long accountId);
-
-    Currency getById(String currencyId);
-
-    /**
-     * Return a (cached) currency name, by id
-     * @param currencyId
-     * @return
-     */
-    String getNameById(String currencyId);
-
-    /**
-     * Return a currency id, by name
-     * @param currencyName
-     * @return
-     */
-    String getIdByName(String currencyName);
+    Optional<Currency> findById(String id);
 
     /**
      * Return a (cached) list of currency ids
      * @return
      */
-    Set<String> getAllIds();
+    Iterable<String> findAllIds();
 
     /**
-     * Return a (cached) number of registered currencies
+     * Return number of registered currencies
      * @return
      */
-    int count();
+    long count();
 
-    /**
-     * Return the value of the last universal dividend
-     * @param currencyId
-     * @return
-     */
-    long getLastUD(String currencyId);
-
-    /**
-     * Return a map of UD (key=blockNumber, value=amount)
-     * @return
-     */
-    Map<Integer, Long> refreshAndGetUD(String currencyId, long lastSyncBlockNumber);
-
-    /**
-     * Return a map of UD (key=blockNumber, value=amount)
-     * @return
-     */
-     Map<Integer, Long> getAllUD(String currencyId);
+    boolean existsById(String id);
+   
 }

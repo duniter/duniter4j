@@ -36,7 +36,6 @@ import org.duniter.core.client.service.exception.InsufficientCreditException;
 import org.duniter.core.exception.TechnicalException;
 import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.CollectionUtils;
-import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.duniter.core.util.crypto.DigestUtils;
@@ -81,7 +80,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 	public String transfer(Wallet wallet, String destPubKey, long amount,
 						   String comment) throws InsufficientCreditException {
 		Preconditions.checkNotNull(wallet);
-		Preconditions.checkNotNull(wallet.getCurrencyId());
+		Preconditions.checkNotNull(wallet.getCurrency());
 
 		return transfer(null, wallet, destPubKey, amount, comment);
 	}
@@ -89,9 +88,9 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 	public String transfer(Peer peer, Wallet wallet, String destPubKey, long amount,
 						   String comment) throws InsufficientCreditException {
 		Preconditions.checkNotNull(wallet);
-		Preconditions.checkArgument(peer != null || wallet.getCurrencyId() != null);
+		Preconditions.checkArgument(peer != null || wallet.getCurrency() != null);
 
-		peer = peer != null ? peer : peerService.getActivePeerByCurrencyId(wallet.getCurrencyId());
+		peer = peer != null ? peer : peerService.getActivePeerByCurrency(wallet.getCurrency());
 		// Get current block
 		BlockchainBlock currentBlock = httpService.executeRequest(peer, BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class);
 
@@ -147,7 +146,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 	}
 
 	public TxSource getSources(String currencyId, String pubKey) {
-		return getSources(peerService.getActivePeerByCurrencyId(currencyId), pubKey);
+		return getSources(peerService.getActivePeerByCurrency(currencyId), pubKey);
 	}
 
     public long getCreditOrZero(Peer peer, String pubKey) {
@@ -160,7 +159,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
     }
 
 	public long getCreditOrZero(String currencyId, String pubKey) {
-		return getCreditOrZero(peerService.getActivePeerByCurrencyId(currencyId), pubKey);
+		return getCreditOrZero(peerService.getActivePeerByCurrency(currencyId), pubKey);
 	}
 
     public Long getCredit(Peer peer, String pubKey) {
@@ -181,7 +180,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
     }
 
 	public Long getCredit(String currencyId, String pubKey) {
-		return getCredit(peerService.getActivePeerByCurrencyId(currencyId), pubKey);
+		return getCredit(peerService.getActivePeerByCurrency(currencyId), pubKey);
 	}
 
 	public long computeCredit(TxSource.Source[] sources) {
@@ -213,7 +212,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
     }
 
 	public TxHistory getTxHistory(String currencyId, String pubKey, long start, long end) {
-		return getTxHistory(peerService.getActivePeerByCurrencyId(currencyId), pubKey, start, end);
+		return getTxHistory(peerService.getActivePeerByCurrency(currencyId), pubKey, start, end);
 	}
 
 	/* -- internal methods -- */
@@ -232,7 +231,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		// Retrieve the wallet sources
 		TxSource sourceResults = peer != null ?
 				getSources(peer, wallet.getPubKeyHash()) :
-				getSources(wallet.getCurrencyId(), wallet.getPubKeyHash());
+				getSources(wallet.getCurrency(), wallet.getPubKeyHash());
 		if (sourceResults == null) {
 			throw new TechnicalException("Unable to load user sources.");
 		}

@@ -32,7 +32,10 @@ import org.duniter.client.actions.TransactionAction;
 import org.apache.commons.io.FileUtils;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.config.ConfigurationOption;
+import org.duniter.core.client.model.bma.jackson.JacksonUtils;
+import org.duniter.core.client.service.DataContext;
 import org.duniter.core.client.service.ServiceLocator;
+import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
 import org.nuiton.i18n.I18n;
 import org.nuiton.i18n.init.DefaultI18nInitializer;
@@ -76,11 +79,11 @@ public class Main {
 
         // Parsing args
         JCommander jc = new JCommander(this);
-        actions.entrySet().forEach(entry -> jc.addCommand(entry.getKey(), entry.getValue()));
+        actions.forEach(jc::addCommand);
         try {
             jc.parse(args);
 
-            jc.getParameters().stream().forEach(param -> {
+            jc.getParameters().forEach(param -> {
               if (param.getParameter().password()
                       && param.getParameter().required()
                       && param.getParameter().echoInput()
@@ -94,7 +97,6 @@ public class Main {
         catch(ParameterException e) {
             System.err.println(e.getMessage());
             System.err.println("Try --help for usage");
-            //jc.usage();
             System.exit(-1);
         }
 
@@ -122,7 +124,11 @@ public class Main {
         }
 
         // Set a default account id, then load cache
-        ServiceLocator.instance().getDataContext().setAccountId(0);
+        // TODO: load data context (e.g. from a data file, or from config file)
+        DataContext context = loadDataContext();
+        if (context != null) {
+            ServiceLocator.instance().getDataContext().copy(context);
+        }
 
         // Initialize service locator
         ServiceLocator.instance().init();
@@ -196,4 +202,22 @@ public class Main {
         return configArgs.toArray(new String[configArgs.size()]);
     }
 
+    protected DataContext loadDataContext() {
+        File dataDirectory = Configuration.instance().getDataDirectory();
+        if (!dataDirectory.exists()) return null; // Skip if not exists
+
+        Preconditions.checkArgument(dataDirectory.isDirectory(), "Invalid directory: " + dataDirectory.getAbsolutePath());
+
+        File dataFile = new File(dataDirectory, "data.json");
+        if (!dataFile.exists()) return null; // Skip if not exists
+
+        Preconditions.checkArgument(dataFile.canRead(), "Cannot read data file: " + dataFile.getAbsolutePath());
+
+        try {
+            return JacksonUtils.getThreadObjectMapper().readValue(dataFile, DataContext.class);
+        } catch (Exception e) {
+            System.err.println(String.format("Cannot read data file: %s. Skipping.", dataFile.getAbsolutePath()));
+            return null;
+        }
+    }
 }

@@ -145,11 +145,11 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
                     match = endpointApi == null || (endpoint != null && endpointApi.equals(endpoint.api));
 
                     if (match && endpoint != null) {
-                        Peer peerEp = Peer.newBuilder()
-                                .setCurrency(remotePeer.getCurrency())
-                                .setPubkey(remotePeer.getPubkey())
-                                .setEndpoint(endpoint)
-                                .setPeering(remotePeer)
+                        Peer peerEp = Peer.builder()
+                                .currency(remotePeer.getCurrency())
+                                .pubkey(remotePeer.getPubkey())
+                                .endpoint(endpoint)
+                                .peering(remotePeer)
                                 .build();
                         result.add(peerEp);
                     }
@@ -184,7 +184,7 @@ public class NetworkRemoteServiceImpl extends BaseRemoteServiceImpl implements N
 
     @Override
     public WebsocketClientEndpoint addPeerListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect) {
-        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+        Peer peer = peerService.getActivePeerByCurrency(currencyId);
         return addPeerListener(peer, listener, autoReconnect);
     }
 

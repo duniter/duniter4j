@@ -40,7 +40,7 @@ public interface PeerService extends Service {
      * @param currencyId
      * @return
      */
-    Peer getActivePeerByCurrencyId(String currencyId);
+    Peer getActivePeerByCurrency(String currency);
 
     /**
      * Save the active (default) peer, for a given currency id
@@ -54,13 +54,13 @@ public interface PeerService extends Service {
      * @param currencyId
      * @return
      */
-    List<Peer> getPeersByCurrencyId(String currencyId);
+    List<Peer> getPeersByCurrencyId(String currency);
 
     void save(String currencyId, List<Peer> peers);
 
-    void updatePeersAsDown(String currencyId, Collection<String> filterApis);
+    void updatePeersAsDown(String currency, Collection<String> filterApis);
 
-    void updatePeersAsDown(String currencyId, long minUpTimeInMs, Collection<String> filterApis);
+    void updatePeersAsDown(String currency, long minUpTimeInMs, Collection<String> filterApis);
 
-    boolean isExists(String currencyId, String peerId);
+    boolean existsByCurrencyAndId(String currency, String id);
 }

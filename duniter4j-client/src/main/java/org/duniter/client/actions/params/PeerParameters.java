@@ -59,12 +59,12 @@ public class PeerParameters {
             String host = parts[0];
             Integer port = parts.length == 2 ? Integer.parseInt(parts[1]) : null;
 
-            Peer.Builder peerBuilder = Peer.newBuilder().setHost(host);
+            Peer.Builder peerBuilder = Peer.builder().host(host);
             if (port != null) {
-                peerBuilder.setPort(port);
+                peerBuilder.port(port);
             }
             if (useSsl){
-                peerBuilder.setUseSsl(useSsl);
+                peerBuilder.useSsl(useSsl);
             }
             peer = peerBuilder.build();
 
@@ -72,8 +72,8 @@ public class PeerParameters {
         }
         else {
             Configuration config = Configuration.instance();
-            peer = Peer.newBuilder().setHost(config.getNodeHost())
-                    .setPort(config.getNodePort())
+            peer = Peer.builder().host(config.getNodeHost())
+                    .port(config.getNodePort())
                     .build();
             log.info(I18n.t("duniter4j.client.info.peer.fallback", peer.getHost(), peer.getPort()));
         }

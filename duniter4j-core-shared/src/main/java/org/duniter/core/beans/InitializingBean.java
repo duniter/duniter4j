@@ -23,6 +23,8 @@ package org.duniter.core.beans;
  */
 
 
+import javax.annotation.PostConstruct;
+
 /**
  * Created by eis on 10/01/15.
  */
@@ -31,5 +33,6 @@ public interface InitializingBean {
     /**
      * Init bean (e.g. link to another services...)
      */
+    @PostConstruct
     void afterPropertiesSet() throws Exception;
 }

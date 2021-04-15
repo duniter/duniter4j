@@ -22,12 +22,11 @@ package org.duniter.core.client.model;
  * #L%
  */
 
-import java.util.*;
-
-import org.duniter.core.util.Preconditions;
 import org.duniter.core.client.model.local.Certification;
-import org.duniter.core.client.model.local.Movement;
-import org.duniter.core.util.CollectionUtils;
+import org.duniter.core.util.Preconditions;
+
+import java.util.Comparator;
+import java.util.Set;
 
 /**
  * Helper class on model entities

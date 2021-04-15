@@ -33,7 +33,10 @@ import org.abstractj.kalium.NaCl.Sodium;
 import org.abstractj.kalium.crypto.Util;
 
 import java.nio.charset.Charset;
+import java.security.AccessController;
 import java.security.GeneralSecurityException;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 
 import static org.abstractj.kalium.NaCl.Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_BOXZEROBYTES;
 import static org.abstractj.kalium.NaCl.Sodium.CRYPTO_BOX_CURVE25519XSALSA20POLY1305_NONCEBYTES;

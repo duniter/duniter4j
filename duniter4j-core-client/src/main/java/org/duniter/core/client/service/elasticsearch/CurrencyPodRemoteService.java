@@ -23,16 +23,14 @@ package org.duniter.core.client.service.elasticsearch;
  */
 
 import org.duniter.core.beans.Service;
-import org.duniter.core.client.model.elasticsearch.Currency;
 import org.duniter.core.client.model.local.Peer;
-import org.duniter.core.client.model.local.Wallet;
 
 import java.util.List;
 
 /**
  * Created by Benoit on 06/05/2015.
  */
-public interface CurrencyRegistryRemoteService extends Service {
+public interface CurrencyPodRemoteService extends Service {
 
     /**
      * Test if elasticsearch node defined in config is alive

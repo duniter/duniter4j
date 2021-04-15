@@ -1,4 +1,4 @@
-package org.duniter.core.client.dao.mem;
+package org.duniter.core.client.repositories.mem;
 
 /*
  * #%L
@@ -24,10 +24,14 @@ package org.duniter.core.client.dao.mem;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import org.duniter.core.client.dao.PeerDao;
+import org.duniter.core.beans.InitializingBean;
+import org.duniter.core.client.model.local.Currency;
+import org.duniter.core.client.repositories.PeerRepository;
 import org.duniter.core.client.model.bma.NetworkWs2pHeads;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Peers;
+import org.duniter.core.client.service.ServiceLocator;
+import org.duniter.core.service.CryptoService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,55 +39,73 @@ import java.util.stream.Collectors;
 /**
  * Created by blavenie on 29/12/15.
  */
-public class MemoryPeerDaoImpl implements PeerDao {
+public class MemoryPeerRepositoryImpl implements PeerRepository, InitializingBean, MemoryCrudRepository<String, Peer> {
 
-    private Map<String, Peer> peersByCurrencyId = new HashMap<>();
+    private Map<String, Peer> peersById = new HashMap<>();
+    private CryptoService cryptoService;
 
-    public MemoryPeerDaoImpl() {
+    public MemoryPeerRepositoryImpl() {
         super();
     }
 
     @Override
-    public Peer create(Peer entity) {
-        entity.setId(entity.computeKey());
+    public void afterPropertiesSet() throws Exception {
+        cryptoService = ServiceLocator.instance().getCryptoService();
+    }
 
-        peersByCurrencyId.put(entity.getId(), entity);
-
+    @Override
+    public <S extends Peer> S save(S entity) {
+        String id = entity.getId();
+        if (id == null) {
+            id = Peers.computeHash(entity, cryptoService);
+            entity.setId(id);
+        }
+        peersById.put(entity.getId(), entity);
         return entity;
     }
 
     @Override
-    public Peer update(Peer entity) {
-        peersByCurrencyId.put(entity.getId(), entity);
-        return entity;
+    public Optional<Peer> findById(String id) {
+        return Optional.ofNullable(peersById.get(id));
     }
 
     @Override
-    public Peer getById(String id) {
-        return peersByCurrencyId.get(id);
+    public Iterable<Peer> findAll() {
+        return ImmutableList.copyOf(peersById.values());
     }
 
     @Override
-    public void remove(Peer entity) {
-        peersByCurrencyId.remove(entity.getId());
+    public long count() {
+        return peersById.size();
     }
 
     @Override
-    public List<Peer> getPeersByCurrencyId(final String currencyId) {
-        Preconditions.checkNotNull(currencyId);
-        return peersByCurrencyId.values().stream()
-            .filter(peer -> currencyId.equals(peer.getCurrency()))
+    public void delete(Peer entity) {
+        Preconditions.checkNotNull(entity);
+        deleteById(entity.getId());
+    }
+
+    @Override
+    public void deleteById(String id) {
+        peersById.remove(id);
+    }
+
+    @Override
+    public List<Peer> getPeersByCurrencyId(final String currency) {
+        Preconditions.checkNotNull(currency);
+        return peersById.values().stream()
+            .filter(peer -> currency.equals(peer.getCurrency()))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Peer> getPeersByCurrencyIdAndApi(final String currencyId, final String endpointApi) {
-        Preconditions.checkNotNull(currencyId);
+    public List<Peer> getPeersByCurrencyIdAndApi(final String currency, final String endpointApi) {
+        Preconditions.checkNotNull(currency);
         Preconditions.checkNotNull(endpointApi);
-        return peersByCurrencyId.values().stream()
+        return peersById.values().stream()
                 .filter(peer ->
                         // Filter on currency
-                        currencyId.equals(peer.getCurrency()) &&
+                        currency.equals(peer.getCurrency()) &&
                         // Filter on API
                         peer.getApi() != null &&
                         endpointApi.equals(peer.getApi()))
@@ -91,12 +113,12 @@ public class MemoryPeerDaoImpl implements PeerDao {
     }
 
     @Override
-    public List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String[] pubkeys) {
+    public List<Peer> getPeersByCurrencyIdAndApiAndPubkeys(String currencyId, String endpointApi, String... pubkeys) {
         Preconditions.checkNotNull(currencyId);
         Preconditions.checkNotNull(endpointApi);
-        List pubkeysAsList = pubkeys != null ? ImmutableList.copyOf(pubkeys) : null;
+        List pubkeysAsList = pubkeys != null ? Arrays.asList(pubkeys) : null;
 
-        return peersByCurrencyId.values().stream()
+        return peersById.values().stream()
                 .filter(peer ->
                         // Filter on currency
                         currencyId.equals(peer.getCurrency()) &&
@@ -114,7 +136,7 @@ public class MemoryPeerDaoImpl implements PeerDao {
     }
 
     @Override
-    public List<Peer> getUpPeersByCurrencyId(String currencyId, String[] pubkeys) {
+    public List<Peer> getUpPeersByCurrencyId(String currencyId, String... pubkeys) {
         Preconditions.checkNotNull(currencyId);
 
         return getPeersByCurrencyIdAndApiAndPubkeys(currencyId, null, pubkeys)
@@ -124,7 +146,7 @@ public class MemoryPeerDaoImpl implements PeerDao {
     }
 
     @Override
-    public List<NetworkWs2pHeads.Head> getWs2pPeersByCurrencyId(String currencyId, String[] pubkeys) {
+    public List<NetworkWs2pHeads.Head> getWs2pPeersByCurrencyId(String currencyId, String... pubkeys) {
         Preconditions.checkNotNull(currencyId);
 
         return getPeersByCurrencyIdAndApiAndPubkeys(currencyId, null, pubkeys)
@@ -135,11 +157,18 @@ public class MemoryPeerDaoImpl implements PeerDao {
                 .collect(Collectors.toList());
     }
 
+
     @Override
-    public boolean isExists(final String currencyId, final  String peerId) {
-        Preconditions.checkNotNull(currencyId);
-        return peersByCurrencyId.values().stream()
-                .anyMatch(peer -> currencyId.equals(peer.getCurrency()) && peerId.equals(peer.getId()));
+    public boolean existsById(final String id) {
+        Preconditions.checkNotNull(id);
+        return peersById.containsKey(id);
+    }
+
+    @Override
+    public boolean existsByCurrencyAndId(final String currency, final  String id) {
+        Preconditions.checkNotNull(currency);
+        return peersById.values().stream()
+                .anyMatch(peer -> currency.equals(peer.getCurrency()) && id.equals(peer.getId()));
     }
 
     @Override

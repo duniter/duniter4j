@@ -24,46 +24,21 @@ package org.duniter.core.client.model.local;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.duniter.core.client.model.BasicIdentity;
+import lombok.Data;
+import org.duniter.core.client.model.BaseIdentity;
 
-public class Identity extends BasicIdentity {
-
-    private static final long serialVersionUID = -7451079677730158794L;
-
-    public static final String PROPERTY_IS_MEMBER = "isMember";
-    public static final String PROPERTY_WAS_MEMBER = "wasMember";
-
-    private String timestamp = null;
-
-    private Boolean isMember = null;
-
-    private Boolean wasMember = null;
+@Data
+public class Identity extends BaseIdentity {
 
     private String currency;
 
-    /**
-     * Indicate whether the certification is written in the blockchain or not.
-     */
-    public Boolean getIsMember() {
-        return isMember;
-    }
+    // The timestamp value of the signature date (a BLOCK_UID)
+    private String timestamp = null;
 
-    public void setMember(Boolean isMember) {
-        this.isMember = isMember;
-    }
+    // Indicate whether the certification is written in the blockchain or not.
+    private Boolean isMember = null;
+    private Boolean wasMember = null;
 
-    public Boolean getWasMember() {
-        return wasMember;
-    }
-
-    public void setWasMember(Boolean wasMember) {
-        this.wasMember = wasMember;
-    }
-
-    /**
-     * The timestamp value of the signature date (a BLOCK_UID)
-     * @return
-     */
     @JsonIgnore
     public String getTimestamp() {
         return timestamp;

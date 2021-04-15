@@ -66,10 +66,11 @@ public class BeanFactory implements Closeable{
         return bean;
     }
 
-    public <S extends Bean, B extends S> void setBean(B bean, Class<S> clazz) {
+    public <S extends Bean, B extends S> BeanFactory setBean(B bean, Class<S> clazz) {
         if (!beansCache.containsKey(clazz)) {
             beansCache.put(clazz, bean);
         }
+        return this;
     }
 
     /* -- protected methods -- */

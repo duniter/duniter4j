@@ -25,77 +25,37 @@ package org.duniter.core.client.model.local;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 
 /**
  * Created by eis on 05/02/15.
  */
-public class Currency implements LocalEntity<String>, Serializable {
-
-    public static final String PROPERTY_FIRST_BLOCK_SIGNATURE = "firstBlockSignature";
-    public static final String PROPERTY_MEMBER_COUNT = "membersCount";
-    public static final String PROPERTY_LAST_UD = "lastUD";
-    public static final String PROPERTY_PARAMETERS = "parameters";
-    public static final String PROPERTY_UNITBASE = "unitbase";
-
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Currency implements ICurrency {
     private String id;
     private BlockchainParameters parameters;
     private String firstBlockSignature;
     private Integer membersCount;
-    private Long lastUD;
+    private Long dividend;
     private Integer unitbase;
 
-    public Currency() {
+    @JsonIgnore
+    @Deprecated
+    public Long getLastUD() {
+        return dividend;
     }
-
 
     @JsonIgnore
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public Integer getMembersCount() {
-        return membersCount;
-    }
-
-    public String getFirstBlockSignature() {
-        return firstBlockSignature;
-    }
-
-    public void setMembersCount(Integer membersCount) {
-        this.membersCount = membersCount;
-    }
-
-    public void setFirstBlockSignature(String firstBlockSignature) {
-        this.firstBlockSignature = firstBlockSignature;
-    }
-
-    public Long getLastUD() {
-        return lastUD;
-    }
-
-    public void setLastUD(Long lastUD) {
-        this.lastUD = lastUD;
-    }
-
-    public Integer getUnitbase() {
-        return unitbase;
-    }
-
-    public void setUnitbase(Integer unitbase) {
-        this.unitbase = unitbase;
-    }
-
-    public BlockchainParameters getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(BlockchainParameters parameters) {
-        this.parameters = parameters;
+    @Deprecated
+    public void setLastUD(long lastUD) {
+        this.dividend = lastUD;
     }
 
     public String toString() {

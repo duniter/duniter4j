@@ -44,21 +44,21 @@ public interface BlockchainRemoteService extends Service {
     /**
      * get the blockchain parameters (currency parameters)
      *
-     * @param currencyId
+     * @param currency
      * @param useCache
      * @return
      */
-    BlockchainParameters getParameters(String currencyId, boolean useCache);
+    BlockchainParameters getParameters(String currency, boolean useCache);
 
     BlockchainParameters getParameters(Peer peer, boolean useCache);
 
     /**
      * get the blockchain parameters (currency parameters)
      *
-     * @param currencyId
+     * @param currency
      * @return
      */
-    BlockchainParameters getParameters(String currencyId);
+    BlockchainParameters getParameters(String currency);
 
     /**
      * get the blockchain parameters (currency parameters)
@@ -71,21 +71,21 @@ public interface BlockchainRemoteService extends Service {
     /**
      * Retrieve a block, by id (from 0 to current)
      *
-     * @param currencyId
+     * @param currency
      * @param number
      * @return
      */
-    BlockchainBlock getBlock(String currencyId, long number) throws BlockNotFoundException;
+    BlockchainBlock getBlock(String currency, long number) throws BlockNotFoundException;
 
     /**
      * Retrieve the dividend of a block, by id (from 0 to current).
      * Usefull method to avoid to deserialize allOfToList the block
      *
-     * @param currencyId
+     * @param currency
      * @param number
      * @return
      */
-    Long getBlockDividend(String currencyId, long number) throws BlockNotFoundException;
+    Long getBlockDividend(String currency, long number) throws BlockNotFoundException;
 
     Long getBlockDividend(Peer peer, long number) throws BlockNotFoundException;
 
@@ -130,7 +130,7 @@ public interface BlockchainRemoteService extends Service {
      * @return
      */
     BlockchainBlock getCurrentBlock(Peer peer, boolean useCache);
-    BlockchainBlock getCurrentBlock(String currencyId, boolean useCache);
+    BlockchainBlock getCurrentBlock(String currency, boolean useCache);
 
     /**
      * Retrieve the current block
@@ -138,7 +138,7 @@ public interface BlockchainRemoteService extends Service {
      * @return
      */
     BlockchainBlock getCurrentBlock(Peer peer);
-    BlockchainBlock getCurrentBlock(String currencyId);
+    BlockchainBlock getCurrentBlock(String currency);
 
     /**
      * Retrieve the currency data, from peer
@@ -153,15 +153,15 @@ public interface BlockchainRemoteService extends Service {
      * @return
      */
     BlockchainDifficulties getDifficulties(Peer peer);
-    BlockchainDifficulties getDifficulties(String currencyId);
+    BlockchainDifficulties getDifficulties(String currency);
 
     /**
      * Retrieve the last emitted UD (or ud0 if not UD emitted yet)
      *
      * @return
      */
-    long getLastUD(Peer peer);
-    long getLastUD(String currencyId);
+    long getLastDividend(Peer peer);
+    long getLastDividend(String currency);
 
     /**
      * Check is a identity is not already used by a existing member
@@ -187,11 +187,11 @@ public interface BlockchainRemoteService extends Service {
      *
      * @param identity
      */
-    void loadMembership(String currencyId, Identity identity, boolean checkLookupForNonMember);
+    void loadMembership(String currency, Identity identity, boolean checkLookupForNonMember);
 
-    BlockchainMemberships getMembershipByUid(String currencyId, String uid);
+    BlockchainMemberships getMembershipByUid(String currency, String uid);
 
-    BlockchainMemberships getMembershipByPublicKey(String currencyId, String pubkey);
+    BlockchainMemberships getMembershipByPublicKey(String currency, String pubkey);
 
     /**
      * Request to integrate the wot
@@ -200,7 +200,7 @@ public interface BlockchainRemoteService extends Service {
 
     void requestMembership(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String membershipBlockUid, String selfBlockUid);
 
-    BlockchainMemberships getMembershipByPubkeyOrUid(String currencyId, String uidOrPubkey);
+    BlockchainMemberships getMembershipByPubkeyOrUid(String currency, String uidOrPubkey);
 
     BlockchainMemberships getMembershipByPubkeyOrUid(Peer peer, String uidOrPubkey);
 
@@ -211,12 +211,12 @@ public interface BlockchainRemoteService extends Service {
     /**
      * Get UD, by block number
      *
-     * @param currencyId
+     * @param currency
      * @param startOffset
      * @return
      */
     Map<Integer, Long> getUDs(Peer peer, long startOffset);
-    Map<Integer, Long> getUDs(String currencyId, long startOffset);
+    Map<Integer, Long> getUDs(String currency, long startOffset);
 
     /**
      * Listening new block event
@@ -225,7 +225,7 @@ public interface BlockchainRemoteService extends Service {
      * @return
      */
     WebsocketClientEndpoint addBlockListener(Peer peer, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
-    WebsocketClientEndpoint addBlockListener(String currencyId, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
+    WebsocketClientEndpoint addBlockListener(String currency, WebsocketClientEndpoint.MessageListener listener, boolean autoReconnect);
 
 
 

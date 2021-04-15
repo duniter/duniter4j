@@ -26,7 +26,10 @@ import java.io.Serializable;
 import java.util.Collection;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.duniter.core.client.model.bma.WotCertification;
+import org.duniter.core.model.IEntity;
 import org.duniter.core.util.ObjectUtils;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.duniter.core.util.crypto.KeyPair;
@@ -35,28 +38,27 @@ import org.duniter.core.util.crypto.KeyPair;
  * A wallet is a user account
  * Created by eis on 13/01/15.
  */
-public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
+@Data
+public class Wallet extends KeyPair implements IEntity<Long>, Serializable {
 
     private Long id;
     private Long accountId;
     private String currency;
     private String name;
     private Long credit;
-    private Identity identity;
+    private Identity identity = new Identity();
     private Double creditAsUD;
     private long blockNumber = -1;
     private long txBlockNumber = -1;
     private Collection<WotCertification> certifications;
 
     public Wallet() {
-        super(null, null);
-        this.identity = new Identity();
+        super();
     }
 
     public Wallet(String currency, String uid, byte[] pubKey, byte[] secKey) {
         super(pubKey, secKey);
         this.currency = currency;
-        this.identity = new Identity();
         this.identity.setPubkey(pubKey == null ? null : CryptoUtils.encodeBase58(pubKey));
         this.identity.setUid(uid);
     }
@@ -75,80 +77,22 @@ public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
         this.identity = identity;
     }
 
-    public Identity getIdentity() {
-        return identity;
-    }
-
-    public void setIdentity(Identity identity) {
-        this.identity = identity;
-    }
-
+    @JsonIgnore
     public String getPubKeyHash() {
         return identity.getPubkey();
     }
 
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
+    @JsonIgnore
     public boolean isAuthenticate() {
         return secretKey != null && identity != null && identity.getPubkey() != null;
     }
 
+    @JsonIgnore
     public boolean isSelfSend() {
         return identity.getTimestamp() != null;
     }
 
-    public String getCurrencyId() {
-        return currency;
-    }
-
-    public void setCurrencyId(String currencyId) {
-        this.currency = currencyId;
-    }
-
-    public Long getAccountId() {
-        return accountId;
-    }
-
-    public void setAccountId(Long accountId) {
-        this.accountId = accountId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Long getCredit() {
-        return credit;
-    }
-
-    public void setCredit(Long credit) {
-        this.credit = credit;
-    }
-
-    @Override
-    public Long getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String toString() {
-        return name != null ? name : identity.getPubkey();
-    }
-
+    @JsonIgnore
     public String getUid() {
         return identity.getUid();
     }
@@ -157,6 +101,7 @@ public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
         identity.setUid(uid);
     }
 
+    @JsonIgnore
     public String getCertTimestamp() {
         return identity.getTimestamp();
     }
@@ -165,44 +110,13 @@ public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
         identity.setTimestamp(timestamp);
     }
 
-    public void setMember(Boolean isMember) {
-        identity.setMember(isMember);
-    }
-
+    @JsonIgnore
     public Boolean getIsMember() {
         return identity.getIsMember();
     }
 
-    public Double getCreditAsUD() {
-        return creditAsUD;
-    }
-
-    public void setCreditAsUD(Double creditAsUD) {
-        this.creditAsUD = creditAsUD;
-    }
-
-    public Collection<WotCertification> getCertifications() {
-        return certifications;
-    }
-
-    public void setCertifications(Collection<WotCertification> certifications) {
-        this.certifications = certifications;
-    }
-
-    public long getBlockNumber() {
-        return blockNumber;
-    }
-
-    public void setBlockNumber(long blockNumber) {
-        this.blockNumber = blockNumber;
-    }
-
-    public long getTxBlockNumber() {
-        return txBlockNumber;
-    }
-
-    public void setTxBlockNumber(long txBlockNumber) {
-        this.txBlockNumber = txBlockNumber;
+    public void setIsMember(Boolean isMember) {
+        identity.setIsMember(isMember);
     }
 
     @Override
@@ -214,4 +128,9 @@ public class Wallet extends KeyPair implements LocalEntity<Long>, Serializable {
         }
         return super.equals(o);
     }
+
+    public String toString() {
+        return name != null ? name : identity.getPubkey();
+    }
+
 }

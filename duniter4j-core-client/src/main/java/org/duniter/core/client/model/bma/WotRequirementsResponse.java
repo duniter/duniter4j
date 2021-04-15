@@ -22,9 +22,9 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
-import org.duniter.core.client.model.BasicIdentity;
+import org.duniter.core.client.model.BaseIdentity;
 
-public class WotRequirementsResponse extends BasicIdentity {
+public class WotRequirementsResponse extends BaseIdentity {
 	private static final long serialVersionUID = -5631089862725952141L;
 
 	private WotRequirements[] identities;

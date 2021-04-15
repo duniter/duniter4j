@@ -22,41 +22,40 @@ package org.duniter.core.client.service;
  * #L%
  */
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.duniter.core.beans.Bean;
 
 import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Hold some contextual data, such as account id
+ * Hold some contextual data. Can be subclasses
  * Created by blavenie on 29/12/15.
  */
+@Data
 public class DataContext implements Bean, Closeable{
-
-    private long accountId = -1;
-
-    public DataContext() {
-
-    }
 
     @Override
     public void close() throws IOException {
         clear();
     }
 
+    /**
+     * Reset the context
+     */
     public void clear() {
-        accountId = -1;
+
     }
 
-    /* -- getter/setter-- */
-
-    public long getAccountId() {
-        return accountId;
+    /**
+     * Copy from another bean
+     * @param otherBean
+     */
+    public void copy(DataContext otherBean) {
+        // Copy content
     }
 
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
-    /* -- protected methods -- */
 }

@@ -109,11 +109,9 @@ public class NetworkAction extends AbstractAction {
             service.addPeersChangeListener(mainPeer, peers -> showPeersTable(peers, true));
 
             try {
-                while(true) {
-                    Thread.sleep(10000); // 10 s
-                }
+                while (true) Thread.sleep(10000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                // end
             }
         }
 

@@ -24,19 +24,20 @@ package org.duniter.core.client.model.local;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.model.IEntity;
 import org.duniter.core.util.http.InetAddressUtils;
 
-import java.io.Serializable;
 import java.util.StringJoiner;
 
-public class Peer implements LocalEntity<String>, Serializable {
+@Data
+public class Peer implements IEntity<String> {
 
-    public static Builder newBuilder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -61,57 +62,57 @@ public class Peer implements LocalEntity<String>, Serializable {
 
         }
 
-        public Builder setApi(String api) {
+        public Builder api(String api) {
             this.api = api;
             return this;
         }
 
-        public Builder setDns(String dns) {
+        public Builder dns(String dns) {
             this.dns = dns;
             return this;
         }
 
-        public Builder setIpv4(String ipv4) {
+        public Builder ipv4(String ipv4) {
             this.ipv4 = ipv4;
             return this;
         }
 
-        public Builder setIpv6(String ipv6) {
+        public Builder ipv6(String ipv6) {
             this.ipv6 = ipv6;
             return this;
         }
 
-        public Builder setPort(int port) {
+        public Builder port(int port) {
             this.port = port;
             return this;
         }
 
-        public Builder setUseSsl(boolean useSsl) {
+        public Builder useSsl(boolean useSsl) {
             this.useSsl = useSsl;
             return this;
         }
 
-        public Builder setCurrency(String currency) {
+        public Builder currency(String currency) {
             this.currency = currency;
             return this;
         }
 
-        public Builder setPubkey(String pubkey) {
+        public Builder pubkey(String pubkey) {
             this.pubkey = pubkey;
             return this;
         }
 
-        public Builder setHash(String hash) {
+        public Builder hash(String hash) {
             this.hash = hash;
             return this;
         }
 
-        public Builder setEpId(String epId) {
+        public Builder epId(String epId) {
             this.epId = epId;
             return this;
         }
 
-        public Builder setHost(String host) {
+        public Builder host(String host) {
             Preconditions.checkNotNull(host);
             if (InetAddressUtils.isIPv4Address(host)) {
                 this.ipv4 = host;
@@ -125,36 +126,36 @@ public class Peer implements LocalEntity<String>, Serializable {
             return this;
         }
 
-        public Builder setEndpoint(NetworkPeering.Endpoint source) {
+        public Builder endpoint(NetworkPeering.Endpoint source) {
             Preconditions.checkNotNull(source);
             if (source.api != null) {
-               setApi(source.api);
+               api(source.api);
             }
             if (StringUtils.isNotBlank(source.id)) {
-                setEpId(source.id);
+                epId(source.id);
             }
             if (StringUtils.isNotBlank(source.dns)) {
-               setDns(source.dns);
+               dns(source.dns);
             }
             if (StringUtils.isNotBlank(source.ipv4)) {
-               setIpv4(source.ipv4);
+               ipv4(source.ipv4);
             }
             if (StringUtils.isNotBlank(source.ipv6)) {
-               setIpv6(source.ipv6);
+               ipv6(source.ipv6);
             }
             if (StringUtils.isNotBlank(source.ipv6)) {
-               setHost(source.ipv6);
+               host(source.ipv6);
             }
             if (source.port != null) {
-               setPort(source.port);
+               port(source.port);
             }
             if (StringUtils.isNotBlank(source.path)) {
-                setPath(source.path);
+                path(source.path);
             }
             return this;
         }
 
-        public Builder setPeering(NetworkPeering remotePeering) {
+        public Builder peering(NetworkPeering remotePeering) {
             this.peering = this.peering != null ? this.peering : new Peering();
 
             this.pubkey = remotePeering.getPubkey();
@@ -180,7 +181,7 @@ public class Peer implements LocalEntity<String>, Serializable {
             return this;
         }
 
-        public Builder setStats(NetworkPeering remotePeering) {
+        public Builder stats(NetworkPeering remotePeering) {
             this.stats = this.stats != null ? this.stats : new Stats();
 
             // Block number+hash
@@ -207,7 +208,7 @@ public class Peer implements LocalEntity<String>, Serializable {
         }
 
 
-        public void setPath(String path) {
+        public void path(String path) {
             this.path = path;
         }
 
@@ -245,19 +246,6 @@ public class Peer implements LocalEntity<String>, Serializable {
 
     }
 
-
-    public static final String PROPERTY_PUBKEY = "pubkey";
-    public static final String PROPERTY_CURRENCY = "currency";
-    public static final String PROPERTY_API = "api";
-    public static final String PROPERTY_DNS = "dns";
-    public static final String PROPERTY_IPV4 = "ipv4";
-    public static final String PROPERTY_IPV6 = "ipv6";
-    public static final String PROPERTY_EP_ID = "epId";
-    public static final String PROPERTY_STATS = "stats";
-    public static final String PROPERTY_PEERING = "peering";
-
-    private String id;
-
     private String api;
     private String epId;
     private String dns;
@@ -266,8 +254,9 @@ public class Peer implements LocalEntity<String>, Serializable {
     private String path;
 
     private String url;
-    private String host;
     private String pubkey;
+
+    private String host;
 
     private String hash;
     private String currency;
@@ -333,12 +322,12 @@ public class Peer implements LocalEntity<String>, Serializable {
 
     @JsonIgnore
     public String getId() {
-        return id;
+        return hash;
     }
 
     @JsonIgnore
-    public void setId(String id) {
-        this.id  = id;
+    public void setId(String hash) {
+        this.hash  = hash;
     }
 
     @JsonIgnore
@@ -349,11 +338,6 @@ public class Peer implements LocalEntity<String>, Serializable {
     @JsonIgnore
     public String getUrl() {
         return this.url; // computed in init()
-    }
-
-    @JsonIgnore
-    public String computeKey()  {
-        return Joiner.on('-').skipNulls().join(pubkey, dns, ipv4, ipv6, port, useSsl, api, path);
     }
 
     public String getApi() {

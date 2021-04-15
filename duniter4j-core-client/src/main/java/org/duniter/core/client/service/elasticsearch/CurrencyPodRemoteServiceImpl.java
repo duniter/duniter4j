@@ -41,8 +41,8 @@ import java.util.List;
 /**
  * Created by Benoit on 06/05/2015.
  */
-public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl implements CurrencyRegistryRemoteService, InitializingBean, Closeable{
-    private static final Logger log = LoggerFactory.getLogger(CurrencyRegistryRemoteServiceImpl.class);
+public class CurrencyPodRemoteServiceImpl extends BaseRemoteServiceImpl implements CurrencyPodRemoteService, InitializingBean, Closeable{
+    private static final Logger log = LoggerFactory.getLogger(CurrencyPodRemoteServiceImpl.class);
 
     private final static String URL_STATUS = "/node/summary";
     private final static String URL_ALL_CURRENCY_NAMES = "/currency/record/_search?_source=currencyName";
@@ -50,7 +50,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
     private Configuration config;
     private Peer peer;
 
-    public CurrencyRegistryRemoteServiceImpl() {
+    public CurrencyPodRemoteServiceImpl() {
         super();
     }
 
@@ -58,7 +58,7 @@ public class CurrencyRegistryRemoteServiceImpl extends BaseRemoteServiceImpl imp
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
         config = Configuration.instance();
-        peer = Peer.newBuilder().setHost(config.getNodeElasticSearchHost()).setPort(config.getNodeElasticSearchPort()).build();
+        peer = Peer.builder().host(config.getNodeElasticSearchHost()).port(config.getNodeElasticSearchPort()).build();
     }
 
     @Override

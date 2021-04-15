@@ -1,4 +1,4 @@
-package org.duniter.core.client.dao;
+package org.duniter.core.client.service.local;
 
 /*
  * #%L
@@ -22,46 +22,41 @@ package org.duniter.core.client.dao;
  * #L%
  */
 
-import org.duniter.core.beans.Bean;
+import org.duniter.core.beans.Service;
 import org.duniter.core.client.model.local.Currency;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
  * Created by eis on 07/02/15.
  */
-public interface CurrencyDao extends Bean, EntityDao<String, Currency> {
-
-    Set<String> getAllIds();
-
-    List<Currency> getAll();
-
-    List<Currency> getAllByAccount(long accountId);
-
-    Currency create(final Currency currency);
-
-    Currency update(final Currency currency);
-
-    void remove(final Currency currency);
+public interface DividendService extends Service {
 
     /**
      * Return the value of the last universal dividend
      * @param currencyId
      * @return
      */
-    long getLastUD(String currencyId);
+    Optional<Long> findLastDividendByCurrency(String currency);
 
     /**
      * Return a map of UD (key=blockNumber, value=amount)
      * @return
      */
-     Map<Integer, Long> getAllUD(String currencyId);
+    Map<Integer, Long> refreshAndGetDividends(String currency, long lastSyncBlockNumber);
 
-     void insertUDs(String currencyId,  Map<Integer, Long> newUDs);
+    /**
+     * Return a map of UD (key=blockNumber, value=amount)
+     * @return
+     */
+    Map<Integer, Long> findAllUdByCurrency(String currency);
 
-    boolean isExists(String currencyId);
-
-
+    /**
+     * Update the last currency dividend
+     * @param currency
+     * @param dividend
+     */
+    void updateLastDividendByCurrency(String currency, Long dividend);
 }

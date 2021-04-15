@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+
 /**
  * Created by blavenie on 22/03/17.
  */
@@ -127,7 +128,6 @@ public class TransactionAction extends AbstractAction  {
                     null,
                     keypair.getPubKey(),
                     keypair.getSecKey());
-            wallet.setCurrencyId(currency.getId());
 
             // Parse TX parameters
             parseTransactionParameters();

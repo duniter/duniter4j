@@ -31,6 +31,11 @@ public class KeyPair {
     public byte[] publicKey;
     public byte[] secretKey;
 
+    public KeyPair() {
+        this.publicKey = null;
+        this.secretKey = null;
+    }
+
     public KeyPair(byte[] publicKey, byte[] secretKey) {
         this.publicKey = publicKey;
         this.secretKey = secretKey;

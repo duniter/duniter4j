@@ -1,4 +1,4 @@
-package org.duniter.core.client.model.bma.jackson;
+package org.duniter.core.client.model.bma.converter;
 
 /*
  * #%L
@@ -22,45 +22,31 @@ package org.duniter.core.client.model.bma.jackson;
  * #L%
  */
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import org.duniter.core.client.model.bma.Endpoints;
 import org.duniter.core.client.model.bma.NetworkPeering;
+import org.duniter.core.client.model.bma.Ws2pHead;
+import org.duniter.core.client.model.bma.Ws2pHeads;
+import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.converter.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 /**
- * Created by blavenie on 17/10/18.
+ * Created by blavenie on 07/12/16.
  */
-public class EndpointSerializer extends JsonSerializer<NetworkPeering.Endpoint> {
-
-    private static final Logger log = LoggerFactory.getLogger(EndpointSerializer.class);
-
-    private boolean debug;
-
-    public EndpointSerializer() {
-        this.debug = log.isDebugEnabled();
-    }
+public class StringToWs2pHeadConverter
+        implements Converter<String, Ws2pHead> {
 
     @Override
-    public void serialize(NetworkPeering.Endpoint endpoint, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) {
-
+    public Ws2pHead convert(String ept) {
         try {
-            jsonGenerator.writeString(endpoint.toString());
-        } catch(IOException e) {
-            // Unable to parse endpoint: continue (will skip this endpoint)
-            if (debug) {
-                log.warn(e.getMessage(), e); // link the exception
-            }
-            else {
-                log.debug(e.getMessage());
-            }
+            return Ws2pHeads.parse(ept);
+        } catch (IOException e) {
+            throw new TechnicalException(e);
         }
     }
 }

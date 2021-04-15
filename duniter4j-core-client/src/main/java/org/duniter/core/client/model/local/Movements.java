@@ -78,17 +78,17 @@ public final class Movements {
                             .map(recipient -> {
                                 // If more than one issuer, apply a ratio (=input amount %)
                                 Double amount = getTxOutputAmountByIssuerAndRecipient(outputs, issuer, recipient) * issuerInputRatio;
-                                Movement movement = new Movement();
-                                movement.setBlockNumber(block.getNumber());
-                                movement.setBlockHash(block.getHash());
-                                movement.setMedianTime(block.getMedianTime());
-                                movement.setAmount(amount.longValue());
-                                movement.setUnitbase(0); // conversion has been done when computed 'amount'
-                                movement.setIssuer(issuer);
-                                movement.setRecipient(recipient);
-                                movement.setBlockNumber(block.getNumber());
-                                movement.setComment(tx.getComment());
-                                return movement;
+                                return Movement.builder()
+                                    .blockNumber(block.getNumber())
+                                    .blockHash(block.getHash())
+                                    .medianTime(block.getMedianTime())
+                                    .amount(amount.longValue())
+                                    .unitbase(0) // conversion has been done when computed 'amount'
+                                    .issuer(issuer)
+                                    .recipient(recipient)
+                                    .blockNumber(block.getNumber())
+                                    .comment(tx.getComment())
+                                .build();
                             })
                             // Exclude movements to itself (e.g. changes)
                             .filter(movement -> movement.getAmount() != 0);

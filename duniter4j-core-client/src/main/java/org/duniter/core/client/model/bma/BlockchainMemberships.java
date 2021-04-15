@@ -22,11 +22,11 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
-import org.duniter.core.client.model.BasicIdentity;
+import org.duniter.core.client.model.BaseIdentity;
 
 import java.io.Serializable;
 
-public class BlockchainMemberships extends BasicIdentity {
+public class BlockchainMemberships extends BaseIdentity {
 	private static final long serialVersionUID = -5631089862725952431L;
 
 	private long sigDate;

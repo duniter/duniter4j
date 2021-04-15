@@ -1,4 +1,4 @@
-package org.duniter.core.client.model.bma.jackson;
+package org.duniter.core.client.model.bma.converter;
 
 /*
  * #%L
@@ -22,37 +22,28 @@ package org.duniter.core.client.model.bma.jackson;
  * #L%
  */
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import org.apache.commons.lang3.StringUtils;
 import org.duniter.core.client.model.bma.BlockchainBlock;
-import org.duniter.core.util.json.JsonSyntaxException;
-
-import java.io.IOException;
+import org.duniter.core.exception.TechnicalException;
+import org.duniter.core.util.converter.Converter;
 
 /**
  * Created by blavenie on 07/12/16.
  */
-public class RevokedDeserializer extends JsonDeserializer<BlockchainBlock.Revoked> {
+public class StringToRevokedConverter implements Converter<String, BlockchainBlock.Revoked> {
     @Override
-    public BlockchainBlock.Revoked deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
-        String str = jp.getText();
-        if (StringUtils.isBlank(str)) {
-            return null;
-        }
+    public BlockchainBlock.Revoked convert(String source) {
+        if (StringUtils.isBlank(source)) return null;
 
-        String[] parts = str.split(":");
+        String[] parts = source.split(":");
         if (parts.length != 2) {
-            throw new JsonSyntaxException(String.format("Bad format for BlockchainBlock.Revoked. Should have 2 parts, but found %s.", parts.length));
+            throw new TechnicalException(String.format("Bad format for BlockchainBlock.Revoked. Should have 2 parts, but found %s.", parts.length));
         }
 
-        BlockchainBlock.Revoked result = new BlockchainBlock.Revoked();
         int i = 0;
-
-        result.setPubkey(parts[i++]);
-        result.setSignature(parts[i++]);
-
-        return result;
+        return BlockchainBlock.Revoked.builder()
+                .pubkey(parts[i++])
+                .signature(parts[i++])
+                .build();
     }
 }

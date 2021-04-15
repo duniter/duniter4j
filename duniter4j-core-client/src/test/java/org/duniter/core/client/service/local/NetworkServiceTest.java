@@ -65,11 +65,11 @@ public class NetworkServiceTest {
 	@Ignore
 	public void getGchangePeers() throws Exception {
 
-		Peer gchangePeer = Peer.newBuilder()
+		Peer gchangePeer = Peer.builder()
 				//.setHost("data.gchange.fr")
-				.setHost("gchange.data.presles.fr")
-				.setPort(443)
-				.setApi("GCHANGE_API")
+				.host("gchange.data.presles.fr")
+				.port(443)
+				.api("GCHANGE_API")
 				.build();
 
 		NetworkService.Filter filterDef = new NetworkService.Filter();
@@ -94,9 +94,9 @@ public class NetworkServiceTest {
 	/* -- internal methods */
 
     protected Peer createTestPeer() {
-        return Peer.newBuilder()
-				.setHost(Configuration.instance().getNodeHost())
-				.setPort(Configuration.instance().getNodePort())
+        return Peer.builder()
+				.host(Configuration.instance().getNodeHost())
+				.port(Configuration.instance().getNodePort())
 				.build();
     }
 }

@@ -24,8 +24,9 @@ package org.duniter.core.client.model.local;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.duniter.core.model.IEntity;
 
-public class Member extends Identity implements LocalEntity<String> {
+public class Member extends Identity implements IEntity<String> {
 
     private static final long serialVersionUID = 8448049949323699700L;
 

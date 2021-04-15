@@ -107,8 +107,10 @@ public abstract class SimpleCache<K, V> implements Cache<K, V> {
             cachedValue = load(key);
 
             // Fill caches
-            mCachedValues.put(key, cachedValue);
-            mCachedTimes.put(key, timeInMillis);
+            if (cachedValue != null) {
+                mCachedValues.put(key, cachedValue);
+                mCachedTimes.put(key, timeInMillis);
+            }
 
             return cachedValue;
         }

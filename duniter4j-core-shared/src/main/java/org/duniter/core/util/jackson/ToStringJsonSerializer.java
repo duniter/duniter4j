@@ -1,10 +1,10 @@
-package org.duniter.core.client.model.elasticsearch;
+package org.duniter.core.util.jackson;
 
 /*
  * #%L
- * Duniter4j :: Core API
+ * Duniter4j :: Core Client API
  * %%
- * Copyright (C) 2014 - 2015 EIS
+ * Copyright (C) 2014 - 2017 EIS
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
@@ -22,24 +22,20 @@ package org.duniter.core.client.model.elasticsearch;
  * #L%
  */
 
+import lombok.extern.slf4j.Slf4j;
 
-import org.duniter.core.client.model.bma.BlockchainParameters;
-
-import java.io.Serializable;
+import java.util.Objects;
 
 /**
- * Created by eis on 05/02/15.
+ * Convert an object into a string
  */
-public class Currency extends org.duniter.core.client.model.local.Currency implements Serializable {
+@Slf4j
+public class ToStringJsonSerializer<T> extends JsonSerializerConverterAdapter<T> {
 
-    private String[] tags;
-
-    public String[] getTags() {
-        return tags;
+    public ToStringJsonSerializer() {
+        super(Objects::toString);
     }
-
-    public void setTags(String[] tags) {
-        this.tags = tags;
+    public ToStringJsonSerializer(boolean failIfInvalid) {
+        super(Objects::toString, failIfInvalid);
     }
-
 }

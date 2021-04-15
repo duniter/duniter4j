@@ -1,4 +1,4 @@
-package org.duniter.core.client.dao;
+package org.duniter.core.client.repositories;
 
 /*
  * #%L
@@ -23,19 +23,18 @@ package org.duniter.core.client.dao;
  */
 
 import org.duniter.core.beans.Bean;
-import org.duniter.core.client.model.local.LocalEntity;
+import org.duniter.core.client.model.local.ICurrency;
+import org.duniter.core.repositories.CrudRepository;
+import org.duniter.core.util.Beans;
+
+import java.util.stream.Collectors;
 
 /**
- * Created by blavenie on 29/12/15.
+ * Created by eis on 07/02/15.
  */
-public interface EntityDao<I, B extends LocalEntity<I>> extends Bean{
+public interface CurrencyRepository<E extends ICurrency> extends Bean, CrudRepository<String, E> {
 
-        B create(B entity);
-
-        B update(B entity);
-
-        B getById(I id);
-
-        void remove(B entity);
-
+    default Iterable<String> findAllIds() {
+        return Beans.getStream(findAll()).map(E::getId).collect(Collectors.toList());
+    }
 }

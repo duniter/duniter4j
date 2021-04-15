@@ -70,13 +70,13 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
 
     @Deprecated
     public <T> T executeRequest(String currencyId, String absolutePath, Class<? extends T> resultClass)  {
-        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+        Peer peer = peerService.getActivePeerByCurrency(currencyId);
         return httpService.executeRequest(peer, absolutePath, resultClass);
     }
 
     @Deprecated
     public <T> T executeRequest(String currencyId, String absolutePath, Class<? extends T> resultClass, int timeout)  {
-        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+        Peer peer = peerService.getActivePeerByCurrency(currencyId);
         return httpService.executeRequest(peer, absolutePath, resultClass, timeout);
     }
 
@@ -86,7 +86,7 @@ public abstract class BaseRemoteServiceImpl implements Service, InitializingBean
     }
 
     public String getPath(String currencyId, String aPath) {
-        Peer peer = peerService.getActivePeerByCurrencyId(currencyId);
+        Peer peer = peerService.getActivePeerByCurrency(currencyId);
         return httpService.getPath(peer, aPath);
     }
 

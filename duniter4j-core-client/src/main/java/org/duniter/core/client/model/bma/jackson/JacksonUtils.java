@@ -30,6 +30,13 @@ import org.duniter.core.client.model.bma.BlockchainBlock;
 import org.duniter.core.client.model.bma.NetworkPeering;
 import org.duniter.core.client.model.bma.NetworkWs2pHeads;
 import org.duniter.core.client.model.bma.Ws2pHead;
+import org.duniter.core.client.model.bma.converter.*;
+import org.duniter.core.util.converter.Converter;
+import org.duniter.core.util.jackson.JsonDeserializerConverterAdapter;
+import org.duniter.core.util.jackson.JsonSerializerConverterAdapter;
+import org.duniter.core.util.jackson.ToStringJsonSerializer;
+
+import javax.annotation.Nullable;
 
 /**
  * Created by blavenie on 07/12/16.
@@ -53,19 +60,19 @@ public abstract class JacksonUtils extends SimpleModule {
         ObjectMapper objectMapper = new ObjectMapper();
 
         // Configure deserializer
-        SimpleModule module = new SimpleModule();
+        SimpleModule module = new SimpleModule()
 
         // Blockchain
-        module.addDeserializer(BlockchainBlock.Identity.class, new IdentityDeserializer());
-        module.addDeserializer(BlockchainBlock.Joiner.class, new JoinerDeserializer());
-        module.addDeserializer(BlockchainBlock.Revoked.class, new RevokedDeserializer());
-        module.addDeserializer(BlockchainBlock.Certification.class, new CertificationDeserializer());
+        .addDeserializer(BlockchainBlock.Identity.class, new JsonDeserializerConverterAdapter<>(StringToIdentityConverter.class))
+        .addDeserializer(BlockchainBlock.Joiner.class, new JsonDeserializerConverterAdapter<>(StringToJoinerConverter.class))
+        .addDeserializer(BlockchainBlock.Revoked.class, new JsonDeserializerConverterAdapter<>(StringToRevokedConverter.class))
+        .addDeserializer(BlockchainBlock.Certification.class, new JsonDeserializerConverterAdapter<>(StringToCertificationConverter.class))
 
         // Network
-        module.addDeserializer(NetworkPeering.Endpoint.class, new EndpointDeserializer());
-        module.addSerializer(NetworkPeering.Endpoint.class, new EndpointSerializer());
-        module.addDeserializer(Ws2pHead.class, new Ws2pHeadDeserializer());
-        module.addSerializer(Ws2pHead.class, new Ws2pHeadSerializer());
+        .addDeserializer(NetworkPeering.Endpoint.class, new JsonDeserializerConverterAdapter<>(StringToEndpointConverter.class, false))
+        .addDeserializer(Ws2pHead.class, new JsonDeserializerConverterAdapter<>(StringToWs2pHeadConverter.class, false))
+        .addSerializer(NetworkPeering.Endpoint.class, new ToStringJsonSerializer<>(false))
+        .addSerializer(Ws2pHead.class, new ToStringJsonSerializer(false));
 
         objectMapper.registerModule(module);
 

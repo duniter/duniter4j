@@ -37,7 +37,7 @@ To send money to a pubkey, execute this command :
        Affichage de l''aide
        Default: false
      -debug
-       Activer les logs de dÃ©buggage
+       Activer les logs de débuggage
        Default: false
    Commands:
      transaction      Effectuer une transaction

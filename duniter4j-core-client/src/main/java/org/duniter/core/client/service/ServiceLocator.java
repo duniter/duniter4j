@@ -25,13 +25,14 @@ package org.duniter.core.client.service;
 
 import org.duniter.core.beans.Bean;
 import org.duniter.core.beans.BeanFactory;
-import org.duniter.core.client.dao.PeerDao;
+import org.duniter.core.client.repositories.PeerRepository;
 import org.duniter.core.client.service.bma.BlockchainRemoteService;
 import org.duniter.core.client.service.bma.NetworkRemoteService;
 import org.duniter.core.client.service.bma.TransactionRemoteService;
 import org.duniter.core.client.service.bma.WotRemoteService;
-import org.duniter.core.client.service.elasticsearch.CurrencyRegistryRemoteService;
+import org.duniter.core.client.service.elasticsearch.CurrencyPodRemoteService;
 import org.duniter.core.client.service.local.CurrencyService;
+import org.duniter.core.client.service.local.DividendService;
 import org.duniter.core.client.service.local.NetworkService;
 import org.duniter.core.client.service.local.PeerService;
 import org.duniter.core.service.CryptoService;
@@ -72,7 +73,7 @@ public class ServiceLocator implements Closeable {
     @Override
     public void close() throws IOException {
         if (beanFactory != null) {
-            log.info("Closing ServiceLocator...");
+            log.debug("Closing ServiceLocator...");
 
             try {
                 beanFactory.close();
@@ -141,8 +142,12 @@ public class ServiceLocator implements Closeable {
         return getBean(WotRemoteService.class);
     }
 
-    public CurrencyRegistryRemoteService getCurrencyRegistryRemoteService() {
-        return getBean(CurrencyRegistryRemoteService.class);
+    public CurrencyPodRemoteService getCurrencyPodRemoteService() {
+        return getBean(CurrencyPodRemoteService.class);
+    }
+
+    public DividendService getDividendService() {
+        return getBean(DividendService.class);
     }
 
     public MailService getMailService() {
@@ -153,8 +158,8 @@ public class ServiceLocator implements Closeable {
         return getBean(NetworkService.class);
     }
 
-    public PeerDao getPeerDao() {
-        return getBean(PeerDao.class);
+    public PeerRepository getPeerRepository() {
+        return getBean(PeerRepository.class);
     }
 
     public <S extends Bean> S getBean(Class<S> clazz) {

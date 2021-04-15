@@ -132,8 +132,8 @@ public class TestResource extends org.duniter.core.test.TestResource {
 
         Locale i18nLocale = config.getI18nLocale();
 
-        if (log.isInfoEnabled()) {
-            log.info(String.format("Starts i18n with locale [%s] at [%s]",
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Starts i18n with locale [%s] at [%s]",
                     i18nLocale, i18nDirectory));
         }
         I18n.init(new UserI18nInitializer(
@@ -151,12 +151,9 @@ public class TestResource extends org.duniter.core.test.TestResource {
     protected void initMockData() {
         Configuration config = Configuration.instance();
 
-        // Set a default account id, then load cache
-        ServiceLocator.instance().getDataContext().setAccountId(0);
-
-        Peer peer = Peer.newBuilder()
-                .setHost(config.getNodeHost())
-                .setPort(config.getNodePort())
+        Peer peer = Peer.builder()
+                .host(config.getNodeHost())
+                .port(config.getNodePort())
                 .build();
         peer.setCurrency(fixtures.getDefaultCurrency());
 

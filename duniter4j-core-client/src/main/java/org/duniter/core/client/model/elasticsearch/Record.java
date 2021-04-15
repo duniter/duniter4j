@@ -23,12 +23,12 @@ package org.duniter.core.client.model.elasticsearch;
  */
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.duniter.core.client.model.local.LocalEntity;
+import org.duniter.core.model.IEntity;
 
 /**
  * Created by blavenie on 01/03/16.
  */
-public class Record implements LocalEntity<String> {
+public class Record implements IEntity<String> {
 
     public static final String PROPERTY_VERSION="version";
     public static final String PROPERTY_ISSUER="issuer";

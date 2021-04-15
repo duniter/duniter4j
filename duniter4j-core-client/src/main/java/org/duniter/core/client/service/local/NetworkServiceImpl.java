@@ -111,14 +111,14 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         Filter filterDef = new Filter();
         filterDef.filterType = null;
         filterDef.filterStatus = Peer.PeerStatus.UP;
-        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.label(), EndpointApi.BMAS.label(), EndpointApi.WS2P.label());
+        filterDef.filterEndpoints = ImmutableList.of(EndpointApi.BASIC_MERKLED_API.label(),
+                EndpointApi.BMAS.label(),
+                EndpointApi.WS2P.label(),
+                EndpointApi.GVA.label(),
+                EndpointApi.GVASUB.label());
         filterDef.minBlockNumber = current.getNumber() - 100;
 
-        // Default sort
-        Sort sortDef = new Sort();
-        sortDef.sortType = null;
-
-        return getPeers(firstPeer, filterDef, sortDef);
+        return getPeers(firstPeer, filterDef, null);
     }
 
     @Override
@@ -627,7 +627,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
                 // Compute the hash
                 .map(peerEp -> {
-                    String hash = cryptoService.hash(peerEp.computeKey());
+                    String hash = Peers.computeHash(peerEp, cryptoService);
                     peerEp.setHash(hash);
                     return peerEp;
                 }).collect(Collectors.toList());
@@ -674,11 +674,11 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         if (CollectionUtils.isNotEmpty(peer.getEndpoints())) {
             for (NetworkPeering.Endpoint ep: peer.getEndpoints()) {
                 if (ep != null && ep.getApi() != null) {
-                    Peer peerEp = Peer.newBuilder()
-                            .setCurrency(peer.getCurrency())
-                            .setHash(hash)
-                            .setPubkey(peer.getPubkey())
-                            .setEndpoint(ep)
+                    Peer peerEp = Peer.builder()
+                            .currency(peer.getCurrency())
+                            .hash(hash)
+                            .pubkey(peer.getPubkey())
+                            .endpoint(ep)
                             .build();
                     // Filter on endpoints - fix #18
                     if (CollectionUtils.isEmpty(filterEndpoints)
@@ -723,7 +723,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         }
 
         // Filter block number
-        if (filter.minBlockNumber != null && (stats.getBlockNumber() == null || stats.getBlockNumber().intValue() < filter.minBlockNumber.intValue())) {
+        if (filter.minBlockNumber != null && (stats.getBlockNumber() == null || stats.getBlockNumber() < filter.minBlockNumber)) {
             return false;
         }
 
@@ -760,7 +760,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
         peer.getStats().setMedianTime(medianTime);
 
         if (log.isTraceEnabled()) {
-            log.trace(String.format("[%s] current block [%s-%s]", peer.toString(), number, hash));
+            log.trace(String.format("[%s] current block [%s-%s]", peer, number, hash));
         }
 
         return peer;

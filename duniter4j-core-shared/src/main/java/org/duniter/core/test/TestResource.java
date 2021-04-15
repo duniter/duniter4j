@@ -93,8 +93,8 @@ public class TestResource implements TestRule {
 
         boolean defaultDbName = StringUtils.isEmpty(configName);
 
-        if (log.isInfoEnabled()) {
-            log.info("Prepare test " + testClass);
+        if (log.isDebugEnabled()) {
+            log.debug("Prepare test " + testClass);
         }
 
         resourceDirectory = getTestSpecificDirectory(testClass, "");

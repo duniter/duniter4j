@@ -22,11 +22,9 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
-import org.duniter.core.client.model.BasicIdentity;
+import org.duniter.core.client.model.BaseIdentity;
 
-import java.io.Serializable;
-
-public class WotPendingMemberships extends BasicIdentity {
+public class WotPendingMemberships extends BaseIdentity {
 	private static final long serialVersionUID = -5631089862725952431L;
 
 	private WotPendingMembership[] memberships;

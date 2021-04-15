@@ -23,12 +23,12 @@ package org.duniter.core.client.model;
  */
 
 
-import org.duniter.core.client.model.local.LocalEntity;
+import org.duniter.core.model.IEntity;
 
 /**
  * Created by eis on 07/02/15.
  */
-public class Account implements LocalEntity<Long> {
+public class Account implements IEntity<Long> {
 
     private Long id;
     private String uid;

@@ -24,7 +24,6 @@ package org.duniter.core.client.model;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.duniter.core.client.model.local.LocalEntity;
 
 import java.io.Serializable;
 
@@ -35,7 +34,7 @@ import java.io.Serializable;
  * @since 1.0
  *
  */
-public class BasicIdentity implements Serializable {
+public abstract class BaseIdentity implements Serializable {
 
     private static final long serialVersionUID = 8080689271400316984L;
 

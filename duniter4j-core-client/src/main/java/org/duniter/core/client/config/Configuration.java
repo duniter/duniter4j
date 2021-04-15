@@ -24,6 +24,7 @@ package org.duniter.core.client.config;
 
 
 import com.google.common.base.Charsets;
+import lombok.extern.slf4j.Slf4j;
 import org.duniter.core.exception.TechnicalException;
 import org.nuiton.config.ApplicationConfig;
 import org.nuiton.config.ApplicationConfigHelper;
@@ -47,9 +48,17 @@ import static org.nuiton.i18n.I18n.t;
  * @author Benoit Lavenier <benoit.lavenier@e-is.pro>
  * @since 1.0
  */
+@Slf4j
 public class Configuration  {
-    /** Logger. */
-    private static final Logger log = LoggerFactory.getLogger(Configuration.class);
+
+    protected static String[] args = null;
+
+    /**
+     * <p>remember app args.</p>
+     */
+    public static void setArgs(String[] sourceArgs) {
+        args = sourceArgs;
+    }
 
     /**
      * Delegate application config.

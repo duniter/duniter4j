@@ -24,31 +24,26 @@ package org.duniter.core.client.service.elasticsearch;
 
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
-import org.duniter.core.client.model.Currency;
-import org.duniter.core.client.model.local.Wallet;
 import org.duniter.core.client.service.ServiceLocator;
-import org.duniter.core.util.crypto.CryptoUtils;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
  * Created by Benoit on 06/05/2015.
  */
-public class CurrencyRegistryRemoteServiceTest {
-    private static final Logger log = LoggerFactory.getLogger(CurrencyRegistryRemoteServiceTest.class);
+public class CurrencyPodRemoteServiceTest {
+    private static final Logger log = LoggerFactory.getLogger(CurrencyPodRemoteServiceTest.class);
 
     @ClassRule
     public static final TestResource resource = TestResource.create();
 
-    private CurrencyRegistryRemoteService service;
+    private CurrencyPodRemoteService service;
     private Configuration config;
 
     @Before
     public void setUp() {
-        service = ServiceLocator.instance().getCurrencyRegistryRemoteService();
+        service = ServiceLocator.instance().getCurrencyPodRemoteService();
         config = Configuration.instance();
 
         // Make sure ES node is alive
