@@ -45,7 +45,7 @@
     <aspectj.version>1.8.7</aspectj.version>
 
     <!-- Unit test -->
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.1</junit.version>
     <jetty.version>9.0.4.v20130625</jetty.version>
 
     <!--license-maven-plugin config -->
