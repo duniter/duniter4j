@@ -34,7 +34,7 @@
     <stringtemplate.version>4.1</stringtemplate.version>
     <jTextUtilsVersion>0.3.3</jTextUtilsVersion>
     <lombok.version>1.18.20</lombok.version>
-    <httpclient.version>4.5.10</httpclient.version>
+    <httpclient.version>4.5.13</httpclient.version>
 
     <nuitonConfigVersion>3.0</nuitonConfigVersion>
     <nuitonVersionVersion>1.0-rc-2</nuitonVersionVersion>
