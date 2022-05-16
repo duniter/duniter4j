@@ -43,6 +43,7 @@
     <!-- UI versions -->
     <spring.version>4.2.1.RELEASE</spring.version>
     <aspectj.version>1.8.7</aspectj.version>
+    <javaMail.version>1.6.7</javaMail.version>
 
     <!-- Unit test -->
     <junit.version>4.12</junit.version>
@@ -223,9 +224,15 @@
         <version>2.6</version>
       </dependency>
       <dependency>
-        <groupId>javax.mail</groupId>
-        <artifactId>mail</artifactId>
-        <version>1.4.7</version>
+        <groupId>jakarta.mail</groupId>
+        <artifactId>jakarta.mail-api</artifactId>
+        <version>${javaMail.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.sun.mail</groupId>
+        <artifactId>jakarta.mail</artifactId>
+        <version>${javaMail.version}</version>
+        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>

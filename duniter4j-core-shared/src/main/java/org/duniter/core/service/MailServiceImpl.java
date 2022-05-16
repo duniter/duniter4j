@@ -28,6 +28,8 @@ import org.duniter.core.model.SmtpConfig;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.activation.CommandMap;
 import javax.activation.MailcapCommandMap;
@@ -41,6 +43,7 @@ import java.util.stream.Collectors;
 
 public class MailServiceImpl implements MailService, Closeable {
 
+    private static Logger log = LoggerFactory.getLogger(MailServiceImpl.class);
     private SmtpConfig smtpConfig;
     private static Session session;
     private static Transport transport;
@@ -279,6 +282,9 @@ public class MailServiceImpl implements MailService, Closeable {
         }
         if (config.isStartTLS()) {
             props.put("mail.smtp.starttls.enable", "true");
+        }
+        if (log.isDebugEnabled()) {
+            props.put("mail.debug", "true");
         }
 
         boolean useAuth = false;
