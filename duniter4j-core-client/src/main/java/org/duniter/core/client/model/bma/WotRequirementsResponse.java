@@ -33,4 +33,8 @@ public class WotRequirementsResponse extends BaseIdentity {
 		return identities;
 	}
 
+	public void setIdentities(WotRequirements[] value) {
+		identities = value;
+	}
+
 }

@@ -24,13 +24,19 @@ package org.duniter.core.client.model.bma;
 
 import org.duniter.core.client.model.BaseIdentity;
 
-public class WotPendingMemberships extends BaseIdentity {
+import java.io.Serializable;
+
+public class WotPendingMemberships implements Serializable {
 	private static final long serialVersionUID = -5631089862725952431L;
 
 	private WotPendingMembership[] memberships;
 
 	public WotPendingMembership[] getMemberships() {
 		return memberships;
+	}
+
+	public void setMemberships(WotPendingMembership[] value) {
+		memberships = value;
 	}
 
 }
