@@ -22,8 +22,6 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
-import org.duniter.core.client.model.BaseIdentity;
-
 import java.io.Serializable;
 
 public class WotPendingMemberships implements Serializable {
