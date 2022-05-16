@@ -22,61 +22,20 @@ package org.duniter.core.client.model.elasticsearch;
  * #L%
  */
 
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
+
 /**
  * Created by blavenie on 01/03/16.
  */
+@Data
+@FieldNameConstants
 public class UserProfile extends Record {
-
-    public static final String PROPERTY_TITLE = "title";
-    public static final String PROPERTY_DESCRIPTION="description";
-    public static final String PROPERTY_ADDRESS="address";
-    public static final String PROPERTY_CITY="city";
-    public static final String PROPERTY_EMAIL="email";
-    public static final String PROPERTY_LOCALE="locale";
 
     private String title;
     private String description;
     private String address;
+    private String city;
     private String email;
     private String locale;
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getLocale() {
-        return locale;
-    }
-
-    public void setLocale(String locale) {
-        this.locale = locale;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
 }

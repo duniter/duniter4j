@@ -36,12 +36,12 @@
     <lombok.version>1.18.20</lombok.version>
     <httpclient.version>4.5.10</httpclient.version>
 
-    <nuitonConfigVersion>3.0</nuitonConfigVersion>
+    <nuitonConfigVersion>3.4</nuitonConfigVersion>
     <nuitonVersionVersion>1.0-rc-2</nuitonVersionVersion>
     <nuitonI18nVersion>3.6.3</nuitonI18nVersion>
 
     <!-- UI versions -->
-    <spring.version>4.2.1.RELEASE</spring.version>
+    <spring.version>5.3.5</spring.version>
     <aspectj.version>1.8.7</aspectj.version>
 
     <!-- Unit test -->

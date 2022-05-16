@@ -91,6 +91,14 @@
       <artifactId>jackson-databind</artifactId>
     </dependency>
 
+    <!-- Spring (need for spring compatibility) -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+      <version>${spring.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- Unit test -->
     <dependency>
       <groupId>junit</groupId>

@@ -126,6 +126,7 @@ public class ModelUtils {
         if (pubkey == null || pubkey.length() < 6) {
             return pubkey;
         }
+        // TODO: use new pubkey minify
         return pubkey.substring(0, 8);
     }
 

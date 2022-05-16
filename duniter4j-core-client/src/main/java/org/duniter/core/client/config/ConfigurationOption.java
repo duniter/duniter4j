@@ -44,11 +44,22 @@ public enum ConfigurationOption implements ConfigOptionDef {
     // ------------------------------------------------------------------------//
     // -- READ-ONLY OPTIONS ---------------------------------------------------//
     // ------------------------------------------------------------------------//
+    APP_NAME(
+            "duniter4j.name",
+            n("duniter4j.config.option.app.name.description"),
+            "duniter4j",
+            File.class),
+
+    VERSION(
+            "duniter4j.version",
+            n("duniter4j.config.option.version.description"),
+            "1.0.0",
+            Version.class),
 
     BASEDIR(
             "duniter4j.basedir",
             n("duniter4j.config.option.basedir.description"),
-            "${user.home}/.config/duniter4j",
+            "${user.home}/.config/${duniter4j.name}",
             File.class),
 
     DATA_DIRECTORY(
@@ -74,12 +85,6 @@ public enum ConfigurationOption implements ConfigOptionDef {
             n("duniter4j.config.option.cache.directory.description"),
             "${duniter4j.data.directory}/cache",
             File.class),
-
-    VERSION(
-            "duniter4j.version",
-            n("duniter4j.config.option.version.description"),
-            "1.0",
-            Version.class),
 
     SITE_URL(
             "duniter4j.site.url",

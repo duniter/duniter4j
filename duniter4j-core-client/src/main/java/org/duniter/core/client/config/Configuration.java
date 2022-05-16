@@ -25,20 +25,19 @@ package org.duniter.core.client.config;
 
 import com.google.common.base.Charsets;
 import lombok.extern.slf4j.Slf4j;
+import org.duniter.core.client.util.spring.ConfigurableEnvironments;
 import org.duniter.core.exception.TechnicalException;
-import org.nuiton.config.ApplicationConfig;
-import org.nuiton.config.ApplicationConfigHelper;
-import org.nuiton.config.ApplicationConfigProvider;
-import org.nuiton.config.ArgumentsParserException;
+import org.nuiton.config.*;
 import org.nuiton.version.Version;
 import org.nuiton.version.VersionBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.Set;
 
 import static org.nuiton.i18n.I18n.t;
@@ -83,27 +82,34 @@ public class Configuration  {
         super();
         this.applicationConfig = applicationConfig;
         this.optionKeyToNotSave = null;
-
         // Override application version
         initVersion(applicationConfig);
     }
 
-    public Configuration(String file, String... args) {
+    public Configuration(ConfigurableEnvironment env,
+                                String... args) {
+        this(env, "application.fake.properties", args);
+    }
+
+    public Configuration(String file,
+                         String... args) {
+        this(null, file, args);
+    }
+
+    protected Configuration(ConfigurableEnvironment env,
+                         String file,
+                         String... args) {
         super();
-        this.applicationConfig = new ApplicationConfig();
+        // load all default options
+        Set<ApplicationConfigProvider> providers = getProviders();
+        Properties defaults = getDefaults(providers, env);
+
+        // Create Nuiton config instance
+        this.applicationConfig = new ApplicationConfig(ApplicationConfigInit.forAllScopesWithout(
+            ApplicationConfigScope.HOME
+        ).setDefaults(defaults));
         this.applicationConfig.setEncoding(Charsets.UTF_8.name());
         this.applicationConfig.setConfigFileName(file);
-
-        // get allOfToList config providers
-        Set<ApplicationConfigProvider> providers =
-                ApplicationConfigHelper.getProviders(null,
-                        null,
-                        null,
-                        true);
-
-        // load allOfToList default options
-        ApplicationConfigHelper.loadAllDefaultOption(applicationConfig,
-                providers);
 
         // Load actions
         for (ApplicationConfigProvider provider : providers) {
@@ -132,29 +138,34 @@ public class Configuration  {
             throw new TechnicalException(t("duniter4j.config.parse.error"), e);
         }
 
-        // TODO Review this, this is very dirty to do this...
-        File appBasedir = applicationConfig.getOptionAsFile(
-                ConfigurationOption.BASEDIR.getKey());
-
-        if (appBasedir == null) {
-            appBasedir = new File("");
-        }
-        if (!appBasedir.isAbsolute()) {
-            appBasedir = new File(appBasedir.getAbsolutePath());
-        }
-        if (appBasedir.getName().equals("..")) {
-            appBasedir = appBasedir.getParentFile().getParentFile();
-        }
-        if (appBasedir.getName().equals(".")) {
-            appBasedir = appBasedir.getParentFile();
-        }
-        if (log.isInfoEnabled()) {
-            log.info("Application basedir: " + appBasedir);
-        }
-        applicationConfig.setOption(
-                ConfigurationOption.BASEDIR.getKey(),
-                appBasedir.getAbsolutePath());
+        // Prepare base dir
+        fixBaseDir(applicationConfig);
     }
+
+    protected static Set<ApplicationConfigProvider> getProviders() {
+        // get allOfToList config providers
+        return ApplicationConfigHelper.getProviders(null,
+                        null,
+                        null,
+                        true);
+    }
+
+    protected Properties getDefaults(Set<ApplicationConfigProvider> providers, ConfigurableEnvironment env) {
+
+        // Populate defaults from providers
+        final Properties defaults = new Properties();
+        providers.forEach(provider -> Arrays.stream(provider.getOptions())
+            .filter(configOptionDef -> configOptionDef.getDefaultValue() != null)
+            .forEach(configOptionDef -> defaults.setProperty(configOptionDef.getKey(), configOptionDef.getDefaultValue())));
+
+        // Set options from env if provided
+        if (env != null) {
+            return ConfigurableEnvironments.readProperties(env, defaults);
+        }
+
+        return defaults;
+    }
+
 
     /**
      * Override the version default option, from the MANIFEST implementation version (if any)
@@ -184,7 +195,32 @@ public class Configuration  {
         applicationConfig.addAlias("-c", "--option", ConfigurationOption.NODE_CURRENCY.getKey());
         applicationConfig.addAlias("--salt", "--option", ConfigurationOption.USER_SALT.getKey());
         applicationConfig.addAlias("--passwd", "--option", ConfigurationOption.USER_PASSWD.getKey());
-     }
+    }
+
+    protected void fixBaseDir(ApplicationConfig applicationConfig) {
+        // TODO Review this, this is very dirty to do this...
+        File appBasedir = applicationConfig.getOptionAsFile(
+                ConfigurationOption.BASEDIR.getKey());
+
+        if (appBasedir == null) {
+            appBasedir = new File("");
+        }
+        if (!appBasedir.isAbsolute()) {
+            appBasedir = new File(appBasedir.getAbsolutePath());
+        }
+        if (appBasedir.getName().equals("..")) {
+            appBasedir = appBasedir.getParentFile().getParentFile();
+        }
+        if (appBasedir.getName().equals(".")) {
+            appBasedir = appBasedir.getParentFile();
+        }
+        if (log.isInfoEnabled()) {
+            log.info("Application basedir: " + appBasedir);
+        }
+        applicationConfig.setOption(
+                ConfigurationOption.BASEDIR.getKey(),
+                appBasedir.getAbsolutePath());
+    }
 
     public File getConfigFile() {
         if (configFile == null) {
