@@ -24,7 +24,7 @@
     <slf4j.version>1.7.30</slf4j.version>
     <guava.version>23.0</guava.version>
     <xml-apis.version>2.0.2</xml-apis.version>
-    <kalium.version>0.8.1-SNAPSHOT</kalium.version>
+    <kalium.version>0.8.2</kalium.version>
     <jna.version>5.8.0</jna.version>
     <jnr-ffi.version>2.2.2</jnr-ffi.version>
     <jnr-jffi.version>1.3.2</jnr-jffi.version>
