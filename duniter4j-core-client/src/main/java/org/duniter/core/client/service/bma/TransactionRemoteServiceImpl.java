@@ -87,6 +87,10 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		return transfer(null, wallet, destPubKey, amount, comment);
 	}
 
+	@Override
+	public String transfer(Wallet wallet, Map<String, Long> mapPubkeyAmount, String comment) throws InsufficientCreditException {
+		return transfer(null, wallet, mapPubkeyAmount, comment);
+	}
 
 	public String transfer(Peer peer, Wallet wallet, String destPubKey, long amount,
 						   String comment) throws InsufficientCreditException {

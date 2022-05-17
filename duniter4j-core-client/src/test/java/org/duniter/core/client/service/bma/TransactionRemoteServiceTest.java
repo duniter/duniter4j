@@ -23,6 +23,9 @@ package org.duniter.core.client.service.bma;
  */
 
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.model.bma.TxSource;
@@ -35,11 +38,11 @@ import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 public class TransactionRemoteServiceTest {
-
-	private static final Logger log = LoggerFactory.getLogger(TransactionRemoteServiceTest.class);
 
 	@ClassRule
 	public static final TestResource resource = TestResource.create();
@@ -62,9 +65,27 @@ public class TransactionRemoteServiceTest {
 		try {
 			service.transfer(
 					createTestWallet(),
-					resource.getFixtures().getOtherUserPublicKey(),
+					resource.getFixtures().getOtherUserPublicKey(0),
 					1,
 					"my comments" + System.currentTimeMillis());
+		} catch (InsufficientCreditException e) {
+			// OK continue
+		}
+	}
+
+	@Test
+	public void transferMulti() throws Exception {
+
+		Map<String, Long> destPubkeyAmount = ImmutableMap.<String, Long>builder()
+			.put(resource.getFixtures().getOtherUserPublicKey(0), 1l)
+			.put(resource.getFixtures().getOtherUserPublicKey(1), 2l)
+			.build();
+
+		try {
+			service.transfer(
+				createTestWallet(),
+				destPubkeyAmount,
+				"my comments" + System.currentTimeMillis());
 		} catch (InsufficientCreditException e) {
 			// OK continue
 		}
