@@ -48,7 +48,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implements TransactionRemoteService {
@@ -85,8 +87,17 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		return transfer(null, wallet, destPubKey, amount, comment);
 	}
 
+
 	public String transfer(Peer peer, Wallet wallet, String destPubKey, long amount,
 						   String comment) throws InsufficientCreditException {
+		Map<String,Long> mapPubkeyAmount = new HashMap<String,Long>();
+		mapPubkeyAmount.put(destPubKey,amount);
+		return transfer(peer,wallet,mapPubkeyAmount,comment);
+	}
+
+	public String transfer(Peer peer, Wallet wallet, Map<String,Long> mapPubkeyAmount,
+					String comment) throws InsufficientCreditException{
+
 		Preconditions.checkNotNull(wallet);
 		Preconditions.checkArgument(peer != null || wallet.getCurrency() != null);
 
@@ -98,7 +109,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		HttpPost httpPost = new HttpPost(httpService.getPath(peer, URL_TX_PROCESS));
 
 		// compute transaction
-		String transaction = getSignedTransaction(peer, wallet, currentBlock, destPubKey, 0, amount,
+		String transaction = getSignedTransaction(peer, wallet, currentBlock,mapPubkeyAmount , 0,
 				comment);
 
 		if (log.isDebugEnabled()) {
@@ -220,9 +231,8 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 	protected String getSignedTransaction(Peer peer,
 									   Wallet wallet,
 									   BlockchainBlock block,
-									   String destPubKey,
+									   Map<String,Long> mapPubkeyAmount,
 									   int locktime,
-									   long amount,
 									   String comment) throws InsufficientCreditException {
 		Preconditions.checkNotNull(wallet);
         Preconditions.checkArgument(StringUtils.isNotBlank(wallet.getCurrency()));
@@ -245,8 +255,8 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		List<TxSource.Source> txInputs = new ArrayList<>();
 		List<TxOutput> txOutputs = new ArrayList<>();
 		computeTransactionInputsAndOuputs(block.getUnitbase(),
-				wallet.getPubKeyHash(), destPubKey,
-				sources, amount, txInputs, txOutputs);
+				wallet.getPubKeyHash(),mapPubkeyAmount,
+				sources, txInputs, txOutputs);
 
 		String transaction = getTransaction(wallet.getCurrency(),
 				block.getNumber(), block.getHash(),
@@ -363,9 +373,14 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 	public void computeTransactionInputsAndOuputs(int currentUnitBase,
 												  String srcPubKey,
-			String destPubKey, TxSource.Source[] sources, long amount,
+												  Map<String,Long> mapPubkeyAmount,
+												  TxSource.Source[] sources,
 			List<TxSource.Source> resultInputs, List<TxOutput> resultOutputs) throws InsufficientCreditException{
 
+		long amount =0;
+		for(String pubKey : mapPubkeyAmount.keySet()){
+			amount += mapPubkeyAmount.get(pubKey);
+		}
 		TxInputs inputs = new TxInputs();
 		inputs.amount = 0;
 		inputs.minBase = currentUnitBase;
@@ -402,18 +417,23 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		long rest = amount;
 		int outputBase = inputs.maxBase;
 		long outputAmount;
-		while(rest > 0) {
-			outputAmount = truncBase(rest, outputBase);
-			rest -= outputAmount;
-			if (outputAmount > 0) {
-				outputAmount = inversePowBase(outputAmount, outputBase);
-				TxOutput output = new TxOutput();
-				output.setAmount(outputAmount);
-				output.setBase(outputBase);
-				output.setPubKey(destPubKey);
-				resultOutputs.add(output);
+		for(String destPubKey : mapPubkeyAmount.keySet()) {
+			rest = mapPubkeyAmount.get(destPubKey);
+			outputBase = inputs.maxBase;
+
+			while (rest > 0) {
+				outputAmount = truncBase(rest, outputBase);
+				rest -= outputAmount;
+				if (outputAmount > 0) {
+					outputAmount = inversePowBase(outputAmount, outputBase);
+					TxOutput output = new TxOutput();
+					output.setAmount(outputAmount);
+					output.setBase(outputBase);
+					output.setPubKey(destPubKey);
+					resultOutputs.add(output);
+				}
+				outputBase--;
 			}
-			outputBase--;
 		}
 		rest = inputs.amount - amount;
 		outputBase = inputs.maxBase;
