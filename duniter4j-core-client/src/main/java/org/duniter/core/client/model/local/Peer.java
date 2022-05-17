@@ -26,6 +26,7 @@ package org.duniter.core.client.model.local;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Preconditions;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.duniter.core.client.model.bma.EndpointApi;
 import org.duniter.core.client.model.bma.NetworkPeering;
@@ -35,6 +36,7 @@ import org.duniter.core.util.http.InetAddressUtils;
 import java.util.StringJoiner;
 
 @Data
+@FieldNameConstants
 public class Peer implements IEntity<String> {
 
     public static Builder builder() {
@@ -483,12 +485,9 @@ public class Peer implements IEntity<String> {
         ERROR
     }
 
+    @Data
+    @FieldNameConstants
     public static class Peering {
-        public static final String PROPERTY_VERSION = "version";
-        public static final String PROPERTY_SIGNATURE = "signature";
-        public static final String PROPERTY_BLOCK_NUMBER = "blockNumber";
-        public static final String PROPERTY_BLOCK_HASH = "blockHash";
-        public static final String PROPERTY_RAW = "raw";
 
         private Integer version;
         private String signature;
@@ -496,58 +495,11 @@ public class Peer implements IEntity<String> {
         private String blockHash;
         private String raw;
 
-        public Integer getVersion() {
-            return version;
-        }
-
-        public void setVersion(Integer version) {
-            this.version = version;
-        }
-
-        public String getSignature() {
-            return signature;
-        }
-
-        public void setSignature(String signature) {
-            this.signature = signature;
-        }
-
-        public Integer getBlockNumber() {
-            return blockNumber;
-        }
-
-        public void setBlockNumber(Integer blockNumber) {
-            this.blockNumber = blockNumber;
-        }
-
-        public String getBlockHash() {
-            return blockHash;
-        }
-
-        public void setBlockHash(String blockHash) {
-            this.blockHash = blockHash;
-        }
-
-        /**
-         * The raw peering document (unsigned)
-         * @return
-         */
-        public String getRaw() {
-            return raw;
-        }
-
-        public void setRaw(String raw) {
-            this.raw = raw;
-        }
     }
 
+    @Data
+    @FieldNameConstants
     public static class Stats {
-        public static final String PROPERTY_SOFTWARE = "software";
-        public static final String PROPERTY_VERSION = "version";
-        public static final String PROPERTY_STATUS = "status";
-        public static final String PROPERTY_UID = "uid";
-        public static final String PROPERTY_LAST_UP_TIME = "lastUpTime";
-        public static final String PROPERTY_FIRST_DOWN_TIME = "firstDownTime";
 
         private String software;
         private String version;
@@ -564,133 +516,12 @@ public class Peer implements IEntity<String> {
         private Long lastUpTime;
         private Long firstDownTime;
 
-        public Stats() {
-
-        }
-
-        public PeerStatus getStatus() {
-            return status;
-        }
 
         @JsonIgnore
         public boolean isReacheable() {
             return status != null && status == PeerStatus.UP;
         }
 
-        public void setStatus(PeerStatus status) {
-            this.status = status;
-        }
 
-        public String getError() {
-            return error;
-        }
-
-        public void setError(String error) {
-            this.error = error;
-        }
-
-        public String getSoftware() {
-            return software;
-        }
-
-        public void setSoftware(String software) {
-            this.software = software;
-        }
-
-        public String getVersion() {
-            return version;
-        }
-
-        public void setVersion(String version) {
-            this.version = version;
-        }
-
-        public Integer getBlockNumber() {
-            return blockNumber;
-        }
-
-        public void setBlockNumber(Integer blockNumber) {
-            this.blockNumber = blockNumber;
-        }
-
-        public String getBlockHash() {
-            return blockHash;
-        }
-
-        public void setBlockHash(String blockHash) {
-            this.blockHash = blockHash;
-        }
-
-        public Long getMedianTime() {
-            return medianTime;
-        }
-
-        public void setMedianTime(Long medianTime) {
-            this.medianTime = medianTime;
-        }
-
-        public boolean isMainConsensus() {
-            return isMainConsensus;
-        }
-
-        public void setMainConsensus(boolean mainConsensus) {
-            this.isMainConsensus = mainConsensus;
-        }
-
-        public boolean isForkConsensus() {
-            return isForkConsensus;
-        }
-
-        public void setForkConsensus(boolean forkConsensus) {
-            this.isForkConsensus = forkConsensus;
-        }
-
-        public Double getConsensusPct() {
-            return consensusPct;
-        }
-
-        public void setConsensusPct(Double consensusPct) {
-            this.consensusPct = consensusPct;
-        }
-
-        public Integer getHardshipLevel() {
-            return hardshipLevel;
-        }
-
-        public void setHardshipLevel(Integer hardshipLevel) {
-            this.hardshipLevel = hardshipLevel;
-        }
-
-        public String getUid() {
-            return uid;
-        }
-
-        public void setUid(String uid) {
-            this.uid = uid;
-        }
-
-        /**
-         * Last time the peer was UP (in second)
-         * @return
-         */
-        public Long getLastUpTime() {
-            return lastUpTime;
-        }
-
-        public void setLastUpTime(Long lastUpTime) {
-            this.lastUpTime = lastUpTime;
-        }
-
-        /**
-         * First time the peer was DOWN (in second)
-         * @return
-         */
-        public Long getFirstDownTime() {
-            return firstDownTime;
-        }
-
-        public void setFirstDownTime(Long firstDownTime) {
-            this.firstDownTime = firstDownTime;
-        }
     }
 }

@@ -23,12 +23,6 @@
 
   </properties>
   <dependencies>
-    <!-- Compile -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>org.duniter</groupId>
       <artifactId>duniter4j-core-shared</artifactId>
@@ -88,6 +82,12 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <!-- Compile -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
     </dependency>
 
     <!-- Unit test -->

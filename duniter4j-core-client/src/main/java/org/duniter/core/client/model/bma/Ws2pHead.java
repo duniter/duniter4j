@@ -24,35 +24,17 @@ package org.duniter.core.client.model.bma;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 
 /**
  * Created by blavenie on 22/01/19.
  */
+@Data
+@FieldNameConstants
 public class Ws2pHead implements Serializable {
-
-
-    public class AccessConfig {
-        public boolean useTor;
-        private String mode;
-
-        public boolean isUseTor() {
-            return useTor;
-        }
-
-        public void setUseTor(boolean useTor) {
-            this.useTor = useTor;
-        }
-
-        public String getMode() {
-            return mode;
-        }
-
-        public void setMode(String mode) {
-            this.mode = mode;
-        }
-    }
 
     public Integer version;
     public String pubkey;
@@ -67,84 +49,12 @@ public class Ws2pHead implements Serializable {
     public AccessConfig privateConfig = new AccessConfig();
     public AccessConfig publicConfig = new AccessConfig();
 
-    public Integer getVersion() {
-        return version;
-    }
 
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
-    public String getPubkey() {
-        return pubkey;
-    }
-
-    public void setPubkey(String pubkey) {
-        this.pubkey = pubkey;
-    }
-
-    public String getBlock() {
-        return block;
-    }
-
-    public void setBlock(String block) {
-        this.block = block;
-    }
-
-    public String getWs2pid() {
-        return ws2pid;
-    }
-
-    public void setWs2pid(String ws2pid) {
-        this.ws2pid = ws2pid;
-    }
-
-    public String getSoftware() {
-        return software;
-    }
-
-    public void setSoftware(String software) {
-        this.software = software;
-    }
-
-    public String getSoftwareVersion() {
-        return softwareVersion;
-    }
-
-    public void setSoftwareVersion(String softwareVersion) {
-        this.softwareVersion = softwareVersion;
-    }
-
-    public String getPowPrefix() {
-        return powPrefix;
-    }
-
-    public void setPowPrefix(String powPrefix) {
-        this.powPrefix = powPrefix;
-    }
-
-    public AccessConfig getPrivateConfig() {
-        return privateConfig;
-    }
-
-    public void setPrivateConfig(AccessConfig privateConfig) {
-        this.privateConfig = privateConfig;
-    }
-
-    public AccessConfig getPublicConfig() {
-        return publicConfig;
-    }
-
-    public void setPublicConfig(AccessConfig publicConfig) {
-        this.publicConfig = publicConfig;
-    }
-
-    public String getSignature() {
-        return signature;
-    }
-
-    public void setSignature(String signature) {
-        this.signature = signature;
+    @Data
+    @FieldNameConstants
+    public static class AccessConfig {
+        public boolean useTor;
+        private String mode;
     }
 
     @Override

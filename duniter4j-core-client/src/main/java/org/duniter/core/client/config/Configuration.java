@@ -32,8 +32,6 @@ import org.nuiton.config.ApplicationConfigProvider;
 import org.nuiton.config.ArgumentsParserException;
 import org.nuiton.version.Version;
 import org.nuiton.version.VersionBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -280,25 +278,25 @@ public class Configuration  {
         return applicationConfig.getOptionAsInt(ConfigurationOption.NETWORK_PEER_UP_MAX_AGE.getKey());
     }
 
-    public String getNodeElasticSearchHost() {
-        return applicationConfig.getOption(ConfigurationOption.NODE_ELASTICSEARCH_HOST.getKey());
+    public String getCesiumPlusPodHost() {
+        return applicationConfig.getOption(ConfigurationOption.CESIUM_PLUS_POD_HOST.getKey());
     }
-    public int getNodeElasticSearchPort() {
-        return applicationConfig.getOptionAsInt(ConfigurationOption.NODE_ELASTICSEARCH_PORT.getKey());
+    public int getCesiumPlusPodPort() {
+        return applicationConfig.getOptionAsInt(ConfigurationOption.CESIUM_PLUS_POD_PORT.getKey());
     }
 
-    public URL getNodeElasticSearchUrl() {
+    public URL getCesiumPlusPodUrl() {
         // Force SSL for 443 port
-        if (getNodeElasticSearchPort() == 443) {
+        if (getCesiumPlusPodPort() == 443) {
             try {
-                return new URL(applicationConfig.getOption(ConfigurationOption.NODE_ELASTICSEARCH_URL.getKey())
+                return new URL(applicationConfig.getOption(ConfigurationOption.CESIUM_PLUS_POD_URL.getKey())
                         .replaceAll("http://", "https://"));
             } catch(MalformedURLException e) {
-                return applicationConfig.getOptionAsURL(ConfigurationOption.NODE_ELASTICSEARCH_URL.getKey());
+                return applicationConfig.getOptionAsURL(ConfigurationOption.CESIUM_PLUS_POD_URL.getKey());
             }
         }
         else {
-            return applicationConfig.getOptionAsURL(ConfigurationOption.NODE_ELASTICSEARCH_URL.getKey());
+            return applicationConfig.getOptionAsURL(ConfigurationOption.CESIUM_PLUS_POD_URL.getKey());
         }
     }
 }

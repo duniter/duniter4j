@@ -23,8 +23,13 @@ package org.duniter.core.client.model.bma;
  */
 
 
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
+
 import java.io.Serializable;
 
+@Data
+@FieldNameConstants
 public class TxSource {
 
 	private String currency;
@@ -33,46 +38,26 @@ public class TxSource {
 	    
     private Source[] sources;
 
-	public TxSource() {
-	}
-
-	public String getCurrency() {
-		return currency;
-	}
-
-	public void setCurrency(String currency) {
-		this.currency = currency;
-	}
-
-	public String getPubkey() {
-		return pubkey;
-	}
-
-	public void setPubkey(String pubkey) {
-		this.pubkey = pubkey;
-	}
-
-	public Source[] getSources() {
-		return sources;
-	}
-
-	public void setSources(Source[] sources) {
-		this.sources = sources;
-	}
-
+	@Data
+	@FieldNameConstants
 	public static class Source implements Serializable, Cloneable {
 
 		private static final long serialVersionUID = 8084087351543574142L;
 
+
+		/**
+		 * Source type : <ul>
+		 * <li><code>D</code> : Universal Dividend</li>
+		 * <li><code>T</code> : Transaction</li>
+		 * </ul>
+		 * @return
+		 */
 		private String type;
 		private String identifier;
 		private String noffset;
 		private long amount;
 		private String conditions;
 		private int base;
-
-		public Source() {
-		}
 
 		@Override
 		public Object clone() throws CloneNotSupportedException {
@@ -86,64 +71,5 @@ public class TxSource {
 			clone.base = base;
 			return clone;
 		}
-
-		/**
-		 * Source type : <ul>
-		 * <li><code>D</code> : Universal Dividend</li>
-		 * <li><code>T</code> : Transaction</li>
-		 * </ul>
-		 * @return
-		 */
-		public String getType() {
-			return type;
-		}
-
-		public void setType(String type) {
-			this.type = type;
-		}
-
-		public String getIdentifier() {
-			return identifier;
-		}
-
-		public void setIdentifier(String identifier) {
-			this.identifier = identifier;
-		}
-
-		public String getNoffset() {
-			return noffset;
-		}
-
-		public void setNoffset(String noffset) {
-			this.noffset = noffset;
-		}
-
-		public long getAmount() {
-			return amount;
-		}
-
-		public void setAmount(long amount) {
-			this.amount = amount;
-		}
-
-
-		public String getConditions() {
-			return conditions;
-		}
-
-		public void setConditions(String conditions) {
-			this.conditions = conditions;
-		}
-
-		public int getBase() {
-			return base;
-		}
-
-		public void setBase(int base) {
-			this.base = base;
-		}
-
 	}
-
-
 }

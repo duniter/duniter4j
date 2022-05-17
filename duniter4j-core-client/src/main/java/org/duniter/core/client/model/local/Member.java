@@ -24,9 +24,16 @@ package org.duniter.core.client.model.local;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
+import org.duniter.core.client.model.BaseIdentity;
 import org.duniter.core.model.IEntity;
 
+@Data
+@FieldNameConstants
 public class Member extends Identity implements IEntity<String> {
+
+    public static class Fields extends Identity.Fields {}
 
     private static final long serialVersionUID = 8448049949323699700L;
 

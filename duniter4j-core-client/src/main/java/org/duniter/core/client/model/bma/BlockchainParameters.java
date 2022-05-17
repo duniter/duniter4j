@@ -24,15 +24,19 @@ package org.duniter.core.client.model.bma;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 
 /**
- * Blockwhain parameters.
+ * Blockchain parameters.
  * 
  * @author Benoit Lavenier <benoit.lavenier@e-is.pro>
  * @since 1.0
  */
+@Data
+@FieldNameConstants
 // FIXME: next ignore is due to issue on Duniter v1.4 - should be removed later
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class BlockchainParameters implements Serializable{
@@ -147,119 +151,6 @@ public class BlockchainParameters implements Serializable{
      */
     private Double percentRot;
 
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public Double getC() {
-        return c;
-    }
-
-    public void setC(Double c) {
-        this.c = c;
-    }
-
-    public Integer getDt() {
-        return dt;
-    }
-
-    public void setDt(Integer dt) {
-        this.dt = dt;
-    }
-
-    public Long getUdTime0() {
-        return udTime0;
-    }
-
-    public void setUdTime0(Long udTime0) {
-        this.udTime0 = udTime0;
-    }
-
-    public Long getUd0() {
-        return ud0;
-    }
-
-    public void setUd0(Long ud0) {
-        this.ud0 = ud0;
-    }
-
-    public Long getUdReevalTime0() {
-        return udReevalTime0;
-    }
-
-    public void setUdReevalTime0(Long udReevalTime0) {
-        this.udReevalTime0 = udReevalTime0;
-    }
-
-    public Long getDtReeval() {
-        return dtReeval;
-    }
-
-    public void setDtReeval(Long dtReeval) {
-        this.dtReeval = dtReeval;
-    }
-
-    public Integer getSigValidity() {
-        return sigValidity;
-    }
-
-    public void setSigValidity(Integer sigValidity) {
-        this.sigValidity = sigValidity;
-    }
-
-    public Integer getSigQty() {
-        return sigQty;
-    }
-
-    public void setSigQty(Integer sigQty) {
-        this.sigQty = sigQty;
-    }
-
-
-    public Integer getMsValidity() {
-        return msValidity;
-    }
-
-    public void setMsValidity(Integer msValidity) {
-        this.msValidity = msValidity;
-    }
-
-    public Integer getStepMax() {
-        return stepMax;
-    }
-
-    public void setStepMax(Integer stepMax) {
-        this.stepMax = stepMax;
-    }
-
-    public Integer getMedianTimeBlocks() {
-        return medianTimeBlocks;
-    }
-
-    public void setMedianTimeBlocks(Integer medianTimeBlocks) {
-        this.medianTimeBlocks = medianTimeBlocks;
-    }
-
-    public Integer getAvgGenTime() {
-        return avgGenTime;
-    }
-
-    public void setAvgGenTime(Integer avgGenTime) {
-        this.avgGenTime = avgGenTime;
-    }
-
-    public Integer getDtDiffEval() {
-        return dtDiffEval;
-    }
-
-    public void setDtDiffEval(Integer dtDiffEval) {
-        this.dtDiffEval = dtDiffEval;
-    }
-
     @Deprecated
     public Integer getBlocksRot() {
         return blocksRot;
@@ -268,54 +159,6 @@ public class BlockchainParameters implements Serializable{
     @Deprecated
     public void setBlocksRot(Integer blocksRot) {
         this.blocksRot = blocksRot;
-    }
-
-    public Double getPercentRot() {
-        return percentRot;
-    }
-
-    public void setPercentRot(Double percentRot) {
-        this.percentRot = percentRot;
-    }
-
-    public Integer getSigPeriod() {
-        return sigPeriod;
-    }
-
-    public void setSigPeriod(Integer sigPeriod) {
-        this.sigPeriod = sigPeriod;
-    }
-
-    public Integer getSigStock() {
-        return sigStock;
-    }
-
-    public void setSigStock(Integer sigStock) {
-        this.sigStock = sigStock;
-    }
-
-    public Integer getSigWindow() {
-        return sigWindow;
-    }
-
-    public void setSigWindow(Integer sigWindow) {
-        this.sigWindow = sigWindow;
-    }
-
-    public Integer getIdtyWindow() {
-        return idtyWindow;
-    }
-
-    public void setIdtyWindow(Integer idtyWindow) {
-        this.idtyWindow = idtyWindow;
-    }
-
-    public Integer getMsWindow() {
-        return msWindow;
-    }
-
-    public void setMsWindow(Integer msWindow) {
-        this.msWindow = msWindow;
     }
 
     @Override

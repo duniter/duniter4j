@@ -58,7 +58,7 @@ public class CurrencyPodRemoteServiceImpl extends BaseRemoteServiceImpl implemen
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
         config = Configuration.instance();
-        peer = Peer.builder().host(config.getNodeElasticSearchHost()).port(config.getNodeElasticSearchPort()).build();
+        peer = Peer.builder().host(config.getCesiumPlusPodHost()).port(config.getCesiumPlusPodPort()).build();
     }
 
     @Override

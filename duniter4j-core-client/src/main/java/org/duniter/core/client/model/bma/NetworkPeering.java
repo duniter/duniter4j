@@ -23,6 +23,8 @@ package org.duniter.core.client.model.bma;
  */
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
@@ -35,6 +37,8 @@ import java.util.stream.Stream;
 /**
  * Created by eis on 05/02/15.
  */
+@Data
+@FieldNameConstants
 public class NetworkPeering implements Serializable {
     private Integer version;
     private String currency;
@@ -46,74 +50,6 @@ public class NetworkPeering implements Serializable {
     private String raw;
 
     public Endpoint[] endpoints;
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public String getBlock() {
-        return block;
-    }
-
-    public void setBlock(String block) {
-        this.block = block;
-    }
-
-    public String getSignature() {
-        return signature;
-    }
-
-    public void setSignature(String signature) {
-        this.signature = signature;
-    }
-
-    public String getPubkey() {
-        return pubkey;
-    }
-
-    public void setPubkey(String pubkey) {
-        this.pubkey = pubkey;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    /**
-     * Unsigned peering document
-     * @return
-     */
-    public String getRaw() {
-        return raw;
-    }
-
-    public void setRaw(String raw) {
-        this.raw = raw;
-    }
-
-    public Endpoint[] getEndpoints() {
-        return endpoints;
-    }
-
-    public void setEndpoints(Endpoint[] endpoints) {
-        this.endpoints = endpoints;
-    }
 
     public String toString() {
         // Use raw, if exists
@@ -161,6 +97,8 @@ public class NetworkPeering implements Serializable {
                 .toString();
     }
 
+    @Data
+    @FieldNameConstants
     public static class Endpoint implements Serializable {
         public String api;
         public String dns;
@@ -171,80 +109,6 @@ public class NetworkPeering implements Serializable {
         public String path;
         public Boolean useSsl;
         public String raw;
-
-        public String getApi() {
-            return api;
-        }
-
-        public void setApi(String api) {
-            this.api = api;
-        }
-
-        public String getDns() {
-            return dns;
-        }
-
-        public void setDns(String dns) {
-            this.dns = dns;
-        }
-
-        public String getIpv4() {
-            return ipv4;
-        }
-
-        public void setIpv4(String ipv4) {
-            this.ipv4 = ipv4;
-        }
-
-        public String getIpv6() {
-            return ipv6;
-        }
-
-        public void setIpv6(String ipv6) {
-            this.ipv6 = ipv6;
-        }
-
-        public Integer getPort() {
-            return port;
-        }
-
-        public void setPort(Integer port) {
-            this.port = port;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        public Boolean useSsl() {
-            return useSsl;
-        }
-
-        public void setUseSsl(Boolean useSsl) {
-            this.useSsl = useSsl;
-        }
-
-        @JsonIgnore
-        public String getRaw() {
-            return raw;
-        }
-
-        @JsonIgnore
-        public void setRaw(String raw) {
-            this.raw = raw;
-        }
 
         @Override
         public String toString() {

@@ -49,8 +49,8 @@ public class CurrencyPodRemoteServiceTest {
         // Make sure ES node is alive
         if (!service.isNodeAlive()) {
             log.warn(String.format("Unable to connect to elasticsearch node [%s:%s]. Skipping test.",
-                    config.getNodeElasticSearchHost(),
-                    config.getNodeElasticSearchPort()));
+                    config.getCesiumPlusPodHost(),
+                    config.getCesiumPlusPodPort()));
             Assume.assumeTrue(false);
         }
     }

@@ -47,7 +47,10 @@ public class Example1 {
                 .build();
 
         // Do something fun !
-        BlockchainBlock currentBlock = ServiceLocator.instance().getBlockchainRemoteService().getCurrentBlock(aPeer);
+        BlockchainBlock currentBlock = ServiceLocator.instance()
+            .getBlockchainRemoteService()
+            .getCurrentBlock(aPeer);
+
         System.out.println(String.format("Hello %s world !", currentBlock.getCurrency()));
     }
 }

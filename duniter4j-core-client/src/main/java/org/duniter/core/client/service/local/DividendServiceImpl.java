@@ -140,14 +140,14 @@ public class DividendServiceImpl implements DividendService, InitializingBean {
         }
 
         // Return the full list
-        return findAllUdByCurrency(currency);
+        return findAllDividendsByCurrency(currency);
     }
 
     /**
      * Return a map of UD (key=blockNumber, value=amount)
      * @return
      */
-    public Map<Integer, Long> findAllUdByCurrency(String currency) {
+    public Map<Integer, Long> findAllDividendsByCurrency(String currency) {
         return Beans.getStream(dividendRepository.findAllByCurrency(currency))
                 .collect(Collectors.toMap(Dividend::getNumber, Dividend::getDividend));
     }

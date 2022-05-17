@@ -25,29 +25,16 @@ package org.duniter.core.client.model.bma;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
-
+@Data
+@FieldNameConstants
 public class WotLookup {
 
     private boolean partial;
     private Result[] results;
-
-    public boolean isPartial() {
-        return partial;
-    }
-
-    public void setPartial(boolean partial) {
-        this.partial = partial;
-    }
-
-    public Result[] getResults() {
-        return results;
-    }
-
-    public void setResults(Result[] results) {
-        this.results = results;
-    }
 
     public String toString() {
         String s = "";
@@ -62,6 +49,8 @@ public class WotLookup {
         return s;
     }
 
+    @Data
+    @FieldNameConstants
     public static class Result implements Serializable {
 
         private static final long serialVersionUID = -39452685440482106L;
@@ -70,33 +59,16 @@ public class WotLookup {
         private Uid[] uids;
         private SignedSignature[] signed;
 
-        public String getPubkey() {
-            return pubkey;
-        }
-
-        public void setPubkey(String pubkey) {
-            this.pubkey = pubkey;
-        }
-
-        public Uid[] getUids() {
-            return uids;
-        }
-
-        public void setUids(Uid[] uids) {
-            this.uids = uids;
-        }
-
-        public SignedSignature[] getSigned() {
-            return signed;
-        }
-
-        public void setSigned(SignedSignature[] signed) {
-            this.signed = signed;
-        }
     }
 
+    @Data
+    @FieldNameConstants
     public static class Uid {
 
+        public interface JsonFields {
+            String REVOCATION_SIG="revocation_sig";
+            String REVOKED_ON="revoked_on";
+        }
         private String uid;
         private Meta meta;
         private String self;
@@ -105,106 +77,65 @@ public class WotLookup {
         private String revocationSig;
         private OtherSignature[] others;
 
-        public Uid(){
 
-        }
-
-        public String getUid() {
-            return uid;
-        }
-
-        public void setUid(String uid) {
-            this.uid = uid;
-        }
-
-        public Meta getMeta() {
-            return meta;
-        }
-
-        public void setMeta(Meta meta) {
-            this.meta = meta;
-        }
-
-        public String getSelf() {
-            return self;
-        }
-
-        public void setSelf(String self) {
-            this.self = self;
-        }
-
-        public OtherSignature[] getOthers() {
-            return others;
-        }
-
-        public void setOthers(OtherSignature[] others) {
-            this.others = others;
-        }
-
-        public Boolean getRevoked() {
-            return revoked;
-        }
-
-        public void setRevoked(Boolean revoked) {
-            this.revoked = revoked;
-        }
-
-        @JsonGetter("revocation_sig")
+        @JsonGetter(JsonFields.REVOCATION_SIG)
         public String getRevocationSig() {
             return revocationSig;
         }
 
-        @JsonSetter("revocation_sig")
+        @JsonSetter(JsonFields.REVOCATION_SIG)
         public void setRevocationSig(String revocationSig) {
             this.revocationSig = revocationSig;
         }
 
-        @JsonGetter("revoked_on")
+        @JsonGetter(JsonFields.REVOKED_ON)
         public Long getRevokedOn() {
             return revokedOn;
         }
 
-        @JsonSetter("revoked_on")
+        @JsonSetter(JsonFields.REVOKED_ON)
         public void setRevokedOn(Long revokedOn) {
             this.revokedOn = revokedOn;
         }
     }
 
-
+    @Data
+    @FieldNameConstants
     public static class Meta implements Serializable {
+
+        public interface JsonFields {
+            String BLOCK_HASH="block_hash";
+            String BLOCK_NUMBER="block_number";
+        }
+
         private String timestamp;
         private String blockHash;
         private Long blockNumber;
 
-        public String getTimestamp() {
-            return timestamp;
-        }
 
-        public void setTimestamp(String timestamp) {
-            this.timestamp = timestamp;
-        }
-
-        @JsonGetter("block_hash")
+        @JsonGetter(JsonFields.BLOCK_HASH)
         public String getBlockHash() {
             return blockHash;
         }
 
-        @JsonSetter("block_hash")
+        @JsonSetter(JsonFields.BLOCK_HASH)
         public void setBlockHash(String blockHash) {
             this.blockHash = blockHash;
         }
-        @JsonGetter("block_number")
+        @JsonGetter(JsonFields.BLOCK_NUMBER)
         public Long getBlockNumber() {
             return blockNumber;
         }
 
-        @JsonSetter("block_number")
+        @JsonSetter(JsonFields.BLOCK_NUMBER)
         public void setBlockNumberH(Long blockNumber) {
             this.blockNumber = blockNumber;
         }
 
     }
 
+    @Data
+    @FieldNameConstants
     public static class OtherSignature {
 
         private String pubkey;
@@ -213,60 +144,14 @@ public class WotLookup {
         private String[] uids;
         private boolean isMember;
         private boolean wasMember;
-
-        public String getPubkey() {
-            return pubkey;
-        }
-
-        public void setPubkey(String pubkey) {
-            this.pubkey = pubkey;
-        }
-
-        public Meta getMeta() {
-            return meta;
-        }
-
-        public void setMeta(Meta meta) {
-            this.meta = meta;
-        }
-
-        public String getSignature() {
-            return signature;
-        }
-
-        public void setSignature(String signature) {
-            this.signature = signature;
-        }
-
-        public String[] getUids() {
-            return uids;
-        }
-
-        public void setUids(String[] uids) {
-            this.uids = uids;
-        }
-
-        @JsonGetter("isMember")
-        public boolean isMember() {
-            return isMember;
-        }
-
-        @JsonSetter("isMember")
-        public void setMember(boolean member) {
-            isMember = member;
-        }
-
-        @JsonGetter("wasMember")
-        public boolean wasMember() {
-            return wasMember;
-        }
-
-        public void setWasMember(boolean wasMember) {
-            this.wasMember = wasMember;
-        }
     }
 
+    @Data
+    @FieldNameConstants
     public static class SignedSignature {
+        public interface JsonFields {
+            String CERT_TIME="cert_time";
+        }
 
         private String uid;
         private String pubkey;
@@ -276,85 +161,33 @@ public class WotLookup {
         private boolean isMember;
         private boolean wasMember;
 
-        public String getUid() {
-            return uid;
-        }
-
-        public void setUid(String uid) {
-            this.uid = uid;
-        }
-
-        public String getPubkey() {
-            return pubkey;
-        }
-
-        public void setPubkey(String pubkey) {
-            this.pubkey = pubkey;
-        }
-
-        public Meta getMeta() {
-            return meta;
-        }
-
-        public void setMeta(Meta meta) {
-            this.meta = meta;
-        }
-
-        public String getSignature() {
-            return signature;
-        }
-
-        public void setSignature(String signature) {
-            this.signature = signature;
-        }
-
-        @JsonGetter("isMember")
-        public boolean isMember() {
-            return isMember;
-        }
-
-        public void setIsMember(boolean isMember) {
-            this.isMember = isMember;
-        }
-
-        @JsonGetter("wasMember")
-        public boolean wasMember() {
-            return wasMember;
-        }
-
-        public void setWasMember(boolean wasMember) {
-            this.wasMember = wasMember;
-        }
-
-        @JsonGetter("cert_time")
+        @JsonGetter(JsonFields.CERT_TIME)
         public CertTime getCerTime() {
             return cerTime;
         }
 
-        @JsonSetter("cert_time")
+        @JsonSetter(JsonFields.CERT_TIME)
         public void setCerTime(CertTime cerTime) {
             this.cerTime = cerTime;
         }
     }
 
+    @Data
+    @FieldNameConstants
     public static class CertTime implements Serializable {
+        public interface JsonFields {
+            String BLOCK_HASH="block_hash";
+        }
+
         private Long block;
         private String blockHash;
 
-        public Long getBlock() {
-            return block;
-        }
-
-        public void setBlock(Long block) {
-            this.block = block;
-        }
-
-        @JsonGetter("block_hash")
+        @JsonGetter(JsonFields.BLOCK_HASH)
         public String getBlockHash() {
             return blockHash;
         }
 
-        @JsonSetter("block_hash")
+        @JsonSetter(JsonFields.BLOCK_HASH)
         public void setBlockHash(String blockHash) {
             this.blockHash = blockHash;
         }

@@ -22,19 +22,14 @@ package org.duniter.core.client.model.bma;
  * #L%
  */
 
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.duniter.core.client.model.BaseIdentity;
 
+@Data
+@FieldNameConstants
 public class WotRequirementsResponse extends BaseIdentity {
 	private static final long serialVersionUID = -5631089862725952141L;
 
 	private WotRequirements[] identities;
-
-	public WotRequirements[] getIdentities() {
-		return identities;
-	}
-
-	public void setIdentities(WotRequirements[] value) {
-		identities = value;
-	}
-
 }

@@ -23,11 +23,15 @@ package org.duniter.core.client.model;
  */
 
 
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.duniter.core.model.IEntity;
 
 /**
  * Created by eis on 07/02/15.
  */
+@Data
+@FieldNameConstants
 public class Account implements IEntity<Long> {
 
     private Long id;
@@ -36,46 +40,4 @@ public class Account implements IEntity<Long> {
     private String salt;
     private String cryptPin;
 
-    @Override
-    public Long getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-
-    public String getUid() {
-        return uid;
-    }
-
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
-
-    public String getPubkey() {
-        return pubkey;
-    }
-
-    public void setPubkey(String pubkey) {
-        this.pubkey = pubkey;
-    }
-
-    public String getSalt() {
-        return salt;
-    }
-
-    public void setSalt(String salt) {
-        this.salt = salt;
-    }
-
-    public String getCryptPin() {
-        return cryptPin;
-    }
-
-    public void setCryptPin(String cryptPin) {
-        this.cryptPin = cryptPin;
-    }
 }

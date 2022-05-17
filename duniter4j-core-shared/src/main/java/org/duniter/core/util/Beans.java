@@ -37,9 +37,11 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * helper class for beans (split by property, make sure list exists, ...)
@@ -71,6 +73,59 @@ public class Beans {
     /**
      * <p>getList.</p>
      *
+     * @param list a {@link Iterable} object.
+     * @param <E> a E object.
+     * @return a {@link List} object.
+     */
+    public static <E> List<E> getList(Iterable<E> iterable) {
+        return getList(iterable.iterator());
+    }
+
+    /**
+     * <p>getList.</p>
+     *
+     * @param iterator a {@link Collection} object.
+     * @param <E> a E object.
+     * @return a {@link List} object.
+     */
+    public static <E> List<E> getList(Iterator<E> iterator) {
+        List<E> result = Lists.newArrayList();
+        while(iterator.hasNext()) {
+            result.add(iterator.next());
+        }
+        return result;
+    }
+
+    /**
+     * <p>getStream.</p>
+     *
+     * @param list a {@link Iterable} object.
+     * @param <E> a E object.
+     * @return a {@link List} object.
+     */
+    public static <E> Stream<E> getStream(Iterable<E> iterable) {
+        return getStream(iterable.spliterator());
+    }
+
+    public static <E> Stream<E> getStream(Spliterator<E> iterator) {
+        return StreamSupport.stream(iterator, false);
+    }
+
+    /**
+     * <p>getStream.</p>
+     *
+     * @param list a {@link Iterable} object.
+     * @param <E> a E object.
+     * @return a {@link List} object.
+     */
+    public static <E> E[] toArray(Iterable<E> iterable, IntFunction<E[]> generator) {
+        return getStream(iterable).toArray(generator);
+    }
+
+
+    /**
+     * <p>getList.</p>
+     *
      * @param list a {@link Collection} object.
      * @param <E> a E object.
      * @return a {@link List} object.
@@ -87,16 +142,6 @@ public class Beans {
             return Stream.empty();
         }
         return Arrays.stream(array);
-    }
-
-    public static <E> Stream<E> getStream(Iterable<E> iterable) {
-        if (iterable == null) {
-            return Stream.empty();
-        }
-        if (iterable instanceof Collection) {
-            return ((Collection<E>) iterable).stream();
-        }
-        return Streams.stream(iterable);
     }
 
     /**

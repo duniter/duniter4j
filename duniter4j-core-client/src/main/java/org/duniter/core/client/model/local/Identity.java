@@ -24,11 +24,18 @@ package org.duniter.core.client.model.local;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 import org.duniter.core.client.model.BaseIdentity;
 
 @Data
+@FieldNameConstants
 public class Identity extends BaseIdentity {
+
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class Fields extends BaseIdentity.Fields {}
 
     private String currency;
 
