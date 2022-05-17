@@ -28,6 +28,8 @@ import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
+import org.duniter.core.client.model.bma.BlockchainBlock;
+import org.duniter.core.client.model.bma.BlockchainBlocks;
 import org.duniter.core.client.model.bma.TxSource;
 import org.duniter.core.client.model.local.Peer;
 import org.duniter.core.client.model.local.Wallet;
@@ -48,6 +50,8 @@ public class TransactionRemoteServiceTest {
 	public static final TestResource resource = TestResource.create();
 	
 	private TransactionRemoteService service;
+
+	private int unitbase;
 	
 	@Before
 	public void setUp() {
@@ -57,6 +61,12 @@ public class TransactionRemoteServiceTest {
 		Assume.assumeTrue(
 				"Invalid currencies in test fixtures",
 				Objects.equals(resource.getFixtures().getDefaultCurrency(), resource.getFixtures().getCurrency()));
+
+		// Get the current unit base
+		 BlockchainBlock currentBlock = ServiceLocator.instance().getBlockchainRemoteService()
+			.getCurrentBlock(resource.getFixtures().getDefaultCurrency());
+		 Assume.assumeNotNull(currentBlock);
+		this.unitbase = currentBlock.getUnitbase();
 	}
 
 	@Test
@@ -64,12 +74,12 @@ public class TransactionRemoteServiceTest {
 
 		try {
 			service.transfer(
-					createTestWallet(),
-					resource.getFixtures().getOtherUserPublicKey(0),
-					1,
-					"my comments" + System.currentTimeMillis());
+				createTestWallet(),
+				resource.getFixtures().getOtherUserPublicKey(0),
+				BlockchainBlocks.powBase(1, unitbase),
+				"Unit test Duniter4j at " + System.currentTimeMillis());
 		} catch (InsufficientCreditException e) {
-			// OK continue
+			Assume.assumeNoException(String.format("No credit on the test wallet '%s'", resource.getFixtures().getUserPublicKey().substring(0,8)), e);
 		}
 	}
 
@@ -77,17 +87,17 @@ public class TransactionRemoteServiceTest {
 	public void transferMulti() throws Exception {
 
 		Map<String, Long> destPubkeyAmount = ImmutableMap.<String, Long>builder()
-			.put(resource.getFixtures().getOtherUserPublicKey(0), 1l)
-			.put(resource.getFixtures().getOtherUserPublicKey(1), 2l)
+			.put(resource.getFixtures().getOtherUserPublicKey(0), BlockchainBlocks.powBase(1, unitbase))
+			.put(resource.getFixtures().getOtherUserPublicKey(1), BlockchainBlocks.powBase(2, unitbase))
 			.build();
 
 		try {
 			service.transfer(
 				createTestWallet(),
 				destPubkeyAmount,
-				"my comments" + System.currentTimeMillis());
+				"Unit test Duniter4j at " + System.currentTimeMillis());
 		} catch (InsufficientCreditException e) {
-			// OK continue
+			Assume.assumeNoException(String.format("No credit on the test wallet '%s'", resource.getFixtures().getUserPublicKey().substring(0,8)), e);
 		}
 	}
 	

@@ -67,6 +67,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 
 
 	private CryptoService cryptoService;
+	private BlockchainRemoteService blockchainService;
 
 	public TransactionRemoteServiceImpl() {
 		super();
@@ -76,6 +77,7 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
         cryptoService = ServiceLocator.instance().getCryptoService();
+		blockchainService = ServiceLocator.instance().getBlockchainRemoteService();
 	}
 
 
@@ -106,14 +108,15 @@ public class TransactionRemoteServiceImpl extends BaseRemoteServiceImpl implemen
 		Preconditions.checkArgument(peer != null || wallet.getCurrency() != null);
 
 		peer = peer != null ? peer : peerService.getActivePeerByCurrency(wallet.getCurrency());
+
 		// Get current block
-		BlockchainBlock currentBlock = httpService.executeRequest(peer, BlockchainRemoteServiceImpl.URL_BLOCK_CURRENT, BlockchainBlock.class);
+		BlockchainBlock currentBlock = blockchainService.getCurrentBlock(peer, true);
 
 		// http post /tx/process
 		HttpPost httpPost = new HttpPost(httpService.getPath(peer, URL_TX_PROCESS));
 
 		// compute transaction
-		String transaction = getSignedTransaction(peer, wallet, currentBlock,mapPubkeyAmount , 0,
+		String transaction = getSignedTransaction(peer, wallet, currentBlock, mapPubkeyAmount , 0,
 				comment);
 
 		if (log.isDebugEnabled()) {
