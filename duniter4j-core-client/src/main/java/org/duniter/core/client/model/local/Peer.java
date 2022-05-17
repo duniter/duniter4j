@@ -311,7 +311,7 @@ public class Peer implements IEntity<String> {
         // else (if define) use dns
         // else (if define) use ipv6
         host = ((port == 443 || useSsl) && dns != null) ? dns :
-                (ipv4 != null && InetAddressUtils.isNotLocalIPv4Address(ipv4) ? ipv4 :
+                (ipv4 != null && InetAddressUtils.isInternetIPv4Address(ipv4) ? ipv4 :
                     (dns != null ? dns :
                         (ipv6 != null ? "[" + ipv6 + "]" : "")));
         // Use local IPv4 if no other host found

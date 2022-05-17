@@ -31,28 +31,79 @@ import org.junit.Test;
 public class InetAddressUtilsTest {
 
     @Test
+    public void isIPv4Address() {
+
+        boolean check = InetAddressUtils.isIPv4Address("192.168.0.254");
+        Assert.assertTrue(check);
+    }
+
+    @Test
     public void isNotLocalIPv4Address() {
 
-        Assert.assertFalse(InetAddressUtils.isNotLocalIPv4Address("192.168.1.11"));
-        Assert.assertFalse(InetAddressUtils.isNotLocalIPv4Address("abc"));
+        Assert.assertFalse(InetAddressUtils.isInternetIPv4Address("192.168.1.11"));
+        Assert.assertFalse(InetAddressUtils.isInternetIPv4Address("abc"));
 
-        Assert.assertTrue(InetAddressUtils.isNotLocalIPv4Address("82.239.120.237"));
+        Assert.assertTrue(InetAddressUtils.isInternetIPv4Address("82.239.120.237"));
     }
 
     @Test
     public void isLocalIPv4Address() {
 
-        boolean check = InetAddressUtils.isLocalIPv4Address("192.168.1.11");
+        boolean check = InetAddressUtils.isIntranetIPv4Address("192.168.1.11");
         Assert.assertTrue(check);
 
-        check = InetAddressUtils.isLocalIPv4Address("127.0.0.1");
+        check = InetAddressUtils.isIntranetIPv4Address("127.0.0.1");
         Assert.assertTrue(check);
     }
 
     @Test
     public void isLocalAddress() {
 
-        boolean check = InetAddressUtils.isLocalAddress("localhost");
-        Assert.assertTrue(check);
+        boolean checkTrue = InetAddressUtils.isLocalAddress("127.0.0.1");
+        Assert.assertTrue(checkTrue);
+
+        checkTrue = InetAddressUtils.isLocalAddress("localhost");
+        Assert.assertTrue(checkTrue);
+
+        boolean checkFalse = InetAddressUtils.isLocalAddress("192.168.0.254");
+        Assert.assertFalse(checkFalse);
+
+        checkFalse = InetAddressUtils.isLocalAddress("10.0.0.1");
+        Assert.assertFalse(checkFalse);
+    }
+
+    @Test
+    public void isIntranetAddress() {
+
+        boolean checkTrue = InetAddressUtils.isIntranetAddress("127.0.0.1");
+        Assert.assertTrue(checkTrue);
+
+        checkTrue = InetAddressUtils.isIntranetAddress("10.0.0.1");
+        Assert.assertTrue(checkTrue);
+
+        checkTrue = InetAddressUtils.isIntranetAddress("localhost");
+        Assert.assertTrue(checkTrue);
+
+        checkTrue = InetAddressUtils.isIntranetAddress("192.168.0.254");
+        Assert.assertTrue(checkTrue);
+    }
+
+    @Test
+    public void isInternetAddress() {
+
+        boolean checkTrue = InetAddressUtils.isInternetAddress("88.168.0.254");
+        Assert.assertTrue(checkTrue);
+
+        boolean checkFalse = InetAddressUtils.isInternetAddress("127.0.0.1");
+        Assert.assertFalse(checkFalse);
+
+        checkFalse = InetAddressUtils.isInternetAddress("10.0.0.1");
+        Assert.assertFalse(checkFalse);
+
+        checkFalse = InetAddressUtils.isInternetAddress("localhost");
+        Assert.assertFalse(checkFalse);
+
+        checkFalse = InetAddressUtils.isInternetAddress("192.168.0.254");
+        Assert.assertFalse(checkFalse);
     }
 }

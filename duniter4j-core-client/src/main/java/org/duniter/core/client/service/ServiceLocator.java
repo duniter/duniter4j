@@ -23,6 +23,7 @@ package org.duniter.core.client.service;
  */
 
 
+import lombok.extern.slf4j.Slf4j;
 import org.duniter.core.beans.Bean;
 import org.duniter.core.beans.BeanFactory;
 import org.duniter.core.client.repositories.PeerRepository;
@@ -43,11 +44,9 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 
+@Slf4j
 public class ServiceLocator implements Closeable {
 
-
-    /* Logger */
-    private static final Logger log = LoggerFactory.getLogger(ServiceLocator.class);
 
     /**
      * The shared instance of this ServiceLocator.

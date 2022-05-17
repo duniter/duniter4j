@@ -179,8 +179,8 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
 
                         return peer;
                     })
-                    // Exclude peer with only a local address
-                    .filter(peer -> InetAddressUtils.isNotLocalAddress(peer.getHost()))
+                    // Exclude peer on intranet (not routable) addresses
+                    .filter(peer -> InetAddressUtils.isInternetAddress(peer.getHost()))
                     .collect(Collectors.toList())
         )
          .thenCompose(peers -> this.refreshPeersAsync(mainPeer, peers, pool));

@@ -24,7 +24,6 @@ package org.duniter.core.client.service.bma;
 
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.duniter.core.client.TestResource;
 import org.duniter.core.client.config.Configuration;
@@ -37,8 +36,6 @@ import org.duniter.core.client.service.ServiceLocator;
 import org.duniter.core.client.service.exception.InsufficientCreditException;
 import org.duniter.core.util.crypto.CryptoUtils;
 import org.junit.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
@@ -51,7 +48,7 @@ public class TransactionRemoteServiceTest {
 	
 	private TransactionRemoteService service;
 
-	private int unitbase;
+	private int unitBase = 0;
 	
 	@Before
 	public void setUp() {
@@ -66,7 +63,7 @@ public class TransactionRemoteServiceTest {
 		 BlockchainBlock currentBlock = ServiceLocator.instance().getBlockchainRemoteService()
 			.getCurrentBlock(resource.getFixtures().getDefaultCurrency());
 		 Assume.assumeNotNull(currentBlock);
-		this.unitbase = currentBlock.getUnitbase();
+		this.unitBase = currentBlock.getUnitbase();
 	}
 
 	@Test
@@ -76,7 +73,7 @@ public class TransactionRemoteServiceTest {
 			service.transfer(
 				createTestWallet(),
 				resource.getFixtures().getOtherUserPublicKey(0),
-				BlockchainBlocks.powBase(1, unitbase),
+				BlockchainBlocks.powBase(1, unitBase),
 				"Unit test Duniter4j at " + System.currentTimeMillis());
 		} catch (InsufficientCreditException e) {
 			Assume.assumeNoException(String.format("No credit on the test wallet '%s'", resource.getFixtures().getUserPublicKey().substring(0,8)), e);
@@ -87,8 +84,8 @@ public class TransactionRemoteServiceTest {
 	public void transferMulti() throws Exception {
 
 		Map<String, Long> destPubkeyAmount = ImmutableMap.<String, Long>builder()
-			.put(resource.getFixtures().getOtherUserPublicKey(0), BlockchainBlocks.powBase(1, unitbase))
-			.put(resource.getFixtures().getOtherUserPublicKey(1), BlockchainBlocks.powBase(2, unitbase))
+			.put(resource.getFixtures().getOtherUserPublicKey(0), BlockchainBlocks.powBase(1, unitBase))
+			.put(resource.getFixtures().getOtherUserPublicKey(1), BlockchainBlocks.powBase(2, unitBase))
 			.build();
 
 		try {
