@@ -137,7 +137,7 @@ public class Endpoints {
             }
         }
 
-        log.warn("Unable to parse Endpoint: " + raw);
+        log.debug("Unable to parse Endpoint: " + raw);
         return Optional.empty();
     }
 
