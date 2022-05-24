@@ -114,6 +114,13 @@ public class EndpointsTest {
         Assert.assertNull(ep.id);
         Assert.assertNull(ep.path);
 
+        ep = Endpoints.parse("WS2P bb5e697f node.g1cotis.fr 20901 /").orElse(null);
+        Assert.assertNotNull(ep);
+        Assert.assertEquals(ep.api, "WS2P");
+        Assert.assertEquals("bb5e697f", ep.id);
+        Assert.assertEquals("/", ep.path);
+        Assert.assertEquals(new Integer(20901), ep.port);
+
         // Parse Invalid endpoints
 
         // This must failed (missing port)
@@ -123,6 +130,22 @@ public class EndpointsTest {
         // This must failed (because bad ID)
         ep = Endpoints.parse("WS2P R8t2sg7w g1.ambau.ovh 443").orElse(null);
         Assert.assertNull(ep);
+
+        // Parse invalid
+        String[] errorEndpoints = new String[]{
+            "WS2P 93.8.54.71 20910", // no id
+            "GVA 77.131.240.28 [2a02:8428:471:6701:cc3e:ef7a:ef19:81f] 30901 gva", // Bad ipV6 (character '[' not need)
+            "BMAS duniter.adn.life/bma/ 443", // Bad path position
+            "BMAS duniter.adn.life/bma 443",
+            "WS2P  duniter.vincentux.fr 443 /ws2p",
+            "WS2P 93.8.54.71 20910",
+            "BMAS cloudanua.ddns.net/bma 192.168.0.46 443",
+            "WS2P 9938ae63 cloudanua.ddns.net/bma 443 /ws2p"
+        };
+        for (String epStr: errorEndpoints) {
+            ep = Endpoints.parse(epStr).orElse(null);
+            Assert.assertNull(ep);
+        }
 
     }
 

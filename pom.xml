@@ -374,12 +374,6 @@
         <groupId>org.glassfish.tyrus</groupId>
         <artifactId>tyrus-container-grizzly-client</artifactId>
         <version>${tyrus.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.glassfish.tyrus</groupId>
-            <artifactId>tyrus-container-grizzly-server</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.glassfish.tyrus</groupId>

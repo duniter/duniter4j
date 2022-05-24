@@ -41,7 +41,7 @@ public class Endpoints {
     private static final Logger log = LoggerFactory.getLogger(Endpoints.class);
 
     // Path regexp (can have no starting slash - see issue https://git.duniter.org/clients/cesium-grp/cesium-plus-pod/-/issues/41)
-    public static final String PATH_REGEXP = "\\/?[^\\/\\s]+(?:\\/[^\\/\\s]+)*";
+    public static final String PATH_REGEXP = "(?:\\/|\\/?[^\\/\\s]+(?:\\/[^\\/\\s]+)*)";
     public static final String EP_END_REGEXP = "(?: ([a-z0-9_ğĞ][a-z0-9-_.ğĞ]*))?(?: ([0-9.]+))?(?: ([0-9a-f:]+)(?:%[a-z0-9]+)?)?(?: ([0-9]+))(?: ("+PATH_REGEXP + "))?$";
     public static final String BMA_API_REGEXP = "^BASIC_MERKLED_API" + EP_END_REGEXP;
     public static final String BMAS_API_REGEXP = "^BMAS" + EP_END_REGEXP;
