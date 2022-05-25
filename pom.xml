@@ -5,7 +5,7 @@
 
   <groupId>org.duniter</groupId>
   <artifactId>duniter4j</artifactId>
-  <version>1.5.5-SNAPSHOT</version>
+  <version>1.5.4-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Duniter4j</name>
   <description>a Duniter Java Client API</description>
