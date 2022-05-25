@@ -28,6 +28,8 @@ import org.duniter.core.model.SmtpConfig;
 
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
+import java.net.URL;
+import java.util.List;
 
 /**
  * Created by blavenie on 28/11/16.
@@ -47,8 +49,14 @@ public interface MailService extends Bean {
 
     void sendHtmlEmailWithText(
             String subject,
-            String utf8textContent,
-            String utf8HtmlContent,
+            String messageText,
+            String messageHtml,
             String... recipients);
 
+    void sendHtmlEmailWithText(
+        String subject,
+        String messageText,
+        String messageHtml,
+        List<URL> attachments,
+        String... recipients);
 }

@@ -28,6 +28,7 @@ import org.duniter.core.model.SmtpConfig;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.Preconditions;
 import org.duniter.core.util.StringUtils;
+import org.duniter.core.util.mail.MailContentBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,9 @@ import javax.mail.*;
 import javax.mail.internet.*;
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -96,32 +99,25 @@ public class MailServiceImpl implements MailService, Closeable {
 
     @Override
     public void sendHtmlEmailWithText(String subject,
-                                      String textContent,
-                                      String htmlContent,
+                                      String messageText,
+                                      String messageHtml,
                                       String... recipients) {
-        try{
+        sendHtmlEmailWithText(subject, messageText, messageHtml, null, recipients);
+    }
 
-            Multipart content = new MimeMultipart("alternative");
+    @Override
+    public void sendHtmlEmailWithText(String subject, String messageText, String messageHtml,
+                                      List<URL> attachments,
+                                      String... recipients) {
+        try {
 
-            // Add text part
-            {
-                MimeBodyPart mbp = new MimeBodyPart();
-                ContentType contentType = new ContentType("text/plain");
-                contentType.setParameter("charset", "UTF-8");
-                mbp.setContent(textContent, contentType.toString());
-                content.addBodyPart(mbp);
-            }
+            MailContentBuilder mailContentBuilder = new MailContentBuilder();
+            final Multipart mixed = mailContentBuilder.build(messageText,
+                messageHtml,
+                mailContentBuilder.findUrls(messageHtml),
+                attachments);
 
-            // Add html part
-            {
-                MimeBodyPart mbp = new MimeBodyPart();
-                ContentType contentType = new ContentType("text/html");
-                contentType.setParameter("charset", "UTF-8");
-                mbp.setContent(htmlContent, contentType.toString());
-                content.addBodyPart(mbp);
-            }
-
-            sendEmail(subject, content.getContentType(), content, recipients);
+            sendEmail(subject, mixed.getContentType(), mixed, recipients);
         }
         catch(MessagingException e) {
             // Should never occur
@@ -166,21 +162,26 @@ public class MailServiceImpl implements MailService, Closeable {
 
             message.setFrom(getSenderAddress(smtpConfig));
 
-            Address[] recipientsAddresses = Arrays.asList(recipients).stream().map(recipient -> {
-                try {
-                    return new InternetAddress(recipient);
-                }
-                catch (AddressException e) {
-                    throw new TechnicalException(String.format("Error while sending email. Bad recipient address [%s]", recipient), e);
-                }
-            }).collect(Collectors.toList()).toArray(new InternetAddress[recipients.length]);
+            Address[] recipientsAddresses = Arrays.stream(recipients)
+                .map(this::toInternetAddress)
+                .toArray(InternetAddress[]::new);
 
-            message.setRecipients(Message.RecipientType.TO, recipientsAddresses);
+            if (recipientsAddresses.length == 1) {
+                message.setRecipients(Message.RecipientType.TO, recipientsAddresses);
+            }
+            else {
+                message.setRecipients(Message.RecipientType.BCC, recipientsAddresses);
+            }
             message.setSubject(subject);
 
-            message.setContent(content, contentType);
+            if (content instanceof Multipart) {
+                message.setContent((Multipart)content);
+            }
+            else {
+                message.setContent(content, contentType);
+            }
             message.setSentDate(new java.util.Date());
-            message.saveChanges();
+            //message.saveChanges();
             transport.sendMessage(message, message.getAllRecipients());
 
         }  catch (MessagingException e) {
@@ -303,8 +304,6 @@ public class MailServiceImpl implements MailService, Closeable {
             } else {
                 transport.connect();
             }
-        } catch (NoSuchProviderException e) {
-            throw new TechnicalException(e);
         } catch (MessagingException e) {
             throw new TechnicalException(e);
         }
@@ -325,11 +324,34 @@ public class MailServiceImpl implements MailService, Closeable {
     protected void configureJavaMailMimeTypes() {
 
         MailcapCommandMap mc = (MailcapCommandMap) CommandMap.getDefaultCommandMap();
-        mc.addMailcap("text/html;; x-java-content-handler=com.sun.mail.handlers.text_html");
+        /*mc.addMailcap("text/html;; x-java-content-handler=com.sun.mail.handlers.text_html");
         mc.addMailcap("text/xml;; x-java-content-handler=com.sun.mail.handlers.text_xml");
         mc.addMailcap("text/plain;; x-java-content-handler=com.sun.mail.handlers.text_plain");
         //mc.addMailcap("multipart/*;; x-java-content-handler=com.sun.mail.handlers.multipart_mixed");
         mc.addMailcap("multipart/alternative;; x-java-content-handler=com.sun.mail.handlers.multipart_mixed");
-        mc.addMailcap("message/rfc822;; x-java-content- handler=com.sun.mail.handlers.message_rfc822");
+        mc.addMailcap("message/rfc822;; x-java-content- handler=com.sun.mail.handlers.message_rfc822");*/
+
+        mc.addMailcap("text/plain;;		x-java-content-handler=com.sun.mail.handlers.text_plain");
+        mc.addMailcap("text/html;;		x-java-content-handler=com.sun.mail.handlers.text_html");
+        mc.addMailcap("text/xml;;		x-java-content-handler=com.sun.mail.handlers.text_xml");
+        mc.addMailcap("multipart/*;;		x-java-content-handler=com.sun.mail.handlers.multipart_mixed; x-java-fallback-entry=true");
+        mc.addMailcap("message/rfc822;;	x-java-content-handler=com.sun.mail.handlers.message_rfc822");
+    }
+
+    protected Multipart newChild(Multipart parent, String alternative) throws MessagingException {
+        MimeMultipart child =  new MimeMultipart(alternative);
+        final MimeBodyPart mbp = new MimeBodyPart();
+        parent.addBodyPart(mbp);
+        mbp.setContent(child);
+        return child;
+    }
+
+    protected InternetAddress toInternetAddress(String address) {
+        try {
+            return new InternetAddress(address);
+        }
+        catch (AddressException e) {
+            throw new TechnicalException(String.format("Invalid email address: %s", address), e);
+        }
     }
 }
