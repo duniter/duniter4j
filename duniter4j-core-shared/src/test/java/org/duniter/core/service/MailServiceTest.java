@@ -70,8 +70,8 @@ public class MailServiceTest {
     }
 
     @Test
-    //@Ignore
-    public void sendHtmlEmailWithText() throws MalformedURLException {
+    @Ignore
+    public void sendHtmlEmailWithText() throws IOException {
 
         service.sendHtmlEmailWithText("Test " + System.currentTimeMillis() + " with HTML",
             "a test text content",
@@ -84,7 +84,7 @@ public class MailServiceTest {
             "benoit.lavenier@e-is.pro");
 
         // Send file attachments
-        try {
+        {
             File temp = new File("/tmp/mail-attachment.csv");
             FileUtils.write(temp, "col1;col2\nval1;val2", StandardCharsets.UTF_8);
 
@@ -96,8 +96,6 @@ public class MailServiceTest {
                     new URL("file://" + temp.getAbsolutePath())
                 ),
                 "benoit.lavenier@e-is.pro");
-        } catch (IOException e) {
-            Assert.fail("error");
         }
     }
 }
