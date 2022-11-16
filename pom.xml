@@ -30,7 +30,7 @@
     <jnr-jffi.version>1.3.2</jnr-jffi.version>
     <scrypt.version>1.4.0</scrypt.version>
     <tyrus.version>1.17</tyrus.version>
-    <jackson.version>2.12.3</jackson.version>
+    <jackson.version>2.12.7.1</jackson.version>
     <stringtemplate.version>4.1</stringtemplate.version>
     <jTextUtilsVersion>0.3.3</jTextUtilsVersion>
     <lombok.version>1.18.20</lombok.version>
