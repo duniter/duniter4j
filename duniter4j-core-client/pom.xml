@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.duniter</groupId>
     <artifactId>duniter4j</artifactId>
-    <version>1.4.1-SNAPSHOT</version>
+    <version>1.5.7-SNAPSHOT</version>
   </parent>
 
   <artifactId>duniter4j-core-client</artifactId>
@@ -24,12 +24,6 @@
 
   </properties>
   <dependencies>
-    <!-- Compile -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>org.duniter</groupId>
       <artifactId>duniter4j-core-shared</artifactId>
@@ -52,7 +46,6 @@
         <groupId>org.glassfish.tyrus</groupId>
         <artifactId>tyrus-client</artifactId>
     </dependency>
-
     <dependency>
         <groupId>org.glassfish.tyrus</groupId>
         <artifactId>tyrus-container-grizzly-client</artifactId>
@@ -89,6 +82,12 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <!-- Compile -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
     </dependency>
 
     <!-- Spring (need for spring compatibility) -->

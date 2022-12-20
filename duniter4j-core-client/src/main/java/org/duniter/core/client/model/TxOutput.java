@@ -23,8 +23,13 @@ package org.duniter.core.client.model;
  */
 
 
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
+
 import java.io.Serializable;
 
+@Data
+@FieldNameConstants
 public class TxOutput implements Serializable {
 
 	private static final long serialVersionUID = 8084087351543574142L;
@@ -35,27 +40,4 @@ public class TxOutput implements Serializable {
 
 	private int base;
 
-	public String getPubKey() {
-		return pubKey;
-	}
-
-	public void setPubKey(String pubKey) {
-		this.pubKey = pubKey;
-	}
-
-	public long getAmount() {
-		return amount;
-	}
-
-	public void setAmount(long amount) {
-		this.amount = amount;
-	}
-
-	public int getBase() {
-		return base;
-	}
-
-	public void setBase(int base) {
-		this.base = base;
-	}
 }

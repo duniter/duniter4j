@@ -26,12 +26,16 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.base.Joiner;
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 
 /**
  * Created by eis on 05/02/15.
  */
+@Data
+@FieldNameConstants
 public class NetworkPeers implements Serializable {
 
     public Peer[] peers;
@@ -40,40 +44,36 @@ public class NetworkPeers implements Serializable {
         return Joiner.on(",").join(peers);
     }
 
+    @Data
+    @FieldNameConstants
     public static class Peer extends NetworkPeering implements Serializable {
+
+        public interface JsonFields {
+            String FIRST_DOWN = "first_down";
+            String  LAST_TRY = "last_try";
+        }
         public Long firstDown;
         public Long lastTry;
-        public Long lastContact;
         public String hash;
 
-        @JsonGetter("first_down")
+        @JsonGetter(JsonFields.FIRST_DOWN)
         public Long getFirstDown() {
             return firstDown;
         }
 
-        @JsonSetter("first_down")
+        @JsonSetter(JsonFields.FIRST_DOWN)
         public void setFirstDown(Long firstDown) {
             this.firstDown = firstDown;
         }
 
-        @JsonGetter("last_try")
+        @JsonGetter(JsonFields.LAST_TRY)
         public Long getLastTry() {
             return lastTry;
         }
 
-        @JsonSetter("last_try")
+        @JsonSetter(JsonFields.LAST_TRY)
         public void setLastTry(Long lastTry) {
             this.lastTry = lastTry;
-        }
-
-        @JsonGetter("lastContact")
-        public Long getLastContact() {
-            return lastContact;
-        }
-
-        @JsonSetter("lastContact")
-        public void setLastContact(Long lastContact) {
-            this.lastContact = lastContact;
         }
 
         @JsonIgnore

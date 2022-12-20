@@ -85,9 +85,15 @@ public class TestFixtures {
      * Get a public key of another user, encode in base 58.
      * @return
      */
-    public String getOtherUserPublicKey() {
-    	// = kimamila
-        return "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of";
+    public String getOtherUserPublicKey(int index) {
+        switch (index) {
+            case 0:
+                // = kimamila
+                return "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of";
+            default:
+                // TODO
+                return "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of";
+        }
     }
 
 }

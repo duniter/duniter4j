@@ -24,6 +24,10 @@ package org.duniter.core.client.model;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
 import java.io.Serializable;
 
@@ -34,35 +38,20 @@ import java.io.Serializable;
  * @since 1.0
  *
  */
+@Data
+@FieldNameConstants
 public abstract class BaseIdentity implements Serializable {
 
     private static final long serialVersionUID = 8080689271400316984L;
 
-    public static final String PROPERTY_UID = "uid";
-    public static final String PROPERTY_PUBKEY = "pubkey";
-    public static final String PROPERTY_SIGNATURE = "signature";
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class Fields {}
 
     private String pubkey;
 
     private String signature;
 
     private String uid;
-
-    public String getPubkey() {
-        return pubkey;
-    }
-
-    public void setPubkey(String pubkey) {
-        this.pubkey = pubkey;
-    }
-
-    public String getSignature() {
-        return signature;
-    }
-
-    public void setSignature(String signature) {
-        this.signature = signature;
-    }
 
     @JsonIgnore
     @Deprecated
@@ -76,14 +65,6 @@ public abstract class BaseIdentity implements Serializable {
         this.signature = signature;
     }
 
-    public String getUid() {
-        return uid;
-    }
-
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
-    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder()

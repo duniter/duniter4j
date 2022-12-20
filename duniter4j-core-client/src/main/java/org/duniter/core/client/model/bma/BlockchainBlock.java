@@ -72,7 +72,7 @@ public class BlockchainBlock implements Serializable {
     private String previousHash;
     private String previousIssuer;
     private String innerHash;
-    private Long dividend;
+    private BigInteger dividend;
     private Identity[] identities;
     private Joiner[] joiners;
     private Joiner[] leavers;

@@ -23,11 +23,9 @@ package org.duniter.core.client.service.local;
  */
 
 import org.duniter.core.beans.Service;
-import org.duniter.core.client.model.local.Currency;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Created by eis on 07/02/15.
@@ -51,7 +49,7 @@ public interface DividendService extends Service {
      * Return a map of UD (key=blockNumber, value=amount)
      * @return
      */
-    Map<Integer, Long> findAllUdByCurrency(String currency);
+    Map<Integer, Long> findAllDividendsByCurrency(String currency);
 
     /**
      * Update the last currency dividend

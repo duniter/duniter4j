@@ -201,28 +201,28 @@ public enum ConfigurationOption implements ConfigOptionDef {
             Integer.class,
             false),
 
-    NODE_ELASTICSEARCH_PROTOCOL(
+    CESIUM_PLUS_POD_PROTOCOL(
             "duniter4j.node.elasticsearch.protocol",
             n("duniter4j.config.option.node.elasticsearch.protocol.description"),
             "http",
             String.class,
             false),
 
-    NODE_ELASTICSEARCH_HOST(
+    CESIUM_PLUS_POD_HOST(
             "duniter4j.node.elasticsearch.host",
             n("duniter4j.config.option.node.elasticsearch.host.description"),
             "localhost",
             String.class,
             false),
 
-    NODE_ELASTICSEARCH_PORT(
+    CESIUM_PLUS_POD_PORT(
             "duniter4j.node.elasticsearch.port",
             n("duniter4j.config.option.node.elasticsearch.port.description"),
             "9200",
             Integer.class,
             false),
 
-    NODE_ELASTICSEARCH_URL(
+    CESIUM_PLUS_POD_URL(
             "duniter4j.node.elasticsearch.url",
             n("duniter4j.config.option.node.elasticsearch.url.description"),
             "${duniter4j.node.elasticsearch.protocol}://${duniter4j.node.elasticsearch.host}:${duniter4j.node.elasticsearch.port}",

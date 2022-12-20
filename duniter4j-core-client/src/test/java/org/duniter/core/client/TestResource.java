@@ -24,6 +24,7 @@ package org.duniter.core.client;
 
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.duniter.core.client.config.Configuration;
 import org.duniter.core.client.config.ConfigurationOption;
 import org.duniter.core.client.model.local.Peer;
@@ -41,9 +42,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+@Slf4j
 public class TestResource extends org.duniter.core.test.TestResource {
 
-    private static final Logger log = LoggerFactory.getLogger(TestResource.class);
 
     public static TestResource create() {
         return new TestResource(null);
@@ -102,7 +103,7 @@ public class TestResource extends org.duniter.core.test.TestResource {
     /* -- -- */
 
     /**
-     * Convenience methods that could be override to initialize other configuration
+     * Convenience methods that could be overridden to initialize other configuration
      *
      * @param configFilename
      */

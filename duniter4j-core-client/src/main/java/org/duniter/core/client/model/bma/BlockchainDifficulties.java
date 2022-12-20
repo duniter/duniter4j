@@ -23,6 +23,8 @@ package org.duniter.core.client.model.bma;
  */
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.Serializable;
@@ -30,46 +32,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Data
+@FieldNameConstants
 public class BlockchainDifficulties implements Serializable {
 	private static final long serialVersionUID = -5631089862715942431L;
 
 	private Long block;
 	private DifficultyLevel[] levels;
 
-	public Long getBlock() {
-		return block;
-	}
-	public void setBlock(Long block) {
-		this.block = block;
-	}
-	public DifficultyLevel[] getLevels() {
-		return levels;
-	}
-	public void setLevels(DifficultyLevel[] levels) {
-		this.levels = levels;
-	}
-
+	@Data
+	@FieldNameConstants
 	public static class DifficultyLevel implements Serializable {
 		private static final long serialVersionUID = 1L;
 
 		private String uid;
 		private int level;
-
-		public String getUid() {
-			return uid;
-		}
-
-		public void setUid(String uid) {
-			this.uid = uid;
-		}
-
-		public int getLevel() {
-			return level;
-		}
-
-		public void setLevel(int level) {
-			this.level = level;
-		}
 	}
 
 	@JsonIgnore

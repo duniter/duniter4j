@@ -29,19 +29,11 @@ import java.util.regex.Pattern;
  */
 public class InetAddressUtils {
 
-    public static final Pattern LOCAL_IP_ADDRESS_PATTERN = Pattern.compile("^127[.]0[.]0.|192[.]168[.]|10[.]0[.]0[.]|172[.]16[.]");
+    public static final Pattern LOCAL_IP_ADDRESS_PATTERN = Pattern.compile("^127[.]0[.]0.");
+
+    public static final Pattern INTRANET_ADDRESS_PATTERN = Pattern.compile("^127[.]0[.]0.|192[.]168[.]|10[.]0[.]0[.]|172[.]16[.]");
 
     private InetAddressUtils() {
-    }
-
-    public static boolean isNotLocalIPv4Address(String input) {
-        return org.apache.http.conn.util.InetAddressUtils.isIPv4Address(input) &&
-                !LOCAL_IP_ADDRESS_PATTERN.matcher(input).find();
-    }
-
-    public static boolean isLocalIPv4Address(String input) {
-        return org.apache.http.conn.util.InetAddressUtils.isIPv4Address(input) &&
-                LOCAL_IP_ADDRESS_PATTERN.matcher(input).find();
     }
 
     public static boolean isIPv4Address(String input) {
@@ -52,11 +44,29 @@ public class InetAddressUtils {
         return org.apache.http.conn.util.InetAddressUtils.isIPv6Address(input);
     }
 
+    public static boolean isInternetIPv4Address(String input) {
+        return isIPv4Address(input) &&
+                !INTRANET_ADDRESS_PATTERN.matcher(input).find();
+    }
+
+    public static boolean isIntranetIPv4Address(String input) {
+        return isIPv4Address(input) && INTRANET_ADDRESS_PATTERN.matcher(input).find();
+    }
+
+
+    public static boolean isIntranetAddress(String input) {
+        return isIntranetIPv4Address(input) || "localhost".equalsIgnoreCase(input);
+    }
+
+    public static boolean isInternetAddress(String input) {
+        return isIPv6Address(input) || isInternetIPv4Address(input);
+    }
+
     public static boolean isLocalAddress(String input) {
-        return isLocalIPv4Address(input) || "localhost".equalsIgnoreCase(input);
+        return (isIPv4Address(input) && LOCAL_IP_ADDRESS_PATTERN.matcher(input).find()) || "localhost".equalsIgnoreCase(input);
     }
 
     public static boolean isNotLocalAddress(String input) {
-        return !isLocalAddress(input);
+        return isIPv6Address(input) || (isIPv4Address(input) && !LOCAL_IP_ADDRESS_PATTERN.matcher(input).find());
     }
 }

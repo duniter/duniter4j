@@ -25,10 +25,8 @@ package org.duniter.core.client.model.local;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldNameConstants;
 import org.duniter.core.client.model.bma.BlockchainParameters;
 
 /**
@@ -36,9 +34,13 @@ import org.duniter.core.client.model.bma.BlockchainParameters;
  */
 @Data
 @Builder
+@FieldNameConstants
 @NoArgsConstructor
 @AllArgsConstructor
 public class Currency implements ICurrency {
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    public static class Fields {}
+
     private String id;
     private BlockchainParameters parameters;
     private String firstBlockSignature;

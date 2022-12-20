@@ -25,6 +25,8 @@ package org.duniter.core.client.model.bma;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.duniter.core.client.model.local.Identity;
 
 import java.io.Serializable;
@@ -35,65 +37,28 @@ import java.io.Serializable;
  * @since 1.0
  *
  */
+@Data
+@FieldNameConstants
 public class WotCertification implements Serializable{
     
     private static final long serialVersionUID = 8568496827055074607L;
 
     private String pubkey;
-
     private String uid;
-
     private String sigDate;
-
     private boolean isMember;
-
     private Certification[] certifications;
 
-    public Certification[] getCertifications() {
-        return certifications;
-    }
 
-    public void setCertifications(Certification[] certifications) {
-        this.certifications = certifications;
-    }
-
-    public String getPubkey() {
-        return pubkey;
-    }
-
-    public void setPubkey(String pubkey) {
-        this.pubkey = pubkey;
-    }
-
-    public String getUid() {
-        return uid;
-    }
-
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
-
-    @JsonGetter("is_member")
-    public boolean isMember() {
-        return isMember;
-    }
-
-    public void setIsMember(boolean isMember) {
-        this.isMember = isMember;
-    }
-
-    public String getSigDate() {
-        return sigDate;
-    }
-
-    public void setSigDate(String sigDate) {
-        this.sigDate = sigDate;
-    }
-
+    @Data
+    @FieldNameConstants
     public static class Certification extends Identity {
 
         private static final long serialVersionUID = 2204517069552693026L;
 
+        public interface JsonFields {
+            String CERT_TIME = "cert_time";
+        }
         private CertTime certTime;
 
         private String sigDate;
@@ -105,91 +70,35 @@ public class WotCertification implements Serializable{
 
         private boolean wasMember;
 
-        @JsonGetter("cert_time")
+        @JsonGetter(JsonFields.CERT_TIME)
         public CertTime getCertTime() {
             return certTime;
         }
 
-        @JsonSetter("cert_time")
+        @JsonSetter(JsonFields.CERT_TIME)
         public void setCertTime(CertTime certTime) {
             this.certTime = certTime;
         }
 
-        /**
-         * Indicate whether the certification is written in the blockchain or not.
-         */
-        public Written getWritten() {
-            return written;
-        }
-
-        public void setWritten(Written written) {
-            this.written = written;
-        }
-
-        public String getSigDate() {
-            return sigDate;
-        }
-
-        public void setSigDate(String sigDate) {
-            this.sigDate = sigDate;
-        }
-
-        @JsonGetter("wasMember")
-        public boolean wasMember() {
-            return wasMember;
-        }
-
-        public void setWasMember(boolean wasMember) {
-            this.wasMember = wasMember;
-        }
     }
 
+    @Data
+    @FieldNameConstants
     public static class CertTime implements Serializable {
 
         private static final long serialVersionUID = -358639516878884523L;
 
         private int block = -1;
-
         private long medianTime = -1;
-
-        public int getBlock() {
-            return block;
-        }
-
-        public void setBlock(int block) {
-            this.block = block;
-        }
-
-        public long getMedianTime() {
-            return medianTime;
-        }
-
-        public void setMedianTime(long medianTime) {
-            this.medianTime = medianTime;
-        }
 
     }
 
+    @Data
+    @FieldNameConstants
     public static class Written implements Serializable{
 
         private long number = -1;
-
         private String hash = "";
 
-        public long getNumber() {
-            return number;
-        }
-
-        public void setNumber(long number) {
-            this.number = number;
-        }
-
-        public String getHash() {
-            return hash;
-        }
-
-        public void setHash(String hash) {
-            this.hash = hash;
-        }
     }
 }

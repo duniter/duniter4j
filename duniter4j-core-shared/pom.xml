@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.duniter</groupId>
     <artifactId>duniter4j</artifactId>
-    <version>1.4.1-SNAPSHOT</version>
+    <version>1.5.7-SNAPSHOT</version>
   </parent>
 
   <artifactId>duniter4j-core-shared</artifactId>
@@ -83,8 +83,8 @@
 
     </dependency>
     <dependency>
-      <groupId>javax.mail</groupId>
-      <artifactId>mail</artifactId>
+      <groupId>com.sun.mail</groupId>
+      <artifactId>jakarta.mail</artifactId>
     </dependency>
 
     <!-- Unit test -->

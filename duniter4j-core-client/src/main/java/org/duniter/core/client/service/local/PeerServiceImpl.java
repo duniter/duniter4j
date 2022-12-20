@@ -91,7 +91,6 @@ public class PeerServiceImpl implements PeerService, InitializingBean {
         Preconditions.checkArgument(StringUtils.isNotBlank(peer.getHost()));
         Preconditions.checkArgument(peer.getPort() >= 0);
 
-
         peer.setHash(Peers.computeHash(peer, cryptoService));
 
         Peer result = peerRepository.save(peer);
