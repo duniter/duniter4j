@@ -87,7 +87,7 @@
             <version>${jansiVersion}</version>
         </dependency>
 
-        <!-- spring (need to extends configuration) -->
+        <!-- spring (need to extend configuration) -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>
