@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#RELEASE_OPTS="-DskipTests"
-RELEASE_OPTS=""
+RELEASE_OPTS="-DskipTests"
+#RELEASE_OPTS=""
 
 # Rollback previous release, if need
 if [[ -f "pom.xml.releaseBackup" ]]; then
