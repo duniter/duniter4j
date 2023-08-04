@@ -33,27 +33,39 @@ public class InetAddressUtilsTest {
     @Test
     public void isIPv4Address() {
 
-        boolean check = InetAddressUtils.isIPv4Address("192.168.0.254");
-        Assert.assertTrue(check);
+        boolean checkTrue = InetAddressUtils.isIPv4Address("192.168.0.254");
+        Assert.assertTrue(checkTrue);
+
+        // Try a host name
+        boolean checkFalse = InetAddressUtils.isInternetAddress("g1.duniter.org");
+        Assert.assertFalse(checkFalse);
     }
 
     @Test
-    public void isNotLocalIPv4Address() {
+    public void isInternetIPv4Address() {
 
         Assert.assertFalse(InetAddressUtils.isInternetIPv4Address("192.168.1.11"));
         Assert.assertFalse(InetAddressUtils.isInternetIPv4Address("abc"));
 
         Assert.assertTrue(InetAddressUtils.isInternetIPv4Address("82.239.120.237"));
+
+        // Try a host name
+        boolean checkFalse = InetAddressUtils.isInternetAddress("g1.duniter.org");
+        Assert.assertFalse(checkFalse);
     }
 
     @Test
-    public void isLocalIPv4Address() {
+    public void isIntranetIPv4Address() {
 
         boolean check = InetAddressUtils.isIntranetIPv4Address("192.168.1.11");
         Assert.assertTrue(check);
 
         check = InetAddressUtils.isIntranetIPv4Address("127.0.0.1");
         Assert.assertTrue(check);
+
+        // Try a host name
+        boolean checkFalse = InetAddressUtils.isInternetAddress("g1.duniter.org");
+        Assert.assertFalse(checkFalse);
     }
 
     @Test
@@ -69,6 +81,10 @@ public class InetAddressUtilsTest {
         Assert.assertFalse(checkFalse);
 
         checkFalse = InetAddressUtils.isLocalAddress("10.0.0.1");
+        Assert.assertFalse(checkFalse);
+
+        // Try a host name
+        checkFalse = InetAddressUtils.isInternetAddress("g1.duniter.org");
         Assert.assertFalse(checkFalse);
     }
 
@@ -86,6 +102,10 @@ public class InetAddressUtilsTest {
 
         checkTrue = InetAddressUtils.isIntranetAddress("192.168.0.254");
         Assert.assertTrue(checkTrue);
+
+        // Try a host name
+        boolean checkFalse = InetAddressUtils.isInternetAddress("g1.duniter.org");
+        Assert.assertFalse(checkFalse);
     }
 
     @Test
@@ -104,6 +124,10 @@ public class InetAddressUtilsTest {
         Assert.assertFalse(checkFalse);
 
         checkFalse = InetAddressUtils.isInternetAddress("192.168.0.254");
+        Assert.assertFalse(checkFalse);
+
+        // Try a host name
+        checkFalse = InetAddressUtils.isInternetAddress("g1.duniter.org");
         Assert.assertFalse(checkFalse);
     }
 }
