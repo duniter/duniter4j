@@ -51,10 +51,12 @@ public class WotRemoteServiceTest {
 	public static final TestResource resource = TestResource.create();
 
 	private WotRemoteService service;
+	private Peer peer;
 
 	@Before
 	public void setUp() {
 		service = ServiceLocator.instance().getWotRemoteService();
+		peer = createTestPeer();
 	}
 
 	@Test
@@ -176,7 +178,6 @@ public class WotRemoteServiceTest {
 
 	@Test
 	public void getMembers() {
-		Peer peer = createTestPeer();
 		List<Member> result = service.getMembers(peer);
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.size() > 0);
@@ -184,7 +185,6 @@ public class WotRemoteServiceTest {
 
 	@Test
 	public void getPendingMemberships() {
-		Peer peer = createTestPeer();
 		List<WotPendingMembership> result = service.getPendingMemberships(peer);
 		Assert.assertNotNull(result);
 		Assert.assertTrue(result.size() > 0);
@@ -192,7 +192,6 @@ public class WotRemoteServiceTest {
 
 	@Test
 	public void getRequirements() {
-		Peer peer = createTestPeer();
 		List<WotPendingMembership> pendingMemberships = service.getPendingMemberships(peer);
 		Assume.assumeTrue(CollectionUtils.isNotEmpty(pendingMemberships));
 

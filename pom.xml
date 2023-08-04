@@ -9,6 +9,18 @@
   <packaging>pom</packaging>
   <name>Duniter4j</name>
   <description>a Duniter Java Client API</description>
+
+  <url>http://doc.e-is.pro/duniter4j/</url>
+  <inceptionYear>2023</inceptionYear>
+  <organization>
+    <name>Duniter Team</name>
+    <url>http://www.duniter.org</url>
+  </organization>
+
+  <prerequisites>
+    <maven>3.1.1</maven>
+  </prerequisites>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <file.encoding>UTF-8</file.encoding>
@@ -34,6 +46,7 @@
     <jTextUtilsVersion>0.3.3</jTextUtilsVersion>
     <lombok.version>1.18.20</lombok.version>
     <httpclient.version>4.5.13</httpclient.version>
+    <commons-net.version>3.9.0</commons-net.version>
 
     <nuitonConfigVersion>3.0</nuitonConfigVersion>
     <nuitonVersionVersion>1.0-rc-2</nuitonVersionVersion>
@@ -70,14 +83,15 @@
     <helperPluginVersion>2.3.2</helperPluginVersion>
 
     <!-- apache maven plugins version -->
-    <jarPluginVersion>3.0.2</jarPluginVersion>
-    <sitePluginVersion>3.6</sitePluginVersion>
+    <jarPluginVersion>3.2.0</jarPluginVersion>
+    <sitePluginVersion>3.10.0</sitePluginVersion>
     <changesPluginVersion>2.12.1</changesPluginVersion>
+    <compilerPluginVersion>3.8.1</compilerPluginVersion>
     <changelogPluginVersion>2.3</changelogPluginVersion>
-    <projectInfoReportsPluginVersion>2.9</projectInfoReportsPluginVersion>
-    <jrxPluginVersion>2.5</jrxPluginVersion>
-    <surefirePluginVersion>2.20.1</surefirePluginVersion>
-    <markdownPluginVersion>1.7</markdownPluginVersion>
+    <projectInfoReportsPluginVersion>3.1.2</projectInfoReportsPluginVersion>
+    <jrxPluginVersion>3.0.0</jrxPluginVersion>
+    <surefirePluginVersion>2.21.0</surefirePluginVersion>
+    <markdownPluginVersion>1.11.1</markdownPluginVersion>
     <enforcerPluginVersion>1.4.1</enforcerPluginVersion>
     <sourcePluginVersion>3.0.1</sourcePluginVersion>
     <releasePluginVersion>2.5.3</releasePluginVersion>
@@ -125,19 +139,6 @@
     <wagonSshVersion>2.12</wagonSshVersion>
   </properties>
 
-  <url>http://doc.e-is.pro/duniter4j/</url>
-  <inceptionYear>2014</inceptionYear>
-  <organization>
-    <name>Duniter Team</name>
-    <url>http://www.duniter.fr</url>
-  </organization>
-
-  <prerequisites>
-    <maven>3.1.1</maven>
-  </prerequisites>
-
-
-
   <licenses>
     <license>
       <name>General Public License (GPL) v3</name>
@@ -160,8 +161,8 @@
   </scm>
 
   <issueManagement>
-    <system>GitLab</system>
-    <url>https://git.duniter.org/clients/java/duniter4j/issues</url>
+    <system>gitlab</system>
+    <url>https://git.duniter.org/clients/java/duniter4j/-/issues</url>
   </issueManagement>
 
   <dependencyManagement>
@@ -290,7 +291,7 @@
       <dependency>
         <groupId>commons-net</groupId>
         <artifactId>commons-net</artifactId>
-        <version>3.4</version>
+        <version>${commons-net.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -900,15 +901,14 @@
             <reportSets>
               <reportSet>
                 <reports>
-                  <report>project-team</report>
-                  <report>mailing-list</report>
-                  <!--<report>cim</report>-->
-                  <report>issue-tracking</report>
-                  <report>license</report>
+                  <report>team</report>
+                  <report>mailing-lists</report>
+                  <report>issue-management</report>
+                  <report>licenses</report>
                   <report>scm</report>
-                  <report>dependency-info</report>
                   <report>dependencies</report>
                   <report>dependency-convergence</report>
+                  <report>dependency-info</report>
                   <report>plugin-management</report>
                   <report>plugins</report>
                   <report>dependency-management</report>
@@ -925,11 +925,13 @@
           </plugin>
 
           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jxr-plugin</artifactId>
             <version>${jrxPluginVersion}</version>
           </plugin>
 
           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-report-plugin</artifactId>
             <version>${surefirePluginVersion}</version>
           </plugin>
@@ -943,7 +945,7 @@
               <escapeHTML>false</escapeHTML>
               <feedType>rss_2.0</feedType>
               <issueLinkTemplatePerSystem>
-                <default>https://git.duniter.org/clients/java/duniter4j/issues/%ISSUE%</default>
+                <default>https://git.duniter.org/clients/java/duniter4j/-/issues/%ISSUE%</default>
               </issueLinkTemplatePerSystem>
             </configuration>
           </plugin>

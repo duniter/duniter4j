@@ -51,6 +51,7 @@ public class BlockchainRemoteServiceTest {
     public static final TestResource resource = TestResource.create();
 
     private BlockchainRemoteService service;
+    private Peer peer;
 
     private boolean isWebSocketNewBlockReceived;
 
@@ -58,6 +59,7 @@ public class BlockchainRemoteServiceTest {
     public void setUp() {
         service = ServiceLocator.instance().getBlockchainRemoteService();
         isWebSocketNewBlockReceived = false;
+        peer = createTestPeer();
     }
 
     @Test
@@ -74,7 +76,7 @@ public class BlockchainRemoteServiceTest {
     @Test
     public void getBlock() throws Exception {
 
-        BlockchainBlock result = service.getBlock(createTestPeer(), 0);
+        BlockchainBlock result = service.getBlock(peer, 0);
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getCurrency());
@@ -93,26 +95,26 @@ public class BlockchainRemoteServiceTest {
     // @FIXME timeout trop court
     public void getBlockWithTx() throws Exception {
 
-        long[] blocks = service.getBlocksWithTx(createTestPeer());
+        long[] blocks = service.getBlocksWithTx(peer);
         if (blocks == null) return;
 
         // Check first block with TX
-        BlockchainBlock result = service.getBlock(createTestPeer(), blocks[0]);
+        BlockchainBlock result = service.getBlock(peer, blocks[0]);
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getTransactions());
         Assert.assertTrue(result.getTransactions().length > 0);
 
         // Check last block with TX
-        result = service.getBlock(createTestPeer(), blocks[blocks.length-1]);
+        result = service.getBlock(peer, blocks[blocks.length-1]);
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getTransactions());
         Assert.assertTrue(result.getTransactions().length > 0);
     }
 
     @Test
-    public void getBlocksAsJson() throws Exception {
+    public void getBlocksAsJson() {
 
-        String[] result= service.getBlocksAsJson(createTestPeer(), 10, 0);
+        String[] result= service.getBlocksAsJson(peer, 10, 0);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(10, result.length);
@@ -135,8 +137,7 @@ public class BlockchainRemoteServiceTest {
     }
 
     @Test
-    public void getLastUD() throws Exception {
-        Peer peer = createTestPeer();
+    public void getLastUD() {
 
         // Get the last UD
         BlockchainRemoteService blockchainRemoteService = ServiceLocator.instance().getBlockchainRemoteService();
@@ -149,7 +150,7 @@ public class BlockchainRemoteServiceTest {
 
         isWebSocketNewBlockReceived = false;
 
-        service.addBlockListener(createTestPeer(), (message) -> {
+        service.addBlockListener(peer, (message) -> {
             try {
                 BlockchainBlock block = JacksonUtils.getThreadObjectMapper().readValue(message, BlockchainBlock.class);
                 log.debug("Received block #" + block.getNumber());
@@ -175,7 +176,6 @@ public class BlockchainRemoteServiceTest {
         // Wait for IP quota
         Thread.sleep(5000);
 
-        Peer peer = createTestPeer();
         Wallet wallet = createTestWallet();
         String uid = resource.getFixtures().getUid();
         String currency = resource.getFixtures().getCurrency();
@@ -199,7 +199,6 @@ public class BlockchainRemoteServiceTest {
     @Test
     @Ignore //FIXME Timeout
     public void getDifficulties() {
-        Peer peer = createTestPeer();
 
         BlockchainDifficulties result = service.getDifficulties(peer);
         Assert.assertNotNull(result);
