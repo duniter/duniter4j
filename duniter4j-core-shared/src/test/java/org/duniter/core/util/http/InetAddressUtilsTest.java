@@ -130,4 +130,24 @@ public class InetAddressUtilsTest {
         checkFalse = InetAddressUtils.isInternetAddress("g1.duniter.org");
         Assert.assertFalse(checkFalse);
     }
+
+    @Test
+    public void isNotLocalAddress() {
+
+        boolean checkTrue = InetAddressUtils.isNotLocalAddress("10.0.0.1");
+        Assert.assertTrue(checkTrue);
+
+        checkTrue = InetAddressUtils.isNotLocalAddress("192.168.0.254");
+        Assert.assertTrue(checkTrue);
+
+        boolean checkFalse = InetAddressUtils.isNotLocalAddress("127.0.0.1");
+        Assert.assertFalse(checkFalse);
+
+        checkFalse = InetAddressUtils.isNotLocalAddress("localhost");
+        Assert.assertFalse(checkFalse);
+
+        // Try a host name
+        checkFalse = InetAddressUtils.isNotLocalAddress("g1.duniter.org");
+        Assert.assertFalse(checkFalse);
+    }
 }

@@ -42,6 +42,7 @@ import org.duniter.core.service.CryptoService;
 import org.duniter.core.util.*;
 import org.duniter.core.util.CollectionUtils;
 import org.duniter.core.util.concurrent.CompletableFutures;
+import org.duniter.core.util.http.DnsUtils;
 import org.duniter.core.util.http.InetAddressUtils;
 import org.duniter.core.util.websocket.WebsocketClientEndpoint;
 import org.slf4j.Logger;
@@ -180,7 +181,7 @@ public class NetworkServiceImpl extends BaseRemoteServiceImpl implements Network
                         return peer;
                     })
                     // Exclude peer on intranet (not routable) addresses
-                    .filter(peer -> InetAddressUtils.isInternetAddress(peer.getHost()))
+                    .filter(peer -> DnsUtils.isInternetHostName(peer.getHost()) || InetAddressUtils.isInternetAddress(peer.getHost()))
                     .collect(Collectors.toList())
         )
          .thenCompose(peers -> this.refreshPeersAsync(mainPeer, peers, pool));
