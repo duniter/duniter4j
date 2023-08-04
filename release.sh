@@ -28,17 +28,8 @@ if [[ $? -ne 0 ]]; then
 fi
 echo "Prepare release [OK]"
 
-
 echo "**********************************"
-echo "* Performing release..."
+echo "* Compiling sources..."
 echo "**********************************"
-mvn release:perform --quiet -Darguments="${RELEASE_OPTS}"
-if [[ $? -ne 0 ]]; then
-    exit 1
-fi
-echo "Perform release [OK]"
-
-
-
-
-mvn release:perform
+mvn clean install -DskipTests --quiet
+echo "Compiling sources [OK]"
