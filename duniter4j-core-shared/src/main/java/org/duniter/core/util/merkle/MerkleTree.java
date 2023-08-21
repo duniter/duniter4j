@@ -142,6 +142,7 @@ public class MerkleTree {
     }
 
     public String root() {
+        if (nodesCount == 0) return null; // No leaves
         return rows.get(0).get(0);
     }
 
