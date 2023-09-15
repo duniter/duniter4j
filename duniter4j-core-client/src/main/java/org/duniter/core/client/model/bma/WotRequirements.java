@@ -46,6 +46,10 @@ public class WotRequirements implements Serializable {
 	private Boolean isSentry;
 	private Boolean wasMember;
 
+	private Long membershipPendingExpiresIn;
+
+	private Long membershipExpiresIn;
+
 	private Certification[] certifications;
 
 	@Data
