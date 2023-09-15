@@ -209,6 +209,26 @@ public class WotRemoteServiceTest {
 			});
 	}
 
+	@Test
+	public void getRequirementsByPubkey() {
+		List<WotPendingMembership> pendingMemberships = service.getPendingMemberships(peer);
+		Assume.assumeTrue(CollectionUtils.isNotEmpty(pendingMemberships));
+
+		MutableInt counter = new MutableInt(0);
+		pendingMemberships.stream()
+			// Get first 10
+			.filter(ms -> {
+				counter.increment();
+				return counter.getValue() < 10;
+			})
+			.forEach(ms -> {
+				List<WotRequirements> result = service.getRequirementsByPubkey(peer, ms.getPubkey());
+				Assert.assertNotNull(result);
+				Assert.assertNotNull(result.size() > 0);
+			});
+	}
+
+
 	/* -- internal methods */
 
 	protected Wallet createTestWallet() {

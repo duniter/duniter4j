@@ -67,11 +67,17 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
 
     public static final String URL_LOOKUP = URL_BASE + "/lookup/%s";
 
-    public static final String URL_REQUIREMENT = URL_BASE+"/requirements/%s";
+    public static final String URL_REQUIREMENT = URL_BASE + "/requirements/%s";
+
+    public static final String URL_REQUIREMENTBY_PUBKEY = URL_REQUIREMENT+  "?pubkey=true";
 
     public static final String URL_CERTIFIED_BY = URL_BASE + "/certified-by/%s";
 
+    public static final String URL_CERTIFIED_BY_PUBKEY = URL_CERTIFIED_BY + "?pubkey=true";
+
     public static final String URL_CERTIFIERS_OF = URL_BASE + "/certifiers-of/%s";
+
+    public static final String URL_CERTIFIERS_OF_BY_PUBKEY = URL_CERTIFIERS_OF + "?pubkey=true";
 
     /**
      * See https://github.com/ucoin-io/ucoin-cli/blob/master/bin/ucoin
@@ -190,19 +196,35 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
     }
 
     @Override
-    public List<WotRequirements> getRequirements(Peer peer, String pubKey) {
+    public List<WotRequirements> getRequirements(Peer peer, String uidOrPubkey) {
         try {
-            WotRequirementsResponse response = httpService.executeRequest(peer, String.format(URL_REQUIREMENT, pubKey), WotRequirementsResponse.class);
+            WotRequirementsResponse response = httpService.executeRequest(peer, String.format(URL_REQUIREMENT, uidOrPubkey), WotRequirementsResponse.class);
             return ImmutableList.copyOf(response.getIdentities());
         } catch (HttpBadRequestException | HttpNotFoundException e) {
-            log.debug(String.format("Unable to get memberships for {%.8s}", pubKey));
+            log.debug(String.format("Unable to get memberships for {%.8s}", uidOrPubkey));
             return null;
         }
     }
 
     @Override
-    public List<WotRequirements> getRequirements(String currencyId, String pubKey) {
-        return getRequirements(peerService.getActivePeerByCurrency(currencyId), pubKey);
+    public List<WotRequirements> getRequirements(String currencyId, String uidOrPubkey) {
+        return getRequirements(peerService.getActivePeerByCurrency(currencyId), uidOrPubkey);
+    }
+
+    @Override
+    public List<WotRequirements> getRequirementsByPubkey(Peer peer, String pubkey) {
+        try {
+            WotRequirementsResponse response = httpService.executeRequest(peer, String.format(URL_REQUIREMENTBY_PUBKEY, pubkey), WotRequirementsResponse.class);
+            return ImmutableList.copyOf(response.getIdentities());
+        } catch (HttpBadRequestException | HttpNotFoundException e) {
+            log.debug(String.format("Unable to get memberships for {%.8s}", pubkey));
+            return null;
+        }
+    }
+
+    @Override
+    public List<WotRequirements> getRequirementsByPubkey(String currencyId, String pubKey) {
+        return getRequirementsByPubkey(peerService.getActivePeerByCurrency(currencyId), pubKey);
     }
 
     public WotLookup.Uid findByUid(Peer peer, String uid) {
@@ -305,21 +327,36 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         return getCertifications(peerService.getActivePeerByCurrency(currencyId), uid, pubkey, isMember);
     }
 
-    public WotCertification getCertifiedBy(Peer peer, String uid) {
+    public WotCertification getCertifiedBy(Peer peer, String uidOrPubkey) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Try to get certifications done by uid: %s", uid));
+            log.debug(String.format("Try to get certifications done by uid: %s", uidOrPubkey));
         }
 
         // call certified-by
-        String path = String.format(URL_CERTIFIED_BY, uid);
+        String path = String.format(URL_CERTIFIED_BY, uidOrPubkey);
         WotCertification result = httpService.executeRequest(peer, path, WotCertification.class);
         
         return result;
     }
 
-    public WotCertification getCertifiedBy(String currencyId, String uid) {
-        return getCertifiedBy(peerService.getActivePeerByCurrency(currencyId), uid);
+    public WotCertification getCertifiedBy(String currencyId, String uidOrPubkey) {
+        return getCertifiedBy(peerService.getActivePeerByCurrency(currencyId), uidOrPubkey);
+    }
 
+    public WotCertification getCertifiedByPubkey(Peer peer, String pubkey) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Try to get certifications done by pubkey: %s", pubkey));
+        }
+
+        // call certified-by
+        String path = String.format(URL_CERTIFIED_BY_PUBKEY, pubkey);
+        WotCertification result = httpService.executeRequest(peer, path, WotCertification.class);
+
+        return result;
+    }
+    @Override
+    public WotCertification getCertifiedByPubkey(String currencyId, String pubkey) {
+        return getCertifiedByPubkey(peerService.getActivePeerByCurrency(currencyId), pubkey);
     }
 
     public long countValidCertifiers(Peer peer, String pubkey) {
@@ -354,6 +391,21 @@ public class WotRemoteServiceImpl extends BaseRemoteServiceImpl implements WotRe
         return getCertifiersOf(peerService.getActivePeerByCurrency(currencyId), uid);
     }
 
+    public WotCertification getCertifiersOfByPubkey(Peer peer, String pubkey) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Try to get certifications done to pubkey: %s", pubkey));
+        }
+
+        // call certifiers-of
+        String path = String.format(URL_CERTIFIERS_OF_BY_PUBKEY, pubkey);
+        WotCertification result = httpService.executeRequest(peer, path, WotCertification.class);
+
+        return result;
+    }
+
+    public WotCertification getCertifiersOfByPubkey(String currencyId, String pubkey) {
+        return getCertifiersOf(peerService.getActivePeerByCurrency(currencyId), pubkey);
+    }
     public void sendIdentity(Peer peer, String currency, byte[] pubKey, byte[] secKey, String uid, String blockUid) {
         // http post /wot/add
         HttpPost httpPost = new HttpPost(httpService.getPath(peer, URL_ADD));

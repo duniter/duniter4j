@@ -38,8 +38,26 @@ public interface WotRemoteService extends Service {
     WotLookup.Uid find(Peer peer, String uidOrPubKey);
     WotLookup.Uid find(String currencyId, String uidOrPubKey);
 
-    List<WotRequirements> getRequirements(Peer peer, String pubKey);
-    List<WotRequirements> getRequirements(String currencyId, String pubKey);
+    /**
+     * @deprecated Use getRequirementsByPubkey() intead
+     * @param peer
+     * @param uidOrPubkey
+     * @return
+     */
+    @Deprecated
+    List<WotRequirements> getRequirements(Peer peer, String uidOrPubkey);
+
+    /**
+     * @deprecated Use getRequirementsByPubkey() intead
+     * @param peer
+     * @param uidOrPubkey
+     * @return
+     */
+    @Deprecated
+    List<WotRequirements> getRequirements(String currencyId, String uidOrPubkey);
+
+    List<WotRequirements> getRequirementsByPubkey(Peer peer, String pubkey);
+    List<WotRequirements> getRequirementsByPubkey(String currencyId, String pubkey);
 
     WotLookup.Uid findByUid(Peer peer, String uid);
     WotLookup.Uid findByUid(String currencyId, String uid);
@@ -57,7 +75,10 @@ public interface WotRemoteService extends Service {
     Collection<Certification> getCertifications(String currencyId, String uid, String pubkey, boolean isMember);
 
     WotCertification getCertifiedBy(Peer peer, String uid);
-    WotCertification getCertifiedBy(String currencyId, String uid);
+    WotCertification getCertifiedBy(String currencyId, String pubkeyOrUid);
+
+    WotCertification getCertifiedByPubkey(Peer peer, String pubkey);
+    WotCertification getCertifiedByPubkey(String currencyId, String pubkey);
 
     long countValidCertifiers(Peer peer, String pubkey);
     long countValidCertifiers(String currencyId, String pubkey);
